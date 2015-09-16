@@ -218,10 +218,10 @@ class BaseElemDef extends BaseElem {
 
     // Override in other places if required
     override def equals(that: Any) = {
-    that match {
-        case f: BaseElemDef => f.FullNameWithVer + "." + f.IsDeleted == FullNameWithVer + "." + IsDeleted
-        case _ => false
-    }
+      that match {
+          case f: BaseElemDef => f.FullNameWithVer + "." + f.IsDeleted == FullNameWithVer + "." + IsDeleted
+          case _ => false
+      }
     }
 
     var uniqueId: Long = 0
@@ -693,25 +693,25 @@ object MiningModelType extends Enumeration {
   val BaselineModel,AssociationModel,ClusteringModel,GeneralRegressionModel,MiningModel,NaiveBayesModel,NearestNeighborModel,NeuralNetwork,RegressionModel,RuleSetModel,SequenceModel,Scorecard,SupportVectorMachineModel,TextModel,TimeSeriesModel,TreeModel, CustomScala, CustomJava, Unknown = Value
 
   def modelType(mdlType : String) : MiningModelType = {
-    val typ : MiningModelType.MiningModelType = mdlType match {
-      case "CustomScala" => CustomScala
-      case "CustomJava" => CustomJava
-      case "RuleSetModel" => RuleSetModel
-      case "TreeModel" => TreeModel
-      case "AssociationModel" => AssociationModel
-      case "BaselineModel" => BaselineModel
-      case "ClusteringModel" => ClusteringModel
-      case "GeneralRegressionModel" => GeneralRegressionModel
-      case "MiningModel" => MiningModel
-      case "NaiveBayesModel" => NaiveBayesModel
-      case "NearestNeighborModel" => NearestNeighborModel
-      case "NeuralNetwork" => NeuralNetwork
-      case "RegressionModel" => RegressionModel
-      case "SequenceModel" => SequenceModel
-      case "Scorecard" => Scorecard
-      case "SupportVectorMachineModel" => SupportVectorMachineModel
-      case "TextModel" => TextModel
-      case "TimeSeriesModel" => TimeSeriesModel
+    val typ : MiningModelType.MiningModelType = mdlType.trim.toLowerCase match {
+      case "customscala" => CustomScala
+      case "customjava" => CustomJava
+      case "rulesetmodel" => RuleSetModel
+      case "treemodel" => TreeModel
+      case "associationmodel" => AssociationModel
+      case "baselinemodel" => BaselineModel
+      case "clusteringmodel" => ClusteringModel
+      case "generalregressionmodel" => GeneralRegressionModel
+      case "miningmodel" => MiningModel
+      case "naivebayesmodel" => NaiveBayesModel
+      case "nearestneighbormodel" => NearestNeighborModel
+      case "neuralnetwork" => NeuralNetwork
+      case "regressionmodel" => RegressionModel
+      case "sequencemodel" => SequenceModel
+      case "scorecard" => Scorecard
+      case "supportvectormachinemodel" => SupportVectorMachineModel
+      case "textmodel" => TextModel
+      case "timeseriesmodel" => TimeSeriesModel
       case _ => Unknown
     }
     typ
@@ -721,6 +721,22 @@ object MiningModelType extends Enumeration {
 object ModelRepresentation extends Enumeration {
   type ModelRepresentation = Value
   val JAR, JPMML = Value
+
+object ModelInputType extends Enumeration {
+  type ModelInputType = Value
+  val JAR, JPMML = Value
+}
+
+/**
+ * @param modelInputType The type of model input - JAR, JPMML etc.
+ * @param isReusable Whether the model execution is referentially transparent
+ * @param msgConsumed Identfy the message that will be consumed. There is 1:! mapping between message and model
+ */
+class ModelDef(val modelInputType: ModelInputType = ModelInputType.JAR, isReusable: Boolean = false, msgConsumed: String = "") extends BaseElemDef {
+  var modelType: String = _ // type of models (RuleSet,..)
+  var inputVars: Array[BaseAttributeDef] = _
+  var outputVars: Array[BaseAttributeDef] = _
+>>>>>>> Add additional fields to ModelDef
 
   def modelRep(mdlRep: String): ModelRepresentation = {
       val rep: ModelRepresentation = mdlRep match {
