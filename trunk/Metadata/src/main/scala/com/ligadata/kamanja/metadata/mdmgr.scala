@@ -16,6 +16,8 @@
 
 package com.ligadata.kamanja.metadata
 
+import com.ligadata.kamanja.metadata.ClusterInfo
+
 import scala.Enumeration
 import scala.collection.immutable.List
 import scala.collection.mutable.{ Map, HashMap, MultiMap, Set, SortedSet, ArrayBuffer }

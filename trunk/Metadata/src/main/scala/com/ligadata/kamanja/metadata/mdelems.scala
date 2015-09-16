@@ -16,13 +16,13 @@
 
 package com.ligadata.kamanja.metadata
 
-import scala.Enumeration
-import scala.collection.mutable.{ Map, Set, TreeSet }
-import scala.io.Source._
+import java.io.{DataInputStream, DataOutputStream}
 import java.util._
 
-import scala.util.parsing.json.{ JSONObject, JSONArray }
-import java.io.{ DataOutputStream, DataInputStream }
+import com.ligadata.kamanja.metadata.ModelInputType.ModelInputType
+
+import scala.Enumeration
+import scala.collection.mutable.{Map, Set}
 
 // define some enumerations 
 object ObjFormatType extends Enumeration {
@@ -42,7 +42,7 @@ object ObjFormatType extends Enumeration {
     str
   }
 }
-import ObjFormatType._
+import com.ligadata.kamanja.metadata.ObjFormatType._
 
 /*
 object ObjContainerType extends Enumeration {
@@ -116,7 +116,7 @@ object ObjType extends Enumeration {
   }
 }
 
-import ObjType._
+import com.ligadata.kamanja.metadata.ObjType._
 
 object ObjTypeType extends Enumeration {
   type TypeType = Value
@@ -130,7 +130,7 @@ object ObjTypeType extends Enumeration {
     str
   }
 }
-import ObjTypeType._
+import com.ligadata.kamanja.metadata.ObjTypeType._
 
 object DefaultMdElemStructVer {
   def Version = 1 // Default version is 1 
@@ -190,8 +190,8 @@ class BaseElemDef extends BaseElem {
   override def ObjectDefinition(definition: String): Unit = objectDefinition = definition // Set XML/JSON Original string used during model/message compilation
   override def ObjectFormat: ObjFormatType.FormatType = objectFormat // format type for Original string(json or xml) used during model/message compilation
   override def IsActive: Boolean = active // Return true if the Element is active, otherwise false
-  override def IsDeactive: Boolean = (active == false) // Return true if the Element is de-active, otherwise false
-  override def IsDeleted: Boolean = (deleted == true) // Return true if the Element is deleted, otherwise false
+  override def IsDeactive: Boolean = !active // Return true if the Element is de-active, otherwise false
+  override def IsDeleted: Boolean = deleted // Return true if the Element is deleted, otherwise false
   override def TranId: Long = tranId // a unique number representing the transaction that modifies this object
   override def Active: Unit = active = true // Make the element as Active
   override def Deactive: Unit = active = false // Make the element as de-active
@@ -466,7 +466,7 @@ object RelationKeyType extends Enumeration {
     typ.toString
   }
 }
-import RelationKeyType._
+import com.ligadata.kamanja.metadata.RelationKeyType._
 
 abstract class RelationKeyBase {
   var constraintName: String = _ // If we have given any name for this constraint
@@ -670,7 +670,17 @@ class MacroDef extends FunctionDef {
   var macroTemplate: (String, String) = ("", "")
 }
 
-class ModelDef extends BaseElemDef {
+object ModelInputType extends Enumeration {
+  type ModelInputType = Value
+  val JAR, JPMML = Value
+}
+
+/**
+ * @param modelInputType The type of model input - JAR, JPMML etc.
+ * @param isReusable Whether the model execution is referentially transparent
+ * @param msgConsumed Identfy the message that will be consumed. There is 1:! mapping between message and model
+ */
+class ModelDef(val modelInputType: ModelInputType = ModelInputType.JAR, isReusable: Boolean = false, msgConsumed: String = "") extends BaseElemDef {
   var modelType: String = _ // type of models (RuleSet,..)
   var inputVars: Array[BaseAttributeDef] = _
   var outputVars: Array[BaseAttributeDef] = _
