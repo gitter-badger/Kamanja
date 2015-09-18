@@ -678,7 +678,7 @@ object ModelInputType extends Enumeration {
 /**
  * @param modelInputType The type of model input - JAR, JPMML etc.
  * @param isReusable Whether the model execution is referentially transparent
- * @param msgConsumed Identfy the message that will be consumed. There is 1:! mapping between message and model
+ * @param msgConsumed Identify the message that will be consumed. There is 1:1 mapping between message and model
  */
 class ModelDef(val modelInputType: ModelInputType = ModelInputType.JAR, isReusable: Boolean = false, msgConsumed: String = "") extends BaseElemDef {
   var modelType: String = _ // type of models (RuleSet,..)
