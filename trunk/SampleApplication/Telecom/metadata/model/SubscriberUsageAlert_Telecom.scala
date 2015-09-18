@@ -53,7 +53,7 @@ object SubscriberUsageAlert extends ModelBaseObj {
   override def IsValidMessage(msg: MessageContainerBase): Boolean = return msg.isInstanceOf[SubscriberUsage]
   override def CreateNewModel(mdlCtxt: ModelContext): ModelBase = return new SubscriberUsageAlert(mdlCtxt)
   override def ModelName(): String = "System.SubscriberUsageAlert" // Model Name
-  override def Version(): String = "0.0.2" // Model Version
+  override def Version(): String = "0.0.1" // Model Version
   override def CreateResultObject(): ModelResultBase = new SubscriberUsageAlertResult()
 }
 
