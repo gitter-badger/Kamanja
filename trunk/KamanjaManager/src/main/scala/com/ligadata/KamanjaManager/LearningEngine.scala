@@ -43,11 +43,12 @@ class LearningEngine(val input: InputAdapter, val curPartitionKey: PartitionUniq
 
     if (finalTopMsgOrContainer != null) {
       val modelInfoMap = KamanjaMetadata.getAllModels
+
       val modelInfos = if (modelInfoMap != null) modelInfoMap.values.toArray else Array[ModelInfo]()
 
       val outputAlways = false
 
-      // Execute all modes here
+      // Execute all models here
       modelInfos.foreach(modelInfo => {
         try {
           if (modelInfo.mdl.IsValidMessage(finalTopMsgOrContainer)) {
@@ -59,7 +60,7 @@ class LearningEngine(val input: InputAdapter, val curPartitionKey: PartitionUniq
             if (curMd != null) {
               val res = curMd.execute(outputAlways)
               if (res != null) {
-                results += new SavedMdlResult().withMdlName(modelInfo.mdl.ModelName).withMdlVersion(modelInfo.mdl.Version).withUniqKey(uk).withUniqVal(uv).withTxnId(transId).withXformedMsgCntr(xformedMsgCntr).withTotalXformedMsgs(totalXformedMsgs).withMdlResult(res)
+                results += new SavedMdlResult().withMdlName(modelInfo.mdl.ModelName()).withMdlVersion(modelInfo.mdl.Version()).withUniqKey(uk).withUniqVal(uv).withTxnId(transId).withXformedMsgCntr(xformedMsgCntr).withTotalXformedMsgs(totalXformedMsgs).withMdlResult(res)
               } else {
                 // Nothing to output
               }
@@ -84,7 +85,8 @@ class LearningEngine(val input: InputAdapter, val curPartitionKey: PartitionUniq
         }
       })
     }
-    return results.toArray
+
+    results.toArray
   }
 
   private def GetTopMsgName(msgName: String): (String, Boolean, MsgContainerObjAndTransformInfo) = {
