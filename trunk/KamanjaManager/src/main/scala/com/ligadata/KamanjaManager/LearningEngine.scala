@@ -63,7 +63,7 @@ class LearningEngine(val input: InputAdapter, val curPartitionKey: PartitionUniq
             if (curMd != null) {
               val res = curMd.execute(outputAlways)
               if (res != null) {
-                results += new SavedMdlResult().withMdlName(modelInfo.mdl.ModelName).withMdlVersion(modelInfo.mdl.Version).withUniqKey(uk).withUniqVal(uv).withTxnId(transId).withXformedMsgCntr(xformedMsgCntr).withTotalXformedMsgs(totalXformedMsgs).withMdlResult(res)
+                results += new SavedMdlResult().withMdlName(modelInfo.mdl.ModelName()).withMdlVersion(modelInfo.mdl.Version()).withUniqKey(uk).withUniqVal(uv).withTxnId(transId).withXformedMsgCntr(xformedMsgCntr).withTotalXformedMsgs(totalXformedMsgs).withMdlResult(res)
               } else {
                 // Nothing to output
               }
