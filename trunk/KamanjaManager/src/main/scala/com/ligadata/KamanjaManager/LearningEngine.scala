@@ -42,29 +42,29 @@ class LearningEngine(val input: InputAdapter, val curPartitionKey: PartitionUniq
     LOG.debug("Processing uniqueKey:%s, uniqueVal:%s".format(uk, uv))
 
     if (finalTopMsgOrContainer != null) {
-      val tmpMdls = KamanjaMetadata.getAllModels
-      val models = if (tmpMdls != null) tmpMdls.map(mdl => mdl._2).toArray else Array[MdlInfo]()
+      val modelInfoMap = KamanjaMetadata.getAllModels
+      val modelInfos = if (modelInfoMap != null) modelInfoMap.values.toArray else Array[ModelInfo]()
 
-      val outputAlways: Boolean = false;
+      val outputAlways = false
 
       // Execute all modes here
-      models.foreach(md => {
+      modelInfos.foreach(modelInfo => {
         try {
-          if (md.mdl.IsValidMessage(finalTopMsgOrContainer)) {
-            LOG.debug("Processing uniqueKey:%s, uniqueVal:%s, model:%s".format(uk, uv, md.mdl.ModelName))
+          if (modelInfo.mdl.IsValidMessage(finalTopMsgOrContainer)) {
+            LOG.debug("Processing uniqueKey:%s, uniqueVal:%s, model:%s".format(uk, uv, modelInfo.mdl.ModelName))
             // Checking whether this message has any fields/concepts to execute in this model
-            val mdlCtxt = new ModelContext(new TransactionContext(transId, envContext, md.tenantId), finalTopMsgOrContainer, inputData, uk)
+            val mdlCtxt = new ModelContext(new TransactionContext(transId, envContext, modelInfo.tenantId), finalTopMsgOrContainer, inputData, uk)
             ThreadLocalStorage.modelContextInfo.set(mdlCtxt)
-            val curMd = md.mdl.CreateNewModel(mdlCtxt)
+            val curMd = modelInfo.mdl.CreateNewModel(mdlCtxt)
             if (curMd != null) {
               val res = curMd.execute(outputAlways)
               if (res != null) {
-                results += new SavedMdlResult().withMdlName(md.mdl.ModelName).withMdlVersion(md.mdl.Version).withUniqKey(uk).withUniqVal(uv).withTxnId(transId).withXformedMsgCntr(xformedMsgCntr).withTotalXformedMsgs(totalXformedMsgs).withMdlResult(res)
+                results += new SavedMdlResult().withMdlName(modelInfo.mdl.ModelName).withMdlVersion(modelInfo.mdl.Version).withUniqKey(uk).withUniqVal(uv).withTxnId(transId).withXformedMsgCntr(xformedMsgCntr).withTotalXformedMsgs(totalXformedMsgs).withMdlResult(res)
               } else {
                 // Nothing to output
               }
             } else {
-              LOG.error("Failed to create model " + md.mdl.ModelName())
+              LOG.error("Failed to create model " + modelInfo.mdl.ModelName())
             }
           } else {
           }
