@@ -372,7 +372,9 @@ class xDerivedField(lineNumber : Int, columnNumber : Int
 					, val name : String
 					, val displayName : String
 					, val optype : String
-					, val dataType : String) extends PmmlExecNode("DerivedField", lineNumber, columnNumber) {
+					, val dataType : String
+          , val retain : Boolean) extends PmmlExecNode("DerivedField", lineNumber, columnNumber) {
+
 	var values : ArrayBuffer[(String,String)] = ArrayBuffer[(String,String)]() /** (value, property) */
 	var leftMargin : String = _
 	var rightMargin : String = _
@@ -444,9 +446,9 @@ class xTransformationDictionary(lineNumber : Int, columnNumber : Int)
 	  			/** pmmlElementVistitorMap += ("Constant" -> PmmlNode.mkPmmlConstant) */
 		  		val dName = dfld.name
 		  		
-				val classname : String = s"Derive_$dName"
-				val classNameFixer = "[-.]+".r
-				val className : String = classNameFixer.replaceAllIn(classname,"_")
+          val classname : String = s"Derive_$dName"
+          val classNameFixer = "[-.]+".r
+          val className : String = classNameFixer.replaceAllIn(classname,"_")
 
 		  		val typ = PmmlTypes.scalaDataType(dfld.dataType)
 		  		val lm : String = dfld.leftMargin
@@ -455,10 +457,12 @@ class xTransformationDictionary(lineNumber : Int, columnNumber : Int)
 		  		serNo += 1
 		  		val serNoStr = serNo.toString
 
+          val retain : String = if (dfld.retain) "true" else "false"
+
 		  		val valnm = s"xbar$serNoStr"
 		  		var valuesStr = NodePrinterHelpers.valuesHlp(dfld.values, valnm, "        ")
 		  		dictBuffer.append(s"        var $valnm : ArrayBuffer[(String,String)] = $valuesStr\n")
-		  		var derivedFieldStr : String = s"        ctx.xDict += (${'"'}$dName${'"'} -> new $className(${'"'}$dName${'"'}, ${'"'}$typ${'"'}, $valnm, ${'"'}$lm${'"'}, ${'"'}$rm${'"'}, ${'"'}$cls${'"'}))\n"
+		  		var derivedFieldStr : String = s"        ctx.xDict += (${'"'}$dName${'"'} -> new $className(${'"'}$dName${'"'}, ${'"'}$typ${'"'}, $valnm, ${'"'}$lm${'"'}, ${'"'}$rm${'"'}, ${'"'}$cls${'"'}, $retain))\n"
 	    		dictBuffer.append(derivedFieldStr)
 		  	}
 		}
@@ -1135,7 +1139,8 @@ object PmmlExecNode extends com.ligadata.pmml.compiler.LogTrait {
 		top match {
 		  case Some(top) => {
 			  	var dict : xTransformationDictionary = top.asInstanceOf[xTransformationDictionary]
-			  	fld = new xDerivedField(d.lineNumber, d.columnNumber, d.name, d.displayName, d.optype, d.dataType)
+          val retain : Boolean = (d.cacheHint != null && d.cacheHint == "retain")
+			  	fld = new xDerivedField(d.lineNumber, d.columnNumber, d.name, d.displayName, d.optype, d.dataType, retain)
 				dict.add(fld)
 				ctx.xDict(fld.name) = fld
 		  }
@@ -1557,7 +1562,7 @@ object PmmlExecNode extends com.ligadata.pmml.compiler.LogTrait {
 			syntax (mapped vs. fixed)
 		@param fieldNodes an array of the names found in a container qualified field reference (e.g., the 
 			container.sub.subsub.fld of a field reference like msg.container.sub.subsub.fld)
-		@param the type information corresponding to the fieldNodes.
+		@param explodedFieldTypes the type information corresponding to the fieldNodes.
 		@return a string rep for the compound field
 							
 	 */	

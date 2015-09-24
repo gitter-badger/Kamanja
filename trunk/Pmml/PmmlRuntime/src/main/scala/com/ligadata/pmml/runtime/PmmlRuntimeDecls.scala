@@ -26,7 +26,7 @@ import org.apache.log4j.Logger
 import com.ligadata.Exceptions.StackTrace
 
 object RuntimeGlobalLogger {
-    val loggerName = this.getClass.getName()
+    val loggerName = this.getClass.getName
     val logger = Logger.getLogger(loggerName)
 }
 
@@ -48,6 +48,9 @@ class Context(val xId : Long, val gCtx : EnvContext) extends LogTrait {
 	  counter += 1 
 	  counter 
 	}
+
+  var isReady : Boolean = false
+  def IsReady() : Unit = { isReady=true }
 		
 	var xformDict: HashMap[String,DerivedField] = HashMap[String,DerivedField]()
 	def xDict : HashMap[String,DerivedField] = xformDict 
@@ -159,9 +162,34 @@ class Context(val xId : Long, val gCtx : EnvContext) extends LogTrait {
 		}
 		returnvalue
 	}
-	
-	
-	/** 
+
+  /**
+   *  Generally reset the model instance to an 'idempotent' capable state.  For now, this means clearing those
+   *  derived fields' values that are not to be retained as part of the cached state.  The derived field's 'retain'
+   *  flag controls this behavior.
+   */
+
+  def reset() : Unit = {
+    resetXDict()
+    counter = 0 /** 0 the counter as well */
+  }
+
+  /**
+   *  Clear the 'set' flags of the transformation dictionary derived fields unless their retain flag has been set.
+   */
+
+  def resetXDict() : Unit = {
+    xDict.foreach(f = pair => {
+      val (key, fld): (String, DerivedField) = pair
+      if (fld.UseCachedValueIfSet) {
+        /** if the valueHasBeenSet && retain flag is set don't reinitialize value... keep it */
+      } else {
+        fld.valueHasBeenSet = false
+      }
+    })
+   }
+
+  /**
 	 *  Determine if the DataField or DerivedField has been set  
 	 *  
 	 *  @param fldName : the name of the DataField or DerivedField of interest
@@ -186,7 +214,7 @@ class Context(val xId : Long, val gCtx : EnvContext) extends LogTrait {
 	/** 
 	 *  Explicitly update the supplied field name with the supplied DataValue.
 	 *  @param fldName name of field to update ... could be in either data or transaction dictionary
-	 *  @param a DataValue presumably appropriately matched to the field's dataType
+	 *  @param value DataValue presumably appropriately matched to the field's dataType
 	 *  @return whether the field was set
 	 */ 
 	def valuePut(fldName : String, value : DataValue) : Boolean = {
@@ -209,7 +237,7 @@ class Context(val xId : Long, val gCtx : EnvContext) extends LogTrait {
 	/** 
 	 *  Explicitly update the supplied field name with the supplied DataValue.
 	 *  @param fldName name of field to update ... could be in either data or transaction dictionary
-	 *  @param a String value
+	 *  @param value String value
 	 *  @return whether the field was set
 	 */ 
 	def valuePut(fldName : String, value : String) : Boolean = { 
@@ -219,7 +247,7 @@ class Context(val xId : Long, val gCtx : EnvContext) extends LogTrait {
 	/** 
 	 *  Explicitly update the supplied field name with the supplied DataValue.
 	 *  @param fldName name of field to update ... could be in either data or transaction dictionary
-	 *  @param an Int value
+	 *  @param value an Int value
 	 *  @return whether the field was set
 	 */ 
 	def valuePut(fldName : String, value : Int) : Boolean = { 
@@ -229,7 +257,7 @@ class Context(val xId : Long, val gCtx : EnvContext) extends LogTrait {
 	/** 
 	 *  Explicitly update the supplied field name with the supplied DataValue.
 	 *  @param fldName name of field to update ... could be in either data or transaction dictionary
-	 *  @param a Long value
+	 *  @param value Long value
 	 *  @return whether the field was set
 	 */ 
 	def valuePut(fldName : String, value : Long) : Boolean = { 
@@ -239,7 +267,7 @@ class Context(val xId : Long, val gCtx : EnvContext) extends LogTrait {
 	/** 
 	 *  Explicitly update the supplied field name with the supplied DataValue.
 	 *  @param fldName name of field to update ... could be in either data or transaction dictionary
-	 *  @param a Double value
+	 *  @param value a Double value
 	 *  @return whether the field was set
 	 */ 
 	def valuePut(fldName : String, value : Double) : Boolean = { 
@@ -249,7 +277,7 @@ class Context(val xId : Long, val gCtx : EnvContext) extends LogTrait {
 	/** 
 	 *  Explicitly update the supplied field name with the supplied DataValue.
 	 *  @param fldName name of field to update ... could be in either data or transaction dictionary
-	 *  @param a Float value
+	 *  @param value a Float value
 	 *  @return whether the field was set
 	 */ 
 	def valuePut(fldName : String, value : Float) : Boolean = { 
@@ -259,7 +287,7 @@ class Context(val xId : Long, val gCtx : EnvContext) extends LogTrait {
 	/** 
 	 *  Explicitly update the supplied field name with the supplied DataValue.
 	 *  @param fldName name of field to update ... could be in either data or transaction dictionary
-	 *  @param any dataType value
+	 *  @param value any dataType value
 	 *  @return whether the field was set
 	 */ 
 	def valuePut(fldName : String, value : Any) : Boolean = { 
@@ -269,7 +297,7 @@ class Context(val xId : Long, val gCtx : EnvContext) extends LogTrait {
 	/** 
 	 *  Explicitly update the supplied field name with the supplied DataValue.
 	 *  @param fldName name of field to update ... could be in either data or transaction dictionary
-	 *  @param a Boolean value
+	 *  @param value a Boolean value
 	 *  @return whether the field was set
 	 */ 
 	def valuePut(fldName : String, value : Boolean) : Boolean = { 
@@ -282,7 +310,7 @@ class Context(val xId : Long, val gCtx : EnvContext) extends LogTrait {
 	 *  can be an integer, Long, double or float.
 	 *  @param fldName the name of the scalar field to update
 	 *  @param incrAmt the amount (integers only at this time) to increment or decrement (if negative)
-	 *  @param whether the field was incremented.
+	 *  @return whether the field was incremented.
 	 */
 	def valueIncr(fldName : String, incrAmt : Int) : Boolean = {
 		var set : Boolean = false
@@ -344,7 +372,7 @@ class Context(val xId : Long, val gCtx : EnvContext) extends LogTrait {
 	
 	/** Answer whether a field with the supplied name exists in the transformation dictionary
 	 *  @param fldName the name of the field sought
-	 *  @param true if it exists
+	 *  @return true if it exists
 	 */
 	def isFieldInTransformationDict(fldName : String) : Boolean = {
 		xDict.contains(fldName)
@@ -352,7 +380,7 @@ class Context(val xId : Long, val gCtx : EnvContext) extends LogTrait {
 	
 	/** Answer whether a field with the supplied name exists in the data dictionary
 	 *  @param fldName the name of the field sought
-	 *  @param true if it exists
+	 *  @return true if it exists
 	 */
 	def isFieldInDataDict(fldName : String) : Boolean = {
 		dDict.contains(fldName)
@@ -421,7 +449,7 @@ object DataValue {
 		  case "datetime" =>  new LongDataValue(new DateTime().getMillis)  
 		  case "time" =>  {
 			  val tm : LocalTime = LocalTime.now()
-			  new LongDataValue(new DateTime(0,0,0,tm.getHourOfDay(),tm.getMinuteOfHour(),tm.getSecondOfMinute()).getMillis()) 
+			  new LongDataValue(new DateTime(0,0,0,tm.getHourOfDay,tm.getMinuteOfHour,tm.getSecondOfMinute).getMillis)
 		  }
 		  
 		  case _ => new AnyDataValue(List[String]("NotSet"))
@@ -441,9 +469,7 @@ object DataValue {
 	 * 
 	 * @param dataType a string rep describing the type
 	 * @param stringRep the string to interpret
-	 * @param a DataValue of the proper sort that contains the value (assuming success).  Unknown types are treated
-	 * 		as string data values.
-	 *   
+	 *
 	 */
 	def make(dataType : String, stringRep : String) : DataValue = {
 		val dataValue : DataValue = if (dataType != null && stringRep.size > 0 && dataType != null && stringRep.size > 0) {
@@ -641,9 +667,9 @@ class DateDataValue(var value : LocalDate) extends DataValue("LocalDate") {
 	def Value(valu : LocalDate) { value = valu }  
 	override def toString : String = {
 		val locDate : org.joda.time.LocalDate = value.asInstanceOf[DateDataValue].Value
-		val mo = locDate.getMonthOfYear()
-		val day = locDate.getDayOfMonth()
-		val yr = locDate.getYear()
+		val mo = locDate.getMonthOfYear
+		val day = locDate.getDayOfMonth
+		val yr = locDate.getYear
 		val formatter : org.joda.time.format.DateTimeFormatter = org.joda.time.format.DateTimeFormat.forPattern("yyyy-MM-dd");
 		val formattedDate : String  = formatter.print(locDate);
 		s"${'"'}$formattedDate${'"'}"
@@ -664,9 +690,9 @@ class DateTimeDataValue(var value : DateTime) extends DataValue("DateTime") {
 	def Value(valu : DateTime) { value = valu }  
 	override def toString : String = {
 		val locDate : org.joda.time.DateTime = value.asInstanceOf[DateTimeDataValue].Value
-		val mo = locDate.getMonthOfYear()
-		val day = locDate.getDayOfMonth()
-		val yr = locDate.getYear()
+		val mo = locDate.getMonthOfYear
+		val day = locDate.getDayOfMonth
+		val yr = locDate.getYear
 		val formatter : org.joda.time.format.DateTimeFormatter = org.joda.time.format.DateTimeFormat.forPattern("yyyy-MM-dd");
 		val formattedDate : String  = formatter.print(locDate);
 		s"${'"'}$formattedDate${'"'}"
@@ -687,10 +713,10 @@ class TimeDataValue(var value : LocalTime) extends DataValue("LocalTime") {
 	def Value(valu : LocalTime) { value = valu }  
 	override def toString : String =  {
 		val locTime : org.joda.time.LocalTime = value.asInstanceOf[TimeDataValue].Value
-		val hrs = locTime.getHourOfDay()
-		val mins = locTime.getMinuteOfHour()
-		val secs = locTime.getSecondOfMinute()
-		val ms = locTime.getMillisOfSecond()
+		val hrs = locTime.getHourOfDay
+		val mins = locTime.getMinuteOfHour
+		val secs = locTime.getSecondOfMinute
+		val ms = locTime.getMillisOfSecond
 		val formatter : org.joda.time.format.DateTimeFormatter = org.joda.time.format.DateTimeFormat.forPattern("k:m:s:S");
 		val formattedTime : String  = formatter.print(locTime);
 		s"${'"'}$formattedTime${'"'}"
@@ -715,7 +741,7 @@ class BooleanDataValue(var value : Boolean) extends DataValue("Boolean") {
 
 object BooleanDataValue {
 	def fromString(boolStr : String) : BooleanDataValue = {
-		val bStr = boolStr.trim.toLowerCase()
+		val bStr = boolStr.trim.toLowerCase
 		var boolObj : BooleanDataValue = bStr match {
 			case "true" | "t" | "1" => { 
 				new BooleanDataValue(true)
@@ -733,8 +759,15 @@ object BooleanDataValue {
 /** 
  *  The DataField is the runtime representation of the DataFields found in the DataDictionary
  *  in the PMML file.   
+ *
+ *  @param name the name of the field
+ *  @param dataType the data type for this field.
+ *  @param values if specified the enumerated values for this derived field that describe cardinality for ordinals
+ *  @param leftMargin the lower bound for an interval specification bounding the lower value possible for the derivation
+ *  @param rightMargin the upper bound, leftMargin's compliment
+ *  @param closure a string the describes whether the margin values are in or outside the permitted range (e.g., closedClosed is "inclusive" on both ends of the interval. Other possibilities are closedOpen, openClosed, and openOpen
  */
-class DataField(val name : String, val dataType : String, values : ArrayBuffer[(String,String)], leftMargin : String, rightMargin : String, closure : String) {
+class DataField(val name : String, val dataType : String, val values : ArrayBuffer[(String,String)], val leftMargin : String, val rightMargin : String, val closure : String) {
 	
 	var valueHasBeenSet : Boolean = false
 	var valueRef : DataValue = null
@@ -748,11 +781,23 @@ class DataField(val name : String, val dataType : String, values : ArrayBuffer[(
 }
 
 /** 
- *  The DerivedField is the runtime representation of the DataFields found in the TransformationDictionary
- *  in the PMML file.  The top level function of the DervivedField, when it executes sets the valueRef.
+ *  The DerivedField is the runtime representation of the DerivedDataFields found in the TransformationDictionary
+ *  in the PMML file.  The top level function of the DervivedField, when it executes sets the valueRef. If the
+ *  retain flag is set, the valueRef once set is retained across invocations.  This is useful for non volatile
+ *  data that is used by the model that is especially expensive to compute with each model invocation (e.g., a
+ *  set of values that are used to filter the incoming message used for all messages received).
+ *
  *  The DerivedField is the base class for all generated DerivedField_<fieldName> classes in the PMML generation.
+ *
+ *  @param name the name of the field
+ *  @param dataType the data type for this field.
+ *  @param values if specified the enumerated values for this derived field that describe cardinality for ordinals
+ *  @param leftMargin the lower bound for an interval specification bounding the lower value possible for the derivation
+ *  @param rightMargin the upper bound, leftMargin's compliment
+ *  @param closure a string the describes whether the margin values are in or outside the permitted range (e.g., closedClosed is "inclusive" on both ends of the interval. Other possibilities are closedOpen, openClosed, and openOpen
+ *  @param retain a boolean that when set causes the execution to use any value already present rather than recomputing it.  This flag is often set for static data that is obtained from disk and can be used again and again after being set once.
  */
-class DerivedField(val name : String, val dataType : String, values : ArrayBuffer[(String,String)], leftMargin : String, rightMargin : String, closure : String) {
+class DerivedField(val name : String, val dataType : String, val values : ArrayBuffer[(String,String)], val leftMargin : String, val rightMargin : String, val closure : String, val retain : Boolean) {
 	var valueHasBeenSet : Boolean = false
 	var valueRef : DataValue = null
 	def Value : DataValue =  { if (valueRef == null) DataValue.defaultValue(dataType) else valueRef }
@@ -762,6 +807,8 @@ class DerivedField(val name : String, val dataType : String, values : ArrayBuffe
 	}
 	
 	def ValueSet : Boolean = { valueHasBeenSet }
+
+	def UseCachedValueIfSet : Boolean = { valueHasBeenSet && retain }
 	
 	/** generated model will override this with the apply function implementation */
 	def execute(ctx : Context) : DataValue = { new StringDataValue("bogus value") }
@@ -967,10 +1014,10 @@ object DateTimeHelpers extends LogTrait {
     													, "dd-MM-yyyy h:mm:ss aa"
     													)
     val timeStampParsers : Array[DateTimeParser] = timeStampPatterns.map (fmt => {
-    	DateTimeFormat.forPattern(fmt).getParser()
+    	DateTimeFormat.forPattern(fmt).getParser
     })
     
-    val tsformatter : DateTimeFormatter = new DateTimeFormatterBuilder().append( null, timeStampParsers ).toFormatter();
+    val tsformatter : DateTimeFormatter = new DateTimeFormatterBuilder().append( null, timeStampParsers ).toFormatter;
 
     /** 
         Answer the number of millisecs from the epoch for the supplied string that is in one of 
@@ -987,27 +1034,26 @@ object DateTimeHelpers extends LogTrait {
 			 "dd-MM-yyyy HH:mm:ss:SSS"		15-04-2015 23:59:59:999
         """
         
-        @param fmtStr - instructions on how to parse the string. @see iso860DateFmt for format info 
         @param timestampStr - the string to parse
         @return a Long representing the timestamp as millisecs since the epoch (1970 based)
      */
     def timeStampFromString(timestampStr : String): Long = {
-		val millis : Long = if (timestampStr != null) {
-		    try {
-		        val dateTime : DateTime = tsformatter.parseDateTime(timestampStr)
-		        val msecs : Long = dateTime.getMillis
-		        msecs
-		    } catch {
-			    case iae:IllegalArgumentException => {
-            
-            logger.error(s"Unable to parse '$timestampStr' with any of the patterns - '${timeStampPatterns.toString}'")
-            
-			    	0
-			    }
-		    }
-		} else {
-			0
-		}
+			val millis : Long = if (timestampStr != null) {
+					try {
+							val dateTime : DateTime = tsformatter.parseDateTime(timestampStr)
+							val msecs : Long = dateTime.getMillis
+							msecs
+					} catch {
+						case iae:IllegalArgumentException => {
+
+							logger.error(s"Unable to parse '$timestampStr' with any of the patterns - '${timeStampPatterns.toString}'")
+
+							0
+						}
+					}
+			} else {
+				0
+			}
         millis
     }
     
@@ -1019,10 +1065,10 @@ object DateTimeHelpers extends LogTrait {
 													, "dd-MMM-yyyy"
 													)
     val dateParsers : Array[DateTimeParser] = datePatterns.map (fmt => {
-    	DateTimeFormat.forPattern(fmt).getParser()
+    	DateTimeFormat.forPattern(fmt).getParser
     })
 
-	val dtformatter : DateTimeFormatter = new DateTimeFormatterBuilder().append( null, dateParsers ).toFormatter();
+	val dtformatter : DateTimeFormatter = new DateTimeFormatterBuilder().append( null, dateParsers ).toFormatter;
     
     /** 
         Answer the number of millisecs from the epoch for the supplied date string that is in one of 
@@ -1038,8 +1084,7 @@ object DateTimeHelpers extends LogTrait {
 			 dd-MMM-yyyy					15-Apr-2015
         """
         
-        @param fmtStr - instructions on how to parse the string. @see iso860DateFmt for format info 
-        @param dateStr - the string to parse
+         @param dateStr - the string to parse
         @return a Long representing the timestamp as millisecs since the epoch (1970 based)
      */
     def dateFromString(dateStr : String): Long = {
@@ -1068,10 +1113,10 @@ object DateTimeHelpers extends LogTrait {
     													, "h:mm:ss aa"
     													)
     val timeParsers : Array[DateTimeParser] = timePatterns.map (fmt => {
-    	DateTimeFormat.forPattern(fmt).getParser()
+    	DateTimeFormat.forPattern(fmt).getParser
     })
 
-	val tmformatter : DateTimeFormatter = new DateTimeFormatterBuilder().append( null, timeParsers ).toFormatter();
+	val tmformatter : DateTimeFormatter = new DateTimeFormatterBuilder().append( null, timeParsers ).toFormatter;
     
     /** 
         Answer the number of millisecs from the epoch for the supplied time string that is in one of 
@@ -1085,7 +1130,6 @@ object DateTimeHelpers extends LogTrait {
 			 "h:mm:ss aa"					12:45:59 PM
         """
         
-        @param fmtStr - instructions on how to parse the string. @see iso860DateFmt for format info 
         @param timeStr - the string to parse
         @return a Long representing the timestamp as millisecs since the epoch (1970 based)
      */

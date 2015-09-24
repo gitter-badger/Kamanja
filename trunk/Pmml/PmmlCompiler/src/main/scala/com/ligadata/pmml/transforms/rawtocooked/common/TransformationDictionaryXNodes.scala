@@ -86,7 +86,8 @@ class DerivedFieldPmmlExecNodeGenerator(val ctx : PmmlContext) extends PmmlExecN
 			top match {
 			  case Some(top) => {
 				  	var dict : xTransformationDictionary = top.asInstanceOf[xTransformationDictionary]
-				  	fld = new xDerivedField(node.lineNumber, node.columnNumber, node.name, node.displayName, node.optype, node.dataType)
+            val retain : Boolean = (node.cacheHint != null && node.cacheHint == "retain")
+          fld = new xDerivedField(node.lineNumber, node.columnNumber, node.name, node.displayName, node.optype, node.dataType, retain)
 					dict.add(fld)
 					ctx.xDict(fld.name) = fld
 			  }

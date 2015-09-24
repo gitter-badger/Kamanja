@@ -1,0 +1,989 @@
+
+<!--
+  ~ Copyright 2015 ligaDATA
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!--
+COPDv3.xml 
+-->
+
+<PMML xmlns="http://www.dmg.org/PMML-4_1" version="4.1">
+
+	<Header copyright="Medco Corp. Copyright 2014" description="COPD Risk Assessment">
+		<Application name="COPDRiskAssessmentNmSpc" version="00.01.00"/>
+	</Header>
+
+	<DataDictionary numberOfFields="8">
+		<DataField name="msg" displayName="msg" optype="categorical" dataType="Beneficiary"/>
+		<DataField name="gCtx" displayName="globalContext" optype="categorical" dataType="EnvContext"/>
+	    <DataField name="parameters" displayName="parameters" dataType="container">
+	       <Value value="gCtx" property="valid"/>
+	       <Value value="msg" property="valid"/>
+	    </DataField>
+		<DataField name="COPDSeverity" displayName="COPDSeverity" optype="categorical" dataType="string"/>
+		<DataField name="Msg_Desynpuf_Id" displayName="Msg_Desynpuf_Id" optype="categorical" dataType="string"/>
+
+		<!-- Not used -->
+		<DataField name="Inp_Clm_Thru_Dt" displayName="Inp_Clm_Thru_Dt" optype="categorical" dataType="integer"/>
+		<DataField name="Outp_Clm_Thru_Dt" displayName="Outp_Clm_Thru_Dt" optype="categorical" dataType="integer"/>
+		<DataField name="Hl7_Clm_Thru_Dt" displayName="Hl7_Clm_Thru_Dt" optype="categorical" dataType="integer"/>
+
+		<DataField name="NamespaceSearchPath" displayName="parameters" dataType="container">
+       		<Value value="pmmludfs, com.mycompany.pmml.udfs.CustomUdfs" property="valid"/>
+    	</DataField>
+
+
+
+	</DataDictionary>
+
+	<TransformationDictionary>
+	
+		<!--
+			**********************************************************
+			*  EnvContext Access 
+			**********************************************************
+		-->
+
+		<!--
+			Obtain the SputumCodes MessageContainerBase array 
+		-->
+		<DerivedField name="SputumMessageContainerBases" dataType="ArrayOfMessageContainerBase" optype="categorical" cacheHint="retain">
+			<Apply function="GetArray">
+				<Constant dataType="context">ctx</Constant>
+			    <Constant dataType="string">system.SputumCodes</Constant>
+			</Apply>
+		</DerivedField>
+
+		<!--
+			Obtain the SputumCodes used to form its filter set
+		-->
+		<DerivedField name="SputumCodes" dataType="ArrayOfSputumCodes" optype="categorical" cacheHint="retain">
+			<Apply function="DownCastArrayMembers">
+				<FieldRef field="SputumMessageContainerBases"/>
+			    <Constant dataType="mbrTypename">SputumCodes</Constant>
+			</Apply>
+		</DerivedField>
+
+		<!--
+			Obtain the SmokingCodes MessageContainerBase array 
+		-->
+		<DerivedField name="SmokingMessageContainerBases" dataType="ArrayOfMessageContainerBase" optype="categorical" cacheHint="retain">
+			<Apply function="GetArray">
+				<Constant dataType="context">ctx</Constant>
+			    <Constant dataType="string">system.SmokeCodes</Constant>
+			</Apply>
+		</DerivedField>
+
+		<!--
+			Obtain the SmokingCodes used to form its filter set
+		-->
+		<DerivedField name="SmokingCodes" dataType="ArrayOfSmokeCodes" optype="categorical" cacheHint="retain">
+			<Apply function="DownCastArrayMembers">
+				<FieldRef field="SmokingMessageContainerBases"/>
+			    <Constant dataType="mbrTypename">SmokingCodes</Constant>
+			</Apply>
+		</DerivedField>
+
+		<!--
+			Obtain the EnvExposureCodes MessageContainerBase array 
+		-->
+		<DerivedField name="EnvExposureMessageContainerBases" dataType="ArrayOfMessageContainerBase" optype="categorical" cacheHint="retain">
+			<Apply function="GetArray">
+				<Constant dataType="context">ctx</Constant>
+			    <Constant dataType="string">system.EnvCodes</Constant>
+			</Apply>
+		</DerivedField>
+
+		<!--
+			Obtain the EnvExposureCodes used to form its filter set
+		-->
+		<DerivedField name="EnvExposureCodes" dataType="ArrayOfEnvCodes" optype="categorical" cacheHint="retain">
+			<Apply function="DownCastArrayMembers">
+				<FieldRef field="EnvExposureMessageContainerBases"/>
+				<Constant dataType="mbrTypename">EnvExposureCodes</Constant>
+			</Apply>
+		</DerivedField>
+
+		<!--
+			Obtain the CoughCodes MessageContainerBase array 
+		-->
+		<DerivedField name="CoughMessageContainerBases" dataType="ArrayOfMessageContainerBase" optype="categorical" cacheHint="retain">
+			<Apply function="GetArray">
+				<Constant dataType="context">ctx</Constant>
+			    <Constant dataType="string">system.CoughCodes</Constant>
+			</Apply>
+		</DerivedField>
+
+		<!--
+			Obtain the CoughCodes used to form its filter set
+		-->
+		<DerivedField name="CoughCodes" dataType="ArrayOfCoughCodes" optype="categorical" cacheHint="retain">
+			<Apply function="DownCastArrayMembers">
+				<FieldRef field="CoughMessageContainerBases"/>
+				<Constant dataType="mbrTypename">CoughCodes</Constant>
+			</Apply>
+		</DerivedField>
+
+		<!--
+			Obtain the CoughCodes MessageContainerBase array 
+		-->
+		<DerivedField name="DyspnoeaMessageContainerBases" dataType="ArrayOfMessageContainerBase" optype="categorical" cacheHint="retain">
+			<Apply function="GetArray">
+				<Constant dataType="context">ctx</Constant>
+			    <Constant dataType="string">system.DyspnoeaCodes</Constant>
+			</Apply>
+		</DerivedField>
+
+		<!--
+			Obtain the CoughCodes used to form its filter set
+		-->
+		<DerivedField name="DyspnoeaCodes" dataType="ArrayOfDyspnoeaCodes" optype="categorical" cacheHint="retain">
+			<Apply function="DownCastArrayMembers">
+				<FieldRef field="DyspnoeaMessageContainerBases"/>
+				<Constant dataType="mbrTypename">DyspnoeaCodes</Constant>
+			</Apply>
+		</DerivedField>
+
+		<!--
+			**********************************************************
+			*  Generally used derivations (date range calculation
+			*  and filter content extracts)
+			**********************************************************
+		-->
+
+		<!-- Project the icd9Code out of the sputum, smoking, envexposure,
+			and cough arrays to form respective sets for matching
+			icd9 codes found in the inpatient and outpatient histories.-->
+
+		<DerivedField name="SputumCodeSet" dataType="ImmutableSetOfString" optype="categorical" cacheHint="retain">
+			<Apply function="ToSet">
+				<Apply function="ContainerMap">
+		       		<FieldRef field="SputumCodes"/>
+		 			<Constant dataType="ident">icd9Code</Constant> 
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+		<DerivedField name="SmokingCodeSet" dataType="ImmutableSetOfString" optype="categorical" cacheHint="retain">
+			<Apply function="ToSet">
+				<Apply function="ContainerMap">
+		       		<FieldRef field="SmokingCodes"/>
+		 			<Constant dataType="ident">icd9Code</Constant> 
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+		<DerivedField name="EnvExposureCodeSet" dataType="ImmutableSetOfString" optype="categorical" cacheHint="retain">
+			<Apply function="ToSet">
+				<Apply function="ContainerMap">
+		       		<FieldRef field="EnvExposureCodes"/>
+		 			<Constant dataType="ident">icd9Code</Constant> 
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+		<DerivedField name="CoughCodeSet" dataType="ImmutableSetOfString" optype="categorical" cacheHint="retain">
+			<Apply function="ToSet">
+				<Apply function="ContainerMap">
+		       		<FieldRef field="CoughCodes"/>
+		 			<Constant dataType="ident">icd9Code</Constant> 
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+		<DerivedField name="DyspnoeaCodeSet" dataType="ImmutableSetOfString" optype="categorical" cacheHint="retain">
+			<Apply function="ToSet">
+				<Apply function="ContainerMap">
+		       		<FieldRef field="DyspnoeaCodes"/>
+		 			<Constant dataType="ident">icd9Code</Constant> 
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+	  	<!-- Time now since epoch expressed as ISO8601 date encoded integer -->
+		<DerivedField name="Today" dataType="integer" optype="categorical">
+			<Apply function="AsCompressedDate">
+				<Apply function="Now"/>
+			</Apply>
+		</DerivedField>
+
+	  	<!-- Time a year ago since epoch expressed as ISO8601 date encoded integer -->
+		<DerivedField name="AYearAgo" dataType="integer" optype="categorical">
+			<Apply function="AsCompressedDate">
+				<Apply function="YearsAgo">
+					<Constant dataType="integer">1</Constant>			
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+	  	<!-- Calculate the member's age -->
+		<DerivedField name="Age" dataType="integer" optype="continuous">
+			<Apply function="AgeCalc">
+				<FieldRef field="msg.bene_birth_dt"/>
+			</Apply>
+		</DerivedField>
+			
+	  	<!-- 40 years of age or older -->
+		<DerivedField name="FortyYrsOrOlder" dataType="boolean" optype="categorical">
+			<Apply function="greaterOrEqual">
+				<FieldRef field="Age"/>
+				<Constant dataType="integer">40</Constant> 
+			</Apply>
+		</DerivedField>
+			
+		<!--
+			**********************************************************
+			*  Filters for smoking, coughing, sputum, etc from various
+			*  patient history elements
+			**********************************************************
+		-->
+
+		<DerivedField name="Cur_desynpuf_id_list" dataType="ListOfString" optype="continuous">
+			<Apply function="ToStringList">
+				<FieldRef field="msg.desynpuf_id"/>
+			</Apply>
+		</DerivedField>
+
+		<!--
+		-->
+		<DerivedField name="desynpuf_id_base_hl7s" dataType="ArrayOfMessageContainerBase" optype="categorical">
+			<Apply function="GetHistory">
+				<Constant dataType="context">ctx</Constant>
+			    <Constant dataType="string">System.HL7</Constant>
+	 			<FieldRef field="Cur_desynpuf_id_list"/> 
+				<Constant dataType="boolean">true</Constant> 
+			</Apply>
+		</DerivedField>
+
+		<!--
+		-->
+		<DerivedField name="desynpuf_id_hl7s" dataType="ArrayOfHL7" optype="categorical">
+			<Apply function="DownCastArrayMembers">
+				<FieldRef field="desynpuf_id_base_hl7s"/>
+			    <Constant dataType="mbrTypename">desynpuf_id_hl7s</Constant>
+			</Apply>
+		</DerivedField>
+
+		<!-- All hl7 messages from this past year NOTE: Clm_Thru_Dt expressed
+			 as ISO8601 encoded int since epoch for this method... if it were millisecs,
+			 things need to be adjusted -->
+		<DerivedField name="hl7InfoThisLastYear" dataType="ArrayOfHL7" optype="categorical">
+			<Apply function="ToArray">
+				<Apply function="ContainerFilter">
+		       		<FieldRef field="desynpuf_id_hl7s"/>
+		 			<Constant dataType="fIdent">Between</Constant> 
+		 			<Constant dataType="ident">Clm_Thru_Dt</Constant> 
+		 			<FieldRef field="AYearAgo"/> 
+		 			<FieldRef field="Today"/> 
+					<Constant dataType="boolean">true</Constant> 
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+		<!-- Over Smoking coded in icd9 codes in last year  -->
+		<DerivedField name="WithSmokingHistory" dataType="boolean" optype="categorical">
+			<Apply function="greaterThan">
+				<Apply function="+">
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="inpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">IsIn</Constant> 
+				 			<Constant dataType="ident">Admtng_Icd9_Dgns_Cd</Constant> 
+				 			<FieldRef field="SmokingCodeSet"/> 
+						</Apply>
+					</Apply>
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="inpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">ContainsAny</Constant> 
+				 			<FieldRef field="SmokingCodeSet"/> 
+				 			<Constant dataType="ident">Icd9_Dgns_Cds</Constant> 
+						</Apply>
+					</Apply>
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="outpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">IsIn</Constant> 
+				 			<Constant dataType="ident">Admtng_Icd9_Dgns_Cd</Constant> 
+				 			<FieldRef field="SmokingCodeSet"/> 
+						</Apply>
+					</Apply>
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="outpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">ContainsAny</Constant> 
+				 			<FieldRef field="SmokingCodeSet"/> 
+				 			<Constant dataType="ident">Icd9_Dgns_Cds</Constant> 
+						</Apply>
+					</Apply>
+				</Apply>
+				<Constant dataType="integer">0</Constant> 
+			</Apply>
+		</DerivedField>
+
+		<!--
+		-->
+		<DerivedField name="desynpuf_id_base_inpatient_claims" dataType="ArrayOfMessageContainerBase" optype="categorical">
+			<Apply function="GetHistory">
+				<Constant dataType="context">ctx</Constant>
+			    <Constant dataType="string">System.InpatientClaim</Constant>
+	 			<FieldRef field="Cur_desynpuf_id_list"/> 
+				<Constant dataType="boolean">true</Constant> 
+			</Apply>
+		</DerivedField>
+
+		<!--
+		-->
+		<DerivedField name="desynpuf_id_inpatient_claims" dataType="ArrayOfInpatientClaim" optype="categorical">
+			<Apply function="DownCastArrayMembers">
+				<FieldRef field="desynpuf_id_base_inpatient_claims"/>
+			    <Constant dataType="mbrTypename">desynpuf_id_inpatient_claims</Constant>
+			</Apply>
+		</DerivedField>
+
+		<!-- All inpatient records this past year  NOTE: Clm_Thru_Dt expressed
+			 as ISO8601 encoded int since epoch for this method... if it were millisecs,
+			 things need to be adjusted -->
+		<DerivedField name="inpatientInfoThisLastYear" dataType="ArrayOfInpatientClaim" optype="categorical">
+			<Apply function="ToArray">
+				<Apply function="ContainerFilter">
+		       		<FieldRef field="desynpuf_id_inpatient_claims"/>
+		 			<Constant dataType="fIdent">Between</Constant> 
+		 			<Constant dataType="ident">Clm_Thru_Dt</Constant> 
+		 			<FieldRef field="AYearAgo"/> 
+		 			<FieldRef field="Today"/> 
+					<Constant dataType="boolean">true</Constant> 
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+		<!--
+		-->
+		<DerivedField name="desynpuf_id_base_outpatient_claims" dataType="ArrayOfMessageContainerBase" optype="categorical">
+			<Apply function="GetHistory">
+				<Constant dataType="context">ctx</Constant>
+			    <Constant dataType="string">System.OutpatientClaim</Constant>
+	 			<FieldRef field="Cur_desynpuf_id_list"/> 
+				<Constant dataType="boolean">true</Constant> 
+			</Apply>
+		</DerivedField>
+
+		<!--
+		-->
+		<DerivedField name="desynpuf_id_outpatient_claims" dataType="ArrayOfOutpatientClaim" optype="categorical">
+			<Apply function="DownCastArrayMembers">
+				<FieldRef field="desynpuf_id_base_outpatient_claims"/>
+			    <Constant dataType="mbrTypename">desynpuf_id_outpatient_claims</Constant>
+			</Apply>
+		</DerivedField>
+
+		<!-- All outpatient records this past year  NOTE: Clm_Thru_Dt expressed
+			 as ISO8601 encoded int since epoch for this method... if it were millisecs,
+			 things need to be adjusted -->
+		<DerivedField name="outpatientInfoThisLastYear" dataType="ArrayOfOutpatientClaim" optype="categorical">
+			<Apply function="ToArray">
+				<Apply function="ContainerFilter">
+		       		<FieldRef field="desynpuf_id_outpatient_claims"/>
+		 			<Constant dataType="fIdent">Between</Constant> 
+		 			<Constant dataType="ident">Clm_Thru_Dt</Constant> 
+		 			<FieldRef field="AYearAgo"/> 
+		 			<FieldRef field="Today"/> 
+					<Constant dataType="boolean">true</Constant> 
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+		<!-- 
+			Tally the reports of Environmental Exposure from the inpatient and
+			outpatient records over the past year and answer if that tally 
+			is greater than 0
+		  -->
+		<DerivedField name="WithEnvironmentalExposures" dataType="boolean" optype="categorical">
+			<Apply function="greaterThan">
+				<Apply function="+">
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="inpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">IsIn</Constant> 
+				 			<Constant dataType="ident">Admtng_Icd9_Dgns_Cd</Constant> 
+				 			<FieldRef field="EnvExposureCodeSet"/> 
+						</Apply>
+					</Apply>
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="inpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">ContainsAny</Constant> 
+				 			<FieldRef field="EnvExposureCodeSet"/> 
+				 			<Constant dataType="ident">Icd9_Dgns_Cds</Constant> 
+						</Apply>
+					</Apply>
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="outpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">IsIn</Constant> 
+				 			<Constant dataType="ident">Admtng_Icd9_Dgns_Cd</Constant> 
+				 			<FieldRef field="EnvExposureCodeSet"/> 
+						</Apply>
+					</Apply>
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="outpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">ContainsAny</Constant> 
+				 			<FieldRef field="EnvExposureCodeSet"/> 
+				 			<Constant dataType="ident">Icd9_Dgns_Cds</Constant> 
+						</Apply>
+					</Apply>
+				</Apply>
+				<Constant dataType="integer">0</Constant> 
+			</Apply>
+		</DerivedField>
+
+
+		<!-- Over HL7 AATDeficiency in last year  -->
+		<DerivedField name="AATDeficiency" dataType="boolean" optype="categorical">
+			<Apply function="greaterThan">
+				<Apply function="CollectionLength">
+					<Apply function="ContainerFilter">
+			       		<FieldRef field="hl7InfoThisLastYear"/>
+			 			<Constant dataType="fIdent">equal</Constant> 
+			 			<Constant dataType="ident">AATDeficiency</Constant> 
+						<Constant dataType="integer">1</Constant> 
+					</Apply>
+				</Apply>
+				<Constant dataType="integer">0</Constant> 
+			</Apply>
+		</DerivedField>
+		
+		<!-- Over inp and outp Dyspnoea (Shortness of Breath) in last year  -->
+		<DerivedField name="Dyspnoea" dataType="boolean" optype="categorical">
+			<Apply function="greaterThan">
+				<Apply function="+">
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="inpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">IsIn</Constant> 
+				 			<Constant dataType="ident">Admtng_Icd9_Dgns_Cd</Constant> 
+				 			<FieldRef field="DyspnoeaCodeSet"/> 
+						</Apply>
+					</Apply>
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="inpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">ContainsAny</Constant> 
+				 			<FieldRef field="DyspnoeaCodeSet"/> 
+				 			<Constant dataType="ident">Icd9_Dgns_Cds</Constant> 
+						</Apply>
+					</Apply>
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="outpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">IsIn</Constant> 
+				 			<Constant dataType="ident">Admtng_Icd9_Dgns_Cd</Constant> 
+				 			<FieldRef field="DyspnoeaCodeSet"/> 
+						</Apply>
+					</Apply>
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="outpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">ContainsAny</Constant> 
+				 			<FieldRef field="DyspnoeaCodeSet"/> 
+				 			<Constant dataType="ident">Icd9_Dgns_Cds</Constant> 
+						</Apply>
+					</Apply>
+				</Apply>
+				<Constant dataType="integer">0</Constant> 
+			</Apply>
+		</DerivedField>
+		
+		<!-- Over inp and outp ChronicCough in last year  -->
+		<DerivedField name="ChronicCough" dataType="boolean" optype="categorical">
+			<Apply function="greaterThan">
+				<Apply function="+">
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="inpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">IsIn</Constant> 
+				 			<Constant dataType="ident">Admtng_Icd9_Dgns_Cd</Constant> 
+				 			<FieldRef field="CoughCodeSet"/> 
+						</Apply>
+					</Apply>
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="inpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">ContainsAny</Constant> 
+				 			<FieldRef field="CoughCodeSet"/> 
+				 			<Constant dataType="ident">Icd9_Dgns_Cds</Constant> 
+						</Apply>
+					</Apply>
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="outpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">IsIn</Constant> 
+				 			<Constant dataType="ident">Admtng_Icd9_Dgns_Cd</Constant> 
+				 			<FieldRef field="CoughCodeSet"/> 
+						</Apply>
+					</Apply>
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="outpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">ContainsAny</Constant> 
+				 			<FieldRef field="CoughCodeSet"/> 
+				 			<Constant dataType="ident">Icd9_Dgns_Cds</Constant> 
+						</Apply>
+					</Apply>
+				</Apply>
+				<Constant dataType="integer">0</Constant> 
+			</Apply>
+		</DerivedField>
+		
+		<!-- Over inp and outp ChronicSputum in last year  -->
+		<DerivedField name="ChronicSputum" dataType="boolean" optype="categorical">
+			<Apply function="greaterThan">
+				<Apply function="+">
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="inpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">IsIn</Constant> 
+				 			<Constant dataType="ident">Admtng_Icd9_Dgns_Cd</Constant> 
+				 			<FieldRef field="SputumCodeSet"/> 
+						</Apply>
+					</Apply>
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="inpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">ContainsAny</Constant> 
+				 			<FieldRef field="SputumCodeSet"/> 
+				 			<Constant dataType="ident">Icd9_Dgns_Cds</Constant> 
+						</Apply>
+					</Apply>
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="outpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">IsIn</Constant> 
+				 			<Constant dataType="ident">Admtng_Icd9_Dgns_Cd</Constant> 
+				 			<FieldRef field="SputumCodeSet"/> 
+						</Apply>
+					</Apply>
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="outpatientInfoThisLastYear"/>
+				 			<Constant dataType="fIdent">ContainsAny</Constant> 
+				 			<FieldRef field="SputumCodeSet"/> 
+				 			<Constant dataType="ident">Icd9_Dgns_Cds</Constant> 
+						</Apply>
+					</Apply>
+				</Apply>
+				<Constant dataType="integer">0</Constant> 
+			</Apply>
+		</DerivedField>
+		
+		<DerivedField name="COPDSymptoms" dataType="boolean" optype="categorical">
+			<Apply function="or">
+				<FieldRef field="Dyspnoea"/>
+				<FieldRef field="ChronicCough"/>
+				<FieldRef field="ChronicSputum"/>
+			</Apply>
+		</DerivedField>
+				
+		<!-- Over HL7 ChronicSputum in last year  
+			
+			Compare this function that examines multiple characteristics of hl7
+			with one pass versus the method in the derivations above that 
+			examine one only at a time.  This requires an Int version of 'or' udf that 
+			can accept 'Int' types where '0' is false and 'non 0' is true
+		-->
+		<DerivedField name="FamilyHistory" dataType="boolean" optype="categorical">
+			<Apply function="or">
+				<Apply function="equal">
+					<FieldRef field="msg.sp_copd"/>
+					<Constant dataType="integer">1</Constant>
+				</Apply>
+				<Apply function="greaterThan">
+					<Apply function="CollectionLength">
+						<Apply function="ContainerFilter">
+				       		<FieldRef field="hl7InfoThisLastYear"/>
+				 			<Constant dataType="fIdent">IntOr</Constant> 
+				 			<Constant dataType="ident">ChronicCough</Constant> 
+				 			<Constant dataType="ident">Sp_Copd</Constant> 
+				 			<Constant dataType="ident">Shortnessofbreath</Constant> 
+				 			<Constant dataType="ident">ChronicSputum</Constant> 
+						</Apply>
+					</Apply>
+					<Constant dataType="integer">0</Constant> 
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+
+		<!--
+			**********************************************************
+			*  Inpatient Aggregation - compute the cost of each visit in lookback period
+			**********************************************************
+		-->
+		<!-- derive Map of Clm_Thru_Dt (an Int) -> Array[InpatientClaim] -->
+		<DerivedField name="inPatientClaimsByDate" dataType="ImmutableMapOfIntArrayOfInpatientClaim" optype="categorical">
+			<Apply function="GroupBy">
+	       		<FieldRef field="inpatientInfoThisLastYear"/>
+	 			<Constant dataType="ident">Clm_Thru_Dt</Constant> 
+			</Apply>
+		</DerivedField>
+
+		<!-- Obtain the InpatientClaim values from the supplied map -->
+		<DerivedField name="inPatientClaimsByDateValues" dataType="ArrayOfArrayOfInpatientClaim" optype="categorical">
+			<Apply function="ToArray">
+				<Apply function="MapValues">
+		       		<FieldRef field="inPatientClaimsByDate"/>
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+		<!-- Obtain the integer keys from the supplied map -->
+		<DerivedField name="inPatientClaimsByDateKeys" dataType="ArrayOfInt" optype="categorical">
+			<Apply function="ToArray">
+				<Apply function="MapKeys">
+		       		<FieldRef field="inPatientClaimsByDate"/>
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+		<!-- project the cost fields from each item of each grouped inpatient claims to array of array of tuples -->
+		<DerivedField name="inPatientClaimCostTuples" dataType="ArrayOfArrayOfTupleOfAny6" optype="categorical">
+			<Apply function="ContainerMap">
+	       		<FieldRef field="inPatientClaimsByDateValues"/>
+	 			<Constant dataType="fIdent">ContainerMap</Constant> 
+		 		<Constant dataType="ident">_each</Constant> 
+	 			<Constant dataType="ident">Clm_Pmt_Amt</Constant> 
+	 			<Constant dataType="ident">Nch_Prmry_Pyr_Clm_Pd_Amt</Constant> 
+				<Constant dataType="ident">Clm_Pass_Thru_Per_Diem_Amt</Constant> 
+				<Constant dataType="ident">Nch_Bene_Ip_Ddctbl_Amt</Constant> 
+				<Constant dataType="ident">Nch_Bene_Pta_Coinsrnc_Lblty_Am</Constant> 
+				<Constant dataType="ident">Nch_Bene_Blood_Ddctbl_Lblty_Am</Constant> 
+			</Apply>
+		</DerivedField>
+
+		<!-- convert the cost fields from each item of each array of tuples extracted to a array of float-->
+		<DerivedField name="inPatientClaimCostsEachDate" dataType="ArrayOfArrayOfDouble" optype="categorical">
+			<Apply function="ToArray">
+				<Apply function="ContainerMap">
+		       		<FieldRef field="inPatientClaimCostTuples"/>
+		 			<Constant dataType="fIdent">SumToArrayOfDouble</Constant> 
+		 			<Constant dataType="ident">_each</Constant> 
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+		<!-- Summarize each array of float and produce an array of float-->
+		<DerivedField name="inPatientClaimTotalCostEachDate" dataType="ArrayOfDouble" optype="categorical">
+			<Apply function="ToArray">
+				<Apply function="ContainerMap">
+		       		<FieldRef field="inPatientClaimCostsEachDate"/>
+		 			<Constant dataType="fIdent">Sum</Constant> 
+		 			<Constant dataType="ident">_each</Constant> 
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+		<!-- format the date keys for the input aggregations -->
+		<DerivedField name="inPatientClaimDateKeysFormatted" dataType="ArrayOfString" optype="categorical">
+			<Apply function="ToArray">
+				<Apply function="ContainerMap">
+		       		<FieldRef field="outPatientClaimsByDateKeys"/>
+		 			<Constant dataType="fIdent">ISO8601DateFmt</Constant> 
+		 			<Constant dataType="string">yyyy-MMM-dd</Constant>
+		 			<Constant dataType="ident">_each</Constant> 
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+		<DerivedField name="inPatientClaimCostsByDate" dataType="ImmutableMapOfIntDouble" optype="categorical">
+			<Apply function="ToMap">
+				<Apply function="Zip">
+					<FieldRef field="inPatientClaimDateKeysFormatted"/>
+					<FieldRef field="inPatientClaimTotalCostEachDate"/>
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+
+		<!--
+			**********************************************************
+			*  OutpatientClaim Aggregation - compute the cost of each visit in lookback period
+			**********************************************************
+		-->
+		<!-- derive Map of Clm_Thru_Dt (an Int) -> Array[OutpatientClaim] -->
+		<DerivedField name="outPatientClaimsByDate" dataType="ImmutableMapOfIntArrayOfOutpatientClaim" optype="categorical">
+			<Apply function="GroupBy">
+	       		<FieldRef field="outpatientInfoThisLastYear"/>
+	 			<Constant dataType="ident">Clm_Thru_Dt</Constant> 
+			</Apply>
+		</DerivedField>
+
+		<!-- Obtain the OutpatientClaim values from the supplied map -->
+		<DerivedField name="outPatientClaimsByDateValues" dataType="ArrayOfArrayOfOutpatientClaim" optype="categorical">
+			<Apply function="ToArray">
+				<Apply function="MapValues">
+		       		<FieldRef field="outPatientClaimsByDate"/>
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+		<!-- Obtain the integer keys from the supplied map -->
+		<DerivedField name="outPatientClaimsByDateKeys" dataType="ArrayOfInt" optype="categorical">
+			<Apply function="ToArray">
+				<Apply function="MapKeys">
+		       		<FieldRef field="outPatientClaimsByDate"/>
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+		<!-- project the cost fields from each item of each grouped inpatient claims to array of array of tuples -->
+		<DerivedField name="outPatientClaimCostTuples" dataType="ArrayOfArrayOfTupleOfAny5" optype="categorical">
+			<Apply function="ContainerMap">
+	       		<FieldRef field="outPatientClaimsByDateValues"/>
+	 			<Constant dataType="fIdent">ContainerMap</Constant> 
+		 		<Constant dataType="ident">_each</Constant> 
+	 			<Constant dataType="ident">Clm_Pmt_Amt</Constant> 
+	 			<Constant dataType="ident">Nch_Prmry_Pyr_Clm_Pd_Amt</Constant> 
+				<Constant dataType="ident">Nch_Bene_Blood_Ddctbl_Lblty_Am</Constant> 
+				<Constant dataType="ident">Nch_Bene_Ptb_Ddctbl_Amt</Constant> 
+				<Constant dataType="ident">Nch_Bene_Ptb_Coinsrnc_Amt</Constant> 
+			</Apply>
+		</DerivedField>
+
+		<!-- convert the cost fields from each item of each array of tuples extracted to a array of float-->
+		<DerivedField name="outPatientClaimCostsEachDate" dataType="ArrayOfArrayOfDouble" optype="categorical">
+			<Apply function="ToArray">
+				<Apply function="ContainerMap">
+		       		<FieldRef field="outPatientClaimCostTuples"/>
+		 			<Constant dataType="fIdent">SumToArrayOfDouble</Constant> 
+		 			<Constant dataType="ident">_each</Constant> 
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+		<!-- Summarize each array of float and produce an array of float-->
+		<DerivedField name="outPatientClaimTotalCostEachDate" dataType="ArrayOfDouble" optype="categorical">
+			<Apply function="ToArray">
+				<Apply function="ContainerMap">
+		       		<FieldRef field="outPatientClaimCostsEachDate"/>
+		 			<Constant dataType="fIdent">Sum</Constant> 
+		 			<Constant dataType="ident">_each</Constant> 
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+		<!-- format the date keys for the output aggregations -->
+		<DerivedField name="outPatientClaimDateKeysFormatted" dataType="ArrayOfString" optype="categorical">
+			<Apply function="ToArray">
+				<Apply function="ContainerMap">
+		       		<FieldRef field="outPatientClaimsByDateKeys"/>
+		 			<Constant dataType="fIdent">ISO8601DateFmt</Constant> 
+		 			<Constant dataType="string">yyyy-MMM-dd</Constant>
+		 			<Constant dataType="ident">_each</Constant> 
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+		<DerivedField name="outPatientClaimCostsByDate" dataType="ImmutableMapOfIntDouble" optype="categorical">
+			<Apply function="ToMap">
+				<Apply function="Zip">
+					<FieldRef field="outPatientClaimDateKeysFormatted"/>
+					<FieldRef field="outPatientClaimTotalCostEachDate"/>
+				</Apply>
+			</Apply>
+		</DerivedField>
+
+		<!-- 
+			Materialize these variables from their containers to derived fields to make
+			them accessible for output emission 
+		-->
+
+		<DerivedField name="MaterializeOutputs" dataType="boolean" optype="categorical">
+			<Apply function="and">
+				<Apply function="Put">  
+					<Constant dataType="context">ctx</Constant>
+					<Constant dataType="string">Msg_Desynpuf_Id</Constant>
+					<FieldRef field="msg.desynpuf_id"/>
+				</Apply>
+				<Apply function="or">
+					<Apply function="greaterThan">
+						<Apply function="CollectionLength">
+							<FieldRef field="inPatientClaimCostsByDate"/>
+						</Apply>
+						<Constant dataType="integer">0</Constant> 
+					</Apply>
+					<Apply function="greaterThan">
+						<Apply function="CollectionLength">
+							<FieldRef field="outPatientClaimCostsByDate"/>
+						</Apply>
+						<Constant dataType="integer">0</Constant> 
+					</Apply>
+				</Apply>
+			</Apply> 
+		</DerivedField>
+
+		<!--
+			**********************************************************
+			*  Principal classification logic... is the patient
+			*  a cat2, 1a, 1b, or none of these?
+			**********************************************************
+		-->
+
+		<DerivedField name="CATII_Rule2" dataType="boolean" optype="categorical">
+			<Apply function="if">
+				<Apply function="and">
+					<Apply function="not">
+						<FieldRef field="FortyYrsOrOlder"/>
+					</Apply>
+					<Apply function="or">
+						<FieldRef field="COPDSymptoms"/>
+						<FieldRef field="AATDeficiency"/>
+						<FieldRef field="FamilyHistory"/>
+					</Apply>
+				</Apply>
+				<!-- Rather than use rule score, you can set variables according
+					to if's predicate above... NOTE: Put always returns true.. so
+					we MUST take specific measure to force CATII_Rule2 value to false -->
+				<Apply function="and">
+					<FieldRef field="MaterializeOutputs"/>
+					<Apply function="Put">  
+						<Constant dataType="context">ctx</Constant>
+						<Constant dataType="string">COPDSeverity</Constant>
+						<Constant dataType="string">2</Constant> 
+					</Apply>
+				</Apply>
+				<Apply function="and">
+					<FieldRef field="MaterializeOutputs"/>
+					<Apply function="Put">  
+						<Constant dataType="context">ctx</Constant>
+						<Constant dataType="string">COPDSeverity</Constant>
+						<Constant dataType="string">NotSet</Constant> 
+					</Apply>
+					<Constant dataType="boolean">false</Constant> <!-- force false to be returned -->
+				</Apply>
+			</Apply>
+		</DerivedField>
+		
+		<DerivedField name="CATI_Rule1b" dataType="boolean" optype="categorical">
+			<Apply function="if">
+				<Apply function="and">
+					<FieldRef field="FortyYrsOrOlder"/>
+					<FieldRef field="WithSmokingHistory"/>
+					<FieldRef field="AATDeficiency"/>
+					<FieldRef field="WithEnvironmentalExposures"/>
+					<FieldRef field="COPDSymptoms"/>
+				</Apply>
+				<!-- Rather than use rule score, you can set variables according
+					to if's predicate above... NOTE: Put always returns true.. so
+					we MUST take specific measure to force CATI_Rule1b value to false -->
+				<Apply function="and">
+					<FieldRef field="MaterializeOutputs"/>
+					<Apply function="Put">  
+						<Constant dataType="context">ctx</Constant>
+						<Constant dataType="string">COPDSeverity</Constant>
+						<Constant dataType="string">1b</Constant> 
+					</Apply>
+				</Apply>
+				<Apply function="and">
+					<FieldRef field="MaterializeOutputs"/>
+					<Apply function="Put">  
+						<Constant dataType="context">ctx</Constant>
+						<Constant dataType="string">COPDSeverity</Constant>
+						<Constant dataType="string">NotSet</Constant> 
+					</Apply>
+					<Constant dataType="boolean">false</Constant>  <!-- force false to be returned -->
+				</Apply>
+
+			</Apply>
+		</DerivedField>
+		
+		<DerivedField name="CATI_Rule1a" dataType="boolean" optype="categorical">
+			<Apply function="if">
+				<Apply function="and">
+					<FieldRef field="FortyYrsOrOlder"/>
+					<FieldRef field="WithSmokingHistory"/>
+					<Apply function="or">
+						<FieldRef field="AATDeficiency"/>
+						<FieldRef field="WithEnvironmentalExposures"/>
+						<FieldRef field="COPDSymptoms"/>
+					</Apply>
+				</Apply>
+				<!-- Rather than use rule score, you can set variables according
+					to if's predicate above... NOTE: Put always returns true.. so
+					we MUST take specific measure to force CATI_Rule1a value to false -->
+				<Apply function="and">
+					<FieldRef field="MaterializeOutputs"/>
+					<Apply function="Put">  
+						<Constant dataType="context">ctx</Constant>
+						<Constant dataType="string">COPDSeverity</Constant>
+						<Constant dataType="string">1a</Constant> 
+					</Apply>
+				</Apply>
+				<Apply function="and">
+					<FieldRef field="MaterializeOutputs"/>
+					<Apply function="Put">  
+						<Constant dataType="context">ctx</Constant>
+						<Constant dataType="string">COPDSeverity</Constant>
+						<Constant dataType="string">NotSet</Constant> 
+					</Apply>
+					<Constant dataType="boolean">false</Constant>  <!-- force false to be returned -->
+				</Apply>
+			</Apply>
+		</DerivedField>
+		
+	</TransformationDictionary>
+
+	<RuleSetModel modelName="COPDRisk" functionName="classification" algorithmName="RuleSet">
+
+	    <MiningSchema>
+			<!-- id info -->
+	    	<MiningField name="Msg_Desynpuf_Id" usageType="supplementary"/>
+	    	<MiningField name="Age" usageType="supplementary"/>
+	    	<MiningField name="Today" usageType="supplementary"/>
+	    	<MiningField name="AYearAgo" usageType="supplementary"/>
+
+			<!-- the prediction ... 1a, 1b, 2 -->
+			<MiningField name="COPDSeverity" usageType="predicted"/>
+
+			<!-- determining factors for audit/verification and validation -->
+			<MiningField name="WithSmokingHistory" usageType="supplementary"/>
+			<MiningField name="AATDeficiency" usageType="supplementary"/>
+			<MiningField name="WithEnvironmentalExposures" usageType="supplementary"/>
+			<MiningField name="FamilyHistory" usageType="supplementary"/>			    	
+	    	<MiningField name="COPDSymptoms" usageType="supplementary"/>
+			<MiningField name="Dyspnoea" usageType="supplementary"/>
+			<MiningField name="ChronicCough" usageType="supplementary"/>
+			<MiningField name="ChronicSputum" usageType="supplementary"/>
+
+			<!-- aggregations -->
+			<MiningField name="inPatientClaimCostsByDate" usageType="supplementary"/>
+			<MiningField name="outPatientClaimCostsByDate" usageType="supplementary"/>
+
+	    </MiningSchema>
+	
+		<RuleSet defaultScore="0">  
+			<RuleSelectionMethod criterion="firstHit"/>
+			<SimpleRule id="CATI_Rule1b" score="1b">
+				<SimplePredicate field="CATI_Rule1b" operator="equal" value="true"/>
+			</SimpleRule>
+			<SimpleRule id="CATI_Rule1a" score="1a">
+				<SimplePredicate field="CATI_Rule1a" operator="equal" value="true"/>
+			</SimpleRule>
+			<SimpleRule id="CATII_Rule2" score="II">
+				<SimplePredicate field="CATII_Rule2" operator="equal" value="true"/>
+			</SimpleRule>
+	    </RuleSet> 
+	</RuleSetModel>
+</PMML>

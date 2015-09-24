@@ -633,8 +633,8 @@ object NodePrinterHelpers extends com.ligadata.pmml.compiler.LogTrait {
 		val scalaDataType = PmmlTypes.scalaDataType(node.dataType)
 		val derivedDataTypeNm = PmmlTypes.scalaDerivedDataType(scalaDataType)
 	
-		clsBuffer.append(s"class $classname (name : String, dataType : String, validValues: ArrayBuffer[(String,String)], leftMargin : String, rightMargin : String, closure : String) \n")
-		clsBuffer.append(s"      extends DerivedField(name, dataType, validValues, leftMargin, rightMargin, closure) with LogTrait { \n\n")
+		clsBuffer.append(s"class $classname (name : String, dataType : String, validValues: ArrayBuffer[(String,String)], leftMargin : String, rightMargin : String, closure : String, retain : Boolean) \n")
+		clsBuffer.append(s"      extends DerivedField(name, dataType, validValues, leftMargin, rightMargin, closure, retain) with LogTrait { \n\n")
 		
 	}
 	
@@ -1599,6 +1599,8 @@ object NodePrinterHelpers extends com.ligadata.pmml.compiler.LogTrait {
 		prepResultBuffer.append(s"            new MappedModelResults().withResults(results) \n")
 		prepResultBuffer.append(s"        } else { null }\n")
 		prepResultBuffer.append(s"\n")
+    prepResultBuffer.append("         ctx.reset() /** before exit, reset dictionary state for idempotent readiness */")
+    prepResultBuffer.append(s"\n")
 		prepResultBuffer.append(s"        modelResult\n")
 		prepResultBuffer.append(s"    }\n")
 		prepResultBuffer.append(s"\n")

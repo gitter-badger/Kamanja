@@ -86,10 +86,13 @@ class TransformationDictionaryCodePrinter(ctx : PmmlContext) extends CodePrinter
 		  		serNo += 1
 		  		val serNoStr = serNo.toString
 
-		  		val valnm = s"xbar$serNoStr"
-		  		var valuesStr = NodePrinterHelpers.valuesHlp(dfld.values, valnm, "        ")
-		  		dictBuffer.append(s"        var $valnm : ArrayBuffer[(String,String)] = $valuesStr\n")
-		  		var derivedFieldStr : String = s"        ctx.xDict += (${'"'}$dName${'"'} -> new $className(${'"'}$dName${'"'}, ${'"'}$typ${'"'}, $valnm, ${'"'}$lm${'"'}, ${'"'}$rm${'"'}, ${'"'}$cls${'"'}))\n"
+          val retain : String = if (dfld.retain) "true" else "false"
+
+          val valnm = s"xbar$serNoStr"
+          var valuesStr = NodePrinterHelpers.valuesHlp(dfld.values, valnm, "        ")
+          dictBuffer.append(s"        var $valnm : ArrayBuffer[(String,String)] = $valuesStr\n")
+          var derivedFieldStr : String = s"        ctx.xDict += (${'"'}$dName${'"'} -> new $className(${'"'}$dName${'"'}, ${'"'}$typ${'"'}, $valnm, ${'"'}$lm${'"'}, ${'"'}$rm${'"'}, ${'"'}$cls${'"'}, $retain))\n"
+
 	    		dictBuffer.append(derivedFieldStr)
 		  	}
 		}

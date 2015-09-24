@@ -129,7 +129,8 @@ class PmmlDerivedField(namespaceURI: String
 				, val name : String
 				, val displayName : String
 				, val optype : String
-				, val dataType : String)  extends PmmlNode(namespaceURI, localName, qName, lineNumber, columnNumber) {
+				, val dataType : String
+				, val cacheHint : String)  extends PmmlNode(namespaceURI, localName, qName, lineNumber, columnNumber) {
 }	 
 
 class PmmlDefineFunction(namespaceURI: String

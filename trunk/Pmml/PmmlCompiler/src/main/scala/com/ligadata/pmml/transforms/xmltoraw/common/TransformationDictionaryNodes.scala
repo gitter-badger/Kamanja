@@ -67,13 +67,14 @@ class DerivedFieldPmmlNodeGenerator extends PmmlNodeGenerator {
 			, atts: Attributes
 			, lineNumber : Int
 			, columnNumber : Int) : PmmlNode =  {
-		val ofInterest : ArrayBuffer[String] = ArrayBuffer("name", "displayName", "optype", "dataType")
+		val ofInterest : ArrayBuffer[String] = ArrayBuffer("name", "displayName", "optype", "dataType", "cacheHint")
 		val selectedValues = PmmlNode.hlpOrganizeAttributes(atts, ofInterest).asInstanceOf[ArrayBuffer[_]]
 		val name : String = selectedValues.apply(0).asInstanceOf[String]
 		val displayName : String = selectedValues.apply(1).asInstanceOf[String]
 		val optype : String = selectedValues.apply(2).asInstanceOf[String]
 		val dataType : String = selectedValues.apply(3).asInstanceOf[String]
-		new PmmlDerivedField(namespaceURI, localName , qName, lineNumber, columnNumber, name, displayName, optype, dataType)
+    val cacheHint : String = selectedValues.apply(4).asInstanceOf[String]
+ 		new PmmlDerivedField(namespaceURI, localName , qName, lineNumber, columnNumber, name, displayName, optype, dataType, cacheHint)
 	}
 }
 
