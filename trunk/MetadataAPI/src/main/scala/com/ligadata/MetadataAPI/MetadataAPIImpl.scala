@@ -23,6 +23,7 @@ import java.util.Calendar
 import java.util.Date
 import java.text.ParseException
 import com.ligadata.MetadataAPI.MetadataAPI.ModelType
+import com.ligadata.MetadataAPI.MetadataAPI.ModelType.ModelType
 
 import scala.Enumeration
 import scala.io._
