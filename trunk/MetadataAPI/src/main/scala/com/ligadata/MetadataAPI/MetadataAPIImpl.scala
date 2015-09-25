@@ -22,6 +22,10 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.text.ParseException
+import com.ligadata.MetadataAPI.MetadataAPI.ModelType
+import com.ligadata.MetadataAPI.MetadataAPI.ModelType.ModelType
+import com.ligadata.MetadataAPI.MetadataAPI.ModelType.ModelType
+
 import scala.Enumeration
 import scala.io._
 import scala.collection.mutable.ArrayBuffer
@@ -2774,7 +2778,7 @@ object MetadataAPIImpl extends MetadataAPI {
     }
   }
 
-  def AddModelFromSource(sourceCode: String, sourceLang: String, modelName: String, userid: Option[String]): String = {
+  private def AddModelFromSource(sourceCode: String, sourceLang: String, modelName: String, userid: Option[String]): String = {
     try {
       var compProxy = new CompilerProxy
       compProxy.setSessionUserId(userid)
@@ -2808,8 +2812,21 @@ object MetadataAPIImpl extends MetadataAPI {
     }
   }
 
+  override def AddModel(input:String, modelType: ModelType, modelName: Option[String], userid: Option[String]): String = {
+    modelType match {
+      case ModelType.PMML =>
+        AddModel(input, userid)
+      case ModelType.JAVA | ModelType.SCALA =>
+        modelName.fold(throw new RuntimeException("Model name should be provided for Java/Scala models"))(name => {
+          AddModelFromSource(input, modelType.toString, name, userid)
+        })
+      case ModelType.JPMML =>
+        throw new RuntimeException("Not implemented yet")
+    }
+  }
+
   // Add Model (format XML)
-  def AddModel(pmmlText: String, userid: Option[String]): String = {
+  private def AddModel(pmmlText: String, userid: Option[String]): String = {
     try {
       var compProxy = new CompilerProxy
       //compProxy.setLoggerLevel(Level.TRACE)

@@ -18,6 +18,7 @@ package com.ligadata.MetadataAPI.Utility
 
 import java.io.File
 
+import com.ligadata.MetadataAPI.MetadataAPI.ModelType
 import com.ligadata.MetadataAPI.MetadataAPIImpl
 
 import scala.io.Source
@@ -58,7 +59,7 @@ object ModelService {
               case option => {
                 var  modelDefs=getUserInputFromMainMenu(models)
                 for (modelDef <- modelDefs)
-                  response += MetadataAPIImpl.AddModel(modelDef.toString, userid)
+                  response += MetadataAPIImpl.AddModel(modelDef.toString, ModelType.PMML, None, userid)
               }
             }
           }
@@ -73,7 +74,7 @@ object ModelService {
         var model = new File(input.toString)
       if(model.exists()){
         modelDef= Source.fromFile(model).mkString
-        response = MetadataAPIImpl.AddModel(modelDef.toString, userid)
+        response = MetadataAPIImpl.AddModel(modelDef.toString, ModelType.PMML, None, userid)
       }else{
         response="Model definition file does not exist"
       }
@@ -406,7 +407,7 @@ object ModelService {
       for (modelDef <- modelDefs){
         println("Adding the next model in the queue.")   
         if (dep.length > 0) {
-          response+= MetadataAPIImpl.AddModelFromSource(modelDef, "scala", userid.get+"."+dep, userid)
+          response+= MetadataAPIImpl.AddModel(modelDef, ModelType.SCALA, Some(userid.get+"."+dep), userid)
         } else { 
           //before adding a model, add its config file.
           var configKeys = MetadataAPIImpl.getModelConfigNames
@@ -434,7 +435,7 @@ object ModelService {
                 errorMsg
               }
             }
-            response+= MetadataAPIImpl.AddModelFromSource(modelDef, "scala", modelConfig, userid)
+            response+= MetadataAPIImpl.AddModel(modelDef, ModelType.SCALA, Some(modelConfig), userid)
           }
         }
       }
@@ -490,7 +491,7 @@ object ModelService {
       for (modelDef <- modelDefs){
         println("Adding the next model in the queue.")
         if (dep.length > 0) {
-          response+= MetadataAPIImpl.AddModelFromSource(modelDef, "java", userid.get+"."+dep, userid)
+          response+= MetadataAPIImpl.AddModel(modelDef, ModelType.SCALA, Some(userid.get+"."+dep), userid)
         } else {
           var configKeys = MetadataAPIImpl.getModelConfigNames
           println("--> got these many back "+configKeys.size)
@@ -518,7 +519,7 @@ object ModelService {
                 errorMsg
               }
             }
-            response+= MetadataAPIImpl.AddModelFromSource(modelDef, "java", modelConfig, userid)
+            response+= MetadataAPIImpl.AddModel(modelDef, ModelType.JAVA, Some(modelConfig), userid)
           } 
         }
       }

@@ -16,10 +16,9 @@
 
 package com.ligadata.MetadataAPI
 
-import org.json4s._
+import com.ligadata.MetadataAPI.MetadataAPI.ModelType
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
-import com.fasterxml.jackson.annotation.JsonFormat
 
 /** A class that defines the result any of the API function uniformly
  * @constructor creates a new ApiResult with a statusCode,functionName,statusDescription,resultData
@@ -42,7 +41,20 @@ class ApiResult(var statusCode:Int, var functionName: String, var resultData: St
   }
 }
 
+object MetadataAPI {
+
+  object ModelType extends Enumeration {
+    type ModelType = Value
+    val PMML = Value("pmml")
+    val JAVA = Value("java")
+    val SCALA = Value("scala")
+    val JPMML = Value("jpmml")
+  }
+
+}
+
 trait MetadataAPI {
+  import ModelType._
   /** MetadataAPI defines the CRUD (create, read, update, delete) operations on metadata objects supported
    * by this system. The metadata objects includes Types, Functions, Concepts, Derived Concepts,
    * MessageDefinitions, Model Definitions. All functions take String values as input in XML or JSON Format
@@ -393,15 +405,15 @@ trait MetadataAPI {
    */
   def RemoveContainer(containerName:String, version:Long, userid: Option[String]): String
 
-  /** Add model given pmmlText in XML
+  /** Add model. Input could be java or scala code, PMML or JPMML
    * 
-   * @param pmmlText text of the model (as XML string)
+   * @param input text of the model (as XML string)
    * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
    * indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
    * ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
    */
 
-  def AddModel(pmmlText:String, userid: Option[String]): String
+  def AddModel(input:String, modelType: ModelType, modelName: Option[String], userid: Option[String]): String
 
   /** Update model given pmmlText
    * 

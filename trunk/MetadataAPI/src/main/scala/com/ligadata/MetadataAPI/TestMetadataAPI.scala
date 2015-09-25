@@ -19,6 +19,7 @@ package com.ligadata.MetadataAPI
 import java.io.{ ByteArrayOutputStream, _ }
 
 import com.esotericsoftware.kryo.io.{ Input, Output }
+import com.ligadata.MetadataAPI.MetadataAPI.ModelType
 import com.ligadata.Serialize._
 import com.ligadata.ZooKeeper._
 import com.ligadata.KvBase.{ Key, Value, TimeRange }
@@ -1454,7 +1455,7 @@ println("Getting Messages")
       
       if( op.equalsIgnoreCase("add") ){
 	println("Results as json string => \n" + 
-		MetadataAPIImpl.AddModelFromSource(sourceStr, "java", modelConfigName, userid))
+		MetadataAPIImpl.AddModel(sourceStr, ModelType.JAVA, Some(modelConfigName), userid))
       }
       else{
 	println("Results as json string => \n" + 
@@ -1544,7 +1545,7 @@ println("Getting Messages")
      
       if( op.equalsIgnoreCase("add") ){
 	println("Results as json string => \n" +
-	      MetadataAPIImpl.AddModelFromSource(sourceStr, "scala", modelConfigName, userid))
+	      MetadataAPIImpl.AddModel(sourceStr, ModelType.SCALA, Some(modelConfigName), userid))
       }
       else{
 	println("Results as json string => \n" +
@@ -1603,7 +1604,7 @@ println("Getting Messages")
       // Save the model
       // MetadataAPIImpl.SetLoggerLevel(Level.TRACE)
 
-      println("Results as json string => \n" + MetadataAPIImpl.AddModel(pmmlStr, userid))
+      println("Results as json string => \n" + MetadataAPIImpl.AddModel(pmmlStr, ModelType.PMML, None, userid))
     } catch {
       case e: AlreadyExistsException => {
         logger.error("Model Already in the metadata....")

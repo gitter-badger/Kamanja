@@ -19,6 +19,7 @@ package com.ligadata.metadataapiservice
 import akka.actor.{Actor, ActorRef}
 import akka.event.Logging
 import akka.io.IO
+import com.ligadata.MetadataAPI.MetadataAPI.ModelType
 
 import spray.routing.RequestContext
 import spray.httpx.SprayJsonSupport
@@ -65,7 +66,7 @@ class AddModelService(requestContext: RequestContext, userid:Option[String], pas
 	    MetadataAPIImpl.logAuditRec(userid,Some(AuditConstants.WRITE),AuditConstants.INSERTOBJECT,pmmlStr,AuditConstants.FAIL,"",nameVal)    
 	    requestContext.complete(new ApiResult(ErrorCodeConstants.Failure, APIName, null,  "Error:UPDATE not allowed for this user").toString )
     } else {
-      val apiResult = MetadataAPIImpl.AddModel(pmmlStr,userid) 
+      val apiResult = MetadataAPIImpl.AddModel(pmmlStr, ModelType.PMML, None, userid)
       requestContext.complete(apiResult)      
     }
   }

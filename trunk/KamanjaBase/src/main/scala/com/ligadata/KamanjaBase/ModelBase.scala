@@ -312,7 +312,7 @@ trait EnvContext {
   /**
    *  Answer an empty instance of the message or container with the supplied fully qualified class name.  If the name is
    *  invalid, null is returned.
-   *  @param fqclassname : a full package qualifed class name
+   *  @param fqclassname : a full package qualified class name
    *  @return a MesssageContainerBase of that ilk
    */
   def NewMessageOrContainer(fqclassname: String): MessageContainerBase
