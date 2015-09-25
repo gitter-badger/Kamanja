@@ -77,10 +77,12 @@ object ModelService {
                 val reply : String = s"JPMML model definition ingestion has failed for model $modelName, version = $version, consumes msg = $msgConsumed user=$userId"
                 logger.error(reply)
                 null /// FIXME : we will return null for now and complain with first failure/
+
             }
             resp
         }
         response
+
     }
 
     /**

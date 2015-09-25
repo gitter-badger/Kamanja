@@ -1544,8 +1544,8 @@ println("Getting Messages")
       println("CHOSE " + (choice2-1) + "  "+modelConfigName)
      
       if( op.equalsIgnoreCase("add") ){
-	println("Results as json string => \n" +
-	      MetadataAPIImpl.AddModel(ModelType.SCALA, sourceStr, userid, Some(modelConfigName)))
+	       println("Results as json string => \n" +
+	         MetadataAPIImpl.AddModel(ModelType.SCALA, sourceStr, userid, Some(modelConfigName)))
       }
       else{
 	println("Results as json string => \n" +
