@@ -406,3 +406,4 @@ object JpmmlAdapter extends ModelBaseObj {
         }
     }
 }
+

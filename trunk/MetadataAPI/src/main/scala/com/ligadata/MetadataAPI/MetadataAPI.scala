@@ -341,6 +341,7 @@ trait MetadataAPI {
     * @param concepts array of Strings where each string is name of the concept
     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
     *               method. If Security and/or Audit are configured, this value must be a value other than None.
+>>>>>>> Fatafat 218
     * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
     * indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
     * ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure

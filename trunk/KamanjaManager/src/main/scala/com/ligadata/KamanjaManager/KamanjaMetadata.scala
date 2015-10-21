@@ -21,6 +21,7 @@ import com.ligadata.jpmml.JpmmlAdapter
 import com.ligadata.kamanja.metadata.{ BaseElem, MappedMsgTypeDef, BaseAttributeDef, StructTypeDef, EntityType, AttributeDef, ArrayBufTypeDef, MessageDef, ContainerDef, ModelDef }
 import com.ligadata.kamanja.metadata._
 import com.ligadata.kamanja.metadata.MdMgr._
+import com.ligadata.jpmml.JpmmlAdapter
 
 import com.ligadata.kamanja.metadataload.MetadataLoad
 import scala.collection.mutable.TreeSet
