@@ -1547,9 +1547,9 @@ println("Getting Messages")
 	       println("Results as json string => \n" +
 	         MetadataAPIImpl.AddModel(ModelType.SCALA, sourceStr, userid, Some(modelConfigName)))
       }
-      else{
-	println("Results as json string => \n" +
-	      MetadataAPIImpl.UpdateModel( ModelType.SCALA, sourceStr, userid, Some(modelConfigName)))
+      else {
+	       println("Results as json string => \n" +
+	         MetadataAPIImpl.UpdateModel( ModelType.SCALA, sourceStr, userid, Some(modelConfigName)))
       }
 	
     } catch {

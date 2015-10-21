@@ -321,6 +321,7 @@ object JpmmlAdapter extends ModelBaseObj {
                 /** Ingest the pmml here and build an evaluator */
                 val modelEvaluator: ModelEvaluator[_] = CreateEvaluator(modelDef.jpmmlText)
                 val builtModel : ModelBase = new JpmmlAdapter( mCtx, this, modelEvaluator)
+
                 /** store the instance in the instance map for future reference */
                 instanceMap.put(modelInstanceKey, Some(builtModel))
 

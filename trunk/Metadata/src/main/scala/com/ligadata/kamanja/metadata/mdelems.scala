@@ -725,18 +725,6 @@ object ModelRepresentation extends Enumeration {
 object ModelInputType extends Enumeration {
   type ModelInputType = Value
   val JAR, JPMML = Value
-}
-
-/**
- * @param modelInputType The type of model input - JAR, JPMML etc.
- * @param isReusable Whether the model execution is referentially transparent
- * @param msgConsumed Identify the message that will be consumed. There is 1:1 mapping between message and model
- */
-class ModelDef(val modelInputType: ModelInputType = ModelInputType.JAR, isReusable: Boolean = false, msgConsumed: String = "") extends BaseElemDef {
-  var modelType: String = _ // type of models (RuleSet,..)
-  var inputVars: Array[BaseAttributeDef] = _
-  var outputVars: Array[BaseAttributeDef] = _
->>>>>>> Add additional fields to ModelDef
 
   def modelRep(mdlRep: String): ModelRepresentation = {
       val rep: ModelRepresentation = mdlRep match {
@@ -749,7 +737,7 @@ class ModelDef(val modelInputType: ModelInputType = ModelInputType.JAR, isReusab
 
 /**
  * The ModelDef provides meta data for all models in the system.  The model's input type can currently be either a jar or
- * a pmml text string (used by JPMML type models.  The mining model type is any of the dmg.org's model types as defined in their xsd or
+ * a pmml text string (used by JPMML type models).  The mining model type is any of the dmg.org's model types as defined in their xsd or
  * one of our own special types (CustomScala, CustomJava, or Unknown when the caller does not supply one).
  *
  * Models, when marked with isReusable, can be cached (are considered idempotent)
