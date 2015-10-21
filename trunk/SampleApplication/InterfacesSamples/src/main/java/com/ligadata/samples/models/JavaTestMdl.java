@@ -20,8 +20,9 @@ import com.ligadata.KamanjaBase.*;
 import com.ligadata.samples.messages.*;
 import com.google.common.base.Optional;
 
-public class JavaTestMdl extends ModelBase {
 
+//public class JavaTestMdl extends ModelBase {
+/**
 	static JavaTestMdlObj objSignleton = new JavaTestMdlObj();
 
 	public ModelResultBase execute(boolean emitAllResults) {
@@ -45,9 +46,11 @@ public class JavaTestMdl extends ModelBase {
 	public JavaTestMdl(ModelContext mdlContext) {
 		super(mdlContext, objSignleton);
 	}
-
+ */
+    /// FIXME: What is the Option Syntax to use for java???????????????????????????????????????????????
+    /**
 	public static class JavaTestMdlObj implements ModelBaseObj {
-		public boolean IsValidMessage(MessageContainerBase msg) {
+		public boolean IsValidMessage(MessageContainerBase msg, scala.Option<? extends JPMMLInfo> jPMMLInfo) {
 			return (msg instanceof CustAlertHistory);
 		}
 
@@ -67,4 +70,5 @@ public class JavaTestMdl extends ModelBase {
 			return new MappedModelResults();
 		}
 	}
-}
+     */
+//}

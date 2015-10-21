@@ -1,0 +1,4 @@
+Manifest-Version: 0.1  
+Built-By: ligaDATA PMML Compiler version 0.1 
+Main-Class: com.%client%.pmml.%applicationName%  
+Class-Path: lib/PmmlRuntime.jar lib/OleBase.jar lib/joda-time-2.3.jar lib/joda-convert-1.6.jar

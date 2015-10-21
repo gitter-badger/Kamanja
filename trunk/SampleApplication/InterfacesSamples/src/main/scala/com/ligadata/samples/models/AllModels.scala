@@ -208,7 +208,7 @@ class LowBalanceAlert(mdlCtxt: ModelContext) extends ModelBase(mdlCtxt, LowBalan
 //   LowBalanceAlertRslt - a new entry is created - system decides what to do with the generated object
 //
 
-  override def IsValidMessage(msg: MessageContainerBase): Boolean = return msg.isInstanceOf[CustTransaction]
+object LowBalanceAlert2 extends ModelBaseObj {
   override def IsValidMessage(msg: MessageContainerBase, modelName : String, modelVersion : String): Boolean = return msg.isInstanceOf[CustTransaction]
   override def CreateNewModel(mdlCtxt: ModelContext): ModelBase = return new LowBalanceAlert2(mdlCtxt)
   override def ModelName(): String = "LowBalanceAlert2" // Model Name

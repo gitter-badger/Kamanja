@@ -14,16 +14,11 @@
  * limitations under the License.
  */
 
-package scala.com.ligadata.MetadataAPI
+package com.ligadata.MetadataAPI
 
-import java.io.File
 import java.util.logging.Logger
-
-import com.ligadata.MetadataAPI.{TestMetadataAPI, MetadataAPIImpl}
+import com.ligadata.MetadataAPI.MetadataAPI.ModelType
 import com.ligadata.MetadataAPI.Utility._
-import scala.io.Source
-
-
 
 /**
  * Created by dhaval Kolapkar on 7/24/15.
@@ -52,6 +47,9 @@ object StartMetadataAPI {
   var parmName: String = ""
 
   def main(args: Array[String]) {
+
+    /** FIXME: the user id should be discovered in the parse of the args array */
+    val userId : Option[String] = Some("metadataapi")
     try {
       var argsUntilParm = 2
       args.foreach(arg =>
@@ -84,7 +82,7 @@ object StartMetadataAPI {
             if (argsUntilParm < 0)
               depName = arg
             else
-              action += arg
+              action += arg  /** concatenate the args together to form the action string... "add model pmml" becomes "addmodelpmmml" */
           }
         }
       })
@@ -98,7 +96,7 @@ object StartMetadataAPI {
       if (action == "")
         TestMetadataAPI.StartTest
       else {
-        response = route(Action.withName(action.trim), location, depName)
+        response = route(Action.withName(action.trim), location, depName, args, userId)
         println("Result: " + response)
       }
     }
@@ -114,7 +112,7 @@ object StartMetadataAPI {
   }
 
 
-  def route(action: Action.Value, input: String, param: String = ""): String = {
+  def route(action: Action.Value, input: String, param: String = "", originalArgs : Array[String], userId : Option[String]): String = {
     var response = ""
     try {
       action match {
@@ -148,33 +146,33 @@ object StartMetadataAPI {
       }
 
         case Action.GETALLOUTPUTMESSAGES => response =MessageService.getAllOutputMessages
-        case Action.GETOUTPUTMESSAGE => response ={
-      if (param.length == 0)
-        MessageService.getOutputMessage()
-      else
-        MessageService.getOutputMessage(param)
-    }
+        case Action.GETOUTPUTMESSAGE => response = {
+            if (param.length == 0)
+                MessageService.getOutputMessage()
+            else
+                MessageService.getOutputMessage(param)
+            }
 
         //model management
-        case Action.ADDMODELPMMML => response = ModelService.addModelPmml(input)
+        case Action.ADDMODELPMML => response = ModelService.addModelPmml(input, userId)
 
         case Action.ADDMODELSCALA => {
           if (param.length == 0)
-            response = ModelService.addModelScala(input)
+            response = ModelService.addModelScala(input, "", userId)
           else
-            response = ModelService.addModelScala(input, param)
+            response = ModelService.addModelScala(input, param, userId)
         }
 
         case Action.ADDMODELJAVA => {
           if (param.length == 0)
-            response = ModelService.addModelJava(input)
+            response = ModelService.addModelJava(input, "", userId)
           else
-            response = ModelService.addModelJava(input, param)
+            response = ModelService.addModelJava(input, param, userId)
         }
 
         case Action.REMOVEMODEL => {
           if (param.length == 0)
-            response = ModelService.removeModel()
+            response = ModelService.removeModel("",userId)
           else
             response = ModelService.removeModel(param)
         }
@@ -183,44 +181,43 @@ object StartMetadataAPI {
           response =
             {
               if (param.length == 0)
-                ModelService.activateModel()
+                ModelService.activateModel("", userId)
               else
-                ModelService.activateModel(param)
+                ModelService.activateModel(param,userId)
             }
 
 
         case Action.DEACTIVATEMODEL => response =  {
           if (param.length == 0)
-            ModelService.deactivateModel()
+            ModelService.deactivateModel("",userId)
           else
-            ModelService.deactivateModel(param)
+            ModelService.deactivateModel(param, userId)
         }
-        case Action.UPDATEMODELPMML => response = ModelService.updateModelpmml(input)
+        case Action.UPDATEMODELPMML => response = ModelService.updateModelpmml(input, userId)
         //case Action.UPDATEMODELSCALA => response = ModelService.updateModelscala(input)
         //case Action.UPDATEMODELJAVA => response = ModelService.updateModeljava(input)
 
         case Action.UPDATEMODELSCALA => {
           if (param.length == 0)
-            response = ModelService.updateModelscala(input)
+            response = ModelService.updateModelscala(input, "", userId)
           else
-            response = ModelService.updateModelscala(input, param)
+            response = ModelService.updateModelscala(input, param, userId)
         }
 
         case Action.UPDATEMODELJAVA => {
           if (param.length == 0)
-            response = ModelService.updateModeljava(input)
+            response = ModelService.updateModeljava(input, "", userId)
           else
-            response = ModelService.updateModeljava(input, param)
+            response = ModelService.updateModeljava(input, param, userId)
         }
-//
 
-        case Action.GETALLMODELS => response = ModelService.getAllModels
+        case Action.GETALLMODELS => response = ModelService.getAllModels(userId)
         case Action.GETMODEL => response =
           {
             if (param.length == 0)
-              ModelService.getModel()
+              ModelService.getModel("", userId)
             else
-              ModelService.getModel(param)
+              ModelService.getModel(param, userId)
           }
 
         //container management
@@ -311,17 +308,17 @@ object StartMetadataAPI {
         case Action.DUMPALLCLUSTERCFGS=>response =DumpService.dumpAllClusterCfgs
         case Action.DUMPALLADAPTERS=>response =DumpService.dumpAllAdapters
         case _ => {
-          println("Unexpected action!")
-          sys.exit(1)
-        }
+
+            throw new RuntimeException(s"Unexpected action! action=$action")
+            //sys.exit(1)  suppress this until the alternate approach is considered in the exception handler
+         }
       }
     }
     catch {
 
       case e: Exception => {
           /** tentative answer of unidentified command type failure. */
-          response = s"Unexpected action! action = $action"
-
+          response = s"Unexpected action! action = $action \n${e.getStackTraceString}"
           /** one more try ... going the alternate route */
           val altResponse: String = AltRoute(originalArgs)
           if (altResponse != null) {
@@ -336,4 +333,73 @@ object StartMetadataAPI {
     }
     response
   }
+
+  /** AltRoute is invoked only if the primary mechanism found in the route method fails to find the appropriate
+    * MetadataAPI method to invoke.  The command argument array is reconsidered with the AlternateCmdParser
+    * If it produces valid command arguments (a command name and Map[String,String] of arg name/values) **and**
+    * it is a command that we currently support with this mechanism (JPMML related commands are currently supported),
+    * the service module is invoked.
+    *
+    * @param origArgs an Array[String] containing all of the arguments originally submitted
+    * @return the response from successfully recognized commands (good or bad) or null if this mechanism couldn't
+    *         make a determination of which command to invoke.  In that case a null is returned and the original
+    *         complaint is returned to the caller.
+    *
+    */
+  def AltRoute(origArgs : Array[String]) : String = {
+
+       /** trim off the config argument */
+       val argsSansConfig : Array[String] = origArgs.tail
+
+       /** Put the command back together */
+       val buffer : StringBuilder = new StringBuilder
+       argsSansConfig.addString(buffer," ")
+       val originalCmd : String = buffer.toString
+
+       /** Feed the command string to the alternate parser. If successful, the cmdName will be valid string. */
+       val (optCmdName, argMap) : (Option[String], Map[String, String]) = AlternateCmdParser.parse(originalCmd)
+       val cmdName : String = optCmdName.orNull
+       val response : String = if (cmdName != null) {
+           /** See if it is one of the **supported** alternate commands */
+           val cmd : String = cmdName.toLowerCase
+
+           val resp : String = cmd match {
+               case "addmodel" => {
+                   val modelTypeToBeAdded : String = if (argMap.contains("type")) argMap("type").toLowerCase else null
+                   if (modelTypeToBeAdded == "jpmml") {
+
+                       val modelName : Option[String] = if (argMap.contains("name")) Some(argMap("name")) else None
+                       val modelVer : Option[String] = if (argMap.contains("version")) Some(argMap("version")) else None
+                       val msgName : Option[String] = if (argMap.contains("message")) Some(argMap("message")) else None
+                       val msgVer : Option[String] = if (argMap.contains("messageversion")) Some(argMap("messageversion")) else Some("-1")
+                       val pmmlSrc : Option[String] = if (argMap.contains("pmml")) Some(argMap("pmml")) else None
+                       val pmmlPath : String = pmmlSrc.orNull
+
+                       ModelService.addModelJPmml(ModelType.JPMML
+                                                , pmmlPath
+                                                , Some("metadataapi")
+                                                , modelName
+                                                , modelVer
+                                                , msgName
+                                                , msgVer)
+
+                   } else {
+                       null
+                   }
+               }
+               case "removemodel" => {
+                   null // FIXME : RemoveModel
+               }
+               case "updatemodel" => {
+                   null // FIXME : UpdateModel
+               }
+
+           }
+           resp
+       } else {
+           null
+       }
+
+       response
+   }
 }

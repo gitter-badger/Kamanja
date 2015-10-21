@@ -37,7 +37,7 @@ object Action extends Enumeration {
   val REMOVEOUTPUTMESSAGE=Value("removeoutputmessage")
   val GETALLOUTPUTMESSAGES=Value("getalloutputmessages")
   //model management
-  val ADDMODELPMMML=Value("addmodelpmml")
+  val ADDMODELPMML=Value("addmodelpmml")
   val ADDMODELSCALA=Value("addmodelscala")
   val ADDMODELJAVA=Value("addmodeljava")
   val REMOVEMODEL=Value("removemodel")

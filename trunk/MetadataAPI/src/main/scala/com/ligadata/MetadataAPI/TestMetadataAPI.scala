@@ -1454,12 +1454,12 @@ println("Getting Messages")
       println("CHOSE " + (choice2-1) + "  "+modelConfigName)
       
       if( op.equalsIgnoreCase("add") ){
-	println("Results as json string => \n" + 
-		MetadataAPIImpl.AddModel(sourceStr, ModelType.JAVA, Some(modelConfigName), userid))
+            println("Results as json string => \n" +
+                MetadataAPIImpl.AddModel(ModelType.JAVA, sourceStr, userid, Some(modelConfigName)))
       }
       else{
 	println("Results as json string => \n" + 
-		MetadataAPIImpl.UpdateModel(sourceStr, "java", modelConfigName, userid))
+		MetadataAPIImpl.UpdateModel(ModelType.JAVA, sourceStr, userid, Some(modelConfigName)))
       }
     } catch {
       case e: AlreadyExistsException => {
@@ -1545,11 +1545,11 @@ println("Getting Messages")
      
       if( op.equalsIgnoreCase("add") ){
 	println("Results as json string => \n" +
-	      MetadataAPIImpl.AddModel(sourceStr, ModelType.SCALA, Some(modelConfigName), userid))
+	      MetadataAPIImpl.AddModel(ModelType.SCALA, sourceStr, userid, Some(modelConfigName)))
       }
       else{
 	println("Results as json string => \n" +
-	      MetadataAPIImpl.UpdateModel(sourceStr, "scala", modelConfigName, userid))
+	      MetadataAPIImpl.UpdateModel( ModelType.SCALA, sourceStr, userid, Some(modelConfigName)))
       }
 	
     } catch {
@@ -1604,7 +1604,7 @@ println("Getting Messages")
       // Save the model
       // MetadataAPIImpl.SetLoggerLevel(Level.TRACE)
 
-      println("Results as json string => \n" + MetadataAPIImpl.AddModel(pmmlStr, ModelType.PMML, None, userid))
+      println("Results as json string => \n" + MetadataAPIImpl.AddModel(ModelType.PMML, pmmlStr, userid, None))
     } catch {
       case e: AlreadyExistsException => {
         logger.error("Model Already in the metadata....")

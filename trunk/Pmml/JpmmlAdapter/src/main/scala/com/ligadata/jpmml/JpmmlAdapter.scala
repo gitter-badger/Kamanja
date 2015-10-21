@@ -80,8 +80,8 @@ class JpmmlAdapter( modelContext: ModelContext, factory : ModelBaseObj, modelEva
      * from the message.  There is no mapping capability metadata at this point.
      *
      * NOTE: It is possible to have missing inputs in the message.  The model, if written robustly, has accounted
-     * for missingValue and other strategies needed to produce results even with imperfect inputs. See
-     * http://dmg.org/pmml/v4-2-1/MiningSchema.html for a discussion about this.
+     * for missingValue and other strategies needed to produce results even with imperfect inputs. 
+     ^ @see http://dmg.org/pmml/v4-2-1/MiningSchema.html for a discussion about this.
      *
      * @param activeFields a List of the FieldNames
      * @param msg the incoming message instance

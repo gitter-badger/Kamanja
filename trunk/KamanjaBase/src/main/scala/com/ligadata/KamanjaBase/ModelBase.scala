@@ -318,6 +318,11 @@ trait EnvContext {
   def NewMessageOrContainer(fqclassname: String): MessageContainerBase
 }
 
+/**
+ * The ModelBase describes the base behavior of all model instances, regardless of their kind.
+ * @param modelContext The model context supplied to the associated factory is stored as part of the instance state.
+ * @param factory the factory that created the ModelBase derivative.
+ */
 abstract class ModelBase(val modelContext: ModelContext, val factory: ModelBaseObj) {
     /**
      * Answer the model's namespace.name.
@@ -353,6 +358,9 @@ abstract class ModelBase(val modelContext: ModelContext, val factory: ModelBaseO
     def execute(outputDefault: Boolean): ModelResultBase // if outputDefault is true we will output the default value if nothing matches, otherwise null
 }
 
+/**
+ * ModelBaseObj describes the contract for Model factories.
+ */
 trait ModelBaseObj {
     /**
      * Determine if the supplied message can be consumed by the model mentioned in the argument list.  The engine will

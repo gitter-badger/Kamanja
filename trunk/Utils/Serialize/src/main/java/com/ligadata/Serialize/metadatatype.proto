@@ -84,9 +84,18 @@ message MetadataType {
    }
 
    message Model {
-   	required ProtoBaseElem pbe = 1;
-   	required string modelType = 2 [default = "RuleSet"];
-	repeated Attribute  inputVars = 3;
-	repeated Attribute  outputVars = 4;
+	   required ProtoBaseElem pbe = 1;
+	   optional string modelType = 2 [default = "Unknown"];
+	   repeated Attribute  inputVars = 3;
+	   repeated Attribute  outputVars = 4;
+	   optional string modelRep = 5;
+	   optional string ObjectDefinition = 6;
+	   optional string ObjectFormat = 7;
+	   optional bool   isReusable = 8;
+	   optional bool   recompile = 9;
+	   optional bool   supportsInstanceSerialization = 10;
+	   optional string msgConsumed = 11;
    }
+
+
 }

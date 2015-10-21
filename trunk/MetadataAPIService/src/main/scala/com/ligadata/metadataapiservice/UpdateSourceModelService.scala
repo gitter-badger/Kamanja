@@ -19,6 +19,7 @@ package com.ligadata.metadataapiservice
 import akka.actor.{Actor, ActorRef}
 import akka.event.Logging
 import akka.io.IO
+import com.ligadata.MetadataAPI.MetadataAPI.ModelType
 import spray.routing.RequestContext
 import spray.httpx.SprayJsonSupport
 import spray.client.pipelining._
@@ -73,7 +74,7 @@ class UpdateSourceModelService(requestContext: RequestContext, userid:Option[Str
     }
     else {
 
-      val apiResult = MetadataAPIImpl.UpdateModel(pmmlStr,"scala",usersModelName,userid)
+      val apiResult = MetadataAPIImpl.UpdateModel(ModelType.SCALA, pmmlStr, userid, Some(usersModelName))
       requestContext.complete(apiResult)
     }
   }
@@ -91,7 +92,7 @@ class UpdateSourceModelService(requestContext: RequestContext, userid:Option[Str
       requestContext.complete(new ApiResult(ErrorCodeConstants.Failure, APIName, null,  "Failed to add model. No model configuration name supplied. Please specify in the header the model configuration name where the key is 'modelname' and the value is the name of the configuration.").toString )
     }
     else {
-      val apiResult = MetadataAPIImpl.UpdateModel(pmmlStr,"java",usersModelName,userid)
+      val apiResult = MetadataAPIImpl.UpdateModel(ModelType.JAVA, pmmlStr,userid, Some(usersModelName))
       requestContext.complete(apiResult)
     }
   }

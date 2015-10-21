@@ -74,7 +74,7 @@ class AddSourceModelService(requestContext: RequestContext, userid:Option[String
       requestContext.complete(new ApiResult(ErrorCodeConstants.Failure, APIName, null,  "Failed to add model. No model configuration name supplied. Please specify in the header the model configuration name where the key is 'modelname' and the value is the name of the configuration.").toString )
     }
     else {
-      val apiResult = MetadataAPIImpl.AddModel(sourceCode,ModelType.JAVA, Some(usersModelName), userid)
+      val apiResult = MetadataAPIImpl.AddModel(ModelType.JAVA, sourceCode, userid, Some(usersModelName))
       requestContext.complete(apiResult)
     }
   }
@@ -102,7 +102,7 @@ class AddSourceModelService(requestContext: RequestContext, userid:Option[String
     }
     else {
       //def AddModelFromSource(sourceCode: String, sourceLang: String, modelName: String, userid: Option[String]): String = {
-      val apiResult = MetadataAPIImpl.AddModel(sourceCode,ModelType.SCALA, Some(usersModelName),userid)
+      val apiResult = MetadataAPIImpl.AddModel(ModelType.SCALA, sourceCode, userid, Some(usersModelName))
       requestContext.complete(apiResult)
     }
   }

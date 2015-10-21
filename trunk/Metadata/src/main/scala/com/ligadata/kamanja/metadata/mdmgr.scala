@@ -16,7 +16,9 @@
 
 package com.ligadata.kamanja.metadata
 
-import com.ligadata.kamanja.metadata.ClusterInfo
+//import com.ligadata.kamanja.metadata.ClusterInfo
+import com.ligadata.kamanja.metadata.MiningModelType.MiningModelType
+import com.ligadata.kamanja.metadata.ModelRepresentation.ModelRepresentation
 
 import scala.Enumeration
 import scala.collection.immutable.List
@@ -476,8 +478,7 @@ class MdMgr {
   /**
    *  Construct an ArgDef from the supplied arguments.
    *
-   *  @param fn - the FunctionDef instance to receive the constructed argument
-   *  @param name - the arguments parameter name.
+ \   *  @param name - the arguments parameter name.
    *  @param nmSpc - the type namespace for this argument
    *  @param tName - the argument's type name
    *  @return an ArgDef
@@ -1018,9 +1019,9 @@ class MdMgr {
   /**
    *  MakeTypeDef catalogs the base type def (or one of its subclasses) supplied.
    *
-   *  @param nameSpace - the type namespace
-   *  @param name - the type name.
-   *  @param typeType - the type supplied
+   *  param nameSpace - the type namespace
+   *  param name - the type name.
+   *  param typeType - the type supplied
    */
   /*
   // physicalName may be null
@@ -1732,8 +1733,16 @@ class MdMgr {
    *
    *  @param nameSpace - the namespace in which this message should be cataloged
    *  @param name - the name of the message.
-   *  @param className - the fully qualified name of the class that will represent the runtime instance of the message
+   *  @param physicalName - the fully qualified name of the class that will represent the runtime instance of the message
    *  @param args - a List of attributes information (attribute namespace, attribute name, attribute type namespace, attribute type name, isGlobal)
+   *  @param ver
+   *  @param jarNm
+   *  @param depJars
+   *  @param primaryKeys
+   *  @param foreignKeys
+   *  @param partitionKey
+   *  @param recompile
+   *  @param persist
    */
 
   @throws(classOf[AlreadyExistsException])
@@ -1767,7 +1776,25 @@ class MdMgr {
     msg
   }
 
-  @throws(classOf[AlreadyExistsException])
+    /**
+     *  Construct and catalog a fixed container with the supplied named attributes. They may be of arbitrary
+     *  types.
+     *
+     *  @param nameSpace - the namespace in which this message should be cataloged
+     *  @param name - the name of the message.
+     *  @param physicalName - the fully qualified name of the class that will represent the runtime instance of the message
+     *  @param args - a List of attributes information (attribute namespace, attribute name, attribute type namespace, attribute type name, isGlobal)
+     *  @param ver
+     *  @param jarNm
+     *  @param depJars
+     *  @param primaryKeys
+     *  @param foreignKeys
+     *  @param partitionKey
+     *  @param recompile
+     *  @param persist
+     */
+
+    @throws(classOf[AlreadyExistsException])
   @throws(classOf[NoSuchElementException])
   def MakeFixedContainer(nameSpace: String, name: String, physicalName: String, args: List[(String, String, String, String, Boolean, String)], ver: Long = 1, jarNm: String = null, depJars: Array[String] = null, primaryKeys: List[(String, List[String])] = null, foreignKeys: List[(String, List[String], String, List[String])] = null, partitionKey: Array[String] = null, recompile: Boolean = false,persist: Boolean = false): ContainerDef = {
 
@@ -1805,8 +1832,17 @@ class MdMgr {
    *
    *  @param nameSpace - the namespace in which this message should be cataloged
    *  @param name - the name of the message.
-   *  @param argTypes - a List of attributes information (attribute namespace, attribute name, attribute type namespace, attribute type name, isGlobal)
-   *  @return the constructed message as a modicum of convenience
+   *  @param physicalName - the fully qualified name of the class that will represent the runtime instance of the message
+   *  @param args - a List of attributes information (attribute namespace, attribute name, attribute type namespace, attribute type name, isGlobal)
+   *  @param ver
+   *  @param jarNm
+   *  @param depJars
+   *  @param primaryKeys
+   *  @param foreignKeys
+   *  @param partitionKey
+   *  @param recompile
+   *  @param persist
+   *  @return a (mapped) MessageDef
    */
 
   @throws(classOf[AlreadyExistsException])
@@ -1839,7 +1875,25 @@ class MdMgr {
     msg
   }
 
-  @throws(classOf[AlreadyExistsException])
+    /**
+     *  Construct and catalog a "map based" container with an arbitrary number of named attributes with <b>HETEROGENEOUS</b> types.
+     *
+     *  @param nameSpace - the namespace in which this message should be cataloged
+     *  @param name - the name of the message.
+     *  @param physicalName - the fully qualified name of the class that will represent the runtime instance of the message
+     *  @param args - a List of attributes information (attribute namespace, attribute name, attribute type namespace, attribute type name, isGlobal)
+     *  @param ver
+     *  @param jarNm
+     *  @param depJars
+     *  @param primaryKeys
+     *  @param foreignKeys
+     *  @param partitionKey
+     *  @param recompile
+     *  @param persist
+     *  @return a (mapped) ContainerDef
+     */
+
+    @throws(classOf[AlreadyExistsException])
   @throws(classOf[NoSuchElementException])
   def MakeMappedContainer(nameSpace: String, name: String, physicalName: String, args: List[(String, String, String, String, Boolean, String)], ver: Long, jarNm: String, depJars: Array[String], primaryKeys: List[(String, List[String])], foreignKeys: List[(String, List[String], String, List[String])], partitionKey: Array[String], recompile: Boolean = false,persist: Boolean = false): ContainerDef = {
 
@@ -1874,10 +1928,25 @@ class MdMgr {
   /**
    *  Construct and catalog a "map based" message container with an arbitrary number of <b>HOMOGENEOUSLY</b> typed value attributes.
    *
+  /**
+   *  Construct and catalog a "map based" container with an arbitrary number of named attributes with <b>HETEROGENEOUS</b> types.
+   *
    *  @param nameSpace - the namespace in which this message should be cataloged
    *  @param name - the name of the message.
-   *  @param argTypes - a List of triples (attribute name, attribute type namespace, attribute type name)
-   *  @return the constructed message as a modicum of convenience
+   *  @param physicalName - the fully qualified name of the class that will represent the runtime instance of the message
+   *  @param argTypNmSpName - a List of attributes information (attribute type namespace, attribute type name)
+   *  @param argNames - a corresponding list of attribute names
+   *  @param ver
+   *  @param jarNm
+   *  @param depJars
+   *  @param primaryKeys
+   *  @param foreignKeys
+   *  @param partitionKey
+   *  @param recompile
+   *  @param persist
+   *  @return a (mapped) MessageDef
+   */
+
    */
   @throws(classOf[AlreadyExistsException])
   @throws(classOf[NoSuchElementException])
@@ -1916,6 +1985,63 @@ class MdMgr {
   }
 
   /**
+   *   @deprecated("compatibility with old style model def...uses of this should be replaced with fully specified version","2015-10-15")
+   *  Construct and catalog a model definition.  NOTE: This function services old style ModelDef uses.  Particularly, PMML and JPMML are no
+   *  longer using this method.  They now use the fully specified argument version.
+   *
+   *  @param nameSpace - the namespace in which this model should be cataloged
+   *  @param name - the name of the model.
+   *  @param physicalName - the fully qualified className for the compiled model.
+   *  @param mdlType - a string identifier that makes note of the type of mining model this is (should match a ModelInputType enum value)
+   *  @param inputVars - a List of quintuples (model var namespace (for msg or concept), variable name, type namespace
+   *  					, type name, isGlobal (a concept that has been independently cataloged, collectionType (not used) ))
+   *  @param outputVars - a List of triples (output variable name, output var type nmspc, output variable type).  Note that the output
+   *                    variable inherits its model's namespace.
+   *  @param ver - a long... the version number assigned to this model ... by default '1'
+   *  @param jarNm - the name of the jar sans path.  The path is prescribed by the engine configuration
+   *  @param depJars - the jars upon which the jarNm depends in order to execute
+   *  @param recompile a Boolean flag that when true will verify that the existing model not only exists for this model name, but
+   *                   that it has an older version than the one being supplied.  When false, version equality is ok (i.e., the model
+   *                   is being replaced).
+   *  @param supportsInstanceSerialization when true, instances of this model are serialized and persisted in the metadata store, saving startup costs
+   *                 required to prepare new instances.  NOTE: this feature is **not** implemented, but will prove useful for reducing
+   *                 cluster startup costs for JPMML models in particular.
+   *  @return the ModelDef instance
+   *
+   */
+
+  def MakeModelDef(nameSpace: String
+                   , name: String
+                   , physicalName: String
+                   , mdlType: String
+                   , inputVars: List[(String, String, String, String, Boolean, String)]
+                   , outputVars: List[(String, String, String)]
+                   , ver: Long
+                   , jarNm: String
+                   , depJars: Array[String]
+                   , recompile: Boolean
+                   , supportsInstanceSerialization: Boolean): ModelDef = {
+
+        val modelType : MiningModelType.MiningModelType = MiningModelType.modelType(mdlType)
+        val modelRep : ModelRepresentation.ModelRepresentation = ModelRepresentation.JAR
+        MakeModelDef(nameSpace
+                    , name
+                    , physicalName
+                    , modelRep
+                    , false /** isReusable */
+                    , "" /** msgConsumed */
+                    , "" /** jpmml string */
+                    , modelType
+                    , inputVars: List[(String, String, String, String, Boolean, String)]
+                    , outputVars: List[(String, String, String)]
+                    , ver
+                    , jarNm
+                    , depJars
+                    , recompile
+                    , supportsInstanceSerialization)
+  }
+
+  /**
    *  Construct and catalog a model definition.  The model definition represents the essential metadata regarding
    *  a PMML generated model, including the identifying information, the model type, and the inputs and output
    *  variables used/generated by the model.  The input and output information is used by the online learning engine
@@ -1923,70 +2049,117 @@ class MdMgr {
    *
    *  @param nameSpace - the namespace in which this model should be cataloged
    *  @param name - the name of the model.
-   *  @param className - the fully qualified className for the compiled model.
-   *  @param inputVars - a List of quintuples (model var namespace (could be msg or concept or modelname), variable name, type namespace
-   *  					, type name, and whether the variable is global (a concept that has been independently cataloged))
-   *  @param outputVars - a List of pairs (output variable name, output variable type).  Note that the output variable inherits
-   *  			its model's namespace.
-   *  @return the ModelDef instance as a measure of convenience
+   *  @param physicalName - the fully qualified className for the compiled model.
+   *  @param modelRep - the sort of model input this is (e.g., a Jar, a JPMML src string, et al)
+   *  @param isReusable - can instances of this model be cached by the engine and reused on subsequent calls for same type?
+   *  @param msgConsumed - relevent for JPMML models, this is the full qualified name of the message from which content
+   *                     will be extracted for the jpmml evaluator
+   *  @param jpmmlStr - relevent for JPMML models, this is the actual xml PMML that is to be ingested by the JPMML evaluator factory
+   *  @param miningModelType :  a visual identifier that can be queried for and/or displayed. Values
+   *                             for this currently include any of the dmg.org model types or our own types... any {BaselineModel, ClusteringModel,
+   *                             GeneralRegressionModel, MiningModel, NaiveBayesModel, NearestNeighborModel, NeuralNetwork, RegressionModel,
+   *                             RuleSetModel, SequenceModel, Scorecard, SupportVectorMachineModel, TextModel, TimeSeriesModel, TreeModel,
+   *                             CustomScala, CustomJava, Unknown}
+   *  @param inputVars - a List of quintuples (model var namespace (for msg or concept), variable name, type namespace
+   *  					, type name, isGlobal (a concept that has been independently cataloged, collectionType (not used) ))
+   *  @param outputVars - a List of triples (output variable name, output var type nmspc, output variable type).  Note that the output
+   *                    variable inherits its model's namespace.
+   *  @param ver - a long... the version number assigned to this model ... by default '1'
+   *  @param jarNm - the name of the jar sans path.  The path is prescribed by the engine configuration
+   *  @param depJars - the jars upon which the jarNm depends in order to execute
+   *  @param recompile a Boolean flag that when true will verify that the existing model not only exists for this model name, but
+   *                   that it has an older version than the one being supplied.  When false, version equality is ok (i.e., the model
+   *                   is being replaced).
+   *  @param supportsInstanceSerialization when true, instances of this model are serialized and persisted in the metadata store, saving startup costs
+   *                 required to prepare new instances.  NOTE: this feature is **not** implemented, but will prove useful for reducing
+   *                 cluster startup costs for JPMML models in particular when it **is**.
+   *  @return the ModelDef instance
    *
    */
 
-  def MakeModelDef(nameSpace: String, name: String, physicalName: String, modelType: String, inputVars: List[(String, String, String, String, Boolean, String)], outputVars: List[(String, String, String)], ver: Long = 1, jarNm: String = null, depJars: Array[String] = null, recompile: Boolean = false,persist: Boolean = false): ModelDef = {
+  def MakeModelDef(nameSpace: String
+                   , name: String
+                   , physicalName: String
+                   , modelRep: ModelRepresentation = ModelRepresentation.JAR
+                   , isReusable : Boolean = false
+                   , msgConsumed: String = ""
+                   , jpmmlStr : String = ""
+                   , miningModelType: MiningModelType = MiningModelType.Unknown
+                   , inputVars: List[(String, String, String, String, Boolean, String)] = List[(String, String, String, String, Boolean, String)]()
+                   , outputVars: List[(String, String, String)] = List[(String, String, String)]()
+                   , ver: Long = 1
+                   , jarNm: String = null
+                   , depJars: Array[String] = null
+                   , recompile: Boolean = false
+                   , supportsInstanceSerialization: Boolean = false): ModelDef = {
 
-    var modelExists: Boolean = false
-    val existingModel = Model(nameSpace, name, -1, false)
-    if (existingModel != None) {
-      val latestmodel = existingModel.get.asInstanceOf[ModelDef]
-      if (recompile == true) { // version equality is OK, if we are recompiling
-        if (ver < latestmodel.Version) {
-          modelExists = true
+        /** Determine model existence constraints and throw exception if they are not met */
+        var modelExists: Boolean = false
+        val existingModel = Model(nameSpace, name, -1, false)
+        if (existingModel != None) {
+                val latestmodel = existingModel.get.asInstanceOf[ModelDef]
+                if (recompile == true) { // version equality is OK, if we are recompiling
+                    if (ver < latestmodel.Version) {
+                    modelExists = true
+                }
+            } else {
+                if (ver <= latestmodel.Version) {
+                    modelExists = true
+                }
+            }
         }
-      } else {
-        if (ver <= latestmodel.Version) {
-          modelExists = true
+        if (modelExists) {
+            throw new AlreadyExistsException(s"Model $nameSpace.$name version should be higher than existing Models.")
         }
-      }
-    }
-    if (modelExists) {
-      throw new AlreadyExistsException(s"Model $nameSpace.$name version should be higher than existing Models.")
-    }
 
-    //val modelToBeReplaced: Boolean = (Model(nameSpace, name, -1, false) != None)
-    //  if (modelToBeReplaced) {
-    //   throw new AlreadyExistsException(s"Model $nameSpace.$name already exists.")
-    // }
+        /** Create the BaseAttributeDef instances for the supplied input and output variable lists */
+        val mdlNm = MdMgr.MkFullName(nameSpace, name)
+        val depJarSet = scala.collection.mutable.Set[String]()
+        val outVars : Array[BaseAttributeDef] = outputVars.map(o => {
+            val (nm, typnsp, typenm) = o
+            val atr = MakeAttribDef(mdlNm, nm, typnsp, typenm, ver, false, null) //BUGBUG::Making all local Attributes and Collection Types does not handled
+            if (atr.JarName != null) depJarSet += atr.JarName
+            if (atr.DependencyJarNames != null) depJarSet ++= atr.DependencyJarNames
+            atr
+        }).toArray
 
-    val mdl: ModelDef = new ModelDef
-    mdl.PhysicalName(physicalName)
-    mdl.modelType = modelType
-    val depJarSet = scala.collection.mutable.Set[String]()
+        val inVars : Array[BaseAttributeDef] = inputVars.map(elem => {
+            val (varNameSp, varName, typeNameNs, typeName, isGlobal, collectionType) = elem
+            val atr = MakeAttribDef(varNameSp, varName, typeNameNs, typeName, ver, isGlobal, collectionType)
+            if (atr.JarName != null) depJarSet += atr.JarName
+            if (atr.DependencyJarNames != null) depJarSet ++= atr.DependencyJarNames
+            atr
+        }).toArray
 
-    val mdlNm = MdMgr.MkFullName(nameSpace, name)
-    // val mdlOutputVars = outputVars.map(o => (mdlNm, o._1, o._2, o._3))
+        /** Instantiate the model definition.  Update the base element with basic id information */
+        val mdl: ModelDef = new ModelDef( modelRep
+                                        , miningModelType
+                                        , inVars
+                                        , outVars
+                                        , isReusable
+                                        , msgConsumed
+                                        , supportsInstanceSerialization)
 
-    mdl.outputVars = outputVars.map(o => {
-      val (nm, typnsp, typenm) = o
-      val atr = MakeAttribDef(mdlNm, nm, typnsp, typenm, ver, false, null) //BUGBUG::Making all local Attributes and Collection Types does not handled
-      if (atr.JarName != null) depJarSet += atr.JarName
-      if (atr.DependencyJarNames != null) depJarSet ++= atr.DependencyJarNames
-      atr
-    }).toArray
+        /** FIXME: All of the statements down to the return of the ModelDef instance really should be just arguments
+          * to the constructor that utilizes values instead of the variables now in use... save this work for a refactor
+          * effort in the future.
+          */
+        if (depJars != null) depJarSet ++= depJars
+        val dJars = if (depJarSet.size > 0) depJarSet.toArray else null
 
-    mdl.inputVars = inputVars.map(elem => {
-      val (varNameSp, varName, typeNameNs, typeName, isGlobal, collectionType) = elem
-      val atr = MakeAttribDef(varNameSp, varName, typeNameNs, typeName, ver, isGlobal, collectionType)
-      if (atr.JarName != null) depJarSet += atr.JarName
-      if (atr.DependencyJarNames != null) depJarSet ++= atr.DependencyJarNames
-      atr
-    }).toArray
+        /** In the case of a JPMML model, save the string in the model representation now.  JPMML strings are
+          * (for the first go) to be injested at the last possible minute by the shim model's factory object.
+          * The instances so created will be cached for subsequent calls on the thread with which the instance
+          * is associated.
+          */
+        if (mdl.modelRepresentation == ModelRepresentation.JPMML) {
+            mdl.ObjectDefinition(jpmmlStr)
+            mdl.ObjectFormat(ObjFormatType.fJPMML)
+        }
+        mdl.PhysicalName(physicalName)
+        SetBaseElem(mdl, nameSpace, name, ver, jarNm, dJars)
 
-    if (depJars != null) depJarSet ++= depJars
-    val dJars = if (depJarSet.size > 0) depJarSet.toArray else null
-
-    SetBaseElem(mdl, nameSpace, name, ver, jarNm, dJars)
-
-    mdl
+        mdl
   }
 
   // Add Functions
@@ -2443,15 +2616,12 @@ class MdMgr {
    *  @param name - the function name that all are to be cataloged in the nameSpace argument.
    *  @param retTypeNsName - a tuple (return type namespace and name)
    *  @param args - a List of triples (argument name, argument type namespace and type name), one for each argument
-   *  @param args - a List of triples (argument name, argument type namespace and type name), one for each argument
-   *  @param fmfeatures - a set of hints that describe the sort of function being cataloged.  See mdelems.scala for details
+   *  @param macrofeatures - a set of hints that describe the sort of function being cataloged.  See mdelems.scala for details
    *  @param macroTemplateStrs - a Tuple2.  when the function has CLASSUPDATE feature, the first macro in the pair
    *  		has the "builds" template has a template that supports "fixed" container field update.  The second string
    *    	in the tuple contains the "mapped" container template for same function.  When the CLASSUPDATE feature is
    *     	not specified, the same macro template can be specified for both tuple._1 and ._2.  A convenience
    *      	method is available that handles this for you.
-   *
-   *
    *  @param ver - the version of the function
    *
    */
@@ -2467,9 +2637,8 @@ class MdMgr {
    *  @param name - the function name that all are to be cataloged in the nameSpace argument.
    *  @param retTypeNsName - a tuple (return type namespace and name)
    *  @param args - a List of triples (argument name, argument type namespace and type name), one for each argument
-   *  @param args - a List of triples (argument name, argument type namespace and type name), one for each argument
-   *  @param fmfeatures - a set of hints that describe the sort of function being cataloged.  See mdelems.scala for details
-   *  @param macroTemplateStrs - a Tuple2.  when the function does not support CLASSUPDATE feature, supply just
+   *  @param macrofeatures - a set of hints that describe the sort of function being cataloged.  See mdelems.scala for details
+   *  @param macroTemplateStr - a Tuple2.  when the function does not support CLASSUPDATE feature, supply just
    *  	one template to this method.
    *
    *
@@ -2509,7 +2678,7 @@ class MdMgr {
    *
    *  @param nameSpace - the namespace in which this message should be cataloged
    *  @param name - the name of the message.
-   *  @param className - the fully qualified name of the class that will represent the runtime instance of the message
+   *  @param physicalName - the fully qualified name of the class that will represent the runtime instance of the message
    *  @param args - a List of attributes information (attribute namespace, attribute name, attribute type namespace, attribute type name, isGlobal)
    */
 
@@ -2524,8 +2693,14 @@ class MdMgr {
    *
    *  @param nameSpace - the namespace in which this message should be cataloged
    *  @param name - the name of the message.
-   *  @param argTypes - a List of attributes information (attribute namespace, attribute name, attribute type namespace, attribute type name, isGlobal)
-   *  @return the constructed message as a modicum of convenience
+   *  @param args - a List of attributes information (attribute namespace, attribute name, attribute type namespace, attribute type name, isGlobal)
+   *  @param ver
+   *  @param jarNm
+   *  @param depJars
+   *  @param primaryKeys
+   *  @param foreignKeys
+   *  @param partitionKey
+   *  @return Unit
    */
 
   @throws(classOf[AlreadyExistsException])
@@ -2539,8 +2714,15 @@ class MdMgr {
    *
    *  @param nameSpace - the namespace in which this message should be cataloged
    *  @param name - the name of the message.
-   *  @param argTypes - a List of triples (attribute name, attribute type namespace, attribute type name)
-   *  @return the constructed message as a modicum of convenience
+   *  @param argTypNmSpName - a List of triples (attribute type namspace, attribute type name)
+   *  @param argNames - a corresponding list of the attribute names for the types
+   *  @param ver
+   *  @param jarNm
+   *  @param depJars
+   *  @param primaryKeys
+   *  @param foreignKeys
+   *  @param partitionKey
+   *  @return Unit
    */
   @throws(classOf[AlreadyExistsException])
   @throws(classOf[NoSuchElementException])
@@ -2571,8 +2753,15 @@ class MdMgr {
    *
    *  @param nameSpace - the namespace in which this message should be cataloged
    *  @param name - the name of the message.
-   *  @param className - the fully qualified name of the class that will represent the runtime instance of the message
+   *  @param physicalName - the fully qualified name of the class that will represent the runtime instance of the message
    *  @param args - a List of attributes information (attribute namespace, attribute name, attribute type namespace, attribute type name, isGlobal)
+   *  @param ver
+   *  @param jarNm
+   *  @param depJars
+   *  @param primaryKeys
+   *  @param foreignKeys
+   *  @param partitionKey
+   *  @return Unit
    */
 
   @throws(classOf[AlreadyExistsException])
@@ -2586,8 +2775,14 @@ class MdMgr {
    *
    *  @param nameSpace - the namespace in which this message should be cataloged
    *  @param name - the name of the message.
-   *  @param argTypes - a List of attributes information (attribute namespace, attribute name, attribute type namespace, attribute type name, isGlobal)
-   *  @return the constructed message as a modicum of convenience
+   *  @param args - a List of attributes information (attribute namespace, attribute name, attribute type namespace, attribute type name, isGlobal)
+   *  @param ver
+   *  @param jarNm
+   *  @param depJars
+   *  @param primaryKeys
+   *  @param foreignKeys
+   *  @param partitionKey
+   *  @return Unit
    */
 
   @throws(classOf[AlreadyExistsException])
@@ -2630,15 +2825,19 @@ class MdMgr {
    *
    *  @param nameSpace - the namespace in which this model should be cataloged
    *  @param name - the name of the model.
-   *  @param className - the fully qualified className for the compiled model.
+   *  @param physicalName - the fully qualified className for the compiled model.
+   *  @param modelType - the sort of model that this is (e.g., RuleSet
    *  @param inputVars - a List of quintuples (model var namespace (could be msg or concept or modelname), variable name, type namespace, and type name)
    *  @param outputVars - a List of pairs (output variable name, output variable type).  Note that the output variable inherits
    *  			its model's namespace.
+   *  @param ver - the version of assigned to this model
+   *  @param jarNm - the jar name, sans path, that contains this model
+   *  @param depJars - the jars upon which this model
    *  @return the ModelDef instance as a measure of convenience
    *
    */
   def AddModelDef(nameSpace: String, name: String, physicalName: String, modelType: String, inputVars: List[(String, String, String, String, Boolean, String)], outputVars: List[(String, String, String)], ver: Long = 1, jarNm: String = null, depJars: Array[String] = Array[String]()): Unit = {
-    AddModelDef(MakeModelDef(nameSpace, name, physicalName, modelType, inputVars, outputVars, ver, jarNm, depJars), false)
+    AddModelDef(MakeModelDef(nameSpace, name, physicalName, modelType, inputVars, outputVars, ver, jarNm, depJars, false, false), false)
   }
 
   def AddModelDef(mdl: ModelDef, allowLatestVersion: Boolean): Unit = {
@@ -2740,8 +2939,7 @@ class MdMgr {
   
   /**
    * AddUserProperty - add UserPropertiesMap to a local cache
-   * @parms - clusterId: String
-   * @parms - upi: UserPropertiesInfo
+   * @param upi: UserPropertiesInfo
    */
   def AddUserProperty(upi: UserPropertiesInfo): Unit = {
     configurations(upi.ClusterId) = upi
@@ -2749,8 +2947,8 @@ class MdMgr {
   
   /**
    * GetUserProperty - return a String value of a User Property
-   * @parm - clusterId: String
-   * @parm - key: String
+   * @param clusterId: String
+   * @param key: String
    */
   def GetUserProperty(clusterId: String, key: String): String = {
     if (configurations.contains(clusterId)) {

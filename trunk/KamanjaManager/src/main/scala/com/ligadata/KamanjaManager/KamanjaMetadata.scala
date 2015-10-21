@@ -17,16 +17,16 @@
 
 package com.ligadata.KamanjaManager
 
-
-import com.ligadata.jpmml.JpmmlAdapter
+import com.ligadata.KamanjaBase.ModelInfo
 import com.ligadata.kamanja.metadata.{ BaseElem, MappedMsgTypeDef, BaseAttributeDef, StructTypeDef, EntityType, AttributeDef, ArrayBufTypeDef, MessageDef, ContainerDef, ModelDef }
 import com.ligadata.kamanja.metadata._
 import com.ligadata.kamanja.metadata.MdMgr._
+import com.ligadata.jpmml.JpmmlAdapter
 
 import com.ligadata.kamanja.metadataload.MetadataLoad
 import scala.collection.mutable.TreeSet
 import scala.util.control.Breaks._
-import com.ligadata.KamanjaBase.{ BaseMsg, ModelInfo, MessageContainerBase, MessageContainerObjBase, BaseMsgObj, BaseContainerObj, BaseContainer, ModelBaseObj, TransformMessage, EnvContext, MdBaseResolveInfo }
+import com.ligadata.KamanjaBase._
 import scala.collection.mutable.HashMap
 import org.apache.log4j._
 import scala.collection.mutable.ArrayBuffer
@@ -56,7 +56,7 @@ class KamanjaMetadata {
   // Metadata manager
   val messageObjects = new HashMap[String, MsgContainerObjAndTransformInfo]
   val containerObjects = new HashMap[String, MsgContainerObjAndTransformInfo]
-  val modelObjects = new HashMap[String, ModelInfo]
+  val modelObjects = new HashMap[String, com.ligadata.KamanjaBase.ModelInfo]
 
   def ValidateAllRequiredJars(tmpMsgDefs: Option[scala.collection.immutable.Set[MessageDef]], tmpContainerDefs: Option[scala.collection.immutable.Set[ContainerDef]],
     tmpModelDefs: Option[scala.collection.immutable.Set[ModelDef]]): Boolean = {
@@ -307,27 +307,27 @@ class KamanjaMetadata {
    * ModelInfo so that JPMML can function without redesigning the interaction of models and engine.  Near term, let's not
    * redesign the interaction.  This continues to be hidden in the model factory(ies).
    *
-   * ModelInfo provide the essential information for model execution for the engine.  For most models, the factory instance and the
-   * jars required to be loaded in order to execute the model is all that is required.  This is because until the JPMML, there
-   * was only one model to contend with in the factory.  With JPMML, all the JPMML models will be managed by one factory. The
-   * factory will be responsible for managing instances of its JPMML models as well, avoiding the costly ingestion for each new
-   * message by reusing the existing instances.
+   * ModelInfo provide the essential information for model execution.  For most models, the factory instance and the
+   * jars required to be loaded in order to execute the model is all that is required.  There are exceptions.  JPMML
+   * evaluated models is such a case.  Before it executes, it needs to be ingested and the evaluation tree formed for
+   * it.  Furthermore, the factory that does this work is the same model for **ALL** JPMML models.
    *
-   * What this means is that same ModelBaseObj instance, namely JpmmlAdapter, will be initialized for all models
+   * What this means is that same ModelBaseObj instance, namely JpmmlModelFactory, will be initialized for all models
    * that are JPMML flavor. I don't believe this presents an issue in terms of functionality.  The KamanjaConfiguration.metadataLoader
-   * will dutifully produce the singleton again and again for the same factory.
+   * will dutifully produce the singleton.  What IS needed, however, is additional information that is not currently in the
+   * ModelInfo.  These include the pmml source text (an Option[String], the message namespace.name that the model will consume
+   * (an Option[String]), the message version (a Long), the modelNamespace.name (Option[String]), and the model version (a Long)
    *
-   * What IS needed, however, is additional information that is not currently in the ModelInfo.  These include the pmml source text,
-   * the message namespace.name that the model will consume (a String), the message version (a Long), the
-   * modelNamespace.name (String), and the model version (a Long).
+   * Rationale:  For now the JpmmlModelFactory will perform the model ingestion and create an JpmmlAdapter instance
+   * that contain the resulting JPMML evaluator for it.  These instances will be cached in the JpmmlModelFactory and
+   * when one is available for the supplied message to IsValidMessage for the current thread, it will returned by
+   * CreateNewModel instead of fabricating a new one.  All JPMML models are idempotent and reusable.
    *
-   * There seem to be a couple of approaches to provide the information to the JpmmlAdapter factory, but I think the one that
-   * provides a more strategic implementation (solving other problems down stream for the anticipated other models we will
-   * support like c-python) is to give a MdMgr reference to the factory (at least the JpmmlAdapter factory perhaps at first).
-   *
-   * The engine then simply supplies the keys that are needed by the factory to fetch the necessary PMML text string for example,
-   * With the metadata manager instance, if it needs to build and cache a new instance it can do that.  The interface for the
-   * models have no change except the explicit mention of the model that is of interest to the engine (from its ModelInfo).
+   * For the JpmmlModelFactory to make the determination that the message is consumable by one of its models, the
+   * ModelInfo will be supplied to the IsValidMessage as well as CreateNewModel (via the ModelContext).  Rather than
+   * pass the entire ModelInfo into the model and thereby exposing a bunch of details to the model that are really none
+   * of its business, the explicit fields required for JPMML model message consumption check and the model instantiation
+   * will be a new structure in the ModelContext.. an Option[JPMMLInfo] which except for the JPMML models, will be None.
    *
    * @param clsName the fully qualified class name of the model factory instance to be created
    * @param mdl
@@ -550,7 +550,6 @@ class KamanjaMetadata {
     modelDefs.foreach(mdl => {
       PrepareModel(mdl, false) // Already Loaded required dependency jars before calling this
     })
-
   }
 }
 
@@ -559,7 +558,7 @@ object KamanjaMetadata extends MdBaseResolveInfo {
   private[this] val LOG = Logger.getLogger(getClass);
   private[this] val mdMgr = GetMdMgr
   private[this] var messageContainerObjects = new HashMap[String, MsgContainerObjAndTransformInfo]
-  private[this] var modelObjects = new HashMap[String, ModelInfo]
+  private[this] var modelObjects = new HashMap[String, com.ligadata.KamanjaBase.ModelInfo]
   private[this] var zkListener: ZooKeeperListener = _
 
   private[this] val reent_lock = new ReentrantReadWriteLock(true);
@@ -567,7 +566,7 @@ object KamanjaMetadata extends MdBaseResolveInfo {
   //LOG.setLevel(Level.TRACE)
 
   private def UpdateKamanjaMdObjects(msgObjects: HashMap[String, MsgContainerObjAndTransformInfo], contObjects: HashMap[String, MsgContainerObjAndTransformInfo],
-    mdlObjects: HashMap[String, ModelInfo], removedModels: ArrayBuffer[(String, String, Long)], removedMessages: ArrayBuffer[(String, String, Long)],
+    mdlObjects: HashMap[String, com.ligadata.KamanjaBase.ModelInfo], removedModels: ArrayBuffer[(String, String, Long)], removedMessages: ArrayBuffer[(String, String, Long)],
     removedContainers: ArrayBuffer[(String, String, Long)]): Unit = {
 
     var exp: Exception = null
@@ -589,7 +588,7 @@ object KamanjaMetadata extends MdBaseResolveInfo {
   }
 
   private def localUpdateKamanjaMdObjects(msgObjects: HashMap[String, MsgContainerObjAndTransformInfo], contObjects: HashMap[String, MsgContainerObjAndTransformInfo],
-    mdlObjects: HashMap[String, ModelInfo], removedModels: ArrayBuffer[(String, String, Long)], removedMessages: ArrayBuffer[(String, String, Long)],
+    mdlObjects: HashMap[String, com.ligadata.KamanjaBase.ModelInfo], removedModels: ArrayBuffer[(String, String, Long)], removedMessages: ArrayBuffer[(String, String, Long)],
     removedContainers: ArrayBuffer[(String, String, Long)]): Unit = {
     //BUGBUG:: Assuming there is no issues if we remove the objects first and then add the new objects. We are not adding the object in the same order as it added in the transaction. 
 
@@ -998,9 +997,9 @@ object KamanjaMetadata extends MdBaseResolveInfo {
     v
   }
 
-  def getModel(mdlName: String): ModelInfo = {
+  def getModel(mdlName: String): com.ligadata.KamanjaBase.ModelInfo = {
     var exp: Exception = null
-    var v: ModelInfo = null
+    var v: com.ligadata.KamanjaBase.ModelInfo = null
 
     reent_lock.readLock().lock();
     try {
@@ -1082,9 +1081,9 @@ object KamanjaMetadata extends MdBaseResolveInfo {
     v
   }
 
-  def getAllModels: Map[String, ModelInfo] = {
+  def getAllModels: Map[String, com.ligadata.KamanjaBase.ModelInfo] = {
     var exp: Exception = null
-    var v: Map[String, ModelInfo] = null
+    var v: Map[String, com.ligadata.KamanjaBase.ModelInfo] = null
 
     reent_lock.readLock().lock();
     try {
@@ -1132,7 +1131,7 @@ object KamanjaMetadata extends MdBaseResolveInfo {
     return null
   }
 
-  private def localgetModel(mdlName: String): ModelInfo = {
+  private def localgetModel(mdlName: String): com.ligadata.KamanjaBase.ModelInfo = {
     if (modelObjects == null) return null
     modelObjects.getOrElse(mdlName.toLowerCase, null)
   }
@@ -1160,7 +1159,7 @@ object KamanjaMetadata extends MdBaseResolveInfo {
     }).toMap
   }
 
-  private def localgetAllModels: Map[String, ModelInfo] = {
+  private def localgetAllModels: Map[String, com.ligadata.KamanjaBase.ModelInfo] = {
     if (modelObjects == null) return null
     modelObjects.toMap
   }

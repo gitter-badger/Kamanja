@@ -16,11 +16,13 @@
 
 package com.ligadata.pmml.compiler
 
+
 import scala.collection.mutable._
 import scala.io.Source
+import sys.process._
+
 import java.io.BufferedWriter
 import java.io.FileWriter
-import sys.process._
 import java.io.PrintWriter
 import java.io.File
 import java.io.FileInputStream
@@ -29,10 +31,10 @@ import java.io.ByteArrayInputStream
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 import javax.xml.parsers.SAXParserFactory
+
 import org.xml.sax.InputSource
 import org.xml.sax.XMLReader
 import org.apache.log4j.Logger
-import com.ligadata.kamanja.metadata.MdMgr._
 import com.ligadata.kamanja.metadata._
 import com.ligadata.kamanja.metadataload.MetadataLoad
 import com.ligadata.pmml.transforms.printers.scala.common._
@@ -41,6 +43,8 @@ import com.ligadata.pmml.xmlingestion._
 import com.ligadata.pmml.transforms.rawtocooked.common._
 import com.ligadata.pmml.transforms.xmltoraw.common._
 import com.ligadata.Exceptions.StackTrace
+import com.ligadata.kamanja.metadata.MiningModelType.MiningModelType
+import com.ligadata.kamanja.metadata.ModelRepresentation.ModelRepresentation
 
 
 /** 
@@ -558,19 +562,47 @@ class PmmlCompiler(val mgr : MdMgr, val clientName : String, val logger : Logger
 		
 		ctx.pmmlTerms("PMML") = Some(pmmlFilePath)  /** to document/identify originating file in source to be generated */
 		ctx.ClientName(clientName)
-		
-		val jarName : String = JarName(ctx)
 
-		val modelDef : ModelDef = mgr.MakeModelDef(modelNamespace
-							    , className
-							    , fqClassName
-							    , modelType
-							    , inputVars
-							    , outputVars
-							    , modelVersion
-							    , jarName
-							    , ctx.classPathJars.toArray
-							    , recompile)
+        /**
+        def MakeModelDef(nameSpace: String
+                       , name: String
+                       , physicalName: String
+                       , modelRep: ModelRepresentation
+                       , isReusable : Boolean
+                       , msgConsumed: String
+                       , jpmmlStr : String
+                       , miningModelType: MiningModelType
+                       , inputVars: List[(String, String, String, String, Boolean, String)]
+                       , outputVars: List[(String, String, String)]
+                       , ver: Long = 1
+                       , jarNm: String = null
+                       , depJars: Array[String] = null
+                       , recompile: Boolean = false
+                       ,supportsInstanceSerialization: Boolean = false): ModelDef
+
+          */
+        val jarName : String = JarName(ctx)
+        val modelRep : ModelRepresentation =  ModelRepresentation.JAR
+        val isReusable : Boolean = true
+        val msgConsumed : String = "" /** jpmml specific... ignored here */
+        val jpmmlStr : String = ""    /** jpmml specific... ignored here */
+        val miningModelType : MiningModelType = MiningModelType.RuleSetModel /** FIXME: this should be discerned by compiler and cached in context */
+        val supportsInstanceSerialization: Boolean = false /** FIXME: NOT SUPPORTED YET */
+        val modelDef : ModelDef = mgr.MakeModelDef(modelNamespace
+                                                , className
+                                                , fqClassName
+                                                , modelRep
+                                                , isReusable
+                                                , msgConsumed
+                                                , jpmmlStr
+                                                , miningModelType
+                                                , inputVars
+                                                , outputVars
+                                                , modelVersion
+                                                , jarName
+                                                , ctx.classPathJars.toArray
+                                                , recompile
+                                                , supportsInstanceSerialization)
 
 		modelDef
 	  

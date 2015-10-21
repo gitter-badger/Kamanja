@@ -98,8 +98,17 @@ case class MetadataAPIConfig(APIConfigParameters: ParameterMap)
 case class APIResultInfo(statusCode: Int, functionName: String, resultData: String, description: String)
 case class APIResultJsonProxy(APIResults: APIResultInfo)
 
+object MetadataAPIGlobalLogger {
+    val loggerName = this.getClass.getName()
+    val logger = Logger.getLogger(loggerName)
+}
+
+trait LogTrait {
+    val logger = MetadataAPIGlobalLogger.logger
+}
+
 // The implementation class
-object MetadataAPIImpl extends MetadataAPI {
+object MetadataAPIImpl extends MetadataAPI with LogTrait {
 
   lazy val sysNS = "System"
   // system name space
@@ -162,7 +171,7 @@ object MetadataAPIImpl extends MetadataAPI {
   /**
    *  getHealthCheck - will return all the health-check information for the nodeId specified.
    *  @param nodeId a cluster node: String - if no parameter specified, return health-check for all nodes
-   * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
+   *  @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
    *               method. If Security and/or Audit are configured, this value must be a value other than None.
    */
     def getHealthCheck(nodeId: String, userid: Option[String]): String = {

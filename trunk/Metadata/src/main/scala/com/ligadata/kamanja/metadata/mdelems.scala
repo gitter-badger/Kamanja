@@ -19,7 +19,8 @@ package com.ligadata.kamanja.metadata
 import java.io.{DataInputStream, DataOutputStream}
 import java.util._
 
-import com.ligadata.kamanja.metadata.ModelInputType.ModelInputType
+import com.ligadata.kamanja.metadata.MiningModelType.MiningModelType
+import com.ligadata.kamanja.metadata.ModelRepresentation.ModelRepresentation
 
 import scala.Enumeration
 import scala.collection.mutable.{Map, Set}
@@ -27,20 +28,34 @@ import scala.collection.mutable.{Map, Set}
 // define some enumerations 
 object ObjFormatType extends Enumeration {
   type FormatType = Value
-  val fCSV, fJSON, fXML, fSERIALIZED, fJAVA, fSCALA = Value
+  val fCSV, fJSON, fXML, fSERIALIZED, fJAVA, fSCALA, fJPMML, fUNKNOWN = Value
 
-  def asString(typ: FormatType): String = {
-    val str = typ.toString match {
-      case "fCSV" => "CSV"
-      case "fJSON" => "JSON"
-      case "fXML" => "XML"
-      case "fSERIALIZED" => "SERIALIZED"
-      case "fJAVA" => "JAVA"
-      case "fSCALA" => "SCALA"
-      case _ => "Unknown"
+    def asString(typ : FormatType) : String = {
+        val str = typ.toString match {
+            case "fCSV" =>  "CSV"
+            case "fJSON" => "JSON"
+            case "fXML" => "XML"
+            case "fSERIALIZED" => "SERIALIZED"
+            case "fJAVA" => "JAVA"
+            case "fSCALA" => "SCALA"
+            case "fJPMML" => "XML"
+            case _ => "Unknown"
+        }
+        str
     }
-    str
-  }
+    def fromString(typstr : String) : FormatType = {
+        val typ : ObjFormatType.Value = typstr.toUpperCase match {
+            case "CSV" =>  fCSV
+            case "JSON" => fJSON
+            case "XML" => fXML
+            case "SERIALIZED" => fSERIALIZED
+            case "JAVA" => fJAVA
+            case "SCALA" => fSCALA
+            case "JPMML" => fXML
+            case _ => fUNKNOWN
+        }
+        typ
+    }
 }
 import com.ligadata.kamanja.metadata.ObjFormatType._
 
@@ -90,7 +105,7 @@ object ObjType extends Enumeration {
     str
   }
   def fromString(typeStr: String): Type = {
-    val typ: Type = typeStr match {
+    val typ: ObjType.Value = typeStr match {
       case "None" => tNone
       case "Any" => tAny
       case "Int" => tInt
@@ -141,90 +156,93 @@ object DefaultMdElemStructVer {
 
 // common fields for all metadata elements
 trait BaseElem {
-  def UniqID: Long
-  def FullName: String // Logical Name
-  def FullNameWithVer: String
-  def CreationTime: Long // Time in milliseconds from 1970-01-01T00:00:00
-  def ModTime: Long // Time in milliseconds from 1970-01-01T00:00:00
-  def OrigDef: String
-  def Description: String
-  def Author: String
-  def NameSpace: String
-  def Name: String
-  def Version: Long
-  def JarName: String
-  def DependencyJarNames: Array[String]
-  def MdElemStructVer: Int // Metadata Element Structure version. By default whole metadata will have same number
-  def PhysicalName: String // Getting Physical name for Logical name (Mapping from Logical name to Physical Name when we generate code)
-  def PhysicalName(phyNm: String): Unit // Setting Physical name for Logical name (Mapping from Logical name to Physical Name when we generate code)
-  def ObjectDefinition: String // Get Original XML/JSON string used during model/message compilation
-  def ObjectDefinition(definition: String): Unit // Set XML/JSON Original string used during model/message compilation
-  def ObjectFormat: ObjFormatType.FormatType // format type for Original string(json or xml) used during model/message compilation
-  def IsActive: Boolean // Return true if the Element is active, otherwise false
-  def IsDeactive: Boolean // Return true if the Element is de-active, otherwise false
-  def IsDeleted: Boolean // Return true if the Element is deleted, otherwise false
-  def TranId: Long // a unique number representing the transaction that modifies this object
-  def Active: Unit // Make the element as Active
-  def Deactive: Unit // Make the element as de-active
-  def Deleted: Unit // Mark the element as deleted
+    def UniqID: Long
+    def FullName: String // Logical Name
+    def FullNameWithVer: String
+    def CreationTime: Long // Time in milliseconds from 1970-01-01T00:00:00
+    def ModTime: Long // Time in milliseconds from 1970-01-01T00:00:00
+    def OrigDef: String
+    def Description: String
+    def Author: String
+    def NameSpace: String
+    def Name: String
+    def Version: Long
+    def JarName: String
+    def DependencyJarNames: Array[String]
+    def MdElemStructVer: Int // Metadata Element Structure version. By default whole metadata will have same number
+    def PhysicalName: String // Getting Physical name for Logical name (Mapping from Logical name to Physical Name when we generate code)
+    def PhysicalName(phyNm: String): Unit // Setting Physical name for Logical name (Mapping from Logical name to Physical Name when we generate code)
+    def ObjectDefinition: String // Get Original XML/JSON string used during model/message compilation
+    def ObjectDefinition(definition: String): Unit // Set XML/JSON Original string used during model/message compilation
+    def ObjectFormat: ObjFormatType.FormatType // format type for Original string(json, xml, et al) used during model/message compilation
+    def ObjectFormat(otype: ObjFormatType.FormatType): Unit // set the format type for Original element injested
+    def IsActive: Boolean // Return true if the Element is active, otherwise false
+    def IsDeactive: Boolean // Return true if the Element is de-active, otherwise false
+    def IsDeleted: Boolean // Return true if the Element is deleted, otherwise false
+    def TranId: Long // a unique number representing the transaction that modifies this object
+    def Active: Unit // Make the element as Active
+    def Deactive: Unit // Make the element as de-active
+    def Deleted: Unit // Mark the element as deleted
 }
 
 class BaseElemDef extends BaseElem {
-  override def UniqID: Long = uniqueId
-  override def FullName: String = nameSpace + "." + name // Logical Name
-  override def FullNameWithVer: String = nameSpace + "." + name + "." + Version
-  override def CreationTime: Long = creationTime // Time in milliseconds from 1970-01-01T00:00:00
-  override def ModTime: Long = modTime // Time in milliseconds from 1970-01-01T00:00:00
-  override def OrigDef: String = origDef
-  override def Description: String = description
-  override def Author: String = author
-  override def NameSpace: String = nameSpace // Part of Logical Name
-  override def Name: String = name // Part of Logical Name
-  override def Version: Long = ver
-  override def JarName: String = jarName
-  override def DependencyJarNames: Array[String] = dependencyJarNames
-  override def MdElemStructVer: Int = mdElemStructVer // Metadata Element version. By default whole metadata will have same number
-  override def PhysicalName: String = physicalName // Getting Physical name for Logical name (Mapping from Logical name to Physical Name when we generate code)
-  override def PhysicalName(phyNm: String): Unit = physicalName = phyNm // Setting Physical name for Logical name (Mapping from Logical name to Physical Name when we generate code). Most of the elements will have Phsical name corresponds to Logical name like Types like System.Int maps to scala.Int as physical name.
-  override def ObjectDefinition: String = objectDefinition // Original XML/JSON string used during model/message compilation
-  override def ObjectDefinition(definition: String): Unit = objectDefinition = definition // Set XML/JSON Original string used during model/message compilation
-  override def ObjectFormat: ObjFormatType.FormatType = objectFormat // format type for Original string(json or xml) used during model/message compilation
-  override def IsActive: Boolean = active // Return true if the Element is active, otherwise false
-  override def IsDeactive: Boolean = !active // Return true if the Element is de-active, otherwise false
-  override def IsDeleted: Boolean = deleted // Return true if the Element is deleted, otherwise false
-  override def TranId: Long = tranId // a unique number representing the transaction that modifies this object
-  override def Active: Unit = active = true // Make the element as Active
-  override def Deactive: Unit = active = false // Make the element as de-active
-  override def Deleted: Unit = deleted = true // Mark the element as deleted
-  def CheckAndGetDependencyJarNames: Array[String] = if (dependencyJarNames != null) dependencyJarNames else Array[String]()
+    override def UniqID: Long = uniqueId
+    override def FullName: String = nameSpace + "." + name // Logical Name
+    override def FullNameWithVer: String = nameSpace + "." + name + "." + Version
+    override def CreationTime: Long = creationTime // Time in milliseconds from 1970-01-01T00:00:00
+    override def ModTime: Long = modTime // Time in milliseconds from 1970-01-01T00:00:00
+    override def OrigDef: String = origDef
+    override def Description: String = description
+    override def Author: String = author
+    override def NameSpace: String = nameSpace // Part of Logical Name
+    override def Name: String = name // Part of Logical Name
+    override def Version: Long = ver
+    override def JarName: String = jarName
+    override def DependencyJarNames: Array[String] = dependencyJarNames
+    override def MdElemStructVer: Int = mdElemStructVer // Metadata Element version. By default whole metadata will have same number
+    override def PhysicalName: String = physicalName // Getting Physical name for Logical name (Mapping from Logical name to Physical Name when we generate code)
+    override def PhysicalName(phyNm: String): Unit = physicalName = phyNm // Setting Physical name for Logical name (Mapping from Logical name to Physical Name when we generate code). Most of the elements will have Phsical name corresponds to Logical name like Types like System.Int maps to scala.Int as physical name.
+    override def ObjectDefinition: String = objectDefinition // Original XML/JSON string used during model/message compilation
+    override def ObjectDefinition(definition: String): Unit = objectDefinition = definition // Set XML/JSON Original string used during model/message compilation
+    override def ObjectFormat: ObjFormatType.FormatType = objectFormat // format type for Original string(json or xml) used during model/message compilation
+    override def ObjectFormat(otype: ObjFormatType.FormatType): Unit = {objectFormat = otype } // set the format type for Original element injested
 
-  // Override in other places if required
-  override def equals(that: Any) = {
+    override def IsActive: Boolean = active // Return true if the Element is active, otherwise false
+    override def IsDeactive: Boolean = !active // Return true if the Element is de-active, otherwise false
+    override def IsDeleted: Boolean = deleted // Return true if the Element is deleted, otherwise false
+    override def TranId: Long = tranId // a unique number representing the transaction that modifies this object
+    override def Active: Unit = active = true // Make the element as Active
+    override def Deactive: Unit = active = false // Make the element as de-active
+    override def Deleted: Unit = deleted = true // Mark the element as deleted
+    def CheckAndGetDependencyJarNames: Array[String] = if (dependencyJarNames != null) dependencyJarNames else Array[String]()
+
+    // Override in other places if required
+    override def equals(that: Any) = {
     that match {
-      case f: BaseElemDef => f.FullNameWithVer + "." + f.IsDeleted == FullNameWithVer + "." + IsDeleted
-      case _ => false
+        case f: BaseElemDef => f.FullNameWithVer + "." + f.IsDeleted == FullNameWithVer + "." + IsDeleted
+        case _ => false
     }
-  }
+    }
 
-  var uniqueId: Long = 0
-  var creationTime: Long = _ // Time in milliseconds from 1970-01-01T00:00:00 (Mostly it is Local time. May be we need to get GMT) 
-  var modTime: Long = _ // Time in milliseconds from 1970-01-01T00:00:00 (Mostly it is Local time. May be we need to get GMT)
+    var uniqueId: Long = 0
+    var creationTime: Long = _ // Time in milliseconds from 1970-01-01T00:00:00 (Mostly it is Local time. May be we need to get GMT)
+    var modTime: Long = _ // Time in milliseconds from 1970-01-01T00:00:00 (Mostly it is Local time. May be we need to get GMT)
 
-  var origDef: String = _ // string associated with this definition 
-  var description: String = _
-  var author: String = _
-  var nameSpace: String = _ //
-  var name: String = _ // simple name - may not be unique across all name spaces (coupled with mNameSpace, it will be unique)
-  var ver: Long = _ // version number - nnnnnn.nnnnnn.nnnnnn form (without decimal)
-  var jarName: String = _ // JAR file name in which the generated metadata info is placed (classes, functions, etc.,)
-  var dependencyJarNames: Array[String] = _ // These are the dependency jars for this
-  var mdElemStructVer: Int = DefaultMdElemStructVer.Version // Metadata Element Structure version. By default whole metadata will have same number
-  var physicalName: String = _ // Mapping from Logical name to Physical Name when we generate code. This is Case sensitive.
-  var active: Boolean = true // Represent whether element is active or deactive. By default it is active.
-  var deleted: Boolean = false // Represent whether element is deleted. By default it is false.
-  var tranId: Long = 0
-  var objectDefinition: String = _
-  var objectFormat: ObjFormatType.FormatType = fJSON
+    var origDef: String = _ // string associated with this definition
+    var description: String = _
+    var author: String = _
+    var nameSpace: String = _ //
+    var name: String = _ // simple name - may not be unique across all name spaces (coupled with mNameSpace, it will be unique)
+    var ver: Long = _ // version number - nnnnnn.nnnnnn.nnnnnn form (without decimal)
+    var jarName: String = _ // JAR file name in which the generated metadata info is placed (classes, functions, etc.,)
+    var dependencyJarNames: Array[String] = _ // These are the dependency jars for this
+    var mdElemStructVer: Int = DefaultMdElemStructVer.Version // Metadata Element Structure version. By default whole metadata will have same number
+    var physicalName: String = _ // Mapping from Logical name to Physical Name when we generate code. This is Case sensitive.
+    var active: Boolean = true // Represent whether element is active or deactive. By default it is active.
+    var deleted: Boolean = false // Represent whether element is deleted. By default it is false.
+    var tranId: Long = 0
+    var objectDefinition: String = _
+    var objectFormat: ObjFormatType.FormatType = fJSON
 }
 
 // All these metadata elements should have specialized serialization and deserialization 
@@ -254,15 +272,15 @@ abstract class BaseTypeDef extends BaseElemDef with TypeDefInfo {
 
 // basic type definition in the system
 class ScalarTypeDef extends BaseTypeDef {
-  def tTypeType = tScalar
-  def tType = typeArg;
+  def tTypeType : ObjTypeType.TypeType = tScalar
+  def tType : ObjType.Value = typeArg;
 
   var typeArg: Type = _
 }
 
 class AnyTypeDef extends BaseTypeDef {
   def tTypeType: ObjTypeType.TypeType = ObjTypeType.tAny
-  def tType = tNone
+  def tType : ObjType.Value = tNone
 
   override def typeString: String = {
     "Any"
@@ -291,7 +309,7 @@ abstract class ContainerTypeDef extends BaseTypeDef {
 }
 
 class SetTypeDef extends ContainerTypeDef {
-  def tType = tSet
+  def tType : ObjType.Value = tSet
   var keyDef: BaseTypeDef = _
 
   override def IsFixed: Boolean = false
@@ -304,7 +322,7 @@ class SetTypeDef extends ContainerTypeDef {
 }
 
 class ImmutableSetTypeDef extends ContainerTypeDef {
-  def tType = tSet
+  def tType : ObjType.Value = tSet
   var keyDef: BaseTypeDef = _
 
   override def IsFixed: Boolean = false
@@ -317,7 +335,7 @@ class ImmutableSetTypeDef extends ContainerTypeDef {
 }
 
 class TreeSetTypeDef extends ContainerTypeDef {
-  def tType = tTreeSet
+  def tType : ObjType.Value = tTreeSet
   var keyDef: BaseTypeDef = _
 
   override def IsFixed: Boolean = false
@@ -330,7 +348,7 @@ class TreeSetTypeDef extends ContainerTypeDef {
 }
 
 class SortedSetTypeDef extends ContainerTypeDef {
-  def tType = tSortedSet
+  def tType : ObjType.Value = tSortedSet
   var keyDef: BaseTypeDef = _
 
   override def IsFixed: Boolean = false
@@ -343,7 +361,7 @@ class SortedSetTypeDef extends ContainerTypeDef {
 }
 
 class MapTypeDef extends ContainerTypeDef {
-  def tType = tMap
+  def tType : ObjType.Value = tMap
 
   var keyDef: BaseTypeDef = _
   var valDef: BaseTypeDef = _
@@ -358,7 +376,7 @@ class MapTypeDef extends ContainerTypeDef {
 }
 
 class ImmutableMapTypeDef extends ContainerTypeDef {
-  def tType = tMap
+  def tType : ObjType.Value = tMap
 
   var keyDef: BaseTypeDef = _
   var valDef: BaseTypeDef = _
@@ -373,7 +391,7 @@ class ImmutableMapTypeDef extends ContainerTypeDef {
 }
 
 class HashMapTypeDef extends ContainerTypeDef {
-  def tType = tHashMap
+  def tType : ObjType.Value = tHashMap
 
   var keyDef: BaseTypeDef = _
   var valDef: BaseTypeDef = _
@@ -388,7 +406,7 @@ class HashMapTypeDef extends ContainerTypeDef {
 }
 
 class ListTypeDef extends ContainerTypeDef {
-  def tType = tList
+  def tType : ObjType.Value = tList
   var valDef: BaseTypeDef = _
 
   override def IsFixed: Boolean = false
@@ -401,7 +419,7 @@ class ListTypeDef extends ContainerTypeDef {
 }
 
 class QueueTypeDef extends ContainerTypeDef {
-  def tType = tQueue
+  def tType : ObjType.Value = tQueue
   var valDef: BaseTypeDef = _
 
   override def IsFixed: Boolean = false
@@ -414,7 +432,7 @@ class QueueTypeDef extends ContainerTypeDef {
 }
 
 class ArrayTypeDef extends ContainerTypeDef {
-  def tType = tArray
+  def tType : ObjType.Value = tArray
 
   var arrayDims: Int = 0 // 0 is invalid; 1..N - dimensions - indicate array of that many dimensions
   var elemDef: BaseTypeDef = _
@@ -429,7 +447,7 @@ class ArrayTypeDef extends ContainerTypeDef {
 }
 
 class ArrayBufTypeDef extends ContainerTypeDef {
-  def tType = tArrayBuf
+  def tType : ObjType.Value = tArrayBuf
 
   var arrayDims: Int = 0 // 0 is invalid; 1..N - dimensions - indicate array of that many dimensions
   var elemDef: BaseTypeDef = _
@@ -445,7 +463,7 @@ class ArrayBufTypeDef extends ContainerTypeDef {
 
 class TupleTypeDef extends ContainerTypeDef {
   override def tTypeType = tTupleN
-  def tType: ObjType.Type = ObjType.tAny
+  def tType : ObjType.Value = ObjType.tAny
 
   var tupleDefs: Array[BaseTypeDef] = Array[BaseTypeDef]()
 
@@ -495,7 +513,7 @@ trait EntityType {
 }
 
 class MappedMsgTypeDef extends ContainerTypeDef with EntityType {
-  def tType = tMsgMap
+  def tType : ObjType.Value = tMsgMap
 
   var attrMap: Map[String, BaseAttributeDef] = Map[String, BaseAttributeDef]()
 
@@ -514,7 +532,7 @@ class MappedMsgTypeDef extends ContainerTypeDef with EntityType {
 }
 
 class StructTypeDef extends ContainerTypeDef with EntityType {
-  def tType = tStruct
+  def tType : ObjType.Value = tStruct
 
   var memberDefs: Array[BaseAttributeDef] = _
 
@@ -540,7 +558,7 @@ abstract class BaseAttributeDef extends BaseElemDef {
 }
 
 class AttributeDef extends BaseAttributeDef {
-  def tType = tAttr
+  def tType : ObjType.Value = tAttr
   def tTypeType = tContainer
   def parent = inherited
   override def typeDef: BaseTypeDef = aType
@@ -670,22 +688,79 @@ class MacroDef extends FunctionDef {
   var macroTemplate: (String, String) = ("", "")
 }
 
-object ModelInputType extends Enumeration {
-  type ModelInputType = Value
+object MiningModelType extends Enumeration {
+  type MiningModelType = Value
+  val BaselineModel,AssociationModel,ClusteringModel,GeneralRegressionModel,MiningModel,NaiveBayesModel,NearestNeighborModel,NeuralNetwork,RegressionModel,RuleSetModel,SequenceModel,Scorecard,SupportVectorMachineModel,TextModel,TimeSeriesModel,TreeModel, CustomScala, CustomJava, Unknown = Value
+
+  def modelType(mdlType : String) : MiningModelType = {
+    val typ : MiningModelType.MiningModelType = mdlType match {
+      case "CustomScala" => CustomScala
+      case "CustomJava" => CustomJava
+      case "RuleSetModel" => RuleSetModel
+      case "TreeModel" => TreeModel
+      case "AssociationModel" => AssociationModel
+      case "BaselineModel" => BaselineModel
+      case "ClusteringModel" => ClusteringModel
+      case "GeneralRegressionModel" => GeneralRegressionModel
+      case "MiningModel" => MiningModel
+      case "NaiveBayesModel" => NaiveBayesModel
+      case "NearestNeighborModel" => NearestNeighborModel
+      case "NeuralNetwork" => NeuralNetwork
+      case "RegressionModel" => RegressionModel
+      case "SequenceModel" => SequenceModel
+      case "Scorecard" => Scorecard
+      case "SupportVectorMachineModel" => SupportVectorMachineModel
+      case "TextModel" => TextModel
+      case "TimeSeriesModel" => TimeSeriesModel
+      case _ => Unknown
+    }
+    typ
+  }
+}
+
+object ModelRepresentation extends Enumeration {
+  type ModelRepresentation = Value
   val JAR, JPMML = Value
+
+  def modelRep(mdlRep: String): ModelRepresentation = {
+      val rep: ModelRepresentation = mdlRep match {
+          case "JAR" => JAR
+          case "JPMML" => JPMML
+      }
+      rep
+  }
 }
 
 /**
- * @param modelInputType The type of model input - JAR, JPMML etc.
+ * The ModelDef provides meta data for all models in the system.  The model's input type can currently be either a jar or
+ * a pmml text string (used by JPMML type models.  The mining model type is any of the dmg.org's model types as defined in their xsd or
+ * one of our own special types (CustomScala, CustomJava, or Unknown when the caller does not supply one).
+ *
+ * Models, when marked with isReusable, can be cached (are considered idempotent)
+ * @param modelRepresentation The form of model to be cataloged - JAR, JPMML etc.
+ * @param miningModelType a MininingModelType default = "Unknown"
+ * @param inputVars an array of the input variables that are consumed by this model (used for dag construction)
+ * @param outputVars an array of the output variables published by this model (also used for dag construction)
  * @param isReusable Whether the model execution is referentially transparent
- * @param msgConsumed Identify the message that will be consumed. There is 1:1 mapping between message and model
+ * @param msgConsumed Namespace.name(.ver?) of message consumed by this model...for now only one messages is consumed by
+ *                    any given model
+ * @param supportsInstanceSerialization when true, ModelDef instances are serialized and cached for retrieval by
+ *                                      the engine and other consumers of ModelDefs.  This mechanism is useful
+ *                                      for JPMML and other models that are relatively expensive to initialize. The
+ *                                      thinking here is that the ingestion will occur at 'add model' time just once
+ *                                      and out of band from the cluster bootstrap.  FIXME: NOT IMPLEMENTED YET
  */
-class ModelDef(val modelInputType: ModelInputType = ModelInputType.JAR, isReusable: Boolean = false, msgConsumed: String = "") extends BaseElemDef {
-  var modelType: String = _ // type of models (RuleSet,..)
-  var inputVars: Array[BaseAttributeDef] = _
-  var outputVars: Array[BaseAttributeDef] = _
+class ModelDef( val modelRepresentation: ModelRepresentation = ModelRepresentation.JAR
+                , val miningModelType : MiningModelType = MiningModelType.Unknown
+                , val inputVars : Array[BaseAttributeDef] = null
+                , val outputVars: Array[BaseAttributeDef] = null
+                , val isReusable: Boolean = false
+                , val msgConsumed: String = ""
+                , val supportsInstanceSerialization : Boolean = false) extends BaseElemDef {
 
-  def typeString: String = PhysicalName
+    def typeString: String = PhysicalName
+    def jpmmlText : String = ObjectDefinition
+    def SupportsInstanceSerialization : Boolean = supportsInstanceSerialization
 }
 
 class ConfigDef extends BaseElemDef {

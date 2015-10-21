@@ -23,7 +23,7 @@ import org.json4s.jackson.JsonMethods._
 /** A class that defines the result any of the API function uniformly
  * @constructor creates a new ApiResult with a statusCode,functionName,statusDescription,resultData
  * @param statusCode status of the API call, 0 => success, non-zero => failure.
- * @param statusDescription relevant in case of non-zero status code
+ * @param description relevant in case of non-zero status code
  * @param resultData A string value representing string, either XML or JSON format
  */
 class ApiResult(var statusCode:Int, var functionName: String, var resultData: String, var description: String){
@@ -44,11 +44,25 @@ class ApiResult(var statusCode:Int, var functionName: String, var resultData: St
 object MetadataAPI {
 
   object ModelType extends Enumeration {
-    type ModelType = Value
-    val PMML = Value("pmml")
-    val JAVA = Value("java")
-    val SCALA = Value("scala")
-    val JPMML = Value("jpmml")
+      type ModelType = Value
+      val JAVA = Value("java")
+      val SCALA = Value("scala")
+      val PMML = Value("pmml")
+      val JPMML = Value("jpmml")
+      val BINARY = Value("binary")
+      val UNKNOWN = Value("unknown")
+
+      def fromString(typstr : String) : ModelType = {
+          val typ : ModelType.Value = typstr.toLowerCase match {
+              case "java" => JAVA
+              case "scala" => SCALA
+              case "pmml" => PMML
+              case "jpmml" => JPMML
+              case "binary" => BINARY
+              case _ => UNKNOWN
+          }
+          typ
+      }
   }
 
 }
@@ -166,7 +180,6 @@ trait MetadataAPI {
   def UploadJar(jarPath:String, userid: Option[String] = None): String
 
   /** Add new functions 
-
     * @param functionsText an input String of functions in a format defined by the next parameter formatType
     * @param formatType format of functionsText ( JSON or XML)
     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
@@ -385,15 +398,6 @@ trait MetadataAPI {
     * ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
     */
   def RemoveMessage(messageName:String, version:Long, userid: Option[String]): String
-
-  /** Add model given pmmlText in XML
-   * 
-   * @param pmmlText text of the model (as XML string)
-   * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
-   * indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
-   * ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
-   */
-
 
   /** Add container given containerText
     *

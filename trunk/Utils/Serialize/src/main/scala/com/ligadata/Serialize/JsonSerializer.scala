@@ -16,6 +16,8 @@
 
 package com.ligadata.Serialize
 
+import com.ligadata.kamanja.metadata.MiningModelType
+import com.ligadata.kamanja.metadata.ModelRepresentation
 import com.ligadata.kamanja.metadata._
 import com.ligadata.kamanja.metadata.ObjType._
 import com.ligadata.kamanja.metadata.MdMgr._
@@ -51,7 +53,24 @@ case class MessageStruct(NameSpace: String, Name: String, FullName: String, Vers
 case class MessageDefinition(Message: MessageStruct)
 case class ContainerDefinition(Container: MessageStruct)
 
-case class ModelInfo(NameSpace: String, Name: String, Version: String, ModelType: String, JarName: String, PhysicalName: String, DependencyJars: List[String], InputAttributes: List[Attr], OutputAttributes: List[Attr])
+//case class ModelInfo(NameSpace: String, Name: String, Version: String, ModelType: String, JarName: String, PhysicalName: String, DependencyJars: List[String], InputAttributes: List[Attr], OutputAttributes: List[Attr])
+
+case class ModelInfo(NameSpace: String
+                     , Name: String
+                     , Version: String
+                     , PhysicalName: String
+                     , ModelRep : String
+                     , ModelType: String
+                     , IsReusable : Boolean
+                     , MsgConsumed : String
+                     , ObjectDefinition : String
+                     , ObjectFormat : String
+                     , JarName: String
+                     , DependencyJars: List[String]
+                     , InputAttributes: List[Attr]
+                     , OutputAttributes: List[Attr]
+                     , Recompile : Boolean
+                     , SupportsInstanceSerialization : Boolean)
 case class ModelDefinition(Model: ModelInfo)
 
 case class ParameterMap(RootDir: String, GitRootDir: String, Database: String, DatabaseHost: String, JarTargetDir: String, ScalaHome: String, JavaHome: String, ManifestPath: String, ClassPath: String, NotifyEngine: String, ZooKeeperConnectString: String)
@@ -576,15 +595,47 @@ object JsonSerializer {
         outputAttrList1 ::= (attr.Name, attr.Type.NameSpace, attr.Type.Name)
       }
 
-      val modDef = MdMgr.GetMdMgr.MakeModelDef(ModDefInst.Model.NameSpace,
-        ModDefInst.Model.Name,
-        ModDefInst.Model.PhysicalName,
-        ModDefInst.Model.ModelType,
-        inputAttrList1,
-        outputAttrList1,
-        ModDefInst.Model.Version.toLong,
-        ModDefInst.Model.JarName,
-        ModDefInst.Model.DependencyJars.toArray)
+      /**
+       *    Create a ModelDef from the extracted information found in the JSON string.
+       *
+       *
+       *case class ModelInfo(NameSpace: String
+                     , Name: String
+                     , Version: String
+                     , PhysicalName: String
+                     , ModelRep : String
+                     , ModelType: String
+                     , IsReusable : Boolean
+                     , MsgConsumed : String
+                     , ObjectDefinition : String
+                     , ObjectFormat : String
+                     , JarName: String
+                     , DependencyJars: List[String]
+                     , InputAttributes: List[Attr]
+                     , OutputAttributes: List[Attr]
+                     , Recompile : Boolean
+                     , SupportsInstanceSerialization : Boolean)
+
+       */
+      val modDef = MdMgr.GetMdMgr.MakeModelDef(ModDefInst.Model.NameSpace
+                                              ,ModDefInst.Model.Name
+                                              ,ModDefInst.Model.PhysicalName
+                                              ,ModelRepresentation.modelRep(ModDefInst.Model.ModelRep)
+                                              ,ModDefInst.Model.IsReusable
+                                              ,ModDefInst.Model.MsgConsumed
+                                              ,ModDefInst.Model.ObjectDefinition
+                                              ,MiningModelType.modelType(ModDefInst.Model.ModelType)
+                                              ,inputAttrList1
+                                              ,outputAttrList1
+                                              ,ModDefInst.Model.Version.toLong
+                                              ,ModDefInst.Model.JarName
+                                              ,ModDefInst.Model.DependencyJars.toArray
+                                              ,ModDefInst.Model.Recompile
+                                              ,ModDefInst.Model.SupportsInstanceSerialization)
+
+      modDef.ObjectDefinition(ModDefInst.Model.ObjectDefinition)
+      val objFmt : ObjFormatType.FormatType = ObjFormatType.fromString(ModDefInst.Model.ObjectFormat)
+      modDef.ObjectFormat(objFmt)
 
       modDef
     } catch {
@@ -676,13 +727,16 @@ object JsonSerializer {
   def zkSerializeObjectToJson(mdObj: BaseElemDef, operation: String): String = {
     try {
       mdObj match {
-        // Assuming that zookeeper transaction will be different based on type of object
+          /**
+                Assuming that zookeeper transaction will be different based on type of object
+           */
         case o: ModelDef => {
           val json = (("ObjectType" -> "ModelDef") ~
             ("Operation" -> operation) ~
             ("NameSpace" -> o.nameSpace) ~
             ("Name" -> o.name) ~
             ("Version" -> o.ver) ~
+            ("ModelType" -> o.miningModelType.toString) ~
             ("PhysicalName" -> o.physicalName) ~
             ("JarName" -> o.jarName) ~
             ("DependantJars" -> o.CheckAndGetDependencyJarNames.toList))
@@ -1043,20 +1097,40 @@ object JsonSerializer {
         }
       }
 
+      /*
+      case class ModelInfo(NameSpace: String
+                 , Name: String
+                 , Version: String
+                 , PhysicalName: String
+                 , ModelRep : String
+                 , ModelType: String
+                 , IsReusable : Boolean
+                 , MsgConsumed : String
+                 , ObjectDefinition : String
+                 , ObjectFormat : String
+                 , JarName: String
+                 , DependencyJars: List[String]
+                 , InputAttributes: List[Attr]
+                 , OutputAttributes: List[Attr]
+                 , Recompile : Boolean
+                 , Persist : Boolean)
+
+       */
       case o: ModelDef => {
         val json = ("Model" ->
-          ("NameSpace" -> o.nameSpace) ~
-          ("Name" -> o.name) ~
-          ("Version" -> MdMgr.Pad0s2Version(o.ver)) ~
-          ("ModelType" -> o.modelType) ~
-          ("JarName" -> o.jarName) ~
-          ("PhysicalName" -> o.typeString) ~
-          ("ObjectDefinition" -> o.objectDefinition) ~
-          ("ObjectFormat" -> ObjFormatType.asString(o.objectFormat)) ~
-          ("DependencyJars" -> o.CheckAndGetDependencyJarNames.toList) ~
-          ("Deleted" -> o.deleted) ~
-          ("Active" -> o.active) ~
-          ("TransactionId" -> o.tranId))
+                    ("NameSpace" -> o.nameSpace) ~
+                    ("Name" -> o.name) ~
+                    ("Version" -> MdMgr.Pad0s2Version(o.ver)) ~
+                    ("ModelRep" -> o.modelRepresentation.toString) ~
+                    ("ModelType" -> o.miningModelType.toString) ~
+                    ("JarName" -> o.jarName) ~
+                    ("PhysicalName" -> o.typeString) ~
+                    ("ObjectDefinition" -> o.objectDefinition) ~
+                    ("ObjectFormat" -> ObjFormatType.asString(o.objectFormat)) ~
+                    ("DependencyJars" -> o.CheckAndGetDependencyJarNames.toList) ~
+                    ("Deleted" -> o.deleted) ~
+                    ("Active" -> o.active) ~
+                    ("TransactionId" -> o.tranId))
         var jsonStr = pretty(render(json))
         jsonStr = replaceLast(jsonStr, "}\n}", "").trim
         jsonStr = jsonStr + ",\n\"InputAttributes\": "

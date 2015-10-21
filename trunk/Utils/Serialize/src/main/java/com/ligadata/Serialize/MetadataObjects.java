@@ -8,17 +8,15 @@ public final class MetadataObjects {
   public static void registerAllExtensions(
       com.google.protobuf.ExtensionRegistry registry) {
   }
-  public interface MetadataTypeOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:MetadataType)
-      com.google.protobuf.MessageOrBuilder {
+  public interface MetadataTypeOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
   }
   /**
    * Protobuf type {@code MetadataType}
    */
   public static final class MetadataType extends
-      com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:MetadataType)
-      MetadataTypeOrBuilder {
+      com.google.protobuf.GeneratedMessage
+      implements MetadataTypeOrBuilder {
     // Use MetadataType.newBuilder() to construct.
     private MetadataType(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
@@ -546,10 +544,10 @@ public final class MetadataObjects {
       // @@protoc_insertion_point(enum_scope:MetadataType.ProtoObjTypeType)
     }
 
-    public interface ProtoBaseElemOrBuilder extends
-        // @@protoc_insertion_point(interface_extends:MetadataType.ProtoBaseElem)
-        com.google.protobuf.MessageOrBuilder {
+    public interface ProtoBaseElemOrBuilder
+        extends com.google.protobuf.MessageOrBuilder {
 
+      // required string NameSpace = 1;
       /**
        * <code>required string NameSpace = 1;</code>
        */
@@ -564,6 +562,7 @@ public final class MetadataObjects {
       com.google.protobuf.ByteString
           getNameSpaceBytes();
 
+      // required string Name = 2;
       /**
        * <code>required string Name = 2;</code>
        */
@@ -578,6 +577,7 @@ public final class MetadataObjects {
       com.google.protobuf.ByteString
           getNameBytes();
 
+      // required int64 Ver = 3;
       /**
        * <code>required int64 Ver = 3;</code>
        */
@@ -587,6 +587,7 @@ public final class MetadataObjects {
        */
       long getVer();
 
+      // optional int64 UniqID = 4;
       /**
        * <code>optional int64 UniqID = 4;</code>
        */
@@ -596,6 +597,7 @@ public final class MetadataObjects {
        */
       long getUniqID();
 
+      // optional int64 CreationTime = 5;
       /**
        * <code>optional int64 CreationTime = 5;</code>
        */
@@ -605,6 +607,7 @@ public final class MetadataObjects {
        */
       long getCreationTime();
 
+      // optional int64 ModTime = 6;
       /**
        * <code>optional int64 ModTime = 6;</code>
        */
@@ -614,6 +617,7 @@ public final class MetadataObjects {
        */
       long getModTime();
 
+      // optional string OrigDef = 7;
       /**
        * <code>optional string OrigDef = 7;</code>
        */
@@ -628,6 +632,7 @@ public final class MetadataObjects {
       com.google.protobuf.ByteString
           getOrigDefBytes();
 
+      // optional string Description = 8;
       /**
        * <code>optional string Description = 8;</code>
        */
@@ -642,6 +647,7 @@ public final class MetadataObjects {
       com.google.protobuf.ByteString
           getDescriptionBytes();
 
+      // optional string Author = 9;
       /**
        * <code>optional string Author = 9;</code>
        */
@@ -656,6 +662,7 @@ public final class MetadataObjects {
       com.google.protobuf.ByteString
           getAuthorBytes();
 
+      // optional string JarName = 10;
       /**
        * <code>optional string JarName = 10;</code>
        */
@@ -670,6 +677,7 @@ public final class MetadataObjects {
       com.google.protobuf.ByteString
           getJarNameBytes();
 
+      // optional string PhysicalName = 12;
       /**
        * <code>optional string PhysicalName = 12;</code>
        */
@@ -684,6 +692,7 @@ public final class MetadataObjects {
       com.google.protobuf.ByteString
           getPhysicalNameBytes();
 
+      // optional bool IsActive = 13;
       /**
        * <code>optional bool IsActive = 13;</code>
        */
@@ -693,6 +702,7 @@ public final class MetadataObjects {
        */
       boolean getIsActive();
 
+      // optional bool IsDeActive = 14;
       /**
        * <code>optional bool IsDeActive = 14;</code>
        */
@@ -702,6 +712,7 @@ public final class MetadataObjects {
        */
       boolean getIsDeActive();
 
+      // optional int32 MdElemStructVer = 15;
       /**
        * <code>optional int32 MdElemStructVer = 15;</code>
        */
@@ -711,11 +722,12 @@ public final class MetadataObjects {
        */
       int getMdElemStructVer();
 
+      // repeated string DependencyJarNames = 19;
       /**
        * <code>repeated string DependencyJarNames = 19;</code>
        */
-      com.google.protobuf.ProtocolStringList
-          getDependencyJarNamesList();
+      java.util.List<java.lang.String>
+      getDependencyJarNamesList();
       /**
        * <code>repeated string DependencyJarNames = 19;</code>
        */
@@ -734,9 +746,8 @@ public final class MetadataObjects {
      * Protobuf type {@code MetadataType.ProtoBaseElem}
      */
     public static final class ProtoBaseElem extends
-        com.google.protobuf.GeneratedMessage implements
-        // @@protoc_insertion_point(message_implements:MetadataType.ProtoBaseElem)
-        ProtoBaseElemOrBuilder {
+        com.google.protobuf.GeneratedMessage
+        implements ProtoBaseElemOrBuilder {
       // Use ProtoBaseElem.newBuilder() to construct.
       private ProtoBaseElem(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
         super(builder);
@@ -783,20 +794,18 @@ public final class MetadataObjects {
                 break;
               }
               case 10: {
-                com.google.protobuf.ByteString bs = input.readBytes();
                 bitField0_ |= 0x00000001;
-                nameSpace_ = bs;
+                nameSpace_ = input.readBytes();
                 break;
               }
               case 18: {
-                com.google.protobuf.ByteString bs = input.readBytes();
                 bitField0_ |= 0x00000002;
-                name_ = bs;
+                name_ = input.readBytes();
                 break;
               }
               case 24: {
                 bitField0_ |= 0x00000004;
-                ver_ = input.readInt32();
+                ver_ = input.readInt64();
                 break;
               }
               case 32: {
@@ -815,33 +824,28 @@ public final class MetadataObjects {
                 break;
               }
               case 58: {
-                com.google.protobuf.ByteString bs = input.readBytes();
                 bitField0_ |= 0x00000040;
-                origDef_ = bs;
+                origDef_ = input.readBytes();
                 break;
               }
               case 66: {
-                com.google.protobuf.ByteString bs = input.readBytes();
                 bitField0_ |= 0x00000080;
-                description_ = bs;
+                description_ = input.readBytes();
                 break;
               }
               case 74: {
-                com.google.protobuf.ByteString bs = input.readBytes();
                 bitField0_ |= 0x00000100;
-                author_ = bs;
+                author_ = input.readBytes();
                 break;
               }
               case 82: {
-                com.google.protobuf.ByteString bs = input.readBytes();
                 bitField0_ |= 0x00000200;
-                jarName_ = bs;
+                jarName_ = input.readBytes();
                 break;
               }
               case 98: {
-                com.google.protobuf.ByteString bs = input.readBytes();
                 bitField0_ |= 0x00000400;
-                physicalName_ = bs;
+                physicalName_ = input.readBytes();
                 break;
               }
               case 104: {
@@ -860,12 +864,11 @@ public final class MetadataObjects {
                 break;
               }
               case 154: {
-                com.google.protobuf.ByteString bs = input.readBytes();
                 if (!((mutable_bitField0_ & 0x00004000) == 0x00004000)) {
                   dependencyJarNames_ = new com.google.protobuf.LazyStringArrayList();
                   mutable_bitField0_ |= 0x00004000;
                 }
-                dependencyJarNames_.add(bs);
+                dependencyJarNames_.add(input.readBytes());
                 break;
               }
             }
@@ -877,7 +880,7 @@ public final class MetadataObjects {
               e.getMessage()).setUnfinishedMessage(this);
         } finally {
           if (((mutable_bitField0_ & 0x00004000) == 0x00004000)) {
-            dependencyJarNames_ = dependencyJarNames_.getUnmodifiableView();
+            dependencyJarNames_ = new com.google.protobuf.UnmodifiableLazyStringList(dependencyJarNames_);
           }
           this.unknownFields = unknownFields.build();
           makeExtensionsImmutable();
@@ -911,6 +914,7 @@ public final class MetadataObjects {
       }
 
       private int bitField0_;
+      // required string NameSpace = 1;
       public static final int NAMESPACE_FIELD_NUMBER = 1;
       private java.lang.Object nameSpace_;
       /**
@@ -953,6 +957,7 @@ public final class MetadataObjects {
         }
       }
 
+      // required string Name = 2;
       public static final int NAME_FIELD_NUMBER = 2;
       private java.lang.Object name_;
       /**
@@ -995,6 +1000,7 @@ public final class MetadataObjects {
         }
       }
 
+      // required int64 Ver = 3;
       public static final int VER_FIELD_NUMBER = 3;
       private long ver_;
       /**
@@ -1010,6 +1016,7 @@ public final class MetadataObjects {
         return ver_;
       }
 
+      // optional int64 UniqID = 4;
       public static final int UNIQID_FIELD_NUMBER = 4;
       private long uniqID_;
       /**
@@ -1025,6 +1032,7 @@ public final class MetadataObjects {
         return uniqID_;
       }
 
+      // optional int64 CreationTime = 5;
       public static final int CREATIONTIME_FIELD_NUMBER = 5;
       private long creationTime_;
       /**
@@ -1040,6 +1048,7 @@ public final class MetadataObjects {
         return creationTime_;
       }
 
+      // optional int64 ModTime = 6;
       public static final int MODTIME_FIELD_NUMBER = 6;
       private long modTime_;
       /**
@@ -1055,6 +1064,7 @@ public final class MetadataObjects {
         return modTime_;
       }
 
+      // optional string OrigDef = 7;
       public static final int ORIGDEF_FIELD_NUMBER = 7;
       private java.lang.Object origDef_;
       /**
@@ -1097,6 +1107,7 @@ public final class MetadataObjects {
         }
       }
 
+      // optional string Description = 8;
       public static final int DESCRIPTION_FIELD_NUMBER = 8;
       private java.lang.Object description_;
       /**
@@ -1139,6 +1150,7 @@ public final class MetadataObjects {
         }
       }
 
+      // optional string Author = 9;
       public static final int AUTHOR_FIELD_NUMBER = 9;
       private java.lang.Object author_;
       /**
@@ -1181,6 +1193,7 @@ public final class MetadataObjects {
         }
       }
 
+      // optional string JarName = 10;
       public static final int JARNAME_FIELD_NUMBER = 10;
       private java.lang.Object jarName_;
       /**
@@ -1223,6 +1236,7 @@ public final class MetadataObjects {
         }
       }
 
+      // optional string PhysicalName = 12;
       public static final int PHYSICALNAME_FIELD_NUMBER = 12;
       private java.lang.Object physicalName_;
       /**
@@ -1265,6 +1279,7 @@ public final class MetadataObjects {
         }
       }
 
+      // optional bool IsActive = 13;
       public static final int ISACTIVE_FIELD_NUMBER = 13;
       private boolean isActive_;
       /**
@@ -1280,6 +1295,7 @@ public final class MetadataObjects {
         return isActive_;
       }
 
+      // optional bool IsDeActive = 14;
       public static final int ISDEACTIVE_FIELD_NUMBER = 14;
       private boolean isDeActive_;
       /**
@@ -1295,6 +1311,7 @@ public final class MetadataObjects {
         return isDeActive_;
       }
 
+      // optional int32 MdElemStructVer = 15;
       public static final int MDELEMSTRUCTVER_FIELD_NUMBER = 15;
       private int mdElemStructVer_;
       /**
@@ -1310,12 +1327,13 @@ public final class MetadataObjects {
         return mdElemStructVer_;
       }
 
+      // repeated string DependencyJarNames = 19;
       public static final int DEPENDENCYJARNAMES_FIELD_NUMBER = 19;
       private com.google.protobuf.LazyStringList dependencyJarNames_;
       /**
        * <code>repeated string DependencyJarNames = 19;</code>
        */
-      public com.google.protobuf.ProtocolStringList
+      public java.util.List<java.lang.String>
           getDependencyJarNamesList() {
         return dependencyJarNames_;
       }
@@ -1342,7 +1360,7 @@ public final class MetadataObjects {
       private void initFields() {
         nameSpace_ = "";
         name_ = "";
-        ver_ = 0;
+        ver_ = 0L;
         uniqID_ = 0L;
         creationTime_ = 0L;
         modTime_ = 0L;
@@ -1359,8 +1377,7 @@ public final class MetadataObjects {
       private byte memoizedIsInitialized = -1;
       public final boolean isInitialized() {
         byte isInitialized = memoizedIsInitialized;
-        if (isInitialized == 1) return true;
-        if (isInitialized == 0) return false;
+        if (isInitialized != -1) return isInitialized == 1;
 
         if (!hasNameSpace()) {
           memoizedIsInitialized = 0;
@@ -1582,9 +1599,8 @@ public final class MetadataObjects {
        * Protobuf type {@code MetadataType.ProtoBaseElem}
        */
       public static final class Builder extends
-          com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-          // @@protoc_insertion_point(builder_implements:MetadataType.ProtoBaseElem)
-          com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElemOrBuilder {
+          com.google.protobuf.GeneratedMessage.Builder<Builder>
+         implements com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElemOrBuilder {
         public static final com.google.protobuf.Descriptors.Descriptor
             getDescriptor() {
           return com.ligadata.Serialize.MetadataObjects.internal_static_MetadataType_ProtoBaseElem_descriptor;
@@ -1621,7 +1637,7 @@ public final class MetadataObjects {
           bitField0_ = (bitField0_ & ~0x00000001);
           name_ = "";
           bitField0_ = (bitField0_ & ~0x00000002);
-          ver_ = 0;
+          ver_ = 0L;
           bitField0_ = (bitField0_ & ~0x00000004);
           uniqID_ = 0L;
           bitField0_ = (bitField0_ & ~0x00000008);
@@ -1732,7 +1748,8 @@ public final class MetadataObjects {
           }
           result.mdElemStructVer_ = mdElemStructVer_;
           if (((bitField0_ & 0x00004000) == 0x00004000)) {
-            dependencyJarNames_ = dependencyJarNames_.getUnmodifiableView();
+            dependencyJarNames_ = new com.google.protobuf.UnmodifiableLazyStringList(
+                dependencyJarNames_);
             bitField0_ = (bitField0_ & ~0x00004000);
           }
           result.dependencyJarNames_ = dependencyJarNames_;
@@ -1857,6 +1874,7 @@ public final class MetadataObjects {
         }
         private int bitField0_;
 
+        // required string NameSpace = 1;
         private java.lang.Object nameSpace_ = "";
         /**
          * <code>required string NameSpace = 1;</code>
@@ -1870,12 +1888,9 @@ public final class MetadataObjects {
         public java.lang.String getNameSpace() {
           java.lang.Object ref = nameSpace_;
           if (!(ref instanceof java.lang.String)) {
-            com.google.protobuf.ByteString bs =
-                (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            if (bs.isValidUtf8()) {
-              nameSpace_ = s;
-            }
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            nameSpace_ = s;
             return s;
           } else {
             return (java.lang.String) ref;
@@ -1933,6 +1948,7 @@ public final class MetadataObjects {
           return this;
         }
 
+        // required string Name = 2;
         private java.lang.Object name_ = "";
         /**
          * <code>required string Name = 2;</code>
@@ -1946,12 +1962,9 @@ public final class MetadataObjects {
         public java.lang.String getName() {
           java.lang.Object ref = name_;
           if (!(ref instanceof java.lang.String)) {
-            com.google.protobuf.ByteString bs =
-                (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            if (bs.isValidUtf8()) {
-              name_ = s;
-            }
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            name_ = s;
             return s;
           } else {
             return (java.lang.String) ref;
@@ -2009,6 +2022,7 @@ public final class MetadataObjects {
           return this;
         }
 
+        // required int64 Ver = 3;
         private long ver_ ;
         /**
          * <code>required int64 Ver = 3;</code>
@@ -2036,11 +2050,12 @@ public final class MetadataObjects {
          */
         public Builder clearVer() {
           bitField0_ = (bitField0_ & ~0x00000004);
-          ver_ = 0;
+          ver_ = 0L;
           onChanged();
           return this;
         }
 
+        // optional int64 UniqID = 4;
         private long uniqID_ ;
         /**
          * <code>optional int64 UniqID = 4;</code>
@@ -2073,6 +2088,7 @@ public final class MetadataObjects {
           return this;
         }
 
+        // optional int64 CreationTime = 5;
         private long creationTime_ ;
         /**
          * <code>optional int64 CreationTime = 5;</code>
@@ -2105,6 +2121,7 @@ public final class MetadataObjects {
           return this;
         }
 
+        // optional int64 ModTime = 6;
         private long modTime_ ;
         /**
          * <code>optional int64 ModTime = 6;</code>
@@ -2137,6 +2154,7 @@ public final class MetadataObjects {
           return this;
         }
 
+        // optional string OrigDef = 7;
         private java.lang.Object origDef_ = "";
         /**
          * <code>optional string OrigDef = 7;</code>
@@ -2150,12 +2168,9 @@ public final class MetadataObjects {
         public java.lang.String getOrigDef() {
           java.lang.Object ref = origDef_;
           if (!(ref instanceof java.lang.String)) {
-            com.google.protobuf.ByteString bs =
-                (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            if (bs.isValidUtf8()) {
-              origDef_ = s;
-            }
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            origDef_ = s;
             return s;
           } else {
             return (java.lang.String) ref;
@@ -2213,6 +2228,7 @@ public final class MetadataObjects {
           return this;
         }
 
+        // optional string Description = 8;
         private java.lang.Object description_ = "";
         /**
          * <code>optional string Description = 8;</code>
@@ -2226,12 +2242,9 @@ public final class MetadataObjects {
         public java.lang.String getDescription() {
           java.lang.Object ref = description_;
           if (!(ref instanceof java.lang.String)) {
-            com.google.protobuf.ByteString bs =
-                (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            if (bs.isValidUtf8()) {
-              description_ = s;
-            }
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            description_ = s;
             return s;
           } else {
             return (java.lang.String) ref;
@@ -2289,6 +2302,7 @@ public final class MetadataObjects {
           return this;
         }
 
+        // optional string Author = 9;
         private java.lang.Object author_ = "";
         /**
          * <code>optional string Author = 9;</code>
@@ -2302,12 +2316,9 @@ public final class MetadataObjects {
         public java.lang.String getAuthor() {
           java.lang.Object ref = author_;
           if (!(ref instanceof java.lang.String)) {
-            com.google.protobuf.ByteString bs =
-                (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            if (bs.isValidUtf8()) {
-              author_ = s;
-            }
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            author_ = s;
             return s;
           } else {
             return (java.lang.String) ref;
@@ -2365,6 +2376,7 @@ public final class MetadataObjects {
           return this;
         }
 
+        // optional string JarName = 10;
         private java.lang.Object jarName_ = "";
         /**
          * <code>optional string JarName = 10;</code>
@@ -2378,12 +2390,9 @@ public final class MetadataObjects {
         public java.lang.String getJarName() {
           java.lang.Object ref = jarName_;
           if (!(ref instanceof java.lang.String)) {
-            com.google.protobuf.ByteString bs =
-                (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            if (bs.isValidUtf8()) {
-              jarName_ = s;
-            }
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            jarName_ = s;
             return s;
           } else {
             return (java.lang.String) ref;
@@ -2441,6 +2450,7 @@ public final class MetadataObjects {
           return this;
         }
 
+        // optional string PhysicalName = 12;
         private java.lang.Object physicalName_ = "";
         /**
          * <code>optional string PhysicalName = 12;</code>
@@ -2454,12 +2464,9 @@ public final class MetadataObjects {
         public java.lang.String getPhysicalName() {
           java.lang.Object ref = physicalName_;
           if (!(ref instanceof java.lang.String)) {
-            com.google.protobuf.ByteString bs =
-                (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            if (bs.isValidUtf8()) {
-              physicalName_ = s;
-            }
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            physicalName_ = s;
             return s;
           } else {
             return (java.lang.String) ref;
@@ -2517,6 +2524,7 @@ public final class MetadataObjects {
           return this;
         }
 
+        // optional bool IsActive = 13;
         private boolean isActive_ ;
         /**
          * <code>optional bool IsActive = 13;</code>
@@ -2549,6 +2557,7 @@ public final class MetadataObjects {
           return this;
         }
 
+        // optional bool IsDeActive = 14;
         private boolean isDeActive_ ;
         /**
          * <code>optional bool IsDeActive = 14;</code>
@@ -2581,6 +2590,7 @@ public final class MetadataObjects {
           return this;
         }
 
+        // optional int32 MdElemStructVer = 15;
         private int mdElemStructVer_ ;
         /**
          * <code>optional int32 MdElemStructVer = 15;</code>
@@ -2613,6 +2623,7 @@ public final class MetadataObjects {
           return this;
         }
 
+        // repeated string DependencyJarNames = 19;
         private com.google.protobuf.LazyStringList dependencyJarNames_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         private void ensureDependencyJarNamesIsMutable() {
           if (!((bitField0_ & 0x00004000) == 0x00004000)) {
@@ -2623,9 +2634,9 @@ public final class MetadataObjects {
         /**
          * <code>repeated string DependencyJarNames = 19;</code>
          */
-        public com.google.protobuf.ProtocolStringList
+        public java.util.List<java.lang.String>
             getDependencyJarNamesList() {
-          return dependencyJarNames_.getUnmodifiableView();
+          return java.util.Collections.unmodifiableList(dependencyJarNames_);
         }
         /**
          * <code>repeated string DependencyJarNames = 19;</code>
@@ -2678,8 +2689,7 @@ public final class MetadataObjects {
         public Builder addAllDependencyJarNames(
             java.lang.Iterable<java.lang.String> values) {
           ensureDependencyJarNamesIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, dependencyJarNames_);
+          super.addAll(values, dependencyJarNames_);
           onChanged();
           return this;
         }
@@ -2717,10 +2727,10 @@ public final class MetadataObjects {
       // @@protoc_insertion_point(class_scope:MetadataType.ProtoBaseElem)
     }
 
-    public interface ProtoBaseTypeOrBuilder extends
-        // @@protoc_insertion_point(interface_extends:MetadataType.ProtoBaseType)
-        com.google.protobuf.MessageOrBuilder {
+    public interface ProtoBaseTypeOrBuilder
+        extends com.google.protobuf.MessageOrBuilder {
 
+      // required .MetadataType.ProtoBaseElem pbe = 1;
       /**
        * <code>required .MetadataType.ProtoBaseElem pbe = 1;</code>
        */
@@ -2734,6 +2744,7 @@ public final class MetadataObjects {
        */
       com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElemOrBuilder getPbeOrBuilder();
 
+      // optional string TypeType = 2;
       /**
        * <code>optional string TypeType = 2;</code>
        */
@@ -2748,6 +2759,7 @@ public final class MetadataObjects {
       com.google.protobuf.ByteString
           getTypeTypeBytes();
 
+      // optional string Type = 3;
       /**
        * <code>optional string Type = 3;</code>
        */
@@ -2762,6 +2774,7 @@ public final class MetadataObjects {
       com.google.protobuf.ByteString
           getTypeBytes();
 
+      // optional string implementationName = 4;
       /**
        * <code>optional string implementationName = 4;</code>
        */
@@ -2780,9 +2793,8 @@ public final class MetadataObjects {
      * Protobuf type {@code MetadataType.ProtoBaseType}
      */
     public static final class ProtoBaseType extends
-        com.google.protobuf.GeneratedMessage implements
-        // @@protoc_insertion_point(message_implements:MetadataType.ProtoBaseType)
-        ProtoBaseTypeOrBuilder {
+        com.google.protobuf.GeneratedMessage
+        implements ProtoBaseTypeOrBuilder {
       // Use ProtoBaseType.newBuilder() to construct.
       private ProtoBaseType(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
         super(builder);
@@ -2842,21 +2854,18 @@ public final class MetadataObjects {
                 break;
               }
               case 18: {
-                com.google.protobuf.ByteString bs = input.readBytes();
                 bitField0_ |= 0x00000002;
-                typeType_ = bs;
+                typeType_ = input.readBytes();
                 break;
               }
               case 26: {
-                com.google.protobuf.ByteString bs = input.readBytes();
                 bitField0_ |= 0x00000004;
-                type_ = bs;
+                type_ = input.readBytes();
                 break;
               }
               case 34: {
-                com.google.protobuf.ByteString bs = input.readBytes();
                 bitField0_ |= 0x00000008;
-                implementationName_ = bs;
+                implementationName_ = input.readBytes();
                 break;
               }
             }
@@ -2899,6 +2908,7 @@ public final class MetadataObjects {
       }
 
       private int bitField0_;
+      // required .MetadataType.ProtoBaseElem pbe = 1;
       public static final int PBE_FIELD_NUMBER = 1;
       private com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem pbe_;
       /**
@@ -2920,6 +2930,7 @@ public final class MetadataObjects {
         return pbe_;
       }
 
+      // optional string TypeType = 2;
       public static final int TYPETYPE_FIELD_NUMBER = 2;
       private java.lang.Object typeType_;
       /**
@@ -2962,6 +2973,7 @@ public final class MetadataObjects {
         }
       }
 
+      // optional string Type = 3;
       public static final int TYPE_FIELD_NUMBER = 3;
       private java.lang.Object type_;
       /**
@@ -3004,6 +3016,7 @@ public final class MetadataObjects {
         }
       }
 
+      // optional string implementationName = 4;
       public static final int IMPLEMENTATIONNAME_FIELD_NUMBER = 4;
       private java.lang.Object implementationName_;
       /**
@@ -3055,8 +3068,7 @@ public final class MetadataObjects {
       private byte memoizedIsInitialized = -1;
       public final boolean isInitialized() {
         byte isInitialized = memoizedIsInitialized;
-        if (isInitialized == 1) return true;
-        if (isInitialized == 0) return false;
+        if (isInitialized != -1) return isInitialized == 1;
 
         if (!hasPbe()) {
           memoizedIsInitialized = 0;
@@ -3192,9 +3204,8 @@ public final class MetadataObjects {
        * Protobuf type {@code MetadataType.ProtoBaseType}
        */
       public static final class Builder extends
-          com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-          // @@protoc_insertion_point(builder_implements:MetadataType.ProtoBaseType)
-          com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseTypeOrBuilder {
+          com.google.protobuf.GeneratedMessage.Builder<Builder>
+         implements com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseTypeOrBuilder {
         public static final com.google.protobuf.Descriptors.Descriptor
             getDescriptor() {
           return com.ligadata.Serialize.MetadataObjects.internal_static_MetadataType_ProtoBaseType_descriptor;
@@ -3357,6 +3368,7 @@ public final class MetadataObjects {
         }
         private int bitField0_;
 
+        // required .MetadataType.ProtoBaseElem pbe = 1;
         private com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem pbe_ = com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem.getDefaultInstance();
         private com.google.protobuf.SingleFieldBuilder<
             com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem.Builder, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElemOrBuilder> pbeBuilder_;
@@ -3465,7 +3477,7 @@ public final class MetadataObjects {
           if (pbeBuilder_ == null) {
             pbeBuilder_ = new com.google.protobuf.SingleFieldBuilder<
                 com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem.Builder, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElemOrBuilder>(
-                    getPbe(),
+                    pbe_,
                     getParentForChildren(),
                     isClean());
             pbe_ = null;
@@ -3473,6 +3485,7 @@ public final class MetadataObjects {
           return pbeBuilder_;
         }
 
+        // optional string TypeType = 2;
         private java.lang.Object typeType_ = "";
         /**
          * <code>optional string TypeType = 2;</code>
@@ -3486,12 +3499,9 @@ public final class MetadataObjects {
         public java.lang.String getTypeType() {
           java.lang.Object ref = typeType_;
           if (!(ref instanceof java.lang.String)) {
-            com.google.protobuf.ByteString bs =
-                (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            if (bs.isValidUtf8()) {
-              typeType_ = s;
-            }
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            typeType_ = s;
             return s;
           } else {
             return (java.lang.String) ref;
@@ -3549,6 +3559,7 @@ public final class MetadataObjects {
           return this;
         }
 
+        // optional string Type = 3;
         private java.lang.Object type_ = "";
         /**
          * <code>optional string Type = 3;</code>
@@ -3562,12 +3573,9 @@ public final class MetadataObjects {
         public java.lang.String getType() {
           java.lang.Object ref = type_;
           if (!(ref instanceof java.lang.String)) {
-            com.google.protobuf.ByteString bs =
-                (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            if (bs.isValidUtf8()) {
-              type_ = s;
-            }
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            type_ = s;
             return s;
           } else {
             return (java.lang.String) ref;
@@ -3625,6 +3633,7 @@ public final class MetadataObjects {
           return this;
         }
 
+        // optional string implementationName = 4;
         private java.lang.Object implementationName_ = "";
         /**
          * <code>optional string implementationName = 4;</code>
@@ -3638,12 +3647,9 @@ public final class MetadataObjects {
         public java.lang.String getImplementationName() {
           java.lang.Object ref = implementationName_;
           if (!(ref instanceof java.lang.String)) {
-            com.google.protobuf.ByteString bs =
-                (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            if (bs.isValidUtf8()) {
-              implementationName_ = s;
-            }
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            implementationName_ = s;
             return s;
           } else {
             return (java.lang.String) ref;
@@ -3712,10 +3718,10 @@ public final class MetadataObjects {
       // @@protoc_insertion_point(class_scope:MetadataType.ProtoBaseType)
     }
 
-    public interface ScalarTypeOrBuilder extends
-        // @@protoc_insertion_point(interface_extends:MetadataType.ScalarType)
-        com.google.protobuf.MessageOrBuilder {
+    public interface ScalarTypeOrBuilder
+        extends com.google.protobuf.MessageOrBuilder {
 
+      // required .MetadataType.ProtoBaseElem pbe = 1;
       /**
        * <code>required .MetadataType.ProtoBaseElem pbe = 1;</code>
        */
@@ -3729,6 +3735,7 @@ public final class MetadataObjects {
        */
       com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElemOrBuilder getPbeOrBuilder();
 
+      // required .MetadataType.ProtoBaseType pbt = 2;
       /**
        * <code>required .MetadataType.ProtoBaseType pbt = 2;</code>
        */
@@ -3746,9 +3753,8 @@ public final class MetadataObjects {
      * Protobuf type {@code MetadataType.ScalarType}
      */
     public static final class ScalarType extends
-        com.google.protobuf.GeneratedMessage implements
-        // @@protoc_insertion_point(message_implements:MetadataType.ScalarType)
-        ScalarTypeOrBuilder {
+        com.google.protobuf.GeneratedMessage
+        implements ScalarTypeOrBuilder {
       // Use ScalarType.newBuilder() to construct.
       private ScalarType(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
         super(builder);
@@ -3860,6 +3866,7 @@ public final class MetadataObjects {
       }
 
       private int bitField0_;
+      // required .MetadataType.ProtoBaseElem pbe = 1;
       public static final int PBE_FIELD_NUMBER = 1;
       private com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem pbe_;
       /**
@@ -3881,6 +3888,7 @@ public final class MetadataObjects {
         return pbe_;
       }
 
+      // required .MetadataType.ProtoBaseType pbt = 2;
       public static final int PBT_FIELD_NUMBER = 2;
       private com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseType pbt_;
       /**
@@ -3909,8 +3917,7 @@ public final class MetadataObjects {
       private byte memoizedIsInitialized = -1;
       public final boolean isInitialized() {
         byte isInitialized = memoizedIsInitialized;
-        if (isInitialized == 1) return true;
-        if (isInitialized == 0) return false;
+        if (isInitialized != -1) return isInitialized == 1;
 
         if (!hasPbe()) {
           memoizedIsInitialized = 0;
@@ -4040,9 +4047,8 @@ public final class MetadataObjects {
        * Protobuf type {@code MetadataType.ScalarType}
        */
       public static final class Builder extends
-          com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-          // @@protoc_insertion_point(builder_implements:MetadataType.ScalarType)
-          com.ligadata.Serialize.MetadataObjects.MetadataType.ScalarTypeOrBuilder {
+          com.google.protobuf.GeneratedMessage.Builder<Builder>
+         implements com.ligadata.Serialize.MetadataObjects.MetadataType.ScalarTypeOrBuilder {
         public static final com.google.protobuf.Descriptors.Descriptor
             getDescriptor() {
           return com.ligadata.Serialize.MetadataObjects.internal_static_MetadataType_ScalarType_descriptor;
@@ -4198,6 +4204,7 @@ public final class MetadataObjects {
         }
         private int bitField0_;
 
+        // required .MetadataType.ProtoBaseElem pbe = 1;
         private com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem pbe_ = com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem.getDefaultInstance();
         private com.google.protobuf.SingleFieldBuilder<
             com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem.Builder, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElemOrBuilder> pbeBuilder_;
@@ -4306,7 +4313,7 @@ public final class MetadataObjects {
           if (pbeBuilder_ == null) {
             pbeBuilder_ = new com.google.protobuf.SingleFieldBuilder<
                 com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem.Builder, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElemOrBuilder>(
-                    getPbe(),
+                    pbe_,
                     getParentForChildren(),
                     isClean());
             pbe_ = null;
@@ -4314,6 +4321,7 @@ public final class MetadataObjects {
           return pbeBuilder_;
         }
 
+        // required .MetadataType.ProtoBaseType pbt = 2;
         private com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseType pbt_ = com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseType.getDefaultInstance();
         private com.google.protobuf.SingleFieldBuilder<
             com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseType, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseType.Builder, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseTypeOrBuilder> pbtBuilder_;
@@ -4422,7 +4430,7 @@ public final class MetadataObjects {
           if (pbtBuilder_ == null) {
             pbtBuilder_ = new com.google.protobuf.SingleFieldBuilder<
                 com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseType, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseType.Builder, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseTypeOrBuilder>(
-                    getPbt(),
+                    pbt_,
                     getParentForChildren(),
                     isClean());
             pbt_ = null;
@@ -4441,10 +4449,10 @@ public final class MetadataObjects {
       // @@protoc_insertion_point(class_scope:MetadataType.ScalarType)
     }
 
-    public interface ProtoBaseTypeKeyOrBuilder extends
-        // @@protoc_insertion_point(interface_extends:MetadataType.ProtoBaseTypeKey)
-        com.google.protobuf.MessageOrBuilder {
+    public interface ProtoBaseTypeKeyOrBuilder
+        extends com.google.protobuf.MessageOrBuilder {
 
+      // required string NameSpace = 1;
       /**
        * <code>required string NameSpace = 1;</code>
        */
@@ -4459,6 +4467,7 @@ public final class MetadataObjects {
       com.google.protobuf.ByteString
           getNameSpaceBytes();
 
+      // required string Name = 2;
       /**
        * <code>required string Name = 2;</code>
        */
@@ -4473,6 +4482,7 @@ public final class MetadataObjects {
       com.google.protobuf.ByteString
           getNameBytes();
 
+      // required int64 Ver = 3;
       /**
        * <code>required int64 Ver = 3;</code>
        */
@@ -4486,9 +4496,8 @@ public final class MetadataObjects {
      * Protobuf type {@code MetadataType.ProtoBaseTypeKey}
      */
     public static final class ProtoBaseTypeKey extends
-        com.google.protobuf.GeneratedMessage implements
-        // @@protoc_insertion_point(message_implements:MetadataType.ProtoBaseTypeKey)
-        ProtoBaseTypeKeyOrBuilder {
+        com.google.protobuf.GeneratedMessage
+        implements ProtoBaseTypeKeyOrBuilder {
       // Use ProtoBaseTypeKey.newBuilder() to construct.
       private ProtoBaseTypeKey(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
         super(builder);
@@ -4535,20 +4544,18 @@ public final class MetadataObjects {
                 break;
               }
               case 10: {
-                com.google.protobuf.ByteString bs = input.readBytes();
                 bitField0_ |= 0x00000001;
-                nameSpace_ = bs;
+                nameSpace_ = input.readBytes();
                 break;
               }
               case 18: {
-                com.google.protobuf.ByteString bs = input.readBytes();
                 bitField0_ |= 0x00000002;
-                name_ = bs;
+                name_ = input.readBytes();
                 break;
               }
               case 24: {
                 bitField0_ |= 0x00000004;
-                ver_ = input.readInt32();
+                ver_ = input.readInt64();
                 break;
               }
             }
@@ -4591,6 +4598,7 @@ public final class MetadataObjects {
       }
 
       private int bitField0_;
+      // required string NameSpace = 1;
       public static final int NAMESPACE_FIELD_NUMBER = 1;
       private java.lang.Object nameSpace_;
       /**
@@ -4633,6 +4641,7 @@ public final class MetadataObjects {
         }
       }
 
+      // required string Name = 2;
       public static final int NAME_FIELD_NUMBER = 2;
       private java.lang.Object name_;
       /**
@@ -4675,6 +4684,7 @@ public final class MetadataObjects {
         }
       }
 
+      // required int64 Ver = 3;
       public static final int VER_FIELD_NUMBER = 3;
       private long ver_;
       /**
@@ -4693,13 +4703,12 @@ public final class MetadataObjects {
       private void initFields() {
         nameSpace_ = "";
         name_ = "";
-        ver_ = 0;
+        ver_ = 0L;
       }
       private byte memoizedIsInitialized = -1;
       public final boolean isInitialized() {
         byte isInitialized = memoizedIsInitialized;
-        if (isInitialized == 1) return true;
-        if (isInitialized == 0) return false;
+        if (isInitialized != -1) return isInitialized == 1;
 
         if (!hasNameSpace()) {
           memoizedIsInitialized = 0;
@@ -4832,9 +4841,8 @@ public final class MetadataObjects {
        * Protobuf type {@code MetadataType.ProtoBaseTypeKey}
        */
       public static final class Builder extends
-          com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-          // @@protoc_insertion_point(builder_implements:MetadataType.ProtoBaseTypeKey)
-          com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseTypeKeyOrBuilder {
+          com.google.protobuf.GeneratedMessage.Builder<Builder>
+         implements com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseTypeKeyOrBuilder {
         public static final com.google.protobuf.Descriptors.Descriptor
             getDescriptor() {
           return com.ligadata.Serialize.MetadataObjects.internal_static_MetadataType_ProtoBaseTypeKey_descriptor;
@@ -4871,7 +4879,7 @@ public final class MetadataObjects {
           bitField0_ = (bitField0_ & ~0x00000001);
           name_ = "";
           bitField0_ = (bitField0_ & ~0x00000002);
-          ver_ = 0;
+          ver_ = 0L;
           bitField0_ = (bitField0_ & ~0x00000004);
           return this;
         }
@@ -4981,6 +4989,7 @@ public final class MetadataObjects {
         }
         private int bitField0_;
 
+        // required string NameSpace = 1;
         private java.lang.Object nameSpace_ = "";
         /**
          * <code>required string NameSpace = 1;</code>
@@ -4994,12 +5003,9 @@ public final class MetadataObjects {
         public java.lang.String getNameSpace() {
           java.lang.Object ref = nameSpace_;
           if (!(ref instanceof java.lang.String)) {
-            com.google.protobuf.ByteString bs =
-                (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            if (bs.isValidUtf8()) {
-              nameSpace_ = s;
-            }
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            nameSpace_ = s;
             return s;
           } else {
             return (java.lang.String) ref;
@@ -5057,6 +5063,7 @@ public final class MetadataObjects {
           return this;
         }
 
+        // required string Name = 2;
         private java.lang.Object name_ = "";
         /**
          * <code>required string Name = 2;</code>
@@ -5070,12 +5077,9 @@ public final class MetadataObjects {
         public java.lang.String getName() {
           java.lang.Object ref = name_;
           if (!(ref instanceof java.lang.String)) {
-            com.google.protobuf.ByteString bs =
-                (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            if (bs.isValidUtf8()) {
-              name_ = s;
-            }
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            name_ = s;
             return s;
           } else {
             return (java.lang.String) ref;
@@ -5133,6 +5137,7 @@ public final class MetadataObjects {
           return this;
         }
 
+        // required int64 Ver = 3;
         private long ver_ ;
         /**
          * <code>required int64 Ver = 3;</code>
@@ -5160,7 +5165,7 @@ public final class MetadataObjects {
          */
         public Builder clearVer() {
           bitField0_ = (bitField0_ & ~0x00000004);
-          ver_ = 0;
+          ver_ = 0L;
           onChanged();
           return this;
         }
@@ -5176,10 +5181,10 @@ public final class MetadataObjects {
       // @@protoc_insertion_point(class_scope:MetadataType.ProtoBaseTypeKey)
     }
 
-    public interface AttributeOrBuilder extends
-        // @@protoc_insertion_point(interface_extends:MetadataType.Attribute)
-        com.google.protobuf.MessageOrBuilder {
+    public interface AttributeOrBuilder
+        extends com.google.protobuf.MessageOrBuilder {
 
+      // required .MetadataType.ProtoBaseElem pbe = 1;
       /**
        * <code>required .MetadataType.ProtoBaseElem pbe = 1;</code>
        */
@@ -5193,6 +5198,7 @@ public final class MetadataObjects {
        */
       com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElemOrBuilder getPbeOrBuilder();
 
+      // required .MetadataType.ProtoBaseTypeKey pbt = 2;
       /**
        * <code>required .MetadataType.ProtoBaseTypeKey pbt = 2;</code>
        */
@@ -5206,6 +5212,7 @@ public final class MetadataObjects {
        */
       com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseTypeKeyOrBuilder getPbtOrBuilder();
 
+      // optional string collectionType = 3;
       /**
        * <code>optional string collectionType = 3;</code>
        */
@@ -5224,9 +5231,8 @@ public final class MetadataObjects {
      * Protobuf type {@code MetadataType.Attribute}
      */
     public static final class Attribute extends
-        com.google.protobuf.GeneratedMessage implements
-        // @@protoc_insertion_point(message_implements:MetadataType.Attribute)
-        AttributeOrBuilder {
+        com.google.protobuf.GeneratedMessage
+        implements AttributeOrBuilder {
       // Use Attribute.newBuilder() to construct.
       private Attribute(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
         super(builder);
@@ -5299,9 +5305,8 @@ public final class MetadataObjects {
                 break;
               }
               case 26: {
-                com.google.protobuf.ByteString bs = input.readBytes();
                 bitField0_ |= 0x00000004;
-                collectionType_ = bs;
+                collectionType_ = input.readBytes();
                 break;
               }
             }
@@ -5344,6 +5349,7 @@ public final class MetadataObjects {
       }
 
       private int bitField0_;
+      // required .MetadataType.ProtoBaseElem pbe = 1;
       public static final int PBE_FIELD_NUMBER = 1;
       private com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem pbe_;
       /**
@@ -5365,6 +5371,7 @@ public final class MetadataObjects {
         return pbe_;
       }
 
+      // required .MetadataType.ProtoBaseTypeKey pbt = 2;
       public static final int PBT_FIELD_NUMBER = 2;
       private com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseTypeKey pbt_;
       /**
@@ -5386,6 +5393,7 @@ public final class MetadataObjects {
         return pbt_;
       }
 
+      // optional string collectionType = 3;
       public static final int COLLECTIONTYPE_FIELD_NUMBER = 3;
       private java.lang.Object collectionType_;
       /**
@@ -5436,8 +5444,7 @@ public final class MetadataObjects {
       private byte memoizedIsInitialized = -1;
       public final boolean isInitialized() {
         byte isInitialized = memoizedIsInitialized;
-        if (isInitialized == 1) return true;
-        if (isInitialized == 0) return false;
+        if (isInitialized != -1) return isInitialized == 1;
 
         if (!hasPbe()) {
           memoizedIsInitialized = 0;
@@ -5574,9 +5581,8 @@ public final class MetadataObjects {
        * Protobuf type {@code MetadataType.Attribute}
        */
       public static final class Builder extends
-          com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-          // @@protoc_insertion_point(builder_implements:MetadataType.Attribute)
-          com.ligadata.Serialize.MetadataObjects.MetadataType.AttributeOrBuilder {
+          com.google.protobuf.GeneratedMessage.Builder<Builder>
+         implements com.ligadata.Serialize.MetadataObjects.MetadataType.AttributeOrBuilder {
         public static final com.google.protobuf.Descriptors.Descriptor
             getDescriptor() {
           return com.ligadata.Serialize.MetadataObjects.internal_static_MetadataType_Attribute_descriptor;
@@ -5743,6 +5749,7 @@ public final class MetadataObjects {
         }
         private int bitField0_;
 
+        // required .MetadataType.ProtoBaseElem pbe = 1;
         private com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem pbe_ = com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem.getDefaultInstance();
         private com.google.protobuf.SingleFieldBuilder<
             com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem.Builder, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElemOrBuilder> pbeBuilder_;
@@ -5851,7 +5858,7 @@ public final class MetadataObjects {
           if (pbeBuilder_ == null) {
             pbeBuilder_ = new com.google.protobuf.SingleFieldBuilder<
                 com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem.Builder, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElemOrBuilder>(
-                    getPbe(),
+                    pbe_,
                     getParentForChildren(),
                     isClean());
             pbe_ = null;
@@ -5859,6 +5866,7 @@ public final class MetadataObjects {
           return pbeBuilder_;
         }
 
+        // required .MetadataType.ProtoBaseTypeKey pbt = 2;
         private com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseTypeKey pbt_ = com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseTypeKey.getDefaultInstance();
         private com.google.protobuf.SingleFieldBuilder<
             com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseTypeKey, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseTypeKey.Builder, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseTypeKeyOrBuilder> pbtBuilder_;
@@ -5967,7 +5975,7 @@ public final class MetadataObjects {
           if (pbtBuilder_ == null) {
             pbtBuilder_ = new com.google.protobuf.SingleFieldBuilder<
                 com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseTypeKey, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseTypeKey.Builder, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseTypeKeyOrBuilder>(
-                    getPbt(),
+                    pbt_,
                     getParentForChildren(),
                     isClean());
             pbt_ = null;
@@ -5975,6 +5983,7 @@ public final class MetadataObjects {
           return pbtBuilder_;
         }
 
+        // optional string collectionType = 3;
         private java.lang.Object collectionType_ = "";
         /**
          * <code>optional string collectionType = 3;</code>
@@ -5988,12 +5997,9 @@ public final class MetadataObjects {
         public java.lang.String getCollectionType() {
           java.lang.Object ref = collectionType_;
           if (!(ref instanceof java.lang.String)) {
-            com.google.protobuf.ByteString bs =
-                (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            if (bs.isValidUtf8()) {
-              collectionType_ = s;
-            }
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            collectionType_ = s;
             return s;
           } else {
             return (java.lang.String) ref;
@@ -6062,10 +6068,10 @@ public final class MetadataObjects {
       // @@protoc_insertion_point(class_scope:MetadataType.Attribute)
     }
 
-    public interface ModelOrBuilder extends
-        // @@protoc_insertion_point(interface_extends:MetadataType.Model)
-        com.google.protobuf.MessageOrBuilder {
+    public interface ModelOrBuilder
+        extends com.google.protobuf.MessageOrBuilder {
 
+      // required .MetadataType.ProtoBaseElem pbe = 1;
       /**
        * <code>required .MetadataType.ProtoBaseElem pbe = 1;</code>
        */
@@ -6079,20 +6085,22 @@ public final class MetadataObjects {
        */
       com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElemOrBuilder getPbeOrBuilder();
 
+      // optional string modelType = 2 [default = "Unknown"];
       /**
-       * <code>required string modelType = 2 [default = "RuleSet"];</code>
+       * <code>optional string modelType = 2 [default = "Unknown"];</code>
        */
       boolean hasModelType();
       /**
-       * <code>required string modelType = 2 [default = "RuleSet"];</code>
+       * <code>optional string modelType = 2 [default = "Unknown"];</code>
        */
       java.lang.String getModelType();
       /**
-       * <code>required string modelType = 2 [default = "RuleSet"];</code>
+       * <code>optional string modelType = 2 [default = "Unknown"];</code>
        */
       com.google.protobuf.ByteString
           getModelTypeBytes();
 
+      // repeated .MetadataType.Attribute inputVars = 3;
       /**
        * <code>repeated .MetadataType.Attribute inputVars = 3;</code>
        */
@@ -6117,6 +6125,7 @@ public final class MetadataObjects {
       com.ligadata.Serialize.MetadataObjects.MetadataType.AttributeOrBuilder getInputVarsOrBuilder(
           int index);
 
+      // repeated .MetadataType.Attribute outputVars = 4;
       /**
        * <code>repeated .MetadataType.Attribute outputVars = 4;</code>
        */
@@ -6140,14 +6149,103 @@ public final class MetadataObjects {
        */
       com.ligadata.Serialize.MetadataObjects.MetadataType.AttributeOrBuilder getOutputVarsOrBuilder(
           int index);
+
+      // optional string modelRep = 5;
+      /**
+       * <code>optional string modelRep = 5;</code>
+       */
+      boolean hasModelRep();
+      /**
+       * <code>optional string modelRep = 5;</code>
+       */
+      java.lang.String getModelRep();
+      /**
+       * <code>optional string modelRep = 5;</code>
+       */
+      com.google.protobuf.ByteString
+          getModelRepBytes();
+
+      // optional string ObjectDefinition = 6;
+      /**
+       * <code>optional string ObjectDefinition = 6;</code>
+       */
+      boolean hasObjectDefinition();
+      /**
+       * <code>optional string ObjectDefinition = 6;</code>
+       */
+      java.lang.String getObjectDefinition();
+      /**
+       * <code>optional string ObjectDefinition = 6;</code>
+       */
+      com.google.protobuf.ByteString
+          getObjectDefinitionBytes();
+
+      // optional string ObjectFormat = 7;
+      /**
+       * <code>optional string ObjectFormat = 7;</code>
+       */
+      boolean hasObjectFormat();
+      /**
+       * <code>optional string ObjectFormat = 7;</code>
+       */
+      java.lang.String getObjectFormat();
+      /**
+       * <code>optional string ObjectFormat = 7;</code>
+       */
+      com.google.protobuf.ByteString
+          getObjectFormatBytes();
+
+      // optional bool isReusable = 8;
+      /**
+       * <code>optional bool isReusable = 8;</code>
+       */
+      boolean hasIsReusable();
+      /**
+       * <code>optional bool isReusable = 8;</code>
+       */
+      boolean getIsReusable();
+
+      // optional bool recompile = 9;
+      /**
+       * <code>optional bool recompile = 9;</code>
+       */
+      boolean hasRecompile();
+      /**
+       * <code>optional bool recompile = 9;</code>
+       */
+      boolean getRecompile();
+
+      // optional bool supportsInstanceSerialization = 10;
+      /**
+       * <code>optional bool supportsInstanceSerialization = 10;</code>
+       */
+      boolean hasSupportsInstanceSerialization();
+      /**
+       * <code>optional bool supportsInstanceSerialization = 10;</code>
+       */
+      boolean getSupportsInstanceSerialization();
+
+      // optional string msgConsumed = 11;
+      /**
+       * <code>optional string msgConsumed = 11;</code>
+       */
+      boolean hasMsgConsumed();
+      /**
+       * <code>optional string msgConsumed = 11;</code>
+       */
+      java.lang.String getMsgConsumed();
+      /**
+       * <code>optional string msgConsumed = 11;</code>
+       */
+      com.google.protobuf.ByteString
+          getMsgConsumedBytes();
     }
     /**
      * Protobuf type {@code MetadataType.Model}
      */
     public static final class Model extends
-        com.google.protobuf.GeneratedMessage implements
-        // @@protoc_insertion_point(message_implements:MetadataType.Model)
-        ModelOrBuilder {
+        com.google.protobuf.GeneratedMessage
+        implements ModelOrBuilder {
       // Use Model.newBuilder() to construct.
       private Model(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
         super(builder);
@@ -6207,9 +6305,8 @@ public final class MetadataObjects {
                 break;
               }
               case 18: {
-                com.google.protobuf.ByteString bs = input.readBytes();
                 bitField0_ |= 0x00000002;
-                modelType_ = bs;
+                modelType_ = input.readBytes();
                 break;
               }
               case 26: {
@@ -6226,6 +6323,41 @@ public final class MetadataObjects {
                   mutable_bitField0_ |= 0x00000008;
                 }
                 outputVars_.add(input.readMessage(com.ligadata.Serialize.MetadataObjects.MetadataType.Attribute.PARSER, extensionRegistry));
+                break;
+              }
+              case 42: {
+                bitField0_ |= 0x00000004;
+                modelRep_ = input.readBytes();
+                break;
+              }
+              case 50: {
+                bitField0_ |= 0x00000008;
+                objectDefinition_ = input.readBytes();
+                break;
+              }
+              case 58: {
+                bitField0_ |= 0x00000010;
+                objectFormat_ = input.readBytes();
+                break;
+              }
+              case 64: {
+                bitField0_ |= 0x00000020;
+                isReusable_ = input.readBool();
+                break;
+              }
+              case 72: {
+                bitField0_ |= 0x00000040;
+                recompile_ = input.readBool();
+                break;
+              }
+              case 80: {
+                bitField0_ |= 0x00000080;
+                supportsInstanceSerialization_ = input.readBool();
+                break;
+              }
+              case 90: {
+                bitField0_ |= 0x00000100;
+                msgConsumed_ = input.readBytes();
                 break;
               }
             }
@@ -6274,6 +6406,7 @@ public final class MetadataObjects {
       }
 
       private int bitField0_;
+      // required .MetadataType.ProtoBaseElem pbe = 1;
       public static final int PBE_FIELD_NUMBER = 1;
       private com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem pbe_;
       /**
@@ -6295,16 +6428,17 @@ public final class MetadataObjects {
         return pbe_;
       }
 
+      // optional string modelType = 2 [default = "Unknown"];
       public static final int MODELTYPE_FIELD_NUMBER = 2;
       private java.lang.Object modelType_;
       /**
-       * <code>required string modelType = 2 [default = "RuleSet"];</code>
+       * <code>optional string modelType = 2 [default = "Unknown"];</code>
        */
       public boolean hasModelType() {
         return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
-       * <code>required string modelType = 2 [default = "RuleSet"];</code>
+       * <code>optional string modelType = 2 [default = "Unknown"];</code>
        */
       public java.lang.String getModelType() {
         java.lang.Object ref = modelType_;
@@ -6321,7 +6455,7 @@ public final class MetadataObjects {
         }
       }
       /**
-       * <code>required string modelType = 2 [default = "RuleSet"];</code>
+       * <code>optional string modelType = 2 [default = "Unknown"];</code>
        */
       public com.google.protobuf.ByteString
           getModelTypeBytes() {
@@ -6337,6 +6471,7 @@ public final class MetadataObjects {
         }
       }
 
+      // repeated .MetadataType.Attribute inputVars = 3;
       public static final int INPUTVARS_FIELD_NUMBER = 3;
       private java.util.List<com.ligadata.Serialize.MetadataObjects.MetadataType.Attribute> inputVars_;
       /**
@@ -6372,6 +6507,7 @@ public final class MetadataObjects {
         return inputVars_.get(index);
       }
 
+      // repeated .MetadataType.Attribute outputVars = 4;
       public static final int OUTPUTVARS_FIELD_NUMBER = 4;
       private java.util.List<com.ligadata.Serialize.MetadataObjects.MetadataType.Attribute> outputVars_;
       /**
@@ -6407,23 +6543,245 @@ public final class MetadataObjects {
         return outputVars_.get(index);
       }
 
+      // optional string modelRep = 5;
+      public static final int MODELREP_FIELD_NUMBER = 5;
+      private java.lang.Object modelRep_;
+      /**
+       * <code>optional string modelRep = 5;</code>
+       */
+      public boolean hasModelRep() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>optional string modelRep = 5;</code>
+       */
+      public java.lang.String getModelRep() {
+        java.lang.Object ref = modelRep_;
+        if (ref instanceof java.lang.String) {
+          return (java.lang.String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            modelRep_ = s;
+          }
+          return s;
+        }
+      }
+      /**
+       * <code>optional string modelRep = 5;</code>
+       */
+      public com.google.protobuf.ByteString
+          getModelRepBytes() {
+        java.lang.Object ref = modelRep_;
+        if (ref instanceof java.lang.String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          modelRep_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+
+      // optional string ObjectDefinition = 6;
+      public static final int OBJECTDEFINITION_FIELD_NUMBER = 6;
+      private java.lang.Object objectDefinition_;
+      /**
+       * <code>optional string ObjectDefinition = 6;</code>
+       */
+      public boolean hasObjectDefinition() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>optional string ObjectDefinition = 6;</code>
+       */
+      public java.lang.String getObjectDefinition() {
+        java.lang.Object ref = objectDefinition_;
+        if (ref instanceof java.lang.String) {
+          return (java.lang.String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            objectDefinition_ = s;
+          }
+          return s;
+        }
+      }
+      /**
+       * <code>optional string ObjectDefinition = 6;</code>
+       */
+      public com.google.protobuf.ByteString
+          getObjectDefinitionBytes() {
+        java.lang.Object ref = objectDefinition_;
+        if (ref instanceof java.lang.String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          objectDefinition_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+
+      // optional string ObjectFormat = 7;
+      public static final int OBJECTFORMAT_FIELD_NUMBER = 7;
+      private java.lang.Object objectFormat_;
+      /**
+       * <code>optional string ObjectFormat = 7;</code>
+       */
+      public boolean hasObjectFormat() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>optional string ObjectFormat = 7;</code>
+       */
+      public java.lang.String getObjectFormat() {
+        java.lang.Object ref = objectFormat_;
+        if (ref instanceof java.lang.String) {
+          return (java.lang.String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            objectFormat_ = s;
+          }
+          return s;
+        }
+      }
+      /**
+       * <code>optional string ObjectFormat = 7;</code>
+       */
+      public com.google.protobuf.ByteString
+          getObjectFormatBytes() {
+        java.lang.Object ref = objectFormat_;
+        if (ref instanceof java.lang.String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          objectFormat_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+
+      // optional bool isReusable = 8;
+      public static final int ISREUSABLE_FIELD_NUMBER = 8;
+      private boolean isReusable_;
+      /**
+       * <code>optional bool isReusable = 8;</code>
+       */
+      public boolean hasIsReusable() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      /**
+       * <code>optional bool isReusable = 8;</code>
+       */
+      public boolean getIsReusable() {
+        return isReusable_;
+      }
+
+      // optional bool recompile = 9;
+      public static final int RECOMPILE_FIELD_NUMBER = 9;
+      private boolean recompile_;
+      /**
+       * <code>optional bool recompile = 9;</code>
+       */
+      public boolean hasRecompile() {
+        return ((bitField0_ & 0x00000040) == 0x00000040);
+      }
+      /**
+       * <code>optional bool recompile = 9;</code>
+       */
+      public boolean getRecompile() {
+        return recompile_;
+      }
+
+      // optional bool supportsInstanceSerialization = 10;
+      public static final int SUPPORTSINSTANCESERIALIZATION_FIELD_NUMBER = 10;
+      private boolean supportsInstanceSerialization_;
+      /**
+       * <code>optional bool supportsInstanceSerialization = 10;</code>
+       */
+      public boolean hasSupportsInstanceSerialization() {
+        return ((bitField0_ & 0x00000080) == 0x00000080);
+      }
+      /**
+       * <code>optional bool supportsInstanceSerialization = 10;</code>
+       */
+      public boolean getSupportsInstanceSerialization() {
+        return supportsInstanceSerialization_;
+      }
+
+      // optional string msgConsumed = 11;
+      public static final int MSGCONSUMED_FIELD_NUMBER = 11;
+      private java.lang.Object msgConsumed_;
+      /**
+       * <code>optional string msgConsumed = 11;</code>
+       */
+      public boolean hasMsgConsumed() {
+        return ((bitField0_ & 0x00000100) == 0x00000100);
+      }
+      /**
+       * <code>optional string msgConsumed = 11;</code>
+       */
+      public java.lang.String getMsgConsumed() {
+        java.lang.Object ref = msgConsumed_;
+        if (ref instanceof java.lang.String) {
+          return (java.lang.String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            msgConsumed_ = s;
+          }
+          return s;
+        }
+      }
+      /**
+       * <code>optional string msgConsumed = 11;</code>
+       */
+      public com.google.protobuf.ByteString
+          getMsgConsumedBytes() {
+        java.lang.Object ref = msgConsumed_;
+        if (ref instanceof java.lang.String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          msgConsumed_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+
       private void initFields() {
         pbe_ = com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem.getDefaultInstance();
-        modelType_ = "RuleSet";
+        modelType_ = "Unknown";
         inputVars_ = java.util.Collections.emptyList();
         outputVars_ = java.util.Collections.emptyList();
+        modelRep_ = "";
+        objectDefinition_ = "";
+        objectFormat_ = "";
+        isReusable_ = false;
+        recompile_ = false;
+        supportsInstanceSerialization_ = false;
+        msgConsumed_ = "";
       }
       private byte memoizedIsInitialized = -1;
       public final boolean isInitialized() {
         byte isInitialized = memoizedIsInitialized;
-        if (isInitialized == 1) return true;
-        if (isInitialized == 0) return false;
+        if (isInitialized != -1) return isInitialized == 1;
 
         if (!hasPbe()) {
-          memoizedIsInitialized = 0;
-          return false;
-        }
-        if (!hasModelType()) {
           memoizedIsInitialized = 0;
           return false;
         }
@@ -6462,6 +6820,27 @@ public final class MetadataObjects {
         for (int i = 0; i < outputVars_.size(); i++) {
           output.writeMessage(4, outputVars_.get(i));
         }
+        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+          output.writeBytes(5, getModelRepBytes());
+        }
+        if (((bitField0_ & 0x00000008) == 0x00000008)) {
+          output.writeBytes(6, getObjectDefinitionBytes());
+        }
+        if (((bitField0_ & 0x00000010) == 0x00000010)) {
+          output.writeBytes(7, getObjectFormatBytes());
+        }
+        if (((bitField0_ & 0x00000020) == 0x00000020)) {
+          output.writeBool(8, isReusable_);
+        }
+        if (((bitField0_ & 0x00000040) == 0x00000040)) {
+          output.writeBool(9, recompile_);
+        }
+        if (((bitField0_ & 0x00000080) == 0x00000080)) {
+          output.writeBool(10, supportsInstanceSerialization_);
+        }
+        if (((bitField0_ & 0x00000100) == 0x00000100)) {
+          output.writeBytes(11, getMsgConsumedBytes());
+        }
         getUnknownFields().writeTo(output);
       }
 
@@ -6486,6 +6865,34 @@ public final class MetadataObjects {
         for (int i = 0; i < outputVars_.size(); i++) {
           size += com.google.protobuf.CodedOutputStream
             .computeMessageSize(4, outputVars_.get(i));
+        }
+        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeBytesSize(5, getModelRepBytes());
+        }
+        if (((bitField0_ & 0x00000008) == 0x00000008)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeBytesSize(6, getObjectDefinitionBytes());
+        }
+        if (((bitField0_ & 0x00000010) == 0x00000010)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeBytesSize(7, getObjectFormatBytes());
+        }
+        if (((bitField0_ & 0x00000020) == 0x00000020)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeBoolSize(8, isReusable_);
+        }
+        if (((bitField0_ & 0x00000040) == 0x00000040)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeBoolSize(9, recompile_);
+        }
+        if (((bitField0_ & 0x00000080) == 0x00000080)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeBoolSize(10, supportsInstanceSerialization_);
+        }
+        if (((bitField0_ & 0x00000100) == 0x00000100)) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeBytesSize(11, getMsgConsumedBytes());
         }
         size += getUnknownFields().getSerializedSize();
         memoizedSerializedSize = size;
@@ -6569,9 +6976,8 @@ public final class MetadataObjects {
        * Protobuf type {@code MetadataType.Model}
        */
       public static final class Builder extends
-          com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-          // @@protoc_insertion_point(builder_implements:MetadataType.Model)
-          com.ligadata.Serialize.MetadataObjects.MetadataType.ModelOrBuilder {
+          com.google.protobuf.GeneratedMessage.Builder<Builder>
+         implements com.ligadata.Serialize.MetadataObjects.MetadataType.ModelOrBuilder {
         public static final com.google.protobuf.Descriptors.Descriptor
             getDescriptor() {
           return com.ligadata.Serialize.MetadataObjects.internal_static_MetadataType_Model_descriptor;
@@ -6613,7 +7019,7 @@ public final class MetadataObjects {
             pbeBuilder_.clear();
           }
           bitField0_ = (bitField0_ & ~0x00000001);
-          modelType_ = "RuleSet";
+          modelType_ = "Unknown";
           bitField0_ = (bitField0_ & ~0x00000002);
           if (inputVarsBuilder_ == null) {
             inputVars_ = java.util.Collections.emptyList();
@@ -6627,6 +7033,20 @@ public final class MetadataObjects {
           } else {
             outputVarsBuilder_.clear();
           }
+          modelRep_ = "";
+          bitField0_ = (bitField0_ & ~0x00000010);
+          objectDefinition_ = "";
+          bitField0_ = (bitField0_ & ~0x00000020);
+          objectFormat_ = "";
+          bitField0_ = (bitField0_ & ~0x00000040);
+          isReusable_ = false;
+          bitField0_ = (bitField0_ & ~0x00000080);
+          recompile_ = false;
+          bitField0_ = (bitField0_ & ~0x00000100);
+          supportsInstanceSerialization_ = false;
+          bitField0_ = (bitField0_ & ~0x00000200);
+          msgConsumed_ = "";
+          bitField0_ = (bitField0_ & ~0x00000400);
           return this;
         }
 
@@ -6685,6 +7105,34 @@ public final class MetadataObjects {
           } else {
             result.outputVars_ = outputVarsBuilder_.build();
           }
+          if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+            to_bitField0_ |= 0x00000004;
+          }
+          result.modelRep_ = modelRep_;
+          if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+            to_bitField0_ |= 0x00000008;
+          }
+          result.objectDefinition_ = objectDefinition_;
+          if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+            to_bitField0_ |= 0x00000010;
+          }
+          result.objectFormat_ = objectFormat_;
+          if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+            to_bitField0_ |= 0x00000020;
+          }
+          result.isReusable_ = isReusable_;
+          if (((from_bitField0_ & 0x00000100) == 0x00000100)) {
+            to_bitField0_ |= 0x00000040;
+          }
+          result.recompile_ = recompile_;
+          if (((from_bitField0_ & 0x00000200) == 0x00000200)) {
+            to_bitField0_ |= 0x00000080;
+          }
+          result.supportsInstanceSerialization_ = supportsInstanceSerialization_;
+          if (((from_bitField0_ & 0x00000400) == 0x00000400)) {
+            to_bitField0_ |= 0x00000100;
+          }
+          result.msgConsumed_ = msgConsumed_;
           result.bitField0_ = to_bitField0_;
           onBuilt();
           return result;
@@ -6761,16 +7209,41 @@ public final class MetadataObjects {
               }
             }
           }
+          if (other.hasModelRep()) {
+            bitField0_ |= 0x00000010;
+            modelRep_ = other.modelRep_;
+            onChanged();
+          }
+          if (other.hasObjectDefinition()) {
+            bitField0_ |= 0x00000020;
+            objectDefinition_ = other.objectDefinition_;
+            onChanged();
+          }
+          if (other.hasObjectFormat()) {
+            bitField0_ |= 0x00000040;
+            objectFormat_ = other.objectFormat_;
+            onChanged();
+          }
+          if (other.hasIsReusable()) {
+            setIsReusable(other.getIsReusable());
+          }
+          if (other.hasRecompile()) {
+            setRecompile(other.getRecompile());
+          }
+          if (other.hasSupportsInstanceSerialization()) {
+            setSupportsInstanceSerialization(other.getSupportsInstanceSerialization());
+          }
+          if (other.hasMsgConsumed()) {
+            bitField0_ |= 0x00000400;
+            msgConsumed_ = other.msgConsumed_;
+            onChanged();
+          }
           this.mergeUnknownFields(other.getUnknownFields());
           return this;
         }
 
         public final boolean isInitialized() {
           if (!hasPbe()) {
-            
-            return false;
-          }
-          if (!hasModelType()) {
             
             return false;
           }
@@ -6812,6 +7285,7 @@ public final class MetadataObjects {
         }
         private int bitField0_;
 
+        // required .MetadataType.ProtoBaseElem pbe = 1;
         private com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem pbe_ = com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem.getDefaultInstance();
         private com.google.protobuf.SingleFieldBuilder<
             com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem.Builder, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElemOrBuilder> pbeBuilder_;
@@ -6920,7 +7394,7 @@ public final class MetadataObjects {
           if (pbeBuilder_ == null) {
             pbeBuilder_ = new com.google.protobuf.SingleFieldBuilder<
                 com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElem.Builder, com.ligadata.Serialize.MetadataObjects.MetadataType.ProtoBaseElemOrBuilder>(
-                    getPbe(),
+                    pbe_,
                     getParentForChildren(),
                     isClean());
             pbe_ = null;
@@ -6928,32 +7402,30 @@ public final class MetadataObjects {
           return pbeBuilder_;
         }
 
-        private java.lang.Object modelType_ = "RuleSet";
+        // optional string modelType = 2 [default = "Unknown"];
+        private java.lang.Object modelType_ = "Unknown";
         /**
-         * <code>required string modelType = 2 [default = "RuleSet"];</code>
+         * <code>optional string modelType = 2 [default = "Unknown"];</code>
          */
         public boolean hasModelType() {
           return ((bitField0_ & 0x00000002) == 0x00000002);
         }
         /**
-         * <code>required string modelType = 2 [default = "RuleSet"];</code>
+         * <code>optional string modelType = 2 [default = "Unknown"];</code>
          */
         public java.lang.String getModelType() {
           java.lang.Object ref = modelType_;
           if (!(ref instanceof java.lang.String)) {
-            com.google.protobuf.ByteString bs =
-                (com.google.protobuf.ByteString) ref;
-            java.lang.String s = bs.toStringUtf8();
-            if (bs.isValidUtf8()) {
-              modelType_ = s;
-            }
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            modelType_ = s;
             return s;
           } else {
             return (java.lang.String) ref;
           }
         }
         /**
-         * <code>required string modelType = 2 [default = "RuleSet"];</code>
+         * <code>optional string modelType = 2 [default = "Unknown"];</code>
          */
         public com.google.protobuf.ByteString
             getModelTypeBytes() {
@@ -6969,7 +7441,7 @@ public final class MetadataObjects {
           }
         }
         /**
-         * <code>required string modelType = 2 [default = "RuleSet"];</code>
+         * <code>optional string modelType = 2 [default = "Unknown"];</code>
          */
         public Builder setModelType(
             java.lang.String value) {
@@ -6982,7 +7454,7 @@ public final class MetadataObjects {
           return this;
         }
         /**
-         * <code>required string modelType = 2 [default = "RuleSet"];</code>
+         * <code>optional string modelType = 2 [default = "Unknown"];</code>
          */
         public Builder clearModelType() {
           bitField0_ = (bitField0_ & ~0x00000002);
@@ -6991,7 +7463,7 @@ public final class MetadataObjects {
           return this;
         }
         /**
-         * <code>required string modelType = 2 [default = "RuleSet"];</code>
+         * <code>optional string modelType = 2 [default = "Unknown"];</code>
          */
         public Builder setModelTypeBytes(
             com.google.protobuf.ByteString value) {
@@ -7004,6 +7476,7 @@ public final class MetadataObjects {
           return this;
         }
 
+        // repeated .MetadataType.Attribute inputVars = 3;
         private java.util.List<com.ligadata.Serialize.MetadataObjects.MetadataType.Attribute> inputVars_ =
           java.util.Collections.emptyList();
         private void ensureInputVarsIsMutable() {
@@ -7145,8 +7618,7 @@ public final class MetadataObjects {
             java.lang.Iterable<? extends com.ligadata.Serialize.MetadataObjects.MetadataType.Attribute> values) {
           if (inputVarsBuilder_ == null) {
             ensureInputVarsIsMutable();
-            com.google.protobuf.AbstractMessageLite.Builder.addAll(
-                values, inputVars_);
+            super.addAll(values, inputVars_);
             onChanged();
           } else {
             inputVarsBuilder_.addAllMessages(values);
@@ -7244,6 +7716,7 @@ public final class MetadataObjects {
           return inputVarsBuilder_;
         }
 
+        // repeated .MetadataType.Attribute outputVars = 4;
         private java.util.List<com.ligadata.Serialize.MetadataObjects.MetadataType.Attribute> outputVars_ =
           java.util.Collections.emptyList();
         private void ensureOutputVarsIsMutable() {
@@ -7385,8 +7858,7 @@ public final class MetadataObjects {
             java.lang.Iterable<? extends com.ligadata.Serialize.MetadataObjects.MetadataType.Attribute> values) {
           if (outputVarsBuilder_ == null) {
             ensureOutputVarsIsMutable();
-            com.google.protobuf.AbstractMessageLite.Builder.addAll(
-                values, outputVars_);
+            super.addAll(values, outputVars_);
             onChanged();
           } else {
             outputVarsBuilder_.addAllMessages(values);
@@ -7484,6 +7956,401 @@ public final class MetadataObjects {
           return outputVarsBuilder_;
         }
 
+        // optional string modelRep = 5;
+        private java.lang.Object modelRep_ = "";
+        /**
+         * <code>optional string modelRep = 5;</code>
+         */
+        public boolean hasModelRep() {
+          return ((bitField0_ & 0x00000010) == 0x00000010);
+        }
+        /**
+         * <code>optional string modelRep = 5;</code>
+         */
+        public java.lang.String getModelRep() {
+          java.lang.Object ref = modelRep_;
+          if (!(ref instanceof java.lang.String)) {
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            modelRep_ = s;
+            return s;
+          } else {
+            return (java.lang.String) ref;
+          }
+        }
+        /**
+         * <code>optional string modelRep = 5;</code>
+         */
+        public com.google.protobuf.ByteString
+            getModelRepBytes() {
+          java.lang.Object ref = modelRep_;
+          if (ref instanceof String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            modelRep_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+        /**
+         * <code>optional string modelRep = 5;</code>
+         */
+        public Builder setModelRep(
+            java.lang.String value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+          modelRep_ = value;
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>optional string modelRep = 5;</code>
+         */
+        public Builder clearModelRep() {
+          bitField0_ = (bitField0_ & ~0x00000010);
+          modelRep_ = getDefaultInstance().getModelRep();
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>optional string modelRep = 5;</code>
+         */
+        public Builder setModelRepBytes(
+            com.google.protobuf.ByteString value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+          modelRep_ = value;
+          onChanged();
+          return this;
+        }
+
+        // optional string ObjectDefinition = 6;
+        private java.lang.Object objectDefinition_ = "";
+        /**
+         * <code>optional string ObjectDefinition = 6;</code>
+         */
+        public boolean hasObjectDefinition() {
+          return ((bitField0_ & 0x00000020) == 0x00000020);
+        }
+        /**
+         * <code>optional string ObjectDefinition = 6;</code>
+         */
+        public java.lang.String getObjectDefinition() {
+          java.lang.Object ref = objectDefinition_;
+          if (!(ref instanceof java.lang.String)) {
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            objectDefinition_ = s;
+            return s;
+          } else {
+            return (java.lang.String) ref;
+          }
+        }
+        /**
+         * <code>optional string ObjectDefinition = 6;</code>
+         */
+        public com.google.protobuf.ByteString
+            getObjectDefinitionBytes() {
+          java.lang.Object ref = objectDefinition_;
+          if (ref instanceof String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            objectDefinition_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+        /**
+         * <code>optional string ObjectDefinition = 6;</code>
+         */
+        public Builder setObjectDefinition(
+            java.lang.String value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000020;
+          objectDefinition_ = value;
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>optional string ObjectDefinition = 6;</code>
+         */
+        public Builder clearObjectDefinition() {
+          bitField0_ = (bitField0_ & ~0x00000020);
+          objectDefinition_ = getDefaultInstance().getObjectDefinition();
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>optional string ObjectDefinition = 6;</code>
+         */
+        public Builder setObjectDefinitionBytes(
+            com.google.protobuf.ByteString value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000020;
+          objectDefinition_ = value;
+          onChanged();
+          return this;
+        }
+
+        // optional string ObjectFormat = 7;
+        private java.lang.Object objectFormat_ = "";
+        /**
+         * <code>optional string ObjectFormat = 7;</code>
+         */
+        public boolean hasObjectFormat() {
+          return ((bitField0_ & 0x00000040) == 0x00000040);
+        }
+        /**
+         * <code>optional string ObjectFormat = 7;</code>
+         */
+        public java.lang.String getObjectFormat() {
+          java.lang.Object ref = objectFormat_;
+          if (!(ref instanceof java.lang.String)) {
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            objectFormat_ = s;
+            return s;
+          } else {
+            return (java.lang.String) ref;
+          }
+        }
+        /**
+         * <code>optional string ObjectFormat = 7;</code>
+         */
+        public com.google.protobuf.ByteString
+            getObjectFormatBytes() {
+          java.lang.Object ref = objectFormat_;
+          if (ref instanceof String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            objectFormat_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+        /**
+         * <code>optional string ObjectFormat = 7;</code>
+         */
+        public Builder setObjectFormat(
+            java.lang.String value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000040;
+          objectFormat_ = value;
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>optional string ObjectFormat = 7;</code>
+         */
+        public Builder clearObjectFormat() {
+          bitField0_ = (bitField0_ & ~0x00000040);
+          objectFormat_ = getDefaultInstance().getObjectFormat();
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>optional string ObjectFormat = 7;</code>
+         */
+        public Builder setObjectFormatBytes(
+            com.google.protobuf.ByteString value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000040;
+          objectFormat_ = value;
+          onChanged();
+          return this;
+        }
+
+        // optional bool isReusable = 8;
+        private boolean isReusable_ ;
+        /**
+         * <code>optional bool isReusable = 8;</code>
+         */
+        public boolean hasIsReusable() {
+          return ((bitField0_ & 0x00000080) == 0x00000080);
+        }
+        /**
+         * <code>optional bool isReusable = 8;</code>
+         */
+        public boolean getIsReusable() {
+          return isReusable_;
+        }
+        /**
+         * <code>optional bool isReusable = 8;</code>
+         */
+        public Builder setIsReusable(boolean value) {
+          bitField0_ |= 0x00000080;
+          isReusable_ = value;
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>optional bool isReusable = 8;</code>
+         */
+        public Builder clearIsReusable() {
+          bitField0_ = (bitField0_ & ~0x00000080);
+          isReusable_ = false;
+          onChanged();
+          return this;
+        }
+
+        // optional bool recompile = 9;
+        private boolean recompile_ ;
+        /**
+         * <code>optional bool recompile = 9;</code>
+         */
+        public boolean hasRecompile() {
+          return ((bitField0_ & 0x00000100) == 0x00000100);
+        }
+        /**
+         * <code>optional bool recompile = 9;</code>
+         */
+        public boolean getRecompile() {
+          return recompile_;
+        }
+        /**
+         * <code>optional bool recompile = 9;</code>
+         */
+        public Builder setRecompile(boolean value) {
+          bitField0_ |= 0x00000100;
+          recompile_ = value;
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>optional bool recompile = 9;</code>
+         */
+        public Builder clearRecompile() {
+          bitField0_ = (bitField0_ & ~0x00000100);
+          recompile_ = false;
+          onChanged();
+          return this;
+        }
+
+        // optional bool supportsInstanceSerialization = 10;
+        private boolean supportsInstanceSerialization_ ;
+        /**
+         * <code>optional bool supportsInstanceSerialization = 10;</code>
+         */
+        public boolean hasSupportsInstanceSerialization() {
+          return ((bitField0_ & 0x00000200) == 0x00000200);
+        }
+        /**
+         * <code>optional bool supportsInstanceSerialization = 10;</code>
+         */
+        public boolean getSupportsInstanceSerialization() {
+          return supportsInstanceSerialization_;
+        }
+        /**
+         * <code>optional bool supportsInstanceSerialization = 10;</code>
+         */
+        public Builder setSupportsInstanceSerialization(boolean value) {
+          bitField0_ |= 0x00000200;
+          supportsInstanceSerialization_ = value;
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>optional bool supportsInstanceSerialization = 10;</code>
+         */
+        public Builder clearSupportsInstanceSerialization() {
+          bitField0_ = (bitField0_ & ~0x00000200);
+          supportsInstanceSerialization_ = false;
+          onChanged();
+          return this;
+        }
+
+        // optional string msgConsumed = 11;
+        private java.lang.Object msgConsumed_ = "";
+        /**
+         * <code>optional string msgConsumed = 11;</code>
+         */
+        public boolean hasMsgConsumed() {
+          return ((bitField0_ & 0x00000400) == 0x00000400);
+        }
+        /**
+         * <code>optional string msgConsumed = 11;</code>
+         */
+        public java.lang.String getMsgConsumed() {
+          java.lang.Object ref = msgConsumed_;
+          if (!(ref instanceof java.lang.String)) {
+            java.lang.String s = ((com.google.protobuf.ByteString) ref)
+                .toStringUtf8();
+            msgConsumed_ = s;
+            return s;
+          } else {
+            return (java.lang.String) ref;
+          }
+        }
+        /**
+         * <code>optional string msgConsumed = 11;</code>
+         */
+        public com.google.protobuf.ByteString
+            getMsgConsumedBytes() {
+          java.lang.Object ref = msgConsumed_;
+          if (ref instanceof String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            msgConsumed_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+        /**
+         * <code>optional string msgConsumed = 11;</code>
+         */
+        public Builder setMsgConsumed(
+            java.lang.String value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000400;
+          msgConsumed_ = value;
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>optional string msgConsumed = 11;</code>
+         */
+        public Builder clearMsgConsumed() {
+          bitField0_ = (bitField0_ & ~0x00000400);
+          msgConsumed_ = getDefaultInstance().getMsgConsumed();
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>optional string msgConsumed = 11;</code>
+         */
+        public Builder setMsgConsumedBytes(
+            com.google.protobuf.ByteString value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000400;
+          msgConsumed_ = value;
+          onChanged();
+          return this;
+        }
+
         // @@protoc_insertion_point(builder_scope:MetadataType.Model)
       }
 
@@ -7500,8 +8367,7 @@ public final class MetadataObjects {
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
+      if (isInitialized != -1) return isInitialized == 1;
 
       memoizedIsInitialized = 1;
       return true;
@@ -7601,9 +8467,8 @@ public final class MetadataObjects {
      * Protobuf type {@code MetadataType}
      */
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:MetadataType)
-        com.ligadata.Serialize.MetadataObjects.MetadataTypeOrBuilder {
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements com.ligadata.Serialize.MetadataObjects.MetadataTypeOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
         return com.ligadata.Serialize.MetadataObjects.internal_static_MetadataType_descriptor;
@@ -7714,37 +8579,37 @@ public final class MetadataObjects {
     // @@protoc_insertion_point(class_scope:MetadataType)
   }
 
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_MetadataType_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_MetadataType_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_MetadataType_ProtoBaseElem_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_MetadataType_ProtoBaseElem_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_MetadataType_ProtoBaseType_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_MetadataType_ProtoBaseType_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_MetadataType_ScalarType_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_MetadataType_ScalarType_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_MetadataType_ProtoBaseTypeKey_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_MetadataType_ProtoBaseTypeKey_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_MetadataType_Attribute_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_MetadataType_Attribute_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_MetadataType_Model_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -7758,9 +8623,9 @@ public final class MetadataObjects {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\022metadatatype.proto\"\201\n\n\014MetadataType\032\254\002" +
+      "\n\022metadatatype.proto\"\246\013\n\014MetadataType\032\254\002" +
       "\n\rProtoBaseElem\022\021\n\tNameSpace\030\001 \002(\t\022\014\n\004Na" +
-      "me\030\002 \002(\t\022\013\n\003Ver\030\003 \002(\005\022\016\n\006UniqID\030\004 \001(\003\022\024\n" +
+      "me\030\002 \002(\t\022\013\n\003Ver\030\003 \002(\003\022\016\n\006UniqID\030\004 \001(\003\022\024\n" +
       "\014CreationTime\030\005 \001(\003\022\017\n\007ModTime\030\006 \001(\003\022\017\n\007" +
       "OrigDef\030\007 \001(\t\022\023\n\013Description\030\010 \001(\t\022\016\n\006Au" +
       "thor\030\t \001(\t\022\017\n\007JarName\030\n \001(\t\022\024\n\014PhysicalN" +
@@ -7773,80 +8638,84 @@ public final class MetadataObjects {
       "\030\001 \002(\0132\033.MetadataType.ProtoBaseElem\022(\n\003p" +
       "bt\030\002 \002(\0132\033.MetadataType.ProtoBaseType\032@\n" +
       "\020ProtoBaseTypeKey\022\021\n\tNameSpace\030\001 \002(\t\022\014\n\004" +
-      "Name\030\002 \002(\t\022\013\n\003Ver\030\003 \002(\005\032z\n\tAttribute\022(\n\003" +
+      "Name\030\002 \002(\t\022\013\n\003Ver\030\003 \002(\003\032z\n\tAttribute\022(\n\003" +
       "pbe\030\001 \002(\0132\033.MetadataType.ProtoBaseElem\022+" +
       "\n\003pbt\030\002 \002(\0132\036.MetadataType.ProtoBaseType" +
-      "Key\022\026\n\016collectionType\030\003 \001(\t\032\246\001\n\005Model\022(\n" +
+      "Key\022\026\n\016collectionType\030\003 \001(\t\032\313\002\n\005Model\022(\n" +
       "\003pbe\030\001 \002(\0132\033.MetadataType.ProtoBaseElem\022",
-      "\032\n\tmodelType\030\002 \002(\t:\007RuleSet\022*\n\tinputVars" +
+      "\032\n\tmodelType\030\002 \001(\t:\007Unknown\022*\n\tinputVars" +
       "\030\003 \003(\0132\027.MetadataType.Attribute\022+\n\noutpu" +
-      "tVars\030\004 \003(\0132\027.MetadataType.Attribute\"7\n\022" +
-      "ProtoObjFormatType\022\007\n\003CSV\020\000\022\010\n\004JSON\020\001\022\016\n" +
-      "\nSERIALIZED\020\002\"\374\001\n\014ProtoObjType\022\010\n\004None\020\000" +
-      "\022\007\n\003Int\020\001\022\007\n\003Any\020\002\022\010\n\004Long\020\003\022\t\n\005Float\020\004\022" +
-      "\n\n\006Double\020\005\022\n\n\006String\020\006\022\013\n\007Boolean\020\007\022\010\n\004" +
-      "Char\020\010\022\t\n\005Array\020\t\022\017\n\013ArrayBuffer\020\n\022\007\n\003Se" +
-      "t\020\013\022\r\n\tSortedSet\020\014\022\013\n\007TreeSet\020\r\022\007\n\003Map\020\016" +
-      "\022\013\n\007HashMap\020\017\022\n\n\006MsgMap\020\020\022\010\n\004List\020\021\022\t\n\005Q",
-      "ueue\020\022\022\n\n\006Struct\020\023\022\010\n\004Attr\020\024\"J\n\020ProtoObj" +
-      "TypeType\022\017\n\013AnyTypeType\020\001\022\n\n\006Scalar\020\002\022\r\n" +
-      "\tContainer\020\003\022\n\n\006TupleN\020\004B)\n\026com.ligadata" +
-      ".SerializeB\017MetadataObjects"
+      "tVars\030\004 \003(\0132\027.MetadataType.Attribute\022\020\n\010" +
+      "modelRep\030\005 \001(\t\022\030\n\020ObjectDefinition\030\006 \001(\t" +
+      "\022\024\n\014ObjectFormat\030\007 \001(\t\022\022\n\nisReusable\030\010 \001" +
+      "(\010\022\021\n\trecompile\030\t \001(\010\022%\n\035supportsInstanc" +
+      "eSerialization\030\n \001(\010\022\023\n\013msgConsumed\030\013 \001(" +
+      "\t\"7\n\022ProtoObjFormatType\022\007\n\003CSV\020\000\022\010\n\004JSON" +
+      "\020\001\022\016\n\nSERIALIZED\020\002\"\374\001\n\014ProtoObjType\022\010\n\004N" +
+      "one\020\000\022\007\n\003Int\020\001\022\007\n\003Any\020\002\022\010\n\004Long\020\003\022\t\n\005Flo",
+      "at\020\004\022\n\n\006Double\020\005\022\n\n\006String\020\006\022\013\n\007Boolean\020" +
+      "\007\022\010\n\004Char\020\010\022\t\n\005Array\020\t\022\017\n\013ArrayBuffer\020\n\022" +
+      "\007\n\003Set\020\013\022\r\n\tSortedSet\020\014\022\013\n\007TreeSet\020\r\022\007\n\003" +
+      "Map\020\016\022\013\n\007HashMap\020\017\022\n\n\006MsgMap\020\020\022\010\n\004List\020\021" +
+      "\022\t\n\005Queue\020\022\022\n\n\006Struct\020\023\022\010\n\004Attr\020\024\"J\n\020Pro" +
+      "toObjTypeType\022\017\n\013AnyTypeType\020\001\022\n\n\006Scalar" +
+      "\020\002\022\r\n\tContainer\020\003\022\n\n\006TupleN\020\004B)\n\026com.lig" +
+      "adata.SerializeB\017MetadataObjects"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
-        new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
-          public com.google.protobuf.ExtensionRegistry assignDescriptors(
-              com.google.protobuf.Descriptors.FileDescriptor root) {
-            descriptor = root;
-            return null;
-          }
-        };
+      new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
+        public com.google.protobuf.ExtensionRegistry assignDescriptors(
+            com.google.protobuf.Descriptors.FileDescriptor root) {
+          descriptor = root;
+          internal_static_MetadataType_descriptor =
+            getDescriptor().getMessageTypes().get(0);
+          internal_static_MetadataType_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_MetadataType_descriptor,
+              new java.lang.String[] { });
+          internal_static_MetadataType_ProtoBaseElem_descriptor =
+            internal_static_MetadataType_descriptor.getNestedTypes().get(0);
+          internal_static_MetadataType_ProtoBaseElem_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_MetadataType_ProtoBaseElem_descriptor,
+              new java.lang.String[] { "NameSpace", "Name", "Ver", "UniqID", "CreationTime", "ModTime", "OrigDef", "Description", "Author", "JarName", "PhysicalName", "IsActive", "IsDeActive", "MdElemStructVer", "DependencyJarNames", });
+          internal_static_MetadataType_ProtoBaseType_descriptor =
+            internal_static_MetadataType_descriptor.getNestedTypes().get(1);
+          internal_static_MetadataType_ProtoBaseType_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_MetadataType_ProtoBaseType_descriptor,
+              new java.lang.String[] { "Pbe", "TypeType", "Type", "ImplementationName", });
+          internal_static_MetadataType_ScalarType_descriptor =
+            internal_static_MetadataType_descriptor.getNestedTypes().get(2);
+          internal_static_MetadataType_ScalarType_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_MetadataType_ScalarType_descriptor,
+              new java.lang.String[] { "Pbe", "Pbt", });
+          internal_static_MetadataType_ProtoBaseTypeKey_descriptor =
+            internal_static_MetadataType_descriptor.getNestedTypes().get(3);
+          internal_static_MetadataType_ProtoBaseTypeKey_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_MetadataType_ProtoBaseTypeKey_descriptor,
+              new java.lang.String[] { "NameSpace", "Name", "Ver", });
+          internal_static_MetadataType_Attribute_descriptor =
+            internal_static_MetadataType_descriptor.getNestedTypes().get(4);
+          internal_static_MetadataType_Attribute_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_MetadataType_Attribute_descriptor,
+              new java.lang.String[] { "Pbe", "Pbt", "CollectionType", });
+          internal_static_MetadataType_Model_descriptor =
+            internal_static_MetadataType_descriptor.getNestedTypes().get(5);
+          internal_static_MetadataType_Model_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_MetadataType_Model_descriptor,
+              new java.lang.String[] { "Pbe", "ModelType", "InputVars", "OutputVars", "ModelRep", "ObjectDefinition", "ObjectFormat", "IsReusable", "Recompile", "SupportsInstanceSerialization", "MsgConsumed", });
+          return null;
+        }
+      };
     com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
         }, assigner);
-    internal_static_MetadataType_descriptor =
-      getDescriptor().getMessageTypes().get(0);
-    internal_static_MetadataType_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_MetadataType_descriptor,
-        new java.lang.String[] { });
-    internal_static_MetadataType_ProtoBaseElem_descriptor =
-      internal_static_MetadataType_descriptor.getNestedTypes().get(0);
-    internal_static_MetadataType_ProtoBaseElem_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_MetadataType_ProtoBaseElem_descriptor,
-        new java.lang.String[] { "NameSpace", "Name", "Ver", "UniqID", "CreationTime", "ModTime", "OrigDef", "Description", "Author", "JarName", "PhysicalName", "IsActive", "IsDeActive", "MdElemStructVer", "DependencyJarNames", });
-    internal_static_MetadataType_ProtoBaseType_descriptor =
-      internal_static_MetadataType_descriptor.getNestedTypes().get(1);
-    internal_static_MetadataType_ProtoBaseType_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_MetadataType_ProtoBaseType_descriptor,
-        new java.lang.String[] { "Pbe", "TypeType", "Type", "ImplementationName", });
-    internal_static_MetadataType_ScalarType_descriptor =
-      internal_static_MetadataType_descriptor.getNestedTypes().get(2);
-    internal_static_MetadataType_ScalarType_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_MetadataType_ScalarType_descriptor,
-        new java.lang.String[] { "Pbe", "Pbt", });
-    internal_static_MetadataType_ProtoBaseTypeKey_descriptor =
-      internal_static_MetadataType_descriptor.getNestedTypes().get(3);
-    internal_static_MetadataType_ProtoBaseTypeKey_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_MetadataType_ProtoBaseTypeKey_descriptor,
-        new java.lang.String[] { "NameSpace", "Name", "Ver", });
-    internal_static_MetadataType_Attribute_descriptor =
-      internal_static_MetadataType_descriptor.getNestedTypes().get(4);
-    internal_static_MetadataType_Attribute_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_MetadataType_Attribute_descriptor,
-        new java.lang.String[] { "Pbe", "Pbt", "CollectionType", });
-    internal_static_MetadataType_Model_descriptor =
-      internal_static_MetadataType_descriptor.getNestedTypes().get(5);
-    internal_static_MetadataType_Model_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_MetadataType_Model_descriptor,
-        new java.lang.String[] { "Pbe", "ModelType", "InputVars", "OutputVars", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)
