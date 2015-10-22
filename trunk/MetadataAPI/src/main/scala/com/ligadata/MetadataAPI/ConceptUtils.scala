@@ -108,6 +108,7 @@ object ConceptUtils {
     }
   }
 
+    @deprecated ("This action must be taken with a user id supplied.  Use the alternate", "2015-10-21")
   def RemoveConcept(concept: AttributeDef): String = {
     var key = concept.nameSpace + ":" + concept.name
     val dispkey = key // Not looking version at this moment

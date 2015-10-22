@@ -294,9 +294,9 @@ object StartMetadataAPI {
         case Action.REMOVECONCEPT => response =
           {
             if (param.length == 0)
-              ConceptService.removeConcept()
+              ConceptService.removeConcept("", userId)
             else
-              ConceptService.removeConcept(param)
+              ConceptService.removeConcept(param, userId)
 
           }
 

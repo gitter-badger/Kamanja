@@ -52,6 +52,7 @@ class MetadataAPISpec extends FunSpec with LocalTestFixtures with BeforeAndAfter
   var iFile: File = null
   var fileList: List[String] = null
   var newVersion:String = null
+  val userid : Option[String] = Some("test")
 
   private val loggerName = this.getClass.getName
   private val logger = Logger.getLogger(loggerName)
@@ -850,7 +851,7 @@ class MetadataAPISpec extends FunSpec with LocalTestFixtures with BeforeAndAfter
 
 	And("RemoveConcept API for all the concepts that were just added")
 	conceptList.Concepts.foreach(concept => {
-	  res = MetadataAPIImpl.RemoveConcept(concept.NameSpace, concept.Name, concept.Version.toLong,None)
+	  res = MetadataAPIImpl.RemoveConcept(concept.NameSpace, concept.Name, concept.Version.toLong,userid)
 	})
 
 	And("Check whether all the concepts are removed")
