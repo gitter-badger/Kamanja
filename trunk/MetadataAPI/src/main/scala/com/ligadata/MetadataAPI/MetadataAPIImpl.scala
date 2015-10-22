@@ -3445,6 +3445,26 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     }
 
 
+=======
+     /**
+     * Remove model with Model Name and Version Number
+     * @param modelName the Namespace.Name of the given model to be removed
+     * @param version   Version of the given model.  The version should comply with the Kamanja version format.  For example,
+     *                  a value of 1000001000001 is the value for 1.000001.000001. Helper functions for constructing this
+     *                  Long from a string can be found in the MdMgr object,
+     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
+     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
+     *               Supply one.
+     * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
+     *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
+     *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
+     */
+  def RemoveModel(modelName: String, version: Long, userid: Option[String] = None): String = {
+    RemoveModel(sysNS, modelName, version, userid)
+  }
+
+
+>>>>>>> fatafat 218 - MetadataAPI interface
     /**
      * The ModelDef returned by the compilers is added to the metadata.
      * @param model
@@ -3975,7 +3995,6 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
                                   , optModelName: Option[String] = None
                                   , optModelVersion: Option[String] = None
                                   , optVersionBeingUpdated : Option[String] ): String = {
-
 
         val modelName: String = optModelName.orNull
         val version: String = optModelVersion.getOrElse("-1")
@@ -5456,6 +5475,46 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
             processed += 1
           })
         }
+=======
+    /**
+     * LoadAllTypesIntoCache
+     */
+  def LoadAllTypesIntoCache {
+    try {
+      val typeKeys = GetAllKeys("TypeDef", None)
+      if (typeKeys.length == 0) {
+        logger.debug("No types available in the Database")
+        return
+      }
+      typeKeys.foreach(key => {
+        val obj = GetObject(key.toLowerCase, typeStore)
+        val typ = serializer.DeserializeObjectFromByteArray(obj.Value.toArray[Byte])
+        if (typ != null) {
+          AddObjectToCache(typ, MdMgr.GetMdMgr)
+        }
+      })
+    } catch {
+      case e: Exception => {
+        val stackTrace = StackTrace.ThrowableTraceString(e)
+        logger.debug("\nStackTrace:" + stackTrace)
+      }
+    }
+  }
+
+    /**
+     * LoadAllConceptsIntoCache
+     */
+  def LoadAllConceptsIntoCache {
+    try {
+      val conceptKeys = GetAllKeys("Concept", None)
+      if (conceptKeys.length == 0) {
+        logger.debug("No concepts available in the Database")
+        return
+      }
+      conceptKeys.foreach(key => {
+        val obj = GetObject(key.toLowerCase, conceptStore)
+        val concept = serializer.DeserializeObjectFromByteArray(obj.Value.toArray[Byte])
+        AddObjectToCache(concept.asInstanceOf[AttributeDef], MdMgr.GetMdMgr)
       })
 
       if (processed == 0) {
@@ -5474,7 +5533,6 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
       }
     }
   }
-
 
     /**
      * LoadMessageIntoCache
