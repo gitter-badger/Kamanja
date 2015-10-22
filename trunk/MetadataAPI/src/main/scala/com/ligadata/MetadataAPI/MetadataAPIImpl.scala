@@ -645,6 +645,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     val getObjFn = (k: Key, v: Value) => {
       objs(0) = v
     }
+
     try {
       objs(0) = null
       store.get(containerName, Array(TimeRange(storageDefaultTime, storageDefaultTime)), Array(Array(bucketKeyStr)), getObjFn)
@@ -2002,6 +2003,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
      * @return
      */
   private def GetDataStoreHandle(jarPaths: collection.immutable.Set[String], dataStoreInfo: String): DataStore = {
+  //private def GetDataStoreHandle(jarPaths: collection.immutable.Set[String], dataStoreInfo: String, tableName: String): DataStore = {
     try {
       logger.debug("Getting DB Connection for dataStoreInfo:%s".format(dataStoreInfo))
       return KeyValueManager.Get(jarPaths, dataStoreInfo)
@@ -2651,6 +2653,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     *          println("Result as Json String => \n" + result._2)
     *          }}}
     */
+
   def AddContainer(containerText: String, format: String, userid: Option[String] = None): String = {
     AddContainerOrMessage(containerText, format, userid)
   }
@@ -3189,7 +3192,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     /**
      * Remove message with Message Name and Version Number
      * @param messageName Name of the given message
-     * @param version  Version of the object   Version of the given message
+     * @param version  Version of the given message
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. If Security and/or Audit are configured, this value should be other than None
      * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
@@ -5052,7 +5055,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     /**
      * LoadAllModelConfigsIntoChache
      */
-  private def LoadAllModelConfigsIntoChache: Unit = {
+  private def LoadAllModelConfigsIntoCache: Unit = {
     val maxTranId = GetTranId
     currentTranLevel = maxTranId
     logger.debug("Max Transaction Id => " + maxTranId)
@@ -5492,7 +5495,6 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
   }
 
 
-
    /**
     * Get a the most recent mesage def (format JSON or XML) as a String
     * @param objectName the name of the message possibly namespace qualified (is simple name, "system" namespace is substituted)
@@ -5601,7 +5603,6 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     val nmspcNodes : Array[String] = nameNodes.splitAt(nameNodes.size -1)._1
     val buffer : StringBuilder = new StringBuilder
     val nameSpace : String = nmspcNodes.addString(buffer, ".").toString
-    GetContainerDefFromCache(nameSpace, objectName, formatType, version, userid)
     GetContainerDef(nameSpace, objectName, formatType, version, userid)
   }
 
@@ -5763,7 +5764,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
      *         the FunctionDef either as a JSON or XML string depending on the parameter formatType
      */
   def GetFunctionDef( objectName: String, version: String, formatType: String, userid: Option[String]) : String = {
-    val nameSpace = MdMgr.sysNS
+    val nameSpace = MdMgr.sysNS /** FIXME: This should be removed and the object name parsed for the namespace and name */
     FunctionUtils.GetFunctionDef(nameSpace, objectName, formatType, version, userid)
   }
 
@@ -5889,8 +5890,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
      * @param objectName name of the desired object, possibly namespace qualified
      * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   // Get types for a given name
@@ -6375,7 +6375,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
       // Save in memory
       AddConfigObjToCache(tranId, modelKey, mdl, MdMgr.GetMdMgr)
     })
-    // Save in Databae
+    // Save in Database
     SaveObjectList(keyList, valueList, "model_config_objects", serializerType)
     if (!isFromNotify) {
       val operations = for (op <- baseElems) yield "Add"
