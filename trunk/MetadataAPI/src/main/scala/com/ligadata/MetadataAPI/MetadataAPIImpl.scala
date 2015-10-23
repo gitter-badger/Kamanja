@@ -6702,8 +6702,6 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
      * @param cfgStr
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. If Security and/or Audit are configured, this value must be a value other than None.
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
      * @param objectList
      * @param isFromNotify
      * @return
