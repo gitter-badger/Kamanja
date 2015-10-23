@@ -318,7 +318,12 @@ object StartMetadataAPI {
 
       case e: Exception => {
           /** tentative answer of unidentified command type failure. */
+<<<<<<< HEAD
           response = s"Unexpected action! action = $action \n${e.getStackTraceString}"
+=======
+          response = s"Unexpected action! action = $action"
+
+>>>>>>> Fatafat 218 JpmmlAdapter get MdMgr
           /** one more try ... going the alternate route */
           val altResponse: String = AltRoute(originalArgs)
           if (altResponse != null) {

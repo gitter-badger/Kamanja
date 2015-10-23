@@ -17,11 +17,10 @@
 
 package com.ligadata.KamanjaManager
 
-import com.ligadata.KamanjaBase.ModelInfo
+import com.ligadata.jpmml.JpmmlAdapter
 import com.ligadata.kamanja.metadata.{ BaseElem, MappedMsgTypeDef, BaseAttributeDef, StructTypeDef, EntityType, AttributeDef, ArrayBufTypeDef, MessageDef, ContainerDef, ModelDef }
 import com.ligadata.kamanja.metadata._
 import com.ligadata.kamanja.metadata.MdMgr._
-import com.ligadata.jpmml.JpmmlAdapter
 
 import com.ligadata.kamanja.metadataload.MetadataLoad
 import scala.collection.mutable.TreeSet
@@ -307,27 +306,27 @@ class KamanjaMetadata {
    * ModelInfo so that JPMML can function without redesigning the interaction of models and engine.  Near term, let's not
    * redesign the interaction.  This continues to be hidden in the model factory(ies).
    *
-   * ModelInfo provide the essential information for model execution.  For most models, the factory instance and the
-   * jars required to be loaded in order to execute the model is all that is required.  There are exceptions.  JPMML
-   * evaluated models is such a case.  Before it executes, it needs to be ingested and the evaluation tree formed for
-   * it.  Furthermore, the factory that does this work is the same model for **ALL** JPMML models.
+   * ModelInfo provide the essential information for model execution for the engine.  For most models, the factory instance and the
+   * jars required to be loaded in order to execute the model is all that is required.  This is because until the JPMML, there
+   * was only one model to contend with in the factory.  With JPMML, all the JPMML models will be managed by one factory. The
+   * factory will be responsible for managing instances of its JPMML models as well, avoiding the costly ingestion for each new
+   * message by reusing the existing instances.
    *
-   * What this means is that same ModelBaseObj instance, namely JpmmlModelFactory, will be initialized for all models
+   * What this means is that same ModelBaseObj instance, namely JpmmlAdapter, will be initialized for all models
    * that are JPMML flavor. I don't believe this presents an issue in terms of functionality.  The KamanjaConfiguration.metadataLoader
-   * will dutifully produce the singleton.  What IS needed, however, is additional information that is not currently in the
-   * ModelInfo.  These include the pmml source text (an Option[String], the message namespace.name that the model will consume
-   * (an Option[String]), the message version (a Long), the modelNamespace.name (Option[String]), and the model version (a Long)
+   * will dutifully produce the singleton again and again for the same factory.
    *
-   * Rationale:  For now the JpmmlModelFactory will perform the model ingestion and create an JpmmlAdapter instance
-   * that contain the resulting JPMML evaluator for it.  These instances will be cached in the JpmmlModelFactory and
-   * when one is available for the supplied message to IsValidMessage for the current thread, it will returned by
-   * CreateNewModel instead of fabricating a new one.  All JPMML models are idempotent and reusable.
+   * What IS needed, however, is additional information that is not currently in the ModelInfo.  These include the pmml source text,
+   * the message namespace.name that the model will consume (a String), the message version (a Long), the
+   * modelNamespace.name (String), and the model version (a Long).
    *
-   * For the JpmmlModelFactory to make the determination that the message is consumable by one of its models, the
-   * ModelInfo will be supplied to the IsValidMessage as well as CreateNewModel (via the ModelContext).  Rather than
-   * pass the entire ModelInfo into the model and thereby exposing a bunch of details to the model that are really none
-   * of its business, the explicit fields required for JPMML model message consumption check and the model instantiation
-   * will be a new structure in the ModelContext.. an Option[JPMMLInfo] which except for the JPMML models, will be None.
+   * There seem to be a couple of approaches to provide the information to the JpmmlAdapter factory, but I think the one that
+   * provides a more strategic implementation (solving other problems down stream for the anticipated other models we will
+   * support like c-python) is to give a MdMgr reference to the factory (at least the JpmmlAdapter factory perhaps at first).
+   *
+   * The engine then simply supplies the keys that are needed by the factory to fetch the necessary PMML text string for example,
+   * With the metadata manager instance, if it needs to build and cache a new instance it can do that.  The interface for the
+   * models have no change except the explicit mention of the model that is of interest to the engine (from its ModelInfo).
    *
    * @param clsName the fully qualified class name of the model factory instance to be created
    * @param mdl
@@ -389,6 +388,7 @@ class KamanjaMetadata {
             * what was done for npario. fwiw.
             */
 
+<<<<<<< HEAD
             val jpmmlFactoryInitialized : Boolean = modelobj match {
                 case jpmml : com.ligadata.jpmml.JpmmlAdapter => {
                      val mutexNeeded : Boolean = false
@@ -400,6 +400,12 @@ class KamanjaMetadata {
                 LOG.error("JPMML Factory: initialization failed")
             } else {
                 LOG.debug("JPMML Factory: initialization successful")
+=======
+            modelobj match {
+                case jpmml : com.ligadata.jpmml.JpmmlAdapter => {
+                     JpmmlAdapter.FactoryInitialize(KamanjaMetadata.getMdMgr)
+                }
+>>>>>>> Fatafat 218 JpmmlAdapter get MdMgr
             }
             val mdlName = (mdl.NameSpace.trim + "." + mdl.Name.trim).toLowerCase
             modelObjects(mdlName) = new com.ligadata.KamanjaBase.ModelInfo(modelobj
@@ -550,6 +556,14 @@ class KamanjaMetadata {
     modelDefs.foreach(mdl => {
       PrepareModel(mdl, false) // Already Loaded required dependency jars before calling this
     })
+<<<<<<< HEAD
+=======
+
+    /** Gather the Jpmml models and give them to the JpmmlAdapter factory. It will cache them so it can disambiguate
+      * which model is being asked to handle which incoming message. */
+    val jpmmlModelDefs : Array[ModelDef] = modelDefs.filter(_ == ModelRepresentation.JPMML).toArray
+    JpmmlAdapter.initializeModelMsgMap(jpmmlModelDefs)
+>>>>>>> Fatafat 218 JpmmlAdapter get MdMgr
   }
 }
 

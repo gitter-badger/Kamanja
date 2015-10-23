@@ -171,7 +171,11 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
   /**
    *  getHealthCheck - will return all the health-check information for the nodeId specified.
    *  @param nodeId a cluster node: String - if no parameter specified, return health-check for all nodes
+<<<<<<< HEAD
    *  @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
+=======
+   * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
+>>>>>>> Fatafat 218 JpmmlAdapter get MdMgr
    *               method. If Security and/or Audit are configured, this value must be a value other than None.
    */
     def getHealthCheck(nodeId: String, userid: Option[String]): String = {
@@ -2653,7 +2657,10 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     *          println("Result as Json String => \n" + result._2)
     *          }}}
     */
+<<<<<<< HEAD
 
+=======
+>>>>>>> Fatafat 218 JpmmlAdapter get MdMgr
   def AddContainer(containerText: String, format: String, userid: Option[String] = None): String = {
     AddContainerOrMessage(containerText, format, userid)
   }
@@ -3192,7 +3199,11 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     /**
      * Remove message with Message Name and Version Number
      * @param messageName Name of the given message
+<<<<<<< HEAD
      * @param version  Version of the given message
+=======
+     * @param version  Version of the object   Version of the given message
+>>>>>>> Fatafat 218 JpmmlAdapter get MdMgr
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. If Security and/or Audit are configured, this value should be other than None
      * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
@@ -5603,6 +5614,10 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     val nmspcNodes : Array[String] = nameNodes.splitAt(nameNodes.size -1)._1
     val buffer : StringBuilder = new StringBuilder
     val nameSpace : String = nmspcNodes.addString(buffer, ".").toString
+<<<<<<< HEAD
+=======
+    GetContainerDefFromCache(nameSpace, objectName, formatType, version, userid)
+>>>>>>> Fatafat 218 JpmmlAdapter get MdMgr
     GetContainerDef(nameSpace, objectName, formatType, version, userid)
   }
 
@@ -5889,8 +5904,11 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
      * GetType
      * @param objectName name of the desired object, possibly namespace qualified
      * @param formatType format of the return value, either JSON or XML
+<<<<<<< HEAD
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. If Security and/or Audit are configured, this value must be a value other than None.
+=======
+>>>>>>> Fatafat 218 JpmmlAdapter get MdMgr
      * @return
      */
   // Get types for a given name
