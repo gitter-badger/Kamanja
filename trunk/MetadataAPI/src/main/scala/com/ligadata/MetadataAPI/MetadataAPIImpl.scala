@@ -3445,26 +3445,6 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     }
 
 
-=======
-     /**
-     * Remove model with Model Name and Version Number
-     * @param modelName the Namespace.Name of the given model to be removed
-     * @param version   Version of the given model.  The version should comply with the Kamanja version format.  For example,
-     *                  a value of 1000001000001 is the value for 1.000001.000001. Helper functions for constructing this
-     *                  Long from a string can be found in the MdMgr object,
-     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
-     * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
-     *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
-     *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
-     */
-  def RemoveModel(modelName: String, version: Long, userid: Option[String] = None): String = {
-    RemoveModel(sysNS, modelName, version, userid)
-  }
-
-
->>>>>>> fatafat 218 - MetadataAPI interface
     /**
      * The ModelDef returned by the compilers is added to the metadata.
      * @param model

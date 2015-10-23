@@ -1,3 +1,19 @@
+/*
+ * Copyright 2015 ligaDATA
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.ligadata.jpmml
 
 import java.io.{PushbackInputStream, ByteArrayInputStream, InputStream}
@@ -163,6 +179,9 @@ object JpmmlAdapter extends ModelBaseObj {
      * @param lockNeeded - indicate if synchronized is required.  It is only required when the engine is processing
      *                   messages.  At cluster startup, it is not needed.
      * @return true if initialization was successful
+     *
+     * FIXME: if this map gets replaced when the engine is active, there needs to be a lock on this function to prevent
+     * FIXME: unpredictable things from occurring.
      */
     private def InitializeModelMsgMap(modelDefinitions : Array[ModelDef], lockNeeded : Boolean) : Boolean = {
         if (lockNeeded) {
