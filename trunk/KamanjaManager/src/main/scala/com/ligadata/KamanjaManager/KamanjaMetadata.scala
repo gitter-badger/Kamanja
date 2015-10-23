@@ -17,6 +17,8 @@
 
 package com.ligadata.KamanjaManager
 
+
+import com.ligadata.jpmml.JpmmlAdapter
 import com.ligadata.kamanja.metadata.{ BaseElem, MappedMsgTypeDef, BaseAttributeDef, StructTypeDef, EntityType, AttributeDef, ArrayBufTypeDef, MessageDef, ContainerDef, ModelDef }
 import com.ligadata.kamanja.metadata._
 import com.ligadata.kamanja.metadata.MdMgr._
@@ -296,6 +298,41 @@ class KamanjaMetadata {
     }
   }
 
+  /**
+   * CheckAndPrepModels is called for each ModelDef known in the metadata that is active. Its goal is
+   * to prepare a ModelInfo, a structure with the instance of the model def's factory object (always
+   * assumed to be a kindOf "com.ligadata.KamanjaBase.ModelBaseObj".
+   *
+   * This is mostly a note to you, Pokuri. This is my analysis and rationale for the changes I have made to the
+   * ModelInfo so that JPMML can function without redesigning the interaction of models and engine.  Near term, let's not
+   * redesign the interaction.  This continues to be hidden in the model factory(ies).
+   *
+   * ModelInfo provide the essential information for model execution for the engine.  For most models, the factory instance and the
+   * jars required to be loaded in order to execute the model is all that is required.  This is because until the JPMML, there
+   * was only one model to contend with in the factory.  With JPMML, all the JPMML models will be managed by one factory. The
+   * factory will be responsible for managing instances of its JPMML models as well, avoiding the costly ingestion for each new
+   * message by reusing the existing instances.
+   *
+   * What this means is that same ModelBaseObj instance, namely JpmmlAdapter, will be initialized for all models
+   * that are JPMML flavor. I don't believe this presents an issue in terms of functionality.  The KamanjaConfiguration.metadataLoader
+   * will dutifully produce the singleton again and again for the same factory.
+   *
+   * What IS needed, however, is additional information that is not currently in the ModelInfo.  These include the pmml source text,
+   * the message namespace.name that the model will consume (a String), the message version (a Long), the
+   * modelNamespace.name (String), and the model version (a Long).
+   *
+   * There seem to be a couple of approaches to provide the information to the JpmmlAdapter factory, but I think the one that
+   * provides a more strategic implementation (solving other problems down stream for the anticipated other models we will
+   * support like c-python) is to give a MdMgr reference to the factory (at least the JpmmlAdapter factory perhaps at first).
+   *
+   * The engine then simply supplies the keys that are needed by the factory to fetch the necessary PMML text string for example,
+   * With the metadata manager instance, if it needs to build and cache a new instance it can do that.  The interface for the
+   * models have no change except the explicit mention of the model that is of interest to the engine (from its ModelInfo).
+   *
+   * @param clsName the fully qualified class name of the model factory instance to be created
+   * @param mdl
+   * @return
+   */
   private[this] def CheckAndPrepModel(clsName: String, mdl: ModelDef): Boolean = {
     var isModel = true
     var curClass: Class[_] = null
@@ -342,15 +379,34 @@ class KamanjaMetadata {
 
         // val objinst = obj.instance
         if (objinst.isInstanceOf[ModelBaseObj]) {
-          val modelobj = objinst.asInstanceOf[ModelBaseObj]
-          val mdlName = (mdl.NameSpace.trim + "." + mdl.Name.trim).toLowerCase
-          modelObjects(mdlName) = new ModelInfo(modelobj, mdl.jarName, mdl.dependencyJarNames, "Ligadata")
-          LOG.info("Created Model:" + mdlName)
-          return true
+            val modelobj = objinst.asInstanceOf[ModelBaseObj]
+
+            /** NOTE: If we wanted to make mdmgr generally available to all models, we set up protocol in the ModelBaseObj
+            * and this metadata manager write access happens on every model. Another idea would be to register those
+            * model factories that are PERMITTED to have access.  Another idea is to provide some sort of read only
+            * access to the metadata for all.  Another idea would be create a layered metadata where each model could have
+            * read access to everything a model may be interested, and a write access to their own ... something like
+            * what was done for npario. fwiw.
+            */
+
+            modelobj match {
+                case jpmml : com.ligadata.jpmml.JpmmlAdapter => {
+                     JpmmlAdapter.FactoryInitialize(KamanjaMetadata.getMdMgr)
+                }
+            }
+            val mdlName = (mdl.NameSpace.trim + "." + mdl.Name.trim).toLowerCase
+            modelObjects(mdlName) = new com.ligadata.KamanjaBase.ModelInfo(modelobj
+                                                                        , mdlName
+                                                                        , MdMgr.ConvertLongVersionToString(mdl.Version)
+                                                                        , mdl.jarName
+                                                                        , mdl.dependencyJarNames
+                                                                        , "Ligadata")
+            LOG.info("Created Model:" + mdlName)
+            return true
         } else {
-          LOG.error("Failed to instantiate model object :" + clsName)
-          LOG.debug("Failed to instantiate model object :" + clsName + ". ObjType0:" + objinst.getClass.getSimpleName + ". ObjType1:" + objinst.getClass.getCanonicalName)
-          return false
+            LOG.error("Failed to instantiate model object :" + clsName)
+            LOG.debug("Failed to instantiate model object :" + clsName + ". ObjType0:" + objinst.getClass.getSimpleName + ". ObjType1:" + objinst.getClass.getCanonicalName)
+            return false
         }
       } catch {
         case e: Exception =>
@@ -487,6 +543,11 @@ class KamanjaMetadata {
     modelDefs.foreach(mdl => {
       PrepareModel(mdl, false) // Already Loaded required dependency jars before calling this
     })
+
+    /** Gather the Jpmml models and give them to the JpmmlAdapter factory. It will cache them so it can disambiguate
+      * which model is being asked to handle which incoming message. */
+    val jpmmlModelDefs : Array[ModelDef] = modelDefs.filter(_ == ModelRepresentation.JPMML).toArray
+    JpmmlAdapter.initializeModelMsgMap(jpmmlModelDefs)
   }
 }
 

@@ -70,7 +70,7 @@ import java.io.{ DataInputStream, DataOutputStream }
 //
 
 object LowBalanceAlert extends ModelBaseObj {
-  override def IsValidMessage(msg: MessageContainerBase): Boolean = return msg.isInstanceOf[CustTransaction]
+  override def IsValidMessage(msg: MessageContainerBase, modelName : String, modelVersion : String): Boolean = return msg.isInstanceOf[CustTransaction]
   override def CreateNewModel(mdlCtxt: ModelContext): ModelBase = return new LowBalanceAlert(mdlCtxt)
   override def ModelName(): String = "LowBalanceAlert" // Model Name
   override def Version(): String = "0.0.1" // Model Version
@@ -208,8 +208,8 @@ class LowBalanceAlert(mdlCtxt: ModelContext) extends ModelBase(mdlCtxt, LowBalan
 //   LowBalanceAlertRslt - a new entry is created - system decides what to do with the generated object
 //
 
-object LowBalanceAlert2 extends ModelBaseObj {
   override def IsValidMessage(msg: MessageContainerBase): Boolean = return msg.isInstanceOf[CustTransaction]
+  override def IsValidMessage(msg: MessageContainerBase, modelName : String, modelVersion : String): Boolean = return msg.isInstanceOf[CustTransaction]
   override def CreateNewModel(mdlCtxt: ModelContext): ModelBase = return new LowBalanceAlert2(mdlCtxt)
   override def ModelName(): String = "LowBalanceAlert2" // Model Name
   override def Version(): String = "0.0.1" // Model Version

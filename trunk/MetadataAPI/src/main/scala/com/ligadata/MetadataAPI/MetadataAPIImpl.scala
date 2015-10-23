@@ -161,7 +161,8 @@ object MetadataAPIImpl extends MetadataAPI {
   /**
    *  getHealthCheck - will return all the health-check information for the nodeId specified.
    *  @param nodeId a cluster node: String - if no parameter specified, return health-check for all nodes
-   *  @param userid the user requesting the check  If security or audit installed, this value should be some value other than None.
+   * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
+   *               method. If Security and/or Audit are configured, this value must be a value other than None.
    */
     def getHealthCheck(nodeId: String, userid: Option[String]): String = {
         val nodeIdentifer : String = if (nodeId == null) "" else nodeId
@@ -1487,8 +1488,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * @param jarName
      * @param byteArray
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def UploadJarToDB(jarName: String, byteArray: Array[Byte], userid: Option[String] = None): String = {
@@ -2119,8 +2119,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * @param typesText
      * @param format
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def AddTypes(typesText: String, format: String, userid: Option[String] = None): String = {
@@ -2131,10 +2130,9 @@ object MetadataAPIImpl extends MetadataAPI {
     * Remove type for given TypeName and Version
     * @param typeNameSpace
     * @param typeName name of the Type
-    * @param version
+    * @param version  Version of the object
     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-    *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-    *               Supply one.
+    *               method. If Security and/or Audit are configured, this value must be a value other than None.
     * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
     *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
     *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
@@ -2157,8 +2155,7 @@ object MetadataAPIImpl extends MetadataAPI {
     * @param typeJson
     * @param format
     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-    *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-    *               Supply one.
+    *               method. If Security and/or Audit are configured, this value must be a value other than None.
     * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
     *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
     *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
@@ -2240,8 +2237,7 @@ object MetadataAPIImpl extends MetadataAPI {
     * @param conceptsText an input String of concepts in a format defined by the next parameter formatType
     * @param format
     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-    *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-    *               Supply one.
+    *               method. If Security and/or Audit are configured, this value must be a value other than None.
     * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
     *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
     *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
@@ -2273,8 +2269,7 @@ object MetadataAPIImpl extends MetadataAPI {
     * @param conceptsText an input String of concepts in a format defined by the next parameter formatType
     * @param format
     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-    *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-    *               Supply one.
+    *               method. If Security and/or Audit are configured, this value must be a value other than None.
     * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
     *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
     *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
@@ -2306,8 +2301,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * RemoveConcept
      * @param key
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def RemoveConcept(key: String, userid: Option[String] = None): String = {
@@ -2316,12 +2310,11 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * RemoveConcept
-     * @param nameSpace
+     * @param nameSpace namespace of the object
      * @param name
-     * @param version
+     * @param version  Version of the object
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def RemoveConcept(nameSpace: String, name: String, version: Long, userid: Option[String]): String = {
@@ -2332,8 +2325,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * RemoveConcepts take all concepts names to be removed as an Array
      * @param concepts array of Strings where each string is name of the concept
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
      *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
      *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
@@ -2495,8 +2487,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * @param contOrMsgText
      * @param format
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @param recompile
      * @return
      */
@@ -2604,8 +2595,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * @param messageText text of the message (as JSON/XML string as defined by next parameter formatType)
      * @param format
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
      *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
      *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
@@ -2626,8 +2616,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * AddMessage
      * @param messageText
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def AddMessage(messageText: String, userid: Option[String]): String = {
@@ -2635,24 +2624,23 @@ object MetadataAPIImpl extends MetadataAPI {
   }
 
     /**
-     * AddContainer
-     * @param containerText text of the container (as JSON/XML string as defined by next parameter formatType)
-     * @param format
-     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
-     * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
-     *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
-     *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
-     *
-     *         Example
-     *
-     *         {{{
-     *          var apiResult = MetadataAPIImpl.AddContainer(msgStr,"JSON"))
-     *          var result = MetadataAPIImpl.getApiResult(apiResult)
-     *          println("Result as Json String => \n" + result._2)
-     *          }}}
- */
+    * AddContainer
+    * @param containerText text of the container (as JSON/XML string as defined by next parameter formatType)
+    * @param format
+    * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
+    *               method. If Security and/or Audit are configured, this value must be a value other than None.
+    * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
+    *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
+    *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
+    *
+    *         Example
+    *
+    *         {{{
+    *          var apiResult = MetadataAPIImpl.AddContainer(msgStr,"JSON"))
+    *          var result = MetadataAPIImpl.getApiResult(apiResult)
+    *          println("Result as Json String => \n" + result._2)
+    *          }}}
+    */
   def AddContainer(containerText: String, format: String, userid: Option[String] = None): String = {
     AddContainerOrMessage(containerText, format, userid)
   }
@@ -2661,8 +2649,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * AddContainer
      * @param containerText
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def AddContainer(containerText: String, userid: Option[String]): String = {
@@ -2715,8 +2702,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * @param messageText text of the message (as JSON/XML string as defined by next parameter formatType)
      * @param format
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
      *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
      *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
@@ -2820,8 +2806,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * @param messageText
      * @param format
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
      *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
      *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
@@ -2834,8 +2819,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * UpdateContainer
      * @param messageText
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def UpdateContainer(messageText: String, userid: Option[String]): String = {
@@ -2846,8 +2830,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * UpdateMessage
      * @param messageText
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def UpdateMessage(messageText: String, userid: Option[String]): String = {
@@ -2898,12 +2881,11 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * Remove container with Container Name and Version Number
-     * @param nameSpace
+     * @param nameSpace namespace of the object
      * @param name
-     * @param version
+     * @param version  Version of the object
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @param zkNotify
      * @return
      */
@@ -2957,12 +2939,11 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * Remove message with Message Name and Version Number
-     * @param nameSpace
+     * @param nameSpace namespace of the object
      * @param name
-     * @param version
+     * @param version  Version of the object
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @param zkNotify
      * @return
      */
@@ -3198,7 +3179,7 @@ object MetadataAPIImpl extends MetadataAPI {
     /**
      * Remove message with Message Name and Version Number
      * @param messageName Name of the given message
-     * @param version   Version of the given message
+     * @param version  Version of the object   Version of the given message
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. If Security and/or Audit are configured, this value should be other than None
      * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
@@ -3209,29 +3190,27 @@ object MetadataAPIImpl extends MetadataAPI {
     RemoveMessage(sysNS, messageName, version, userid)
   }
 
-     /**
-     * Remove container with Container Name and Version Number
-     * @param containerName Name of the given container
-     * @param version   Version of the given container
-     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
-     * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
-     *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
-     *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
-     */
+   /**
+    * Remove container with Container Name and Version Number
+    * @param containerName Name of the given container
+    * @param version  Version of the object   Version of the given container
+    * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
+    *               method. If Security and/or Audit are configured, this value must be a value other than None.
+    * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
+    *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
+    *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
+    */
   def RemoveContainer(containerName: String, version: Long, userid: Option[String]): String = {
     RemoveContainer(sysNS, containerName, version, userid)
   }
 
     /**
      * Deactivate the model that presumably is active and waiting for input in the working set of the cluster engines.
-     * @param nameSpace
+     * @param nameSpace namespace of the object
      * @param name
-     * @param version
+     * @param version  Version of the object
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def DeactivateModel(nameSpace: String, name: String, version: Long, userid: Option[String] = None): String = {
@@ -3246,9 +3225,9 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * Deactivate a model FIXME: Explain what it means to do this locally.
-     * @param nameSpace
+     * @param nameSpace namespace of the object
      * @param name
-     * @param version
+     * @param version  Version of the object
      * @return
      */
   private def DeactivateLocalModel(nameSpace: String, name: String, version: Long): Boolean = {
@@ -3285,12 +3264,11 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * Activate the model with the supplied keys. The engine is notified and the model factory is loaded.
-     * @param nameSpace
+     * @param nameSpace namespace of the object
      * @param name
-     * @param version
+     * @param version  Version of the object
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def ActivateModel(nameSpace: String, name: String, version: Long, userid: Option[String] = None): String = {
@@ -3369,12 +3347,11 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * Remove model with Model Name and Version Number
-     * @param nameSpace
+     * @param nameSpace namespace of the object
      * @param name
-     * @param version
+     * @param version  Version of the object
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def RemoveModel(nameSpace: String, name: String, version: Long, userid: Option[String]): String = {
@@ -3411,19 +3388,18 @@ object MetadataAPIImpl extends MetadataAPI {
     }
   }
 
-     /**
-     * Remove model with Model Name and Version Number
-     * @param modelName the Namespace.Name of the given model to be removed
-     * @param version   Version of the given model.  The version should comply with the Kamanja version format.  For example,
-     *                  a value of 1000001000001 is the value for 1.000001.000001. Helper functions for constructing this
-     *                  Long from a string can be found in the MdMgr object,
-     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
-     * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
-     *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
-     *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
-     */
+   /**
+    * Remove model with Model Name and Version Number
+    * @param modelName the Namespace.Name of the given model to be removed
+    * @param version   Version of the given model.  The version should comply with the Kamanja version format.  For example,
+    *                  a value of 1000001000001 is the value for 1.000001.000001. Helper functions for constructing this
+    *                  Long from a string can be found in the MdMgr object,
+    * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
+    *               method. If Security and/or Audit are configured, this value must be a value other than None.
+    * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
+    *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
+    *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
+    */
   def RemoveModel(modelName: String, version: Long, userid: Option[String] = None): String = {
     RemoveModel(sysNS, modelName, version, userid)
   }
@@ -3459,8 +3435,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * @param sourceLang
      * @param modelName
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   private def AddModelFromSource(sourceCode: String, sourceLang: String, modelName: String, userid: Option[String] = None): String = {
@@ -3596,9 +3571,8 @@ object MetadataAPIImpl extends MetadataAPI {
      * @param msgVersion the version of the message that this JPMML model will consume
      * @param pmmlText the actual PMML (xml) that is submitted by the client.
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
-     *
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
+     * @return json string result
      */
   private def AddJPMMLModel(  modelName : String
                             , version : String
@@ -3694,9 +3668,8 @@ object MetadataAPIImpl extends MetadataAPI {
      * Add Model (format XML)
      * @param pmmlText
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
-     * @return
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
+     * @return json string result
      */
   private def AddModel(pmmlText: String, userid: Option[String]): String = {
     try {
@@ -3826,8 +3799,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * @param modelType e.g., java, scala, pmml, jpmml, binary
      * @param input the source of the model to ingest
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @param modelName the name of the model to be ingested (JPMML)
      *                  or the model's config for java and scala
      * @param version the version number of the model to be updated (only relevant for JPMML ingestion)
@@ -3924,8 +3896,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * UpdateModel
      * @param pmmlText
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def UpdateModel(pmmlText: String, userid: Option[String]): String = {
@@ -4086,7 +4057,7 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * Get all available models (format JSON or XML) as string.
-     * @param formatType
+     * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. If Security and/or Audit are configured, this value must be a value other than None
      * @return string representation in specified format.
@@ -4117,7 +4088,7 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * GetAllMessageDefs - get all available messages(format JSON or XML) as a String
-     * @param formatType
+     * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
@@ -4149,7 +4120,7 @@ object MetadataAPIImpl extends MetadataAPI {
   // All available containers(format JSON or XML) as a String
     /**
      * GetAllContainerDefs
-     * @param formatType
+     * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return result as string
@@ -4182,8 +4153,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * GetAllModelsFromCache
      * @param active
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def GetAllModelsFromCache(active: Boolean, userid: Option[String] = None): Array[String] = {
@@ -4218,8 +4188,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * GetAllMessagesFromCache
      * @param active
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def GetAllMessagesFromCache(active: Boolean, userid: Option[String] = None): Array[String] = {
@@ -4254,8 +4223,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * GetAllContainersFromCache
      * @param active
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def GetAllContainersFromCache(active: Boolean, userid: Option[String] = None): Array[String] = {
@@ -4289,7 +4257,8 @@ object MetadataAPIImpl extends MetadataAPI {
     /**
      * GetAllFunctionsFromCache
      * @param active
-     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.     *               Supply one.
+     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def GetAllFunctionsFromCache(active: Boolean, userid: Option[String] = None): Array[String] = {
@@ -4324,8 +4293,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * GetAllConceptsFromCache
      * @param active
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def GetAllConceptsFromCache(active: Boolean, userid: Option[String] = None): Array[String] = {
@@ -4336,8 +4304,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * GetAllTypesFromCache
      * @param active
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def GetAllTypesFromCache(active: Boolean, userid: Option[String] = None): Array[String] = {
@@ -4347,12 +4314,11 @@ object MetadataAPIImpl extends MetadataAPI {
   // Specific models (format JSON or XML) as an array of strings using modelName(without version) as the key
     /**
      * 
-     * @param nameSpace
-     * @param objectName
-     * @param formatType
+     * @param nameSpace namespace of the object
+     * @param objectName name of the desired object, possibly namespace qualified
+     * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def GetModelDef(nameSpace: String, objectName: String, formatType: String, userid : Option[String]): String = {
@@ -4381,8 +4347,8 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * Get a specific models (format JSON or XML) as an array of strings using modelName(without version) as the key
-     * @param objectName
-     * @param formatType
+     * @param objectName name of the desired object, possibly namespace qualified
+     * @param formatType format of the return value, either JSON or XML
      * @return
      */
   def GetModelDef(objectName: String, formatType: String, userid : Option[String] = None): String = {
@@ -4391,13 +4357,12 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * Get a specific model (format JSON or XML) as a String using modelName(with version) as the key
-     * @param nameSpace
+     * @param nameSpace namespace of the object
      * @param name
-     * @param formatType
-     * @param version
+     * @param formatType format of the return value, either JSON or XML
+     * @param version  Version of the object
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def GetModelDefFromCache(nameSpace: String, name: String, formatType: String, version: String, userid: Option[String] = None): String = {
@@ -4430,13 +4395,12 @@ object MetadataAPIImpl extends MetadataAPI {
   // Specific models (format JSON or XML) as an array of strings using modelName(without version) as the key
     /**
      * 
-     * @param nameSpace
-     * @param objectName
-     * @param formatType
-     * @param version
+     * @param nameSpace namespace of the object
+     * @param objectName name of the desired object, possibly namespace qualified
+     * @param formatType format of the return value, either JSON or XML
+     * @param version  Version of the object
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def GetModelDef(nameSpace: String, objectName: String, formatType: String, version: String, userid: Option[String]): String = {
@@ -4452,13 +4416,12 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * Get the specific message (format JSON or XML) as a String using messageName(with version) as the key
-     * @param nameSpace
+     * @param nameSpace namespace of the object
      * @param name
-     * @param formatType
-     * @param version
+     * @param formatType format of the return value, either JSON or XML
+     * @param version  Version of the object
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def GetMessageDefFromCache(nameSpace: String, name: String, formatType: String, version: String, userid: Option[String] = None): String = {
@@ -4490,13 +4453,12 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * Get the specific container (format JSON or XML) as a String using containerName(with version) as the key
-     * @param nameSpace
+     * @param nameSpace namespace of the object
      * @param name
-     * @param formatType
-     * @param version
+     * @param formatType format of the return value, either JSON or XML
+     * @param version  Version of the object
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def GetContainerDefFromCache(nameSpace: String, name: String, formatType: String, version: String, userid: Option[String]): String = {
@@ -4528,10 +4490,10 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * Return Specific messageDef object using messageName(with version) as the key
-     * @param nameSpace
+     * @param nameSpace namespace of the object
      * @param name
-     * @param formatType
-     * @param version
+     * @param formatType format of the return value, either JSON or XML
+     * @param version  Version of the object
      * @throws com.ligadata.Exceptions.ObjectNotFoundException
      * @return
      */
@@ -4893,13 +4855,12 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * Get a specific model definition from persistent store
-     * @param nameSpace
-     * @param objectName
-     * @param formatType
-     * @param version
+     * @param nameSpace namespace of the object
+     * @param objectName name of the desired object, possibly namespace qualified
+     * @param formatType format of the return value, either JSON or XML
+     * @param version  Version of the object
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def GetModelDefFromDB(nameSpace: String, objectName: String, formatType: String, version: String, userid: Option[String] = None): String = {
@@ -4940,8 +4901,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * GetAllKeys
      * @param objectType
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def GetAllKeys(objectType: String, userid: Option[String] = None): Array[String] = {
@@ -5524,16 +5484,19 @@ object MetadataAPIImpl extends MetadataAPI {
 
 
    /**
-    * Get a specific messages (format JSON or XML) as a String using messageName(without version) as the key
-    * @param objectName
-    * @param formatType
+    * Get a the most recent mesage def (format JSON or XML) as a String
+    * @param objectName the name of the message possibly namespace qualified (is simple name, "system" namespace is substituted)
+    * @param formatType format of the return value, either JSON or XML
     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-    *               method. Supply one.
+    *               method. If Security and/or Audit are configured, this value must be a value other than None.
     * @return
     */
   def GetMessageDef(objectName: String, formatType: String, userid: Option[String] = None): String = {
-    val nameSpace = MdMgr.sysNS
-    GetMessageDefFromCache(nameSpace, objectName, formatType, "-1", userid)
+       val nameNodes: Array[String] = if (objectName != null && objectName.contains('.')) objectName.split('.') else Array(MdMgr.sysNS,objectName)
+       val nmspcNodes : Array[String] = nameNodes.splitAt(nameNodes.size -1)._1
+       val buffer : StringBuilder = new StringBuilder
+       val nameSpace : String = nmspcNodes.addString(buffer, ".").toString
+       GetMessageDef(nameSpace, objectName, "-1", formatType, userid)
   }
 
     /**
@@ -5542,8 +5505,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * @param version  Version of the MessageDef
      * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return the result as a JSON String of object ApiResult where ApiResult.resultData contains
      *         the MessageDef either as a JSON or XML string depending on the parameter formatType
      */
@@ -5558,13 +5520,12 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * Get a specific message (format JSON or XML) as a String using messageName(with version) as the key
-     * @param nameSpace
+     * @param nameSpace namespace of the object
      * @param objectName Name of the MessageDef
      * @param version  Version of the MessageDef
      * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return the result as a JSON String of object ApiResult where ApiResult.resultData contains
      *         the MessageDef either as a JSON or XML string depending on the parameter formatType
      */
@@ -5580,25 +5541,29 @@ object MetadataAPIImpl extends MetadataAPI {
     }
     /**
      * Get a specific container (format JSON or XML) as a String using containerName(without version) as the key
-     * @param objectName
+     * @param objectName Name of the ContainerDef, possibly namespace qualified. When no namespace, "system" substituted
      * @param formatType
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. Supply one.
-     * @return
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
+     * @return the result as a JSON String of object ApiResult where ApiResult.resultData contains
+     *         the ContainerDef either as a JSON or XML string depending on the parameter formatType
      */
   def GetContainerDef(objectName: String, formatType: String, userid: Option[String] = None): String = {
-    val nameSpace = MdMgr.sysNS
-    GetContainerDefFromCache(nameSpace, objectName, formatType, "-1", None)
+        val nameNodes: Array[String] = if (objectName != null && objectName.contains('.')) objectName.split('.') else Array(MdMgr.sysNS,objectName)
+        val nmspcNodes : Array[String] = nameNodes.splitAt(nameNodes.size -1)._1
+        val buffer : StringBuilder = new StringBuilder
+        val nameSpace : String = nmspcNodes.addString(buffer, ".").toString
+        GetContainerDefFromCache(nameSpace, objectName, formatType, "-1", userid)
   }
 
     /**
      * Get a specific container (format JSON or XML) as a String using containerName(with version) as the key
-     * @param nameSpace
+     * @param nameSpace namespace of the object
      * @param objectName Name of the ContainerDef
-     * @param formatType format of the return value, either JSON or XML
+     * @param formatType format of the return value, either JSON or XML format of the return value, either JSON or XML
      * @param version  Version of the ContainerDef
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return the result as a JSON String of object ApiResult where ApiResult.resultData contains
      *         the ContainerDef either as a JSON or XML string depending on the parameter formatType
      */
@@ -5607,21 +5572,26 @@ object MetadataAPIImpl extends MetadataAPI {
                       , formatType: String
                       , version: String
                       , userid: Option[String]): String = {
-    logAuditRec(userid, Some(AuditConstants.READ), AuditConstants.GETOBJECT, AuditConstants.CONTAINER, AuditConstants.SUCCESS, "", nameSpace + "." + objectName + "." + version)
-    GetContainerDefFromCache(nameSpace, objectName, formatType, version, None)
+        logAuditRec(userid, Some(AuditConstants.READ), AuditConstants.GETOBJECT, AuditConstants.CONTAINER, AuditConstants.SUCCESS, "", nameSpace + "." + objectName + "." + version)
+        GetContainerDefFromCache(nameSpace, objectName, formatType, version, None)
   }
 
     /**
-     * Get a specific container (format JSON or XML) as a String using containerName(with version) as the key
-     * @param objectName
-     * @param version
-     * @param formatType
-     * @return
-     *
-     * FIXME: This method should assume that the user may or may NOT supply a namespace.
+     * Get a specific container (format JSON or XML) as a String using containerName(without version) as the key
+     * @param objectName Name of the ContainerDef, possibly namespace qualified. When no namespace, "system" substituted
+     * @param version  Version of the object
+     * @param formatType format of the return value, either JSON or XML
+     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
+     * @return the result as a JSON String of object ApiResult where ApiResult.resultData contains
+     *         the ContainerDef either as a JSON or XML string depending on the parameter formatType
      */
   def GetContainerDef(objectName: String, version: String, formatType: String, userid: Option[String]): String = {
-    val nameSpace = MdMgr.sysNS
+    val nameNodes: Array[String] = if (objectName != null && objectName.contains('.')) objectName.split('.') else Array(MdMgr.sysNS,objectName)
+    val nmspcNodes : Array[String] = nameNodes.splitAt(nameNodes.size -1)._1
+    val buffer : StringBuilder = new StringBuilder
+    val nameSpace : String = nmspcNodes.addString(buffer, ".").toString
+    GetContainerDefFromCache(nameSpace, objectName, formatType, version, userid)
     GetContainerDef(nameSpace, objectName, formatType, version, userid)
   }
 
@@ -5630,8 +5600,7 @@ object MetadataAPIImpl extends MetadataAPI {
     * @param functionsText an input String of functions in a format defined by the next parameter formatType
     * @param formatType format of functionsText ( JSON or XML)
     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-    *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-    *               Supply one.
+    *               method. If Security and/or Audit are configured, this value must be a value other than None.
     * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
     *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
     *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
@@ -5673,8 +5642,7 @@ object MetadataAPIImpl extends MetadataAPI {
     * @param functionsText an input String of functions in a format defined by the next parameter formatType
     * @param formatType format of functionsText ( JSON or XML)
     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-    *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-    *               Supply one.
+    *               method. If Security and/or Audit are configured, this value must be a value other than None.
     * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
     *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
     *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
@@ -5716,10 +5684,9 @@ object MetadataAPIImpl extends MetadataAPI {
 
      * @param nameSpace the function's namespace
      * @param functionName name of the function
-     * @param version
+     * @param version  Version of the object
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
      *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
      *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
@@ -5740,8 +5707,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * GetAllFunctionDefs
      * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return the function count and the result as a JSON String of object ApiResult where ApiResult.resultData contains
      *         the FunctionDef(s) either as a JSON or XML string depending on the parameter formatType as a Tuple2[Int,String]
      */
@@ -5754,8 +5720,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * @param objectName Name of the FunctionDef
      * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return the result as a JSON String of object ApiResult where ApiResult.resultData contains
      *         the FunctionDef(s) either as a JSON or XML string depending on the parameter formatType
      */
@@ -5765,13 +5730,12 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * GetFunctionDef
-     * @param nameSpace
-     * @param objectName
-     * @param formatType
-     * @param version
+     * @param nameSpace namespace of the object 
+     * @param objectName name of the desired object, possibly namespace qualified
+     * @param formatType format of the return value, either JSON or XML
+     * @param version  Version of the object
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def GetFunctionDef(nameSpace: String, objectName: String, formatType: String, version: String, userid: Option[String]): String = {
@@ -5784,8 +5748,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * @param version  Version of the FunctionDef
      * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return the result as a JSON String of object ApiResult where ApiResult.resultData contains
      *         the FunctionDef either as a JSON or XML string depending on the parameter formatType
      */
@@ -5798,8 +5761,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * Get all available concepts as a String
      * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return the result as a JSON String of object ApiResult where ApiResult.resultData contains
      *         the Concept(s) either as a JSON or XML string depending on the parameter formatType
      */
@@ -5809,10 +5771,10 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * Get a single concept as a string using name and version as the key
-     * @param nameSpace
-     * @param objectName
-     * @param version
-     * @param formatType
+     * @param nameSpace namespace of the object
+     * @param objectName name of the desired object, possibly namespace qualified
+     * @param version  Version of the object
+     * @param formatType format of the return value, either JSON or XML
      * @return
      */
   def GetConcept(nameSpace: String, objectName: String, version: String, formatType: String, userid: Option[String]): String = {
@@ -5821,9 +5783,9 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * Get a single concept as a string using name and version as the key
-     * @param objectName
-     * @param version
-     * @param formatType
+     * @param objectName name of the desired object, possibly namespace qualified
+     * @param version  Version of the object
+     * @param formatType format of the return value, either JSON or XML
      * @return
      */
   def GetConcept(objectName: String, version: String, formatType: String, userid: Option[String]): String = {
@@ -5833,13 +5795,12 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * Get a single concept as a string using name and version as the key
-     * @param nameSpace
-     * @param objectName
-     * @param formatType
-     * @param version
+     * @param nameSpace namespace of the object
+     * @param objectName name of the desired object, possibly namespace qualified
+     * @param formatType format of the return value, either JSON or XML
+     * @param version  Version of the object
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def GetConceptDef(nameSpace: String, objectName: String, formatType: String,
@@ -5849,8 +5810,8 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * Get a list of concept(s) as a string using name
-     * @param objectName
-     * @param formatType
+     * @param objectName name of the desired object, possibly namespace qualified
+     * @param formatType format of the return value, either JSON or XML
      * @return
      */
   def GetConcept(objectName: String, formatType: String, userid: Option[String] = None): String = {
@@ -5859,7 +5820,7 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * Get all available derived concepts(format JSON or XML) as a String
-     * @param formatType
+     * @param formatType format of the return value, either JSON or XML
      * @return
      */
   def GetAllDerivedConcepts(formatType: String, userid: Option[String] = None): String = {
@@ -5869,8 +5830,8 @@ object MetadataAPIImpl extends MetadataAPI {
   //
     /**
      * Get a derived concept(format JSON or XML) as a string using name(without version) as the key
-     * @param objectName
-     * @param formatType
+     * @param objectName name of the desired object, possibly namespace qualified
+     * @param formatType format of the return value, either JSON or XML
      * @return
      */
   def GetDerivedConcept(objectName: String, formatType: String, userid: Option[String] = None): String = {
@@ -5879,31 +5840,30 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * GetDerivedConcept - A derived concept(format JSON or XML) as a string using name and version as the key
-     * @param objectName
-     * @param version
-     * @param formatType
+     * @param objectName name of the desired object, possibly namespace qualified
+     * @param version  Version of the object
+     * @param formatType format of the return value, either JSON or XML
      * @return
      */
   def GetDerivedConcept(objectName: String, version: String, formatType: String, userid: Option[String]): String = {
     ConceptUtils.GetDerivedConcept(objectName,version,formatType)
   }
 
-     /**
-     * GetAllTypes - All available types(format JSON or XML) as a String
-     * @param formatType format of the return value, either JSON or XML
-     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
-     * @return the result as a JSON String of object ApiResult where ApiResult.resultData contains
-     *         the available types as a JSON or XML string depending on the parameter formatType
-     */
+   /**
+    * GetAllTypes - All available types(format JSON or XML) as a String
+    * @param formatType format of the return value, either JSON or XML
+    * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
+    *               method. If Security and/or Audit are configured, this value must be a value other than None.
+    * @return the result as a JSON String of object ApiResult where ApiResult.resultData contains
+    *         the available types as a JSON or XML string depending on the parameter formatType
+    */
   def GetAllTypes(formatType: String, userid: Option[String] = None): String = {
     TypeUtils.GetAllTypes(formatType,userid)
   }
 
     /**
      * GetAllTypesByObjType - All available types(format JSON or XML) as a String
-     * @param formatType
+     * @param formatType format of the return value, either JSON or XML
      * @param objType
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
@@ -5916,8 +5876,8 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * GetType
-     * @param objectName
-     * @param formatType
+     * @param objectName name of the desired object, possibly namespace qualified
+     * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
      *               Supply one.
@@ -5930,13 +5890,12 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * GetTypeDef
-     * @param nameSpace
-     * @param objectName
-     * @param formatType
-     * @param version
+     * @param nameSpace namespace of the object
+     * @param objectName name of the desired object, possibly namespace qualified
+     * @param formatType format of the return value, either JSON or XML
+     * @param version  Version of the object
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def GetTypeDef(nameSpace: String, objectName: String, formatType: String, version: String, userid: Option[String] = None): String = {
@@ -5945,13 +5904,12 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * GetType
-     * @param nameSpace
-     * @param objectName
-     * @param version
-     * @param formatType
+     * @param nameSpace namespace of the object
+     * @param objectName name of the desired object, possibly namespace qualified
+     * @param version  Version of the object
+     * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def GetType(nameSpace: String, objectName: String, version: String, formatType: String, userid: Option[String]): Option[BaseTypeDef] = {
@@ -6222,8 +6180,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * @param modifiedTime
      * @param createdTime
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def UpdateClusterCfg(clusterCfgId: String, cfgMap: scala.collection.mutable.HashMap[String, String],
@@ -6258,8 +6215,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * Remove a cluster configuration
      * @param cfgStr
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @param cobjects
      * @return results string
      */
@@ -6342,8 +6298,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * FIXME: Which ones? input or output?
      * @param modelConfigName
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def getModelDependencies(modelConfigName: String, userid: Option[String] = None): List[String] = {
@@ -6355,8 +6310,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * getModelMessagesContainers
      * @param modelConfigName
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
   def getModelMessagesContainers(modelConfigName: String, userid: Option[String] = None): List[String] = {
@@ -6378,8 +6332,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * Upload a model config.  These are for native models written in Scala or Java
      * @param cfgStr
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @param objectList
      * @param isFromNotify
      * @return
@@ -6460,8 +6413,7 @@ object MetadataAPIImpl extends MetadataAPI {
      * Accept a config specification (a JSON str)
      * @param cfgStr the json file to be interpted
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
-     *               Supply one.
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @param objectList note on the objects in the configuration to be logged to audit adapter
      * @return
      */
@@ -6683,7 +6635,7 @@ object MetadataAPIImpl extends MetadataAPI {
   // All available nodes(format JSON) as a String
     /**
      * Get the nodes as json.
-     * @param formatType
+     * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
      *               Supply one.
@@ -6713,7 +6665,7 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * All available adapters(format JSON) as a String
-     * @param formatType
+     * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
      *               Supply one.
@@ -6744,7 +6696,7 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * All available clusters(format JSON) as a String
-     * @param formatType
+     * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
      *               Supply one.
@@ -6775,7 +6727,7 @@ object MetadataAPIImpl extends MetadataAPI {
   // All available clusterCfgs(format JSON) as a String
     /**
      *
-     * @param formatType
+     * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
      *               Supply one.
@@ -6807,7 +6759,7 @@ object MetadataAPIImpl extends MetadataAPI {
 
     /**
      * All available config objects(format JSON) as a String
-     * @param formatType
+     * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
      *               Supply one.

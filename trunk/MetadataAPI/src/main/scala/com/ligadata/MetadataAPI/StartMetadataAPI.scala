@@ -317,7 +317,22 @@ object StartMetadataAPI {
       }
     }
     catch {
-      case e: Exception => response = e.getStackTraceString
+
+      case e: Exception => {
+          /** tentative answer of unidentified command type failure. */
+          response = s"Unexpected action! action = $action"
+
+          /** one more try ... going the alternate route */
+          val altResponse: String = AltRoute(originalArgs)
+          if (altResponse != null) {
+            response = altResponse
+          } else {
+              /* if the AltRoute doesn't produce a valid result, we will complain with the original failure */
+              printf(response)
+              sys.exit(1)
+          }
+      }
+
     }
     response
   }

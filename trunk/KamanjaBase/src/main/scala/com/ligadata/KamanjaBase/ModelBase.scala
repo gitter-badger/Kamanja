@@ -319,33 +319,116 @@ trait EnvContext {
 }
 
 abstract class ModelBase(val modelContext: ModelContext, val factory: ModelBaseObj) {
-  final def EnvContext() = if (modelContext != null && modelContext.txnContext != null) modelContext.txnContext.gCtx else null // gCtx
-  final def ModelName() = factory.ModelName() // Model Name
-  final def Version() = factory.Version() // Model Version
-  final def TenantId() = if (modelContext != null && modelContext.txnContext != null) modelContext.txnContext.tenantId else null // Tenant Id
-  final def TransId() = if (modelContext != null && modelContext.txnContext != null) modelContext.txnContext.transId else null // transId
+    /**
+     * Answer the model's namespace.name.
+     */
+    final def ModelName() : String = if (modelContext != null && modelContext.modelName != null) modelContext.modelName else factory.Version()
+    /**
+     * Answer the model version.
+     */
+    final def Version() : String = if (modelContext != null) modelContext.modelVersion else factory.ModelName()
 
-  def execute(outputDefault: Boolean): ModelResultBase // if outputDefault is true we will output the default value if nothing matches, otherwise null 
+    /**
+     * Answer the EnvContext that provides access to the persistent storage for models that wish to fetch/store values there
+     * during its execution.
+     */
+    final def EnvContext() = if (modelContext != null && modelContext.txnContext != null) modelContext.txnContext.gCtx else null
+    /**
+     * Answer the model's owner or tenant. This is useful for cluster accounting in multi-tenant situations..
+      */
+    final def TenantId() = if (modelContext != null && modelContext.txnContext != null) modelContext.txnContext.tenantId else null
+    /**
+     * Answer the transaction id for the current model execution.
+      */
+    final def TransId() = if (modelContext != null && modelContext.txnContext != null) modelContext.txnContext.transId else null // transId
+
+    /**
+     * The engine will call the model instance's execute method to process the message it received at CreateNewModel time by its factory.
+     * @param outputDefault when true, a model result will always be produced with default values.  If false (ordinary case), output is
+     *                      emitted only when the model deems this message worthy of report.  If desired the model may return a 'null'
+     *                      for the execute's return value and the engine will not proceed with output processing
+     * @return a ModelResultBase derivative or null if there is nothing to report.
+     */
+    def execute(outputDefault: Boolean): ModelResultBase // if outputDefault is true we will output the default value if nothing matches, otherwise null
 }
 
 trait ModelBaseObj {
-  def IsValidMessage(msg: MessageContainerBase): Boolean // Check to fire the model
-  def CreateNewModel(mdlCtxt: ModelContext): ModelBase // Creating same type of object with given values 
-  def ModelName(): String // Model Name
-  def Version(): String // Model Version
+    /**
+     * Determine if the supplied message can be consumed by the model mentioned in the argument list.  The engine will
+     * call this method when a new messages has arrived and been prepared.  It is passed to each of the active models
+     * in the working set.  Each model has the opportunity to indicate its interest in the message.
+     *
+     * NOTE: For many model factories that implement this interface, there is only one model to be concerned with and the
+     * namespace.name.version can be ignored. Some factories, however, are responsible for servicing many models, so
+     * the Kamanja engine's intentions are made known explicitly as to which active model it is currently concerned.
+     *
+     * @param msg  the message instance that is currently being processed
+     * @param modelName the namespace.name of the model that the engine wishes to know if it can process this message
+     * @param modelVersion the canonical version of the model (string form) that the engine wishes to know if it can
+     *                     process this message
+     * @return true if this model can process the message.
+     */
+  def IsValidMessage(msg: MessageContainerBase, modelName : String, modelVersion : String): Boolean
+    /**
+     * If the message can be processed, the engine will call this method to get an instance of the model.  Depending upon the model
+     * characteristics, it will either obtain one from its instance cache (models that are reusable behave this way), or worse case,
+     * instantiate a new model to process the message
+     * @param mdlCtxt key information needed by the model to create and intialize itself.
+     * @return an instance of the Model that can process the message found in the ModelContext
+     */
+  def CreateNewModel(mdlCtxt: ModelContext): ModelBase
+    /**
+     * Answer the name of the model.
+     * @return the model name
+     */
+  def ModelName(): String
+    /**
+     * Answer the version of the model.
+     * @return the model version
+     */
+  def Version(): String
+
+    /**
+     * Create a result object to contain any results the model wishes to report
+     * @return a ModelResultBase derivative appropriate for the model
+     */
   def CreateResultObject(): ModelResultBase // ResultClass associated the model. Mainly used for Returning results as well as Deserialization
 }
 
-class ModelInfo(val mdl: ModelBaseObj, val jarPath: String, val dependencyJarNames: Array[String], val tenantId: String) {
+/**
+ * ModelInfo objects are created at cluster startup and cache information required to manage the creation of models and their
+ * execution in the Kamanja engine.
+ * @param mdl the factory object that will be asked to decide if the current message can be consumed by an instance of a model
+ *            that it can create.
+ * @param modelName the namespace.name of the model that the engine wishes to know if it can process this message
+ * @param modelVersion the version of the model that the engine wishes to know if it can process this message
+ * @param jarPath the location(s) of all jars required to execute models that can be produced by this factory object
+ * @param dependencyJarNames the names of the dependency jars that are in fact needed
+ * @param tenantId the name of the model owner used for multi-tenancy accounting and security
+ */
+class ModelInfo(val mdl: ModelBaseObj
+                , val modelName : String
+                , val modelVersion : String
+                , val jarPath: String
+                , val dependencyJarNames: Array[String]
+                , val tenantId: String) {
 }
 
-// partitionKey is the one used for this message
-class ModelContext(val txnContext: TransactionContext, val msg: MessageContainerBase, val msgData: Array[Byte], val partitionKey: String) {
-  def InputMessageData: Array[Byte] = msgData
-  def Message: MessageContainerBase = msg
-  def TransactionContext: TransactionContext = txnContext
-  def PartitionKey: String = partitionKey
-  def getPropertyValue(clusterId: String, key: String): String = (txnContext.getPropertyValue(clusterId, key))
+/**
+ * A ModelContext is presented to each model instance when a new message is to be processed by that model instance.
+ * The current transaction, access to the persistent store, the model owner, and the message to be processed are available.
+ *
+ * @param txnContext the TransactionContext describing the transaction id, global context (persistent store interface) and
+ *                   tenant id (used for multi tenancy clusters and the accounting required for that).
+ * @param msg the instance of the incoming message to be consumed by the model instance.
+ * @param modelName the namespace.name of the model that the engine is invoking
+ * @param modelVersion the version of the model that the engine wishes to know if it can process this message
+ */
+class ModelContext(val txnContext: TransactionContext
+                   , val msg: MessageContainerBase
+                   , val modelName : String
+                   , val modelVersion : String ) {
+  def getPropertyValue(clusterId: String, key:String): String = (txnContext.getPropertyValue(clusterId, key))
 }
 
 class TransactionContext(val transId: Long, val gCtx: EnvContext, val tenantId: String) {

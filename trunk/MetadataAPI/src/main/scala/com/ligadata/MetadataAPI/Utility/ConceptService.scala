@@ -88,7 +88,9 @@ object ConceptService {
         }
       }
       //val conceptKeys : String = MetadataAPIImpl.GetAllConcepts("JSON", userid) <<< this returns a JSON string
-      val optConceptKeys : Option[scala.collection.immutable.Set[BaseAttributeDef]] = MdMgr.GetMdMgr.Attributes(true, true)
+      val onlyActive: Boolean = false
+      val latestVersion: Boolean = false
+      val optConceptKeys : Option[scala.collection.immutable.Set[BaseAttributeDef]] = MdMgr.GetMdMgr.Attributes(onlyActive, latestVersion)
       val conceptKeys : Array[BaseAttributeDef] = optConceptKeys.getOrElse(scala.collection.immutable.Set[BaseAttributeDef]()).toArray
 
       if (conceptKeys.length == 0) {
@@ -100,7 +102,7 @@ object ConceptService {
         var srno = 0
         for (conceptKey <- conceptKeys) {
           srno += 1
-          println("[" + srno + "] " + conceptKey)
+          println(s"[$srno] (${conceptKey.FullNameWithVer} : ${conceptKey.typeString} IsActive=${conceptKey.IsActive} IsDeleted=${conceptKey.IsDeleted}})")
         }
         println("Enter your choice: ")
         val choice: Int = readInt()

@@ -51,10 +51,13 @@ class LearningEngine(val input: InputAdapter, val curPartitionKey: PartitionUniq
       // Execute all models here
       modelInfos.foreach(modelInfo => {
         try {
-          if (modelInfo.mdl.IsValidMessage(finalTopMsgOrContainer)) {
+          if (modelInfo.mdl.IsValidMessage(finalTopMsgOrContainer, modelInfo.modelName, modelInfo.modelVersion)) {
             LOG.debug("Processing uniqueKey:%s, uniqueVal:%s, model:%s".format(uk, uv, modelInfo.mdl.ModelName))
             // Checking whether this message has any fields/concepts to execute in this model
-            val mdlCtxt = new ModelContext(new TransactionContext(transId, envContext, modelInfo.tenantId), finalTopMsgOrContainer, inputData, uk)
+            val mdlCtxt = new ModelContext(new TransactionContext(transId, envContext, modelInfo.tenantId)
+                                        , finalTopMsgOrContainer
+                                        , modelInfo.modelName
+                                        , modelInfo.modelVersion)
             ThreadLocalStorage.modelContextInfo.set(mdlCtxt)
             val curMd = modelInfo.mdl.CreateNewModel(mdlCtxt)
             if (curMd != null) {
