@@ -327,7 +327,7 @@ abstract class ModelBase(val modelContext: ModelContext, val factory: ModelBaseO
     /**
      * Answer the model version.
      */
-    final def Version() : String = if (modelContext != null && modelContext.modelVersion != null) modelContext.modelName else factory.Version()
+    final def Version() : String = if (modelContext != null && modelContext.modelVersion != null) modelContext.modelVersion else factory.Version()
 
     /**
      * Answer the EnvContext that provides access to the persistent storage for models that wish to fetch/store values there
