@@ -179,9 +179,6 @@ object JpmmlAdapter extends ModelBaseObj {
      * @param lockNeeded - indicate if synchronized is required.  It is only required when the engine is processing
      *                   messages.  At cluster startup, it is not needed.
      * @return true if initialization was successful
-     *
-     * FIXME: if this map gets replaced when the engine is active, there needs to be a lock on this function to prevent
-     * FIXME: unpredictable things from occurring.
      */
     private def InitializeModelMsgMap(modelDefinitions : Array[ModelDef], lockNeeded : Boolean) : Boolean = {
         if (lockNeeded) {
@@ -222,7 +219,6 @@ object JpmmlAdapter extends ModelBaseObj {
         }
 
     }
-
 
     /** JpmmlAdapter has access to the engine metadata through this reference */
     private var mdMgr : MdMgr = null

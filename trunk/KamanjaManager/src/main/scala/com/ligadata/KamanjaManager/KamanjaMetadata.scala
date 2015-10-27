@@ -401,6 +401,12 @@ class KamanjaMetadata {
                 } else {
                     LOG.debug("JPMML Factory: initialization successful")
                 }
+                case _ => false
+            }
+            if (! jpmmlFactoryInitialized) {
+                LOG.error("JPMML Factory: initialization failed")
+            } else {
+                LOG.debug("JPMML Factory: initialization successful")
             }
             val mdlName = (mdl.NameSpace.trim + "." + mdl.Name.trim).toLowerCase
             modelObjects(mdlName) = new com.ligadata.KamanjaBase.ModelInfo(modelobj
