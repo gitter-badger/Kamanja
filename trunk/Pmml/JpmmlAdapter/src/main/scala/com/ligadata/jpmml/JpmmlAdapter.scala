@@ -54,7 +54,7 @@ class JpmmlAdapter( modelContext: ModelContext, factory : ModelBaseObj, modelEva
     }
 
 
-    /** Since the decode util for the map results shows that at least one key can possibly be null,
+    /** Since the JPMML decode util for the map results shows that at least one key can possibly be null,
       * let's give a name to it for our results.  This is likely just careful coding, but no harm
       * taking precaution.  This is the tag for the null field:
       */
@@ -80,7 +80,7 @@ class JpmmlAdapter( modelContext: ModelContext, factory : ModelBaseObj, modelEva
      * from the message.  There is no mapping capability metadata at this point.
      *
      * NOTE: It is possible to have missing inputs in the message.  The model, if written robustly, has accounted
-     * for missingValue and other strategies needed to produce results even with imperfect results. See
+     * for missingValue and other strategies needed to produce results even with imperfect inputs. See
      * http://dmg.org/pmml/v4-2-1/MiningSchema.html for a discussion about this.
      *
      * @param activeFields a List of the FieldNames
@@ -104,8 +104,8 @@ class JpmmlAdapter( modelContext: ModelContext, factory : ModelBaseObj, modelEva
 }
 
 /**
- * The JpmmlAdapter factory object manages all JPMML models that are active in the system.  It expects the message
- * namespace.name and version to be properly filled in by the Kamanja engine when its IsValidMessage is called.
+ * The JpmmlAdapter factory object instantiates/caches all JPMML model instances that are active in the system.  It expects
+ * the message namespace.name and version to be properly filled in by the Kamanja engine when its IsValidMessage is called.
  *
  * Should the JpmmlAdapter be changed out during message processing (a notification has been received by the engine
  * from a MetadataAPI service serving the cluster), it is incumbent upon the engine to quiesce the JPMML models that
@@ -116,8 +116,8 @@ class JpmmlAdapter( modelContext: ModelContext, factory : ModelBaseObj, modelEva
  * are managing multiple models (like JpmmlAdapter).''
  *
  * When a replacement is made like this during message processing the FactoryInitialize(mdmgr : MdMgr, mutexLockNeeded : Boolean)
- * method should be called with the flag set to true.  Initialization at cluster startup before the messages are flying, this flag
- * should be false.
+ * method should be called with the flag set to true.  For initialization at cluster startup before the messages are flying,
+ * this flag should be false.
  */
 object JpmmlAdapter extends ModelBaseObj {
 
@@ -177,7 +177,7 @@ object JpmmlAdapter extends ModelBaseObj {
      * Called when the engine has been notified that the JPMML models (possibly) have changed by the MetadataAPI,
      * this function causes the models to be refetched
      */
-    def JpmmlModelsHaveChanged : Unit = {
+    def JpmmlModelsHaveChanged() : Unit = {
         val mutexLockNeeded : Boolean = true
         val onlyActive : Boolean = true
         val latestVersionsOnly : Boolean = false

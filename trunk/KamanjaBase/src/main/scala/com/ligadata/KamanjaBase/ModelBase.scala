@@ -423,7 +423,7 @@ class ModelInfo(val mdl: ModelBaseObj
  *                   tenant id (used for multi tenancy clusters and the accounting required for that).
  * @param msg the instance of the incoming message to be consumed by the model instance.
  * @param modelName the namespace.name of the model that the engine is invoking
- * @param modelVersion the version of the model that the engine wishes to know if it can process this message
+ * @param modelVersion the version of the model that the engine is invoking
  */
 class ModelContext(val txnContext: TransactionContext
                    , val msg: MessageContainerBase
@@ -432,6 +432,13 @@ class ModelContext(val txnContext: TransactionContext
   def getPropertyValue(clusterId: String, key:String): String = (txnContext.getPropertyValue(clusterId, key))
 }
 
+/**
+ * The transaction context contains miscellaneous information needed by the engine and models running on it.
+ * @param transId the transaction id for the current message execution
+ * @param gCtx the EnvContext, the gateway to persistent storage that can contain values required by the model
+ *             as well as a storage place for values the model wishes to save.
+ * @param tenantId an identifier to aid in multi-tenant clusters.
+ */
 class TransactionContext(val transId: Long, val gCtx: EnvContext, val tenantId: String) {
   def getPropertyValue(clusterId: String, key: String): String = { gCtx.getPropertyValue(clusterId, key) }
 }
