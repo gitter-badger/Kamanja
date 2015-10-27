@@ -159,12 +159,8 @@ object JpmmlAdapter extends ModelBaseObj {
      * @param lockNeeded - indicate if synchronized is required.  It is only required when the engine is processing
      *                   messages.  At cluster startup, it is not needed.
      * @return true if initialization was successful
-     *
-     * FIXME: if this map gets replaced when the engine is active, there needs to be a lock on this function to prevent
-     * FIXME: unpredictable things from occurring.
      */
     private def InitializeModelMsgMap(modelDefinitions : Array[ModelDef], lockNeeded : Boolean) : Boolean = {
-
         if (lockNeeded) {
             mutex.synchronized {
                 modelDefinitions.foreach(modelDef => {
@@ -204,12 +200,20 @@ object JpmmlAdapter extends ModelBaseObj {
 
     }
 
+
     /** JpmmlAdapter has access to the engine metadata through this reference */
     private var mdMgr : MdMgr = null
     /** JpmmlAdapter factory namespace.name */
     private var factoryName : String = null
     /** JpmmlAdapter factory's version */
     private var factoryVersion : String = null
+    /** JpmmlAdapter factory initialization flag... when true the factory has been initialized */
+    private var isFactoryInitialized : Boolean = false 
+
+    /** Determine if the factory has been initialized. 
+     *  @return boolean
+     */
+    def IsFactoryInitialized : Boolean = isFactoryInitialized 
 
     /**
      * Called at cluster startup, set the mdmgr needed to manage the instances and answer IsValidMessage question.
@@ -250,6 +254,7 @@ object JpmmlAdapter extends ModelBaseObj {
             logger.error(s"Factory Initialization failed.. there is no model named ${'"'}com.ligadata.jpmml.JpmmlAdapter${'"'}")
             false
         }
+        isFactoryInitialized = factoryInitialized
         factoryInitialized
     }
 

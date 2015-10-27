@@ -327,20 +327,13 @@ abstract class ModelBase(val modelContext: ModelContext, val factory: ModelBaseO
     /**
      * Answer the model's namespace.name.
      */
-<<<<<<< HEAD
     final def ModelName() : String = if (modelContext != null && modelContext.modelName != null) modelContext.modelName else factory.ModelName()
 
     /**
      * Answer the model version.
      */
     final def Version() : String = if (modelContext != null && modelContext.modelVersion != null) modelContext.modelVersion else factory.Version()
-=======
-    final def ModelName() : String = if (modelContext != null && modelContext.modelName != null) modelContext.modelName else factory.Version()
-    /**
-     * Answer the model version.
-     */
-    final def Version() : String = if (modelContext != null) modelContext.modelVersion else factory.ModelName()
->>>>>>> Fatafat 218 JpmmlAdapter get MdMgr
+
 
     /**
      * Answer the EnvContext that provides access to the persistent storage for models that wish to fetch/store values there
@@ -439,11 +432,7 @@ class ModelInfo(val mdl: ModelBaseObj
  *                   tenant id (used for multi tenancy clusters and the accounting required for that).
  * @param msg the instance of the incoming message to be consumed by the model instance.
  * @param modelName the namespace.name of the model that the engine is invoking
-<<<<<<< HEAD
  * @param modelVersion the version of the model that the engine is invoking
-=======
- * @param modelVersion the version of the model that the engine wishes to know if it can process this message
->>>>>>> Fatafat 218 JpmmlAdapter get MdMgr
  */
 class ModelContext(val txnContext: TransactionContext
                    , val msg: MessageContainerBase

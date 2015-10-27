@@ -388,24 +388,19 @@ class KamanjaMetadata {
             * what was done for npario. fwiw.
             */
 
-<<<<<<< HEAD
-            val jpmmlFactoryInitialized : Boolean = modelobj match {
-                case jpmml : com.ligadata.jpmml.JpmmlAdapter => {
-                     val mutexNeeded : Boolean = false
-                     JpmmlAdapter.FactoryInitialize(KamanjaMetadata.getMdMgr, mutexNeeded)
+            if (! JpmmlAdapter.IsFactoryInitialized) {
+                val jpmmlFactoryInitialized : Boolean = modelobj match {
+                    case jpmml : com.ligadata.jpmml.JpmmlAdapter => {
+                         val mutexNeeded : Boolean = false
+                         JpmmlAdapter.FactoryInitialize(KamanjaMetadata.getMdMgr, mutexNeeded)
+                    }
+                    case _ => false
                 }
-                case _ => false
-            }
-            if (! jpmmlFactoryInitialized) {
-                LOG.error("JPMML Factory: initialization failed")
-            } else {
-                LOG.debug("JPMML Factory: initialization successful")
-=======
-            modelobj match {
-                case jpmml : com.ligadata.jpmml.JpmmlAdapter => {
-                     JpmmlAdapter.FactoryInitialize(KamanjaMetadata.getMdMgr)
+                if (! jpmmlFactoryInitialized) {
+                    LOG.error("JPMML Factory: initialization failed")
+                } else {
+                    LOG.debug("JPMML Factory: initialization successful")
                 }
->>>>>>> Fatafat 218 JpmmlAdapter get MdMgr
             }
             val mdlName = (mdl.NameSpace.trim + "." + mdl.Name.trim).toLowerCase
             modelObjects(mdlName) = new com.ligadata.KamanjaBase.ModelInfo(modelobj
@@ -556,14 +551,7 @@ class KamanjaMetadata {
     modelDefs.foreach(mdl => {
       PrepareModel(mdl, false) // Already Loaded required dependency jars before calling this
     })
-<<<<<<< HEAD
-=======
 
-    /** Gather the Jpmml models and give them to the JpmmlAdapter factory. It will cache them so it can disambiguate
-      * which model is being asked to handle which incoming message. */
-    val jpmmlModelDefs : Array[ModelDef] = modelDefs.filter(_ == ModelRepresentation.JPMML).toArray
-    JpmmlAdapter.initializeModelMsgMap(jpmmlModelDefs)
->>>>>>> Fatafat 218 JpmmlAdapter get MdMgr
   }
 }
 
