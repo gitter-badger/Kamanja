@@ -389,10 +389,17 @@ class KamanjaMetadata {
             * what was done for npario. fwiw.
             */
 
-            modelobj match {
+            val jpmmlFactoryInitialized : Boolean = modelobj match {
                 case jpmml : com.ligadata.jpmml.JpmmlAdapter => {
-                     JpmmlAdapter.FactoryInitialize(KamanjaMetadata.getMdMgr)
+                     val mutexNeeded : Boolean = false
+                     JpmmlAdapter.FactoryInitialize(KamanjaMetadata.getMdMgr, mutexNeeded)
                 }
+                case _ => false
+            }
+            if (! jpmmlFactoryInitialized) {
+                LOG.error("JPMML Factory: initialization failed")
+            } else {
+                LOG.debug("JPMML Factory: initialization successful")
             }
             val mdlName = (mdl.NameSpace.trim + "." + mdl.Name.trim).toLowerCase
             modelObjects(mdlName) = new com.ligadata.KamanjaBase.ModelInfo(modelobj
@@ -544,10 +551,6 @@ class KamanjaMetadata {
       PrepareModel(mdl, false) // Already Loaded required dependency jars before calling this
     })
 
-    /** Gather the Jpmml models and give them to the JpmmlAdapter factory. It will cache them so it can disambiguate
-      * which model is being asked to handle which incoming message. */
-    val jpmmlModelDefs : Array[ModelDef] = modelDefs.filter(_ == ModelRepresentation.JPMML).toArray
-    JpmmlAdapter.initializeModelMsgMap(jpmmlModelDefs)
   }
 }
 

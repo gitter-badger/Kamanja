@@ -8,6 +8,7 @@ import javax.xml.transform.sax.SAXSource
 
 import com.ligadata.KamanjaBase._
 import com.ligadata.kamanja.metadata._
+import org.apache.log4j.Logger
 import org.dmg.pmml.{PMML, FieldName}
 import org.jpmml.evaluator._
 import org.jpmml.model.{JAXBUtil, ImportFilter}
@@ -103,86 +104,163 @@ class JpmmlAdapter( modelContext: ModelContext, factory : ModelBaseObj, modelEva
 }
 
 /**
- * JPMMLInfo contains the additional information needed to both recognize the need to instantiate a model for a given message presented to the
- * model factory's IsValidMessage method as well as that information to instantiate an instance of the model that will process that message.
- * This state information is collected and maintained for JPMML models only.
- * @see ModelInfo
- * @see ModelContext
+ * The JpmmlAdapter factory object manages all JPMML models that are active in the system.  It expects the message
+ * namespace.name and version to be properly filled in by the Kamanja engine when its IsValidMessage is called.
  *
- * @param jpmmlText the pmml source that will be sent to the JPMML evaluator factory to create a suitable evaluator to process the message.
- * @param msgConsumed the incoming message's namespace.name.version that this pmml model will consume.  It is mapped to the input fields in the
- *                    PMML model by the ModelAdapter instance.
- * @param modelName the modelNamespace.name of the model that will process the message.  Unlike most model factories, JPMML's model factory handles
- *                  all JPMML models.  We need to know which of the JPMML ModelDef instances is being used.
- * @param modelVersion the model version.
+ * Should the JpmmlAdapter be changed out during message processing (a notification has been received by the engine
+ * from a MetadataAPI service serving the cluster), it is incumbent upon the engine to quiesce the JPMML models that
+ * are in RUN state before removing and replacing the JpmmlAdapter.
+ *
+ * ''FIXME: Afaik, there is no mechanism for tracking model execution by MetadataAPI.ModelType.  For factories that
+ * don't manage multiple models, this is not an issue.  It will possibly be an issue only for the factories that
+ * are managing multiple models (like JpmmlAdapter).''
+ *
+ * When a replacement is made like this during message processing the FactoryInitialize(mdmgr : MdMgr, mutexLockNeeded : Boolean)
+ * method should be called with the flag set to true.  Initialization at cluster startup before the messages are flying, this flag
+ * should be false.
  */
-case class JPMMLInfo(val jpmmlText : String, val msgConsumed : String, val modelName : String, val modelVersion : Long)
-
-
 object JpmmlAdapter extends ModelBaseObj {
 
-    /** Key for modelMsgMap */
+    val logger = Logger.getLogger(getClass)
+
+    /** Key for modelMsgMap (name is namespace.name, version is the canonical form returned by MdMgr.ConvertLongVersionToString */
     private case class ModelNameVersion(name: String, version: String)
-    /** Key for instanceMap */
+    /** Key for instanceMap (both names are namespace.name, both versions are the canonical form returned by
+      * MdMgr.ConvertLongVersionToString and threadId is the Thread.currentThread.getId.toString */
     private case class ModelMessageThreadId(modelName: String, modelVer: String, msgName : String, msgVer : String, threadId : String)
 
     /** modelMsgMap is utilized to construct new instances of JPMML models.
       *
-      * FIXME: When there are updates to models, or a new model is added to the metadata and activated, or perhaps
-      * FIXME: a model is deactivated. the JpmmlModelFactory here needs to be notified of this change.  Perhaps an
-      * FIXME: Event is sent here such that the maps can be amended.
-      */
-    private var modelMsgMap : TrieMap[ModelNameVersion, ModelDef] = TrieMap.empty[ModelNameVersion, ModelDef]
-
-    /** modelMsgMap is utilized to construct new instances of JPMML models.
+      * When there are updates to models, or a new model is added to the metadata and activated, or perhaps
+      * a model is deactivated. the JpmmlModelFactory here needs to be notified of this change.  To do this, call
+      * method JpmmlModelsHaveChanged.
+      * @see JpmmlModelsHaveChanged
       *
-      * FIXME: When a thread terminates, it might be useful to eliminate any instances that were allocated for that thread
       */
-    private var instanceMap : TrieMap[ModelMessageThreadId, Option[ModelBase]] = TrieMap.empty[ModelMessageThreadId,Option[ModelBase]]
+    private val modelMsgMap : TrieMap[ModelNameVersion, ModelDef] = TrieMap.empty[ModelNameVersion, ModelDef]
 
+    /** The instanceMap serves as a cache of JPMML model instances. JPMML models are relatively expensive to build, but since
+      * they are idempotent, a cache of instances is maintained to service subsequent calls. If the engine is configured to
+      * execute models on multiple threads, there will be one JPMML model instance for each thread for any given JPMML model.
+      * @see ModelMessageThreadId
+      */
+    private val instanceMap : TrieMap[ModelMessageThreadId, Option[ModelBase]] = TrieMap.empty[ModelMessageThreadId,Option[ModelBase]]
+
+    /** The variable mutex serves as the synchronization variable for updating the modelMsgMap */
+    private val mutex : Integer = 0
     /**
      * Called at cluster startup, this method collects the metadata for the JPMML model definitions.  These definitions
      * contain the source
-     * @param modelDefinitions
+     * @param modelDefinitions - an Array[ModelDef] containing only JPMML models
+     * @param lockNeeded - indicate if synchronized is required.  It is only required when the engine is processing
+     *                   messages.  At cluster startup, it is not needed.
      * @return true if initialization was successful
-     *
-     * FIXME: if this map gets replaced when the engine is active, there needs to be a lock on this function to prevent
-     * FIXME: unpredictable things from occurring.
      */
-    def initializeModelMsgMap(modelDefinitions : Array[ModelDef]) : Boolean = {
-        modelDefinitions.foreach(modelDef => {
-            modelMsgMap.put(ModelNameVersion(modelDef.FullName,modelDef.Version.toString), modelDef)
-        })
+    private def InitializeModelMsgMap(modelDefinitions : Array[ModelDef], lockNeeded : Boolean) : Boolean = {
 
-        (modelMsgMap != null && modelMsgMap.size >= 0)
+        if (lockNeeded) {
+            mutex.synchronized {
+                modelDefinitions.foreach(modelDef => {
+                    modelMsgMap.put(ModelNameVersion(modelDef.FullName, MdMgr.ConvertLongVersionToString(modelDef.Version)), modelDef)
+                })
+            }
+        } else {
+            modelDefinitions.foreach(modelDef => {
+                modelMsgMap.put(ModelNameVersion(modelDef.FullName, MdMgr.ConvertLongVersionToString(modelDef.Version)), modelDef)
+            })
+        }
+
+        (modelMsgMap != null && modelMsgMap.size >= 0) /** it's ok to have no models though unlikely */
     }
 
+    /**
+     * Called when the engine has been notified that the JPMML models (possibly) have changed by the MetadataAPI,
+     * this function causes the models to be refetched
+     */
+    def JpmmlModelsHaveChanged : Unit = {
+        val mutexLockNeeded : Boolean = true
+        val onlyActive : Boolean = true
+        val latestVersionsOnly : Boolean = false
+        val optModelDefs: Option[scala.collection.immutable.Set[ModelDef]] = mdMgr.Models(onlyActive, latestVersionsOnly)
+        val modelDefs : scala.collection.immutable.Set[ModelDef] = optModelDefs.orNull
+        val initialized : Boolean = if (modelDefs != null) {
+            val jpmmlModelDefs: Array[ModelDef] = modelDefs.filter(_ == ModelRepresentation.JPMML).toArray
+            InitializeModelMsgMap(jpmmlModelDefs, mutexLockNeeded)
+        } else {
+            InitializeModelMsgMap(Array[ModelDef](), mutexLockNeeded)
+        }
+        if (! initialized) {
+            logger.error(s"Factory Initialization result = $initialized ... unable to load the model defs from the metadata manager")
+        } else {
+            logger.debug(s"Factory Initialization result = $initialized ... load successful")
+        }
+
+    }
+
+    /** JpmmlAdapter has access to the engine metadata through this reference */
     private var mdMgr : MdMgr = null
+    /** JpmmlAdapter factory namespace.name */
     private var factoryName : String = null
+    /** JpmmlAdapter factory's version */
     private var factoryVersion : String = null
 
     /**
-     * Set the mdmgr needed to manage the instances and answer IsValidMessage question.
-     * ''pre-condition: this function is called before any message processing commences.''
+     * Called at cluster startup, set the mdmgr needed to manage the instances and answer IsValidMessage question.
      *
-     * @param mdmgr the Kamanja engine's MdMgr
+     * @param mdmgr - the Kamanja engine's MdMgr
+     * @param mutexLockNeeded - this value should be 'true' if the messages are being processed.  The 'false' value
+     *                        is acceptable during cluster initialization before message processing.
      */
-    def FactoryInitialize(mdmgr : MdMgr)  : Unit = {
+    def FactoryInitialize(mdmgr : MdMgr, mutexLockNeeded : Boolean) : Boolean = {
         mdMgr = mdmgr
         val optModel : Option[ModelDef] = if (mdMgr != null) {
             val currentVersion : Long = -1
-            mdMgr.Model("com.ligadata.jpmml.JpmmlAdapter", currentVersion, true)
+            val active : Boolean = true
+            mdMgr.Model("com.ligadata.jpmml.JpmmlAdapter", currentVersion, active)
         } else {
             None
         }
         val factoryModel : ModelDef = optModel.orNull
-        if (factoryModel != null) {
+        val factoryInitialized : Boolean = if (factoryModel != null) {
             factoryName = factoryModel.FullName
             factoryVersion = MdMgr.ConvertLongVersionToString(factoryModel.Version)
+
+            /** Gather the Jpmml models and put them in a Map so it can be discerned which of the models is being
+              * asked it it is able to service the current supplied message. */
+
+            val onlyActive : Boolean = true
+            val latestVersionsOnly : Boolean = false
+            val optModelDefs: Option[scala.collection.immutable.Set[ModelDef]] = mdMgr.Models(onlyActive, latestVersionsOnly)
+            val modelDefs : scala.collection.immutable.Set[ModelDef] = optModelDefs.orNull
+            val initialized : Boolean = if (modelDefs != null) {
+                val jpmmlModelDefs: Array[ModelDef] = modelDefs.filter(_ == ModelRepresentation.JPMML).toArray
+                InitializeModelMsgMap(jpmmlModelDefs, mutexLockNeeded)
+            } else {
+                InitializeModelMsgMap(Array[ModelDef](), mutexLockNeeded)
+            }
+            initialized
+        } else {
+            logger.error(s"Factory Initialization failed.. there is no model named ${'"'}com.ligadata.jpmml.JpmmlAdapter${'"'}")
+            false
         }
+        factoryInitialized
     }
 
-    /** See if any of the models consume the supplied message */
+    /**
+     * Determine if the supplied message can be consumed by the model mentioned in the argument list.  The engine will
+     * call this method when a new messages has arrived and been prepared.  It is passed to each of the active models
+     * in the working set.  Each model has the opportunity to indicate its interest in the message.
+     *
+     * NOTE: For many model factories that implement this interface, there is only one model to be concerned with and the
+     * namespace.name.version can be ignored. Some factories, however, are responsible for servicing many models, so
+     * the Kamanja engine's intentions are made known explicitly as to which active model it is currently concerned.
+     *
+     * @param msg  - the message instance that is currently being processed
+     * @param modelName - the namespace.name of the model that the engine wishes to know if it can process this message
+     * @param modelVersion - the canonical version of the model (string form) that the engine wishes to know if it can
+     *                     process this message
+     * @return true if this model can process the message.
+     */
     def IsValidMessage(msg: MessageContainerBase, modelName : String, modelVersion : String): Boolean = {
         val msgFullName : String = msg.FullName
         val msgVersion : String = msg.Version
@@ -198,11 +276,11 @@ object JpmmlAdapter extends ModelBaseObj {
     }
 
     /**
-     * Answer a model instance to the caller, obtaining a pre-existing one in the cache if possible.
-     * @param mCtx the ModelContext object supplied by the engine with the message and model name to instantiate/fetch
-     * @return an instance of the Model that can process the message found in the ModelContext
+     * Answer a model instance, obtaining a pre-existing one in the cache if possible.
+     * @param mCtx - the ModelContext object supplied by the engine with the message and model name to instantiate/fetch
+     * @return - an instance of the Model that can process the message found in the ModelContext
      */
-    override def CreateNewModel(mCtx: ModelContext): ModelBase = {
+    def CreateNewModel(mCtx: ModelContext): ModelBase = {
         /** First determine if we have an instance of this model for this thread */
         val threadId : String = Thread.currentThread.getId.toString
         val msgName : String = mCtx.msg.FullName
@@ -224,9 +302,6 @@ object JpmmlAdapter extends ModelBaseObj {
             val modelDef : ModelDef = optModelDef.orNull
 
             if (modelDef != null) {
-                val modelName : String = modelDef.FullName
-                val version : String = MdMgr.ConvertLongVersionToString(modelDef.Version)
-
                 /** Ingest the pmml here and build an evaluator */
                 val modelEvaluator: ModelEvaluator[_] = CreateEvaluator(modelDef.jpmmlText)
                 val builtModel : ModelBase = new JpmmlAdapter( mCtx, this, modelEvaluator)
@@ -235,24 +310,32 @@ object JpmmlAdapter extends ModelBaseObj {
 
                 builtModel
             } else {
-
-                //logger.error(s"model could not be built for modelName=$modelName")  /// FIXME add logger to classes
+                logger.error(s"ModelDef not found...instance could not be built for modelName=$modelName modelVersion=$modelVer, msgName=$msgName, msgVersion=$msgVer")
                 null
             }
         }
         useThisModel
     }
 
+    /**
+     * Answer the model name.
+     * @return the model name
+     */
     def ModelName(): String = {
         factoryName
     }
+
+    /**
+     * Answer the model version.
+     * @return the model version
+     */
     def Version(): String = {
         factoryVersion
     }
 
     /**
-     * Answer a ModelBaseResult from which to give the model results.
-     * @return a ModelResultBase derivative appropriate for the model
+     * Answer a ModelResultBase from which to give the model results.
+     * @return - a ModelResultBase derivative appropriate for the model
      */
     def CreateResultObject(): ModelResultBase = new MappedModelResults
 
