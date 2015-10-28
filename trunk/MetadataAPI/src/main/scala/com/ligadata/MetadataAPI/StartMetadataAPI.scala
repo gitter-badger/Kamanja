@@ -106,7 +106,6 @@ object StartMetadataAPI {
     }
     catch {
       case nosuchelement: NoSuchElementException => {
-
           /** preserve the original response ... */
           response = s"Invalid command action! action=$action"
 
@@ -114,7 +113,6 @@ object StartMetadataAPI {
           val altResponse: String = AltRoute(args)
           if (altResponse != null) {
             response = altResponse
-            printf(response)
           } else {
             /* if the AltRoute doesn't produce a valid result, we will complain with the original failure */
             printf(response)
@@ -127,6 +125,9 @@ object StartMetadataAPI {
     }
   }
 
+  def usage : Unit = {
+      println(s"Usage:\n  kamanja <action> <optional input> \n e.g. kamanja add message ${'$'}HOME/msg.json" )
+  }
 
   def route(action: Action.Value, input: String, param: String = "", originalArgs : Array[String], userId : Option[String]): String = {
     var response = ""
@@ -324,9 +325,8 @@ object StartMetadataAPI {
         case Action.DUMPALLCLUSTERCFGS=>response =DumpService.dumpAllClusterCfgs
         case Action.DUMPALLADAPTERS=>response =DumpService.dumpAllAdapters
         case _ => {
-
+            println(s"Unexpected action! action=$action")
             throw new RuntimeException(s"Unexpected action! action=$action")
-            //sys.exit(1)  suppress this until the alternate approach is considered in the exception handler
          }
       }
     }
@@ -364,8 +364,12 @@ object StartMetadataAPI {
     */
   def AltRoute(origArgs : Array[String]) : String = {
 
-       /** trim off the config argument */
-       val argsSansConfig : Array[String] = origArgs.tail
+       /** trim off the config argument and if debugging the "debug" argument as well */
+       val argsSansConfig : Array[String] = if (origArgs != null && origArgs.size > 0 && origArgs(0).toLowerCase == "debug") {
+           origArgs.tail.tail
+       } else {
+           origArgs.tail
+       }
 
        /** Put the command back together */
        val buffer : StringBuilder = new StringBuilder

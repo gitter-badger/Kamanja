@@ -6,6 +6,8 @@ shellPrompt := { state =>  "sbt (%s)> ".format(Project.extract(state).currentPro
 
 assemblySettings
 
+mainClass in assembly := Some("com.ligadata.MetadataAPI.StartMetadataAPI")
+
 assemblyOption in assembly ~= { _.copy(prependShellScript = Some(defaultShellScript)) }
 
 jarName in assembly := { s"${name.value}-${version.value}" }

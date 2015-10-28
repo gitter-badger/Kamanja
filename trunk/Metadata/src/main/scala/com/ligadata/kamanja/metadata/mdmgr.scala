@@ -3252,7 +3252,7 @@ object MdMgr extends LogTrait {
       throw new Exception("Expecting only 0 to 999999 in major, minor & micro versions, but got %d from %s".format(value, orgVerInfo))
   }
 
-  // Make sure the version is in the format of nn.nn.nn
+  // Make sure the version is in the format of "%06d.%06d.%06d"
   def FormatVersion(verInfo: String): String = {
     /*
 	    //BUGBUG:: This is returning non found matches, may be better to go with split
