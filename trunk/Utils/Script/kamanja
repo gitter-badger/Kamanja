@@ -27,6 +27,12 @@ SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 KAMANJA_HOME="$(dirname "$SCRIPT_DIR")"
 export KAMANJA_HOME=$KAMANJA_HOME
 INPUT=$@
+
+if [ "$1" == "debug" ]; then
+    attachDebugger="true"
+    shift
+fi
+
 jar_full_path=$(which jar)
 if [ "$?" != "0" ]; then
 	echo "Not found java home directory."
@@ -127,5 +133,10 @@ elif [ "$INPUT" = "push data" ]; then
 #echo "User selected: $INPUTFILE"
 #$INPUTFILE
 else
-java -jar $KAMANJA_HOME/bin/MetadataAPI-1.0 $INPUT
+    if [ -n "$attachDebugger" ]; then
+        ipport="8998"
+        java -Xdebug -Xrunjdwp:transport=dt_socket,address="$ipport",server=y -jar $KAMANJA_HOME/bin/MetadataAPI-1.0 $INPUT
+    else
+        java -jar $KAMANJA_HOME/bin/MetadataAPI-1.0 $INPUT
+    fi
 fi
