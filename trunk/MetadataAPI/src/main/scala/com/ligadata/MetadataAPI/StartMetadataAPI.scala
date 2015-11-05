@@ -113,6 +113,7 @@ object StartMetadataAPI {
           val altResponse: String = AltRoute(args)
           if (altResponse != null) {
             response = altResponse
+            printf(response)
           } else {
             /* if the AltRoute doesn't produce a valid result, we will complain with the original failure */
             printf(response)
