@@ -19,6 +19,7 @@ package com.ligadata.MetadataAPI
 import java.util.logging.Logger
 import com.ligadata.MetadataAPI.MetadataAPI.ModelType
 import com.ligadata.MetadataAPI.Utility._
+import com.ligadata.kamanja.metadata.MdMgr
 
 /**
  * Created by dhaval Kolapkar on 7/24/15.
@@ -82,7 +83,10 @@ object StartMetadataAPI {
             if (argsUntilParm < 0)
               depName = arg
             else
-              action += arg  /** concatenate the args together to form the action string... "add model pmml" becomes "addmodelpmmml" */
+              if (arg != "debug") /** ignore the debug tag */ {
+                /** concatenate the args together to form the action string... "add model pmml" becomes "addmodelpmmml" */
+                action += arg
+              }
           }
         }
       })
@@ -102,8 +106,20 @@ object StartMetadataAPI {
     }
     catch {
       case nosuchelement: NoSuchElementException => {
-        println(action+ " is an unrecognized command. \n USAGE: kamanja <action> <optional input> \n e.g. kamanja add message $HOME/msg.json")
-        //response = action+ " is an unrecognized command. \n USAGE: kamanja <action> <optional input> \n e.g. kamanja add message $HOME/msg.json"
+
+          /** preserve the original response ... */
+          response = s"Invalid command action! action=$action"
+
+          /** one more try ... going the alternate route */
+          val altResponse: String = AltRoute(args)
+          if (altResponse != null) {
+            response = altResponse
+            printf(response)
+          } else {
+            /* if the AltRoute doesn't produce a valid result, we will complain with the original failure */
+            printf(response)
+            usage
+          }
       }
       case e: Throwable => e.getStackTrace.toString
     } finally {
@@ -318,12 +334,7 @@ object StartMetadataAPI {
 
       case e: Exception => {
           /** tentative answer of unidentified command type failure. */
-<<<<<<< HEAD
           response = s"Unexpected action! action = $action \n${e.getStackTraceString}"
-=======
-          response = s"Unexpected action! action = $action"
-
->>>>>>> Fatafat 218 JpmmlAdapter get MdMgr
           /** one more try ... going the alternate route */
           val altResponse: String = AltRoute(originalArgs)
           if (altResponse != null) {
@@ -339,13 +350,13 @@ object StartMetadataAPI {
     response
   }
 
-  /** AltRoute is invoked only if the primary mechanism found in the route method fails to find the appropriate
+  /** AltRoute is invoked only if the 'Action.withName(action.trim)' method fails to discern the appropriate
     * MetadataAPI method to invoke.  The command argument array is reconsidered with the AlternateCmdParser
     * If it produces valid command arguments (a command name and Map[String,String] of arg name/values) **and**
     * it is a command that we currently support with this mechanism (JPMML related commands are currently supported),
     * the service module is invoked.
     *
-    * @param origArgs an Array[String] containing all of the arguments originally submitted
+    * @param origArgs an Array[String] containing all of the arguments (sans debug if present) originally submitted
     * @return the response from successfully recognized commands (good or bad) or null if this mechanism couldn't
     *         make a determination of which command to invoke.  In that case a null is returned and the original
     *         complaint is returned to the caller.
@@ -371,32 +382,75 @@ object StartMetadataAPI {
            val resp : String = cmd match {
                case "addmodel" => {
                    val modelTypeToBeAdded : String = if (argMap.contains("type")) argMap("type").toLowerCase else null
-                   if (modelTypeToBeAdded == "jpmml") {
+                   if (modelTypeToBeAdded != null && modelTypeToBeAdded == "jpmml") {
 
                        val modelName : Option[String] = if (argMap.contains("name")) Some(argMap("name")) else None
-                       val modelVer : Option[String] = if (argMap.contains("version")) Some(argMap("version")) else None
+                       val modelVer : String = if (argMap.contains("modelversion")) argMap("modelversion") else null
                        val msgName : Option[String] = if (argMap.contains("message")) Some(argMap("message")) else None
-                       val msgVer : Option[String] = if (argMap.contains("messageversion")) Some(argMap("messageversion")) else Some("-1")
+                       /** it is permissable to not supply the messageversion... the latest version is assumed in that case */
+                       val msgVer : String = if (argMap.contains("messageversion")) argMap("messageversion") else MdMgr.LatestVersion
                        val pmmlSrc : Option[String] = if (argMap.contains("pmml")) Some(argMap("pmml")) else None
                        val pmmlPath : String = pmmlSrc.orNull
+
+                       var validatedModelVersion : String = null
+                       var validatedMsgVersion : String = null
+                       try {
+                           validatedModelVersion = if (modelVer != null) MdMgr.FormatVersion(modelVer) else null
+                           validatedMsgVersion = if (msgVer != null) MdMgr.FormatVersion(msgVer) else null
+                       } catch {
+                           case e : Exception => throw(new RuntimeException(s"One of the version parameters is invalid... either not numeric or out of range...modelversion=$modelVer, messageversion=$msgVer"))
+                       }
+                       val optModelVer : Option[String] =  Option(validatedModelVersion)
+                       val optMsgVer : Option[String] = Option(validatedMsgVersion)
+
 
                        ModelService.addModelJPmml(ModelType.JPMML
                                                 , pmmlPath
                                                 , Some("metadataapi")
                                                 , modelName
-                                                , modelVer
+                                                , optModelVer
                                                 , msgName
-                                                , msgVer)
+                                                , optModelVer)
 
                    } else {
                        null
                    }
                }
-               case "removemodel" => {
-                   null // FIXME : RemoveModel
-               }
                case "updatemodel" => {
-                   null // FIXME : UpdateModel
+                   // updateModel type(jpmml) name(com.anotherCo.jpmml.DahliaRandomForest) newVersion(000000.000001.000002) oldVersion(000000.000001.000001) pmml(/anotherpath/prettierDahliaRandomForest.xml)  <<< update an explicit model version... doesn't have to be latest
+                   // updateModel type(jpmml) name(com.anotherCo.jpmml.DahliaRandomForest) newVersion(000000.000001.000002) pmml(/anotherpath/prettierDahliaRandomForest.xml)  <<< default to the updating the latest model version there.
+
+                   val modelTypeToBeUpdated: String = if (argMap.contains("type")) argMap("type").toLowerCase else null
+                   if (modelTypeToBeUpdated != null && modelTypeToBeUpdated == "jpmml") {
+
+                       val modelName: Option[String] = if (argMap.contains("name")) Some(argMap("name")) else None
+                       val newVer: String = if (argMap.contains("newVersion")) argMap("newVersion") else null
+                       /** it is permissable to not supply the old version... we just ask for update of the latest version in that case */
+                       val oldVer: String = if (argMap.contains("oldVersion")) argMap("oldVersion") else MdMgr.LatestVersion
+                       val pmmlSrc: Option[String] = if (argMap.contains("pmml")) Some(argMap("pmml")) else None
+                       val pmmlPath: String = pmmlSrc.orNull
+
+                       var validatedOldVersion: String = null
+                       var validatedNewVersion: String = null
+                       try {
+                           validatedOldVersion = if (oldVer != null) MdMgr.FormatVersion(oldVer) else null
+                           validatedNewVersion = if (newVer != null) MdMgr.FormatVersion(newVer) else null
+                       } catch {
+                           case e: Exception => throw (new RuntimeException(s"One or more version parameters are invalid... oldVer=$oldVer, newVer=$newVer"))
+                       }
+                       val optOldVer: Option[String] = Option(validatedOldVersion)
+                       val optNewVer: Option[String] = Option(validatedNewVersion)
+
+                       ModelService.addModelJPmml(ModelType.JPMML
+                           , pmmlPath
+                           , Some("metadataapi")
+                           , modelName
+                           , optNewVer
+                           , optOldVer)
+
+                   } else {
+                       null
+                   }
                }
 
            }

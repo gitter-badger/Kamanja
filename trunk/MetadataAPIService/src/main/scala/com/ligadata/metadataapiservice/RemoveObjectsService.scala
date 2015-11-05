@@ -84,7 +84,7 @@ class RemoveObjectsService(requestContext: RequestContext, userid: Option[String
 
     arg.ObjectType match {
       case "model" => {
-	      return MetadataAPIImpl.RemoveModel(nameSpace,arg.Name,version.toLong, userid)
+	      return MetadataAPIImpl.RemoveModel(s"$nameSpace.${arg.Name}",MdMgr.ConvertLongVersionToString(version.toLong), userid)
       }
       case "message" => {
 	      return MetadataAPIImpl.RemoveMessage(nameSpace,arg.Name,version.toLong, userid)

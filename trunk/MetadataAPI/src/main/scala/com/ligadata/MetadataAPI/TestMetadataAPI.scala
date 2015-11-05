@@ -759,7 +759,7 @@ println("Getting Messages")
 
       val modKey = modKeys(choice - 1)
       val(modNameSpace, modName, modVersion) = com.ligadata.kamanja.metadata.Utils.parseNameToken(modKey)
-      val apiResult = MetadataAPIImpl.RemoveModel(modNameSpace, modName, modVersion.toLong, userid)
+      val apiResult = MetadataAPIImpl.RemoveModel(s"$modNameSpace.$modName", modVersion, userid)
 
       //   val apiResultStr = MetadataAPIImpl.getApiResult(apiResult)
       println("Result as Json String => \n" + apiResult)
@@ -874,7 +874,7 @@ println("Getting Messages")
 
       val modKey = modKeys(choice - 1)
       val(modNameSpace, modName, modVersion) = com.ligadata.kamanja.metadata.Utils.parseNameToken(modKey)
-      val apiResult = MetadataAPIImpl.RemoveModel(modNameSpace, modName, modVersion.toLong, userid)
+      val apiResult = MetadataAPIImpl.RemoveModel(s"$modNameSpace.$modName", modVersion, userid)
 
       //    val apiResultStr = MetadataAPIImpl.getApiResult(apiResult)
       println("Result as Json String => \n" + apiResult)
@@ -1334,7 +1334,7 @@ println("Getting Messages")
       println(pmmlStr)
       // Save the model
       //    MetadataAPIImpl.SetLoggerLevel(Level.TRACE)
-      println("Results as json string => \n" + MetadataAPIImpl.UpdateModel(pmmlStr, userid))
+      println("Results as json string => \n" + MetadataAPIImpl.UpdateModel(ModelType.PMML, pmmlStr, userid))
     } catch {
       case e: Exception => {
         val stackTrace = StackTrace.ThrowableTraceString(e)

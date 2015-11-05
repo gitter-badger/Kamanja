@@ -526,7 +526,8 @@ class MetadataAPISpec extends FunSpec with LocalTestFixtures with BeforeAndAfter
 	res should include regex ("\"Status Code\" : 0")
 
 	And("RemoveModel API for the model that was just added")
-	res = MetadataAPIImpl.RemoveModel("system",objName,1000000,None)
+    val mdmgr : MdMgr = MdMgr.GetMdMgr
+	res = MetadataAPIImpl.RemoveModel(s"system.$objName",MdMgr.ConvertLongVersionToString(1000000),None)
 	res should include regex ("\"Status Code\" : 0")
 
 	And("AddModel again to add Model from " + file.getPath)
@@ -564,7 +565,7 @@ class MetadataAPISpec extends FunSpec with LocalTestFixtures with BeforeAndAfter
 	And("Clone the input json and update the version number to simulate a model for an update operation")
 	modStr = modStr.replaceFirst("01.00","01.01")
 	assert(modStr.indexOf("\"00.01.01\"") >= 0)
-	res = MetadataAPIImpl.UpdateModel(modStr,None)
+	res = MetadataAPIImpl.UpdateModel(ModelType.PMML, modStr, None)
 	res should include regex ("\"Status Code\" : 0")
 
 	And("GetModelDef API to fetch the model that was just updated")

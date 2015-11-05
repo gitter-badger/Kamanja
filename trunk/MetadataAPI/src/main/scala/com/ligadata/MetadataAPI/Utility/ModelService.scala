@@ -172,7 +172,7 @@ object ModelService {
                   case option => {
                     var  modelDefs=getUserInputFromMainMenu(models)
                     for (modelDef <- modelDefs)
-                      response = MetadataAPIImpl.UpdateModel(modelDef.toString, userid)
+                      response = MetadataAPIImpl.UpdateModel(ModelType.PMML, modelDef.toString, userid)
                   }
                 }
               }
@@ -188,7 +188,7 @@ object ModelService {
           var model = new File(input.toString)
           if(model.exists()){
             modelDef= Source.fromFile(model).mkString
-            response = MetadataAPIImpl.UpdateModel(modelDef, userid)
+            response = MetadataAPIImpl.UpdateModel(ModelType.PMML, modelDef, userid)
           }else{
             response="File does not exist"
           }
@@ -658,7 +658,7 @@ object ModelService {
           if (modelId.length > 0) {
              val(ns, name, ver) = com.ligadata.kamanja.metadata.Utils.parseNameToken(modelId)
              try {
-               val apiResult = MetadataAPIImpl.RemoveModel(ns, name, ver.toInt, userid).toString
+               val apiResult = MetadataAPIImpl.RemoveModel(s"$ns.$name", ver, userid)
                return apiResult
              } catch {
                case e: Exception => e.printStackTrace()
@@ -688,7 +688,7 @@ object ModelService {
 
             val modelKey = modelKeys(choice - 1)
             val(ns, name, ver) = com.ligadata.kamanja.metadata.Utils.parseNameToken(modelKey)
-            val apiResult = MetadataAPIImpl.RemoveModel(ns, name, ver.toInt, userid).toString
+            val apiResult = MetadataAPIImpl.RemoveModel(s"$ns.$name", ver, userid)
             response=apiResult
           }
 

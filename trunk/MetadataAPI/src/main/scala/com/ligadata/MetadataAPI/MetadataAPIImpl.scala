@@ -171,11 +171,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
   /**
    *  getHealthCheck - will return all the health-check information for the nodeId specified.
    *  @param nodeId a cluster node: String - if no parameter specified, return health-check for all nodes
-<<<<<<< HEAD
    *  @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-=======
-   * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
->>>>>>> Fatafat 218 JpmmlAdapter get MdMgr
    *               method. If Security and/or Audit are configured, this value must be a value other than None.
    */
     def getHealthCheck(nodeId: String, userid: Option[String]): String = {
@@ -1972,8 +1968,6 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     /**
      * getApiResult
      * @param apiResultJson
-     * @throws com.ligadata.Exceptions.Json4sParsingException
-     * @throws com.ligadata.Exceptions.ApiResultParsingException
      * @return
      */
   @throws(classOf[Json4sParsingException])
@@ -2543,7 +2537,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
             if (depModels.length > 0) {
               depModels.foreach(mod => {
                 logger.debug("DependentModel => " + mod.FullNameWithVer)
-                resultStr = resultStr + RecompileModel(mod, userid)
+                resultStr = resultStr + RecompileModel(mod, userid, Some(msg))
               })
             }
           }
@@ -2577,7 +2571,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
             if (depModels.length > 0) {
               depModels.foreach(mod => {
                 logger.debug("DependentModel => " + mod.FullNameWithVer)
-                resultStr = resultStr + RecompileModel(mod, userid)
+                resultStr = resultStr + RecompileModel(mod, userid, None)
               })
             }
           }
@@ -2657,10 +2651,6 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     *          println("Result as Json String => \n" + result._2)
     *          }}}
     */
-<<<<<<< HEAD
-
-=======
->>>>>>> Fatafat 218 JpmmlAdapter get MdMgr
   def AddContainer(containerText: String, format: String, userid: Option[String] = None): String = {
     AddContainerOrMessage(containerText, format, userid)
   }
@@ -2737,6 +2727,11 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
       msgDef match {
         case msg: MessageDef => {
           logAuditRec(userid, Some(AuditConstants.WRITE), AuditConstants.UPDATEOBJECT, messageText, AuditConstants.SUCCESS, "", msg.FullNameWithVer)
+
+          /** FIXME: It is incorrect to assume that the latest message is the one being replaced.
+            * It is possible that multiple message versions could be present in the system.  UpdateMessage should explicitly
+            * receive the version to be replaced.  There could be a convenience method that uses this method for the "latest" case.
+            */
           val latestVersion = GetLatestMessage(msg)
           var isValid = true
           if (latestVersion != None) {
@@ -2758,7 +2753,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
             if (depModels.length > 0) {
               depModels.foreach(mod => {
                 logger.debug("DependentModel => " + mod.FullNameWithVer)
-                resultStr = resultStr + RecompileModel(mod, userid)
+                resultStr = resultStr + RecompileModel(mod, userid, Some(msg))
               })
             }
             resultStr
@@ -2789,7 +2784,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
             if (depModels.length > 0) {
               depModels.foreach(mod => {
                 logger.debug("DependentModel => " + mod.FullName + "." + MdMgr.Pad0s2Version(mod.Version))
-                resultStr = resultStr + RecompileModel(mod, userid)
+                resultStr = resultStr + RecompileModel(mod, userid, None)
               })
             }
             resultStr
@@ -3199,11 +3194,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     /**
      * Remove message with Message Name and Version Number
      * @param messageName Name of the given message
-<<<<<<< HEAD
      * @param version  Version of the given message
-=======
-     * @param version  Version of the object   Version of the given message
->>>>>>> Fatafat 218 JpmmlAdapter get MdMgr
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. If Security and/or Audit are configured, this value should be other than None
      * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
@@ -3378,7 +3369,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
      *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @return
      */
-  def RemoveModel(nameSpace: String, name: String, version: Long, userid: Option[String]): String = {
+  private def RemoveModel(nameSpace: String, name: String, version: Long, userid: Option[String]): String = {
     var key = nameSpace + "." + name + "." + version
     if (userid != None) logAuditRec(userid, Some(AuditConstants.WRITE), AuditConstants.DELETEOBJECT, "Model", AuditConstants.SUCCESS, "", key)
     val dispkey = nameSpace + "." + name + "." + MdMgr.Pad0s2Version(version)
@@ -3393,10 +3384,10 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
           apiResult.toString()
         case Some(m) =>
           logger.debug("model found => " + m.asInstanceOf[ModelDef].FullName + "." + MdMgr.Pad0s2Version(m.asInstanceOf[ModelDef].Version))
-          DeleteObject(m.asInstanceOf[ModelDef])
+          DeleteObject(m)
           var objectsUpdated = new Array[BaseElemDef](0)
           m.tranId = newTranId
-          objectsUpdated = objectsUpdated :+ m.asInstanceOf[ModelDef]
+          objectsUpdated = objectsUpdated :+ m
           var operations = for (op <- objectsUpdated) yield "Remove"
           NotifyEngine(objectsUpdated, operations)
           var apiResult = new ApiResult(ErrorCodeConstants.Success, "RemoveModel", null, ErrorCodeConstants.Remove_Model_Successful + ":" + dispkey)
@@ -3416,17 +3407,42 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     * Remove model with Model Name and Version Number
     * @param modelName the Namespace.Name of the given model to be removed
     * @param version   Version of the given model.  The version should comply with the Kamanja version format.  For example,
-    *                  a value of 1000001000001 is the value for 1.000001.000001. Helper functions for constructing this
-    *                  Long from a string can be found in the MdMgr object,
+    *                  a value of "000001.000001.000001" shows the digits available for version.  All must be base 10 digits
+    *                  with up to 6 digits for major version, minor version and micro version sections.
+    *                  elper functions are available in MdMgr object for converting to/from strings and 0 padding the
+    *                  version sections if desirable.
     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
     *               method. If Security and/or Audit are configured, this value must be a value other than None.
     * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
     *         indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
     *         ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
     */
-  def RemoveModel(modelName: String, version: Long, userid: Option[String] = None): String = {
-    RemoveModel(sysNS, modelName, version, userid)
-  }
+    override def RemoveModel(modelName: String, version: String, userid: Option[String] = None): String = {
+
+        val reasonable : Boolean = modelName != null && modelName.length > 0
+        val result : String = if (reasonable) {
+            val buffer: StringBuilder = new StringBuilder
+            val modelNameAdjusted: String = if (modelName.contains(".")) {
+                modelName
+            } else {
+                logger.warn(s"No namespace qualification given...attempting removal with the ${sysNS} as the namespace")
+                s"$sysNS.$modelName"
+            }
+            val modelNameNodes: Array[String] = modelNameAdjusted.split('.')
+            val modelNm: String = modelNameNodes.last
+            modelNameNodes.take(modelNameNodes.size - 1).addString(buffer, ".")
+            val modelNmSpace: String = buffer.toString
+
+            // old way; The Sytem namespace assumed... RemoveModel(sysNS, modelName, version, userid)
+
+            RemoveModel(modelNmSpace, modelNm, MdMgr.ConvertVersionToLong(version), userid)
+
+        } else {
+            val modelNameStr : String = if (modelName == null) "NO MODEL NAME GIVEN" else "MODEL NAME of zero length"
+            new ApiResult(ErrorCodeConstants.Failure, "RemoveModel", null, s"${ErrorCodeConstants.Remove_Model_Failed} : supplied model name ($modelNameStr) is bad").toString
+        }
+        result
+    }
 
 
     /**
@@ -3524,7 +3540,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
       * indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
       * ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
      */
-  override def AddModel( modelType: com.ligadata.MetadataAPI.MetadataAPI.ModelType.ModelType
+  override def AddModel( modelType: ModelType.ModelType
                            , input: String
                            , optUserid: Option[String] = None
                            , optModelName: Option[String] = None
@@ -3555,7 +3571,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
                                                     , optUserid)
                     res
                 } else {
-                    val inputRep: String = if (input != null && input.size > 100) input.substring(0, 99)
+                    val inputRep: String = if (input != null && input.size > 200) input.substring(0, 199)
                                             else if (input != null) input
                                             else "no model text"
                     val apiResult = new ApiResult(ErrorCodeConstants.Failure
@@ -3623,6 +3639,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
                                                         , msgNamespace
                                                         , msgName
                                                         , msgVersion
+                                                        , None
                                                         , pmmlText)
 
         val modDef : ModelDef = jpmmlSupport.CreateModel
@@ -3748,239 +3765,530 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
   }
 
     /**
-     * Recompile the supplied model.
-     * @param mod
-     * @return
+     * Recompile the supplied model. Optionally the message definition is supplied that was just built.
+     *
+     * @param mod the model definition that possibly needs to be reconstructed.
+     * @param userid the user id that has invoked this command
+     * @param optMsgDef the MessageDef constructed, assuming it was a message def. If a container def has been rebuilt,
+     *               this field will have a value of None.  This is only meaningful at this point when the model to
+     *               be rebuilt is a JPMML model.
+     * @return the result string reflecting what happened with this operation.
      */
-  def RecompileModel(mod: ModelDef, userid : Option[String]): String = {
-    try {
-      var compProxy = new CompilerProxy
-      //compProxy.setLoggerLevel(Level.TRACE)
-      var modDef: ModelDef = null
+    def RecompileModel(mod: ModelDef, userid : Option[String], optMsgDef : Option[MessageDef]): String = {
+        try {
+            /** FIXME: This should really handle BINARY models too.  When we start supporting them, we cannot recompile
+              * it but we can send notifications to consoles or some thing like this to help identify the need for
+              * a replacement to the prior binary model.  This needs to be discussed and documented how we are going to
+              * do this.
+              * FIXME: Actually an update to a message that supports BINARY models needs to be detected up front and
+              * a warning and rejection of the message update made. Perhaps adding a "force" flag to get the message
+              * to compile despite this obstacle is warranted.
+              */
+            val isJpmml : Boolean = mod.modelRepresentation == ModelRepresentation.JPMML
+            val msgDef : MessageDef = optMsgDef.orNull
+            val modDef: ModelDef = if (! isJpmml) {
 
-      // Models can be either PMML or Custom Sourced.  See which one we are dealing with
-      // here.
-      if (mod.objectFormat == ObjFormatType.fXML) {
-        val pmmlText = mod.ObjectDefinition
-        var (classStrTemp, modDefTemp) = compProxy.compilePmml(pmmlText, true)
-        modDef = modDefTemp
-      } else {
-        val saveModelParms = parse(mod.ObjectDefinition).values.asInstanceOf[Map[String, Any]]
-        //val souce = mod.ObjectDefinition
-        modDef = compProxy.recompileModelFromSource(saveModelParms.getOrElse(ModelCompilationConstants.SOURCECODE, "").asInstanceOf[String],
-          saveModelParms.getOrElse(ModelCompilationConstants.PHYSICALNAME, "").asInstanceOf[String],
-          saveModelParms.getOrElse(ModelCompilationConstants.DEPENDENCIES, List[String]()).asInstanceOf[List[String]],
-          saveModelParms.getOrElse(ModelCompilationConstants.TYPES_DEPENDENCIES, List[String]()).asInstanceOf[List[String]],
-          mod.ObjectFormat.toString)
-      }
+                val compProxy = new CompilerProxy
+                //compProxy.setLoggerLevel(Level.TRACE)
 
-      val latestVersion = if (modDef == null) None else GetLatestModel(modDef)
-      val isValid: Boolean = (modDef != null)
-      if (isValid) {
-        RemoveModel(latestVersion.get.nameSpace, latestVersion.get.name, latestVersion.get.ver, None)
-        UploadJarsToDB(modDef)
-        val result = AddModel(modDef,userid)
-        var objectsUpdated = new Array[BaseElemDef](0)
-        var operations = new Array[String](0)
-        objectsUpdated = objectsUpdated :+ latestVersion.get
-        operations = operations :+ "Remove"
-        objectsUpdated = objectsUpdated :+ modDef
-        operations = operations :+ "Add"
-        NotifyEngine(objectsUpdated, operations)
-        result
-      } else {
-        val reasonForFailure: String = ErrorCodeConstants.Add_Model_Failed
-        val modDefName: String = if (modDef != null) modDef.FullName else "(pmml compile failed)"
-        val modDefVer: String = if (modDef != null) MdMgr.Pad0s2Version(modDef.Version) else MdMgr.UnknownVersion
-        var apiResult = new ApiResult(ErrorCodeConstants.Failure, "AddModel", null, reasonForFailure + ":" + modDefName + "." + modDefVer)
-        apiResult.toString()
-      }
-    } catch {
-      case e: ModelCompilationFailedException => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.debug("\nStackTrace:" + stackTrace)
-        var apiResult = new ApiResult(ErrorCodeConstants.Failure, "AddModel", null, "Error in producing scala file or Jar file.." + ErrorCodeConstants.Add_Model_Failed)
-        apiResult.toString()
-      }
-      case e: AlreadyExistsException => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.debug("\nStackTrace:" + stackTrace)
-        var apiResult = new ApiResult(ErrorCodeConstants.Failure, "AddModel", null, "Error :" + e.toString() + ErrorCodeConstants.Add_Model_Failed)
-        apiResult.toString()
-      }
-      case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.debug("\nStackTrace:" + stackTrace)
-        var apiResult = new ApiResult(ErrorCodeConstants.Failure, "AddModel", null, "Error :" + e.toString() + ErrorCodeConstants.Add_Model_Failed)
-        apiResult.toString()
-      }
+                // Recompile the model based upon its model type.Models can be either PMML or Custom Sourced.  See which one we are dealing with
+                // here.
+                if (mod.objectFormat == ObjFormatType.fXML) {
+                    val pmmlText = mod.ObjectDefinition
+                    val (classStrTemp, modDefTemp) = compProxy.compilePmml(pmmlText, true)
+                    modDefTemp
+                } else {
+                    val saveModelParms = parse(mod.ObjectDefinition).values.asInstanceOf[Map[String, Any]]
+                    val custModDef: ModelDef = compProxy.recompileModelFromSource(
+                        saveModelParms.getOrElse(ModelCompilationConstants.SOURCECODE, "").asInstanceOf[String],
+                        saveModelParms.getOrElse(ModelCompilationConstants.PHYSICALNAME, "").asInstanceOf[String],
+                        saveModelParms.getOrElse(ModelCompilationConstants.DEPENDENCIES, List[String]()).asInstanceOf[List[String]],
+                        saveModelParms.getOrElse(ModelCompilationConstants.TYPES_DEPENDENCIES, List[String]()).asInstanceOf[List[String]],
+                        mod.ObjectFormat.toString)
+                    custModDef
+                }
+            } else {
+                val reasonable : Boolean = (mod.FullName == msgDef.FullName)
+                if (reasonable) {
+                    val msgName: String = msgDef.Name
+                    val msgNamespace: String = msgDef.NameSpace
+                    val msgVersion: String = MdMgr.ConvertLongVersionToString(msgDef.Version)
+                    val modelNmSpace : String = mod.NameSpace
+                    val modelName : String = mod.Name
+                    val modelVersion : String = MdMgr.ConvertLongVersionToString(mod.Version)
+                    val jpmmlSupport: JpmmlSupport = new JpmmlSupport(mdMgr
+                                                                    , modelNmSpace
+                                                                    , modelName
+                                                                    , modelVersion
+                                                                    , msgNamespace
+                                                                    , msgName
+                                                                    , msgVersion
+                                                                    , optMsgDef
+                                                                    , mod.jpmmlText)
+                    val model : ModelDef = jpmmlSupport.CreateModel
+                    model
+                } else {
+                    /** this means that the dependencies are incorrect.. message is not the JPMML message of interest */
+                    logger.error(s"The message names for model ${mod.FullName} and the message just built (${msgDef.FullName}) don't match up. It suggests model dependencies and/or the model type are messed up.")
+                    null
+                }
+            }
+
+            val latestVersion = if (modDef == null) None else GetLatestModel(modDef)
+            val isValid: Boolean = (modDef != null)
+            if (isValid) {
+                RemoveModel(latestVersion.get.nameSpace, latestVersion.get.name, latestVersion.get.ver, None)
+                UploadJarsToDB(modDef)
+                val result = AddModel(modDef,userid)
+                var objectsUpdated = new Array[BaseElemDef](0)
+                var operations = new Array[String](0)
+                objectsUpdated = objectsUpdated :+ latestVersion.get
+                operations = operations :+ "Remove"
+                objectsUpdated = objectsUpdated :+ modDef
+                operations = operations :+ "Add"
+                NotifyEngine(objectsUpdated, operations)
+                result
+            } else {
+                val reasonForFailure: String = ErrorCodeConstants.Add_Model_Failed
+                val modDefName: String = if (modDef != null) modDef.FullName else "(compilation failed)"
+                val modDefVer: String = if (modDef != null) MdMgr.Pad0s2Version(modDef.Version) else MdMgr.UnknownVersion
+                var apiResult = new ApiResult(ErrorCodeConstants.Failure, "RecompileModel", null, reasonForFailure + ":" + modDefName + "." + modDefVer)
+                apiResult.toString()
+            }
+        } catch {
+            case e: ModelCompilationFailedException => {
+                val stackTrace = StackTrace.ThrowableTraceString(e)
+                logger.debug("\nStackTrace:" + stackTrace)
+                var apiResult = new ApiResult(ErrorCodeConstants.Failure, "RecompileModel", null, "Error in producing scala file or Jar file.." + ErrorCodeConstants.Add_Model_Failed)
+                apiResult.toString()
+            }
+            case e: AlreadyExistsException => {
+                val stackTrace = StackTrace.ThrowableTraceString(e)
+                logger.debug("\nStackTrace:" + stackTrace)
+                var apiResult = new ApiResult(ErrorCodeConstants.Failure, "RecompileModel", null, "Error :" + e.toString() + ErrorCodeConstants.Add_Model_Failed)
+                apiResult.toString()
+            }
+            case e: Exception => {
+                val stackTrace = StackTrace.ThrowableTraceString(e)
+                logger.debug("\nStackTrace:" + stackTrace)
+                var apiResult = new ApiResult(ErrorCodeConstants.Failure, "RecompileModel", null, "Error :" + e.toString() + ErrorCodeConstants.Add_Model_Failed)
+                apiResult.toString()
+            }
+        }
     }
-  }
 
     /**
-     * Update the model with new source.
+     * Update the model with new source of type modelType.
      *
-     * @param modelType e.g., java, scala, pmml, jpmml, binary
+     * Except for the modelType and the input, all fields are marked optional. Note, however, that for some of the
+     * model types all arguments should have meaningful values.
+     *
+     * @see AddModel for semantics.
+     *
+     * Note that the message and message version (as seen in AddModel) are not used.  Should a message change that is being
+     * used by one of the JPMML models, it will be automatically be updated immediately when the message compilation and
+     * metadata update has completed for it.
+     *
+     * Currently only the most recent model cataloged with the name noted in the source file can be "updated".  It is not
+     * possible to have a number of models with the same name differing only by version and be able to update one of them
+     * explicitly.  This is a feature that is to be implemented.
+     *
+     * If both the model and the message are changing, consider using AddModel to create a new JPMML model and then remove the older
+     * version if appropriate.
+     *
+     * @param modelType the type of the model submission (any {SCALA,JAVA,PMML,JPMML,BINARY}
+     * @param input the text element to be added dependent upon the modelType specified.
+     * @param optUserid the identity to be used by the security adapter to ascertain if this user has access permissions for this
+     *               method.
+     * @param optModelName the namespace.name of the JPMML model to be added to the Kamanja metadata
+     * @param optVersion the model version to be used to describe this JPMML model
+     * @param optVersionBeingUpdated not used .. reserved for future release where explicit modelnamespace.modelname.modelversion
+     *                               can be updated (not just the latest version)
+     * @return  result string indicating success or failure of operation
+     */
+    override def UpdateModel(modelType: ModelType.ModelType
+                            , input: String
+                            , optUserid: Option[String] = None
+                            , optModelName: Option[String] = None
+                            , optVersion: Option[String] = None
+                            , optVersionBeingUpdated : Option[String] = None): String = {
+        try {
+
+            /**
+             * FIXME: The current strategy is that only the most recent version can be updated.
+             * FIXME: This is not a satisfactory condition. It may be desirable to have 10 models all with
+             * FIXME: the same name but differing only in their version numbers. If someone wants to tune
+             * FIXME: #6 of the 10, that number six is not the latest.  It is just a unique model.
+             *
+             * For this reason, the version of the model that is to be changed should be supplied here and all of the
+             * associated handler functions that service update for the various model types should be amended to
+             * consider which model it is that is to be updated exactly.  The removal of the model being replaced
+             * must be properly handled to remove the one with the version supplied.
+             */
+
+            val modelResult: String = modelType match {
+                case ModelType.PMML => {
+                    val result: String = UpdatePmmlModel(modelType, input, optUserid, optModelName, optVersion)
+                    result
+                }
+                case ModelType.JAVA | ModelType.SCALA => {
+                    val result: String = UpdateCustomModel(modelType, input, optUserid, optModelName, optVersion)
+                    result
+                }
+                case ModelType.JPMML => {
+                    val result : String = UpdateJpmmlModel(modelType, input, optUserid, optModelName, optVersion, optVersionBeingUpdated)
+                    result
+                }
+                case ModelType.BINARY =>
+                    new ApiResult(ErrorCodeConstants.Failure, "AddModel", null, s"BINARY model type NOT SUPPORTED YET ...${ErrorCodeConstants.Add_Model_Failed}").toString
+                case _ => {
+                    val apiResult = new ApiResult(ErrorCodeConstants.Failure, "AddModel", null, s"Unknown model type ${modelType.toString} error = ${ErrorCodeConstants.Add_Model_Failed}")
+                    apiResult.toString
+                }
+            }
+            modelResult
+
+
+        }
+    }
+
+    /**
+     * Update a JPMML model with the supplied inputs.  The input is presumed to be a new version of a JPMML model that
+     * is currently cataloged.  The user id should be supplied for any installation that is using the security or audit
+     * plugins. The model name, it's new version, and optionally the model version of the model to be updated is
+     * supplied. If this prior version is not supplied, it will be assumed that the current version of the model
+     * is the one to be replaced.
+     *
+     * @param modelType the type of the model... JPMML in this case
+     * @param input the new source to ingest for the model being updated/replaced
+     * @param optUserid the identity to be used by the security adapter to ascertain if this user has access permissions for this
+     *               method. If Security and/or Audit are configured, this value must be a value other than None.
+     * @param optModelName the name of the model to be ingested (only relevant for JPMML ingestion)
+     * @param optModelVersion the version number of the model to be updated (only relevant for JPMML ingestion)
+     * @return result string indicating success or failure of operation
+     */
+    private def UpdateJpmmlModel(modelType: ModelType.ModelType
+                                  , input: String
+                                  , optUserid: Option[String] = None
+                                  , optModelName: Option[String] = None
+                                  , optModelVersion: Option[String] = None
+                                  , optVersionBeingUpdated : Option[String] ): String = {
+
+
+        val modelName: String = optModelName.orNull
+        val version: String = optModelVersion.getOrElse("-1")
+        val result: String = if (modelName != null && version != null) {
+            try {
+                val buffer: StringBuilder = new StringBuilder
+                val modelNameNodes: Array[String] = modelName.split('.')
+                val modelNm: String = modelNameNodes.last
+                modelNameNodes.take(modelNameNodes.size - 1).addString(buffer, ".")
+                val modelNmSpace: String = buffer.toString
+
+                val jpmmlSupport: JpmmlSupport = new JpmmlSupport(mdMgr
+                    , modelNmSpace
+                    , modelNm
+                    , version
+                    , None
+                    , input)
+
+                val modDef: ModelDef = jpmmlSupport.UpdateModel
+
+                /**
+                 * FIXME: The current strategy is that only the most recent version can be updated.
+                 * FIXME: This is not a satisfactory condition. It may be desirable to have 10 models all with
+                 * FIXME: the same name but differing only in their version numbers. If someone wants to tune
+                 * FIXME: #6 of the 10, that number six is not the latest.  It is just a unique model.
+                 *
+                 * For this reason, the version of the model that is to be changed should be supplied here and in the
+                 * more generic interface implementation that calls here.
+                 */
+
+                //def Model(nameSpace: String, name: String, ver: Long, onlyActive: Boolean): Option[ModelDef]
+                val tentativeVersionBeingUpdated : String = optVersionBeingUpdated.orNull
+                val versionBeingUpdated : String = if (tentativeVersionBeingUpdated != null) tentativeVersionBeingUpdated else "-1"
+                val versionLong : Long = MdMgr.ConvertVersionToLong(version)
+                val onlyActive : Boolean = false /** allow active or inactive models to be updated */
+                val optVersionUpdated : Option[ModelDef] = MdMgr.GetMdMgr.Model(modelNmSpace, modelNm, versionLong, onlyActive)
+                val versionUpdated : ModelDef = optVersionUpdated.orNull
+
+                // ModelDef may be null if the model evaluation failed
+                // old .... val latestVersion: Option[ModelDef] = if (modDef == null) None else GetLatestModel(modDef) was compared
+                // with modeDef in IsValidVersion
+                //val isValid: Boolean = if (latestVersion.isDefined) IsValidVersion(latestVersion.get, modDef) else true
+                val isValid: Boolean = if (optVersionUpdated.isDefined) IsValidVersion(versionUpdated, modDef) else true
+
+                if (isValid && modDef != null) {
+                    logAuditRec(optUserid, Some(AuditConstants.WRITE), AuditConstants.INSERTOBJECT, input, AuditConstants.SUCCESS, "", modDef.FullNameWithVer)
+
+                    /**
+                     * FIXME: Considering the design goal of NON-STOP cluster model management, it seems that the window
+                     * FIXME: for something to go wrong is too likely with this current approach.  The old model is being
+                     * FIXME: deleted before the engine is notified.  Should the engine ask for metadata on that model
+                     * FIXME: after the model being updated is removed but before the new version has been added, there
+                     * FIXME: is likelihood that unpredictable behavior that would be difficult to diagnose could occur.
+                     *
+                     * FIXME: Furthermore, who is to say that the user doesn't want the model to be updated all right, but
+                     * FIXME: but that they are not sure that they want the old version to be removed.  In other words,
+                     * FIXME: "the model is to be updated" means "add the modified version of the model, and atomically
+                     * FIXME: swap the old active version (deactivate it) and the new version (activate it)?
+                     *
+                     * FIXME: We need to think it through... what the semantics of the Update is.  In fact we might want
+                     * FIXME: to deprecate it altogether.  There should be just Add model, Activate model, Deactivate model,
+                     * FIXME: Swap Models (activate and deactivate same model/different versions atomically), and Remove
+                     * FIXME: model. Removes would fail if they are active; they need to be deactivated before removal.
+                     *
+                     * FIXME: The design goals are to not stop the cluster and to not miss an incoming message. The windows
+                     * FIXME: of opportunity for calamity are measured by how long it takes to swap inactive/active.  Everything
+                     * FIXME: else is "offline" as it were.
+                     *
+                     */
+                    if( versionUpdated != null ){
+                        RemoveModel(versionUpdated.NameSpace, versionUpdated.Name, versionUpdated.Version, None)
+                    }
+                    logger.info("Begin uploading dependent Jars, please wait...")
+                    UploadJarsToDB(modDef)
+                    logger.info("uploading dependent Jars complete")
+
+                    val apiResult = AddModel(modDef, optUserid)
+                    logger.debug("Model is added..")
+                    var objectsAdded = new Array[BaseElemDef](0)
+                    objectsAdded = objectsAdded :+ modDef
+                    val operations = for (op <- objectsAdded) yield "Add"
+                    logger.debug("Notify engine via zookeeper")
+                    NotifyEngine(objectsAdded, operations)
+                    apiResult
+                } else {
+                    val reasonForFailure: String = if (modDef != null) {
+                        ErrorCodeConstants.Add_Model_Failed_Higher_Version_Required
+                    } else {
+                        ErrorCodeConstants.Add_Model_Failed
+                    }
+                    val modDefName: String = if (modDef != null) modDef.FullName else "(pmml compile failed)"
+                    val modDefVer: String = if (modDef != null) MdMgr.Pad0s2Version(modDef.Version) else MdMgr.UnknownVersion
+                    var apiResult = new ApiResult(ErrorCodeConstants.Failure
+                        , "AddModel"
+                        , null
+                        , s"$reasonForFailure : $modDefName.$modDefVer)")
+                    apiResult.toString()
+                }
+            } catch {
+                case e: ModelCompilationFailedException => {
+                    val stackTrace = StackTrace.ThrowableTraceString(e)
+                    logger.debug("\nStackTrace:" + stackTrace)
+                    val apiResult = new ApiResult(ErrorCodeConstants.Failure
+                        , s"UpdateModel(type = JPMML)"
+                        , null
+                        , s"Error : ${e.toString} + ${ErrorCodeConstants.Add_Model_Failed}")
+                    apiResult.toString()
+                }
+                case e: AlreadyExistsException => {
+                    val stackTrace = StackTrace.ThrowableTraceString(e)
+                    logger.debug("\nStackTrace:" + stackTrace)
+                    val apiResult = new ApiResult(ErrorCodeConstants.Failure
+                        , s"UpdateModel(type = JPMML)"
+                        , null
+                        , s"Error : ${e.toString} + ${ErrorCodeConstants.Add_Model_Failed}")
+                    apiResult.toString()
+                }
+                case e: Exception => {
+                    val stackTrace = StackTrace.ThrowableTraceString(e)
+                    logger.debug("\nStackTrace:" + stackTrace)
+                    val apiResult = new ApiResult(ErrorCodeConstants.Failure
+                        , s"UpdateModel(type = JPMML)"
+                        , null
+                        , s"Error : ${e.toString} + ${ErrorCodeConstants.Add_Model_Failed}")
+                    apiResult.toString()
+                }
+            }
+        } else {
+            val apiResult = new ApiResult(ErrorCodeConstants.Failure
+                , s"UpdateModel(type = JPMML)"
+                , null
+                , s"The model name and new version was not supplied for this JPMML model : name=$modelName version=$version\nOptionally one should consider supplying the exact version of the model being updated, especially important when you are maintaining multiple versions with the same model name and tweaking versions of same for your 'a/b/c...' score comparisons.")
+            apiResult.toString()
+
+        }
+        result
+    }
+
+    /**
+     * Update the java or scala model with new source.
+     *
+     * @param modelType the type of the model... JAVA | SCALA in this case
      * @param input the source of the model to ingest
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @param modelName the name of the model to be ingested (JPMML)
      *                  or the model's config for java and scala
      * @param version the version number of the model to be updated (only relevant for JPMML ingestion)
-     * @param msgConsumed the message consumed (only relevant for JPMML ingestion)
-     * @return
+     * @return result string indicating success or failure of operation
      */
-    override def UpdateModel(modelType: com.ligadata.MetadataAPI.MetadataAPI.ModelType.ModelType
-                    , input: String
-                    , userid: Option[String] = None
-                    , modelName: Option[String] = None
-                    , version: Option[String] = None
-                    , msgConsumed: Option[String] = None ): String = {
-    try {
-        val sourceLang : String = modelType.toString
-        val compProxy = new CompilerProxy
-        compProxy.setSessionUserId(userid)
-        val modelNm : String = modelName.orNull
-        val modDef : ModelDef =  compProxy.compileModelFromSource(input, modelNm, sourceLang)
+    private def UpdateCustomModel(modelType: ModelType.ModelType
+                                  , input: String
+                                  , userid: Option[String] = None
+                                  , modelName: Option[String] = None
+                                  , version: Option[String] = None): String = {
+        val sourceLang : String = modelType.toString /** to get here it is either 'java' or 'scala' */
+        try {
+            val compProxy = new CompilerProxy
+            compProxy.setSessionUserId(userid)
+            val modelNm : String = modelName.orNull
+            val modDef : ModelDef =  compProxy.compileModelFromSource(input, modelNm, sourceLang)
 
-        val latestVersion = if (modDef == null) None else GetLatestModel(modDef)
-        val isValid: Boolean = if (latestVersion != None) IsValidVersion(latestVersion.get, modDef) else true
+            /**
+             * FIXME: The current strategy is that only the most recent version can be updated.
+             * FIXME: This is not a satisfactory condition. It may be desirable to have 10 models all with
+             * FIXME: the same name but differing only in their version numbers. If someone wants to tune
+             * FIXME: #6 of the 10, that number six is not the latest.  It is just a unique model.
+             *
+             * For this reason, the version of the model that is to be changed should be supplied here and in the
+             * more generic interface implementation that calls here.
+             */
 
-        if (isValid && modDef != null) {
-            logAuditRec(userid, Some(AuditConstants.WRITE), AuditConstants.UPDATEOBJECT, input, AuditConstants.SUCCESS, "", modDef.FullNameWithVer)
-            val key = MdMgr.MkFullNameWithVersion(modDef.nameSpace, modDef.name, modDef.ver)
-            if( latestVersion != None ){
-              RemoveModel(latestVersion.get.nameSpace, latestVersion.get.name, latestVersion.get.ver, None)
+            val latestVersion = if (modDef == null) None else GetLatestModel(modDef)
+            val isValid: Boolean = if (latestVersion != None) IsValidVersion(latestVersion.get, modDef) else true
+
+            if (isValid && modDef != null) {
+                logAuditRec(userid, Some(AuditConstants.WRITE), AuditConstants.UPDATEOBJECT, input, AuditConstants.SUCCESS, "", modDef.FullNameWithVer)
+                val key = MdMgr.MkFullNameWithVersion(modDef.nameSpace, modDef.name, modDef.ver)
+                if( latestVersion != None ){
+                    RemoveModel(latestVersion.get.nameSpace, latestVersion.get.name, latestVersion.get.ver, None)
+                }
+                logger.info("Begin uploading dependent Jars, please wait...")
+                UploadJarsToDB(modDef)
+                logger.info("Finished uploading dependent Jars.")
+                val apiResult = AddModel(modDef, userid)
+                var objectsUpdated = new Array[BaseElemDef](0)
+                var operations = new Array[String](0)
+                if( latestVersion != None ){
+                    objectsUpdated = objectsUpdated :+ latestVersion.get
+                    operations = operations :+ "Remove"
+                }
+                objectsUpdated = objectsUpdated :+ modDef
+                operations = operations :+ "Add"
+                NotifyEngine(objectsUpdated, operations)
+                apiResult
+            } else {
+                val reasonForFailure: String = if (modDef != null) ErrorCodeConstants.Add_Model_Failed_Higher_Version_Required else ErrorCodeConstants.Add_Model_Failed
+                val modDefName: String = if (modDef != null) modDef.FullName else "(source compile failed)"
+                val modDefVer: String = if (modDef != null) MdMgr.Pad0s2Version(modDef.Version) else MdMgr.UnknownVersion
+                var apiResult = new ApiResult(ErrorCodeConstants.Failure, "UpdateModel", null, reasonForFailure + ":" + modDefName + "." + modDefVer)
+                apiResult.toString()
             }
-            logger.info("Begin uploading dependent Jars, please wait.")
-            UploadJarsToDB(modDef)
-            logger.info("Finished uploading dependent Jars.")
-            val apiResult = AddModel(modDef, userid)
-            var objectsUpdated = new Array[BaseElemDef](0)
-            var operations = new Array[String](0)
-            if( latestVersion != None ){
-              objectsUpdated = objectsUpdated :+ latestVersion.get
-              operations = operations :+ "Remove"
+        } catch {
+            case e: ModelCompilationFailedException => {
+                val stackTrace = StackTrace.ThrowableTraceString(e)
+                logger.debug("\nStackTrace:"+stackTrace)
+                var apiResult = new ApiResult(ErrorCodeConstants.Failure, s"${'"'}UpdateModel(type = $sourceLang)${'"'}", null, "Error :" + e.toString() + ErrorCodeConstants.Update_Model_Failed)
+                apiResult.toString()
             }
-            objectsUpdated = objectsUpdated :+ modDef
-            operations = operations :+ "Add"
-            NotifyEngine(objectsUpdated, operations)
-            apiResult
-        } else {
-            val reasonForFailure: String = if (modDef != null) ErrorCodeConstants.Add_Model_Failed_Higher_Version_Required else ErrorCodeConstants.Add_Model_Failed
-            val modDefName: String = if (modDef != null) modDef.FullName else "(source compile failed)"
-            val modDefVer: String = if (modDef != null) MdMgr.Pad0s2Version(modDef.Version) else MdMgr.UnknownVersion
-            var apiResult = new ApiResult(ErrorCodeConstants.Failure, "UpdateModel", null, reasonForFailure + ":" + modDefName + "." + modDefVer)
-            apiResult.toString()
+            case e: AlreadyExistsException => {
+                val stackTrace = StackTrace.ThrowableTraceString(e)
+                logger.debug("\nStackTrace:"+stackTrace)
+                var apiResult = new ApiResult(ErrorCodeConstants.Failure, s"${'"'}UpdateModel(type = $sourceLang)${'"'}", null, "Error :" + e.toString() + ErrorCodeConstants.Update_Model_Failed)
+                apiResult.toString()
+            }
+            case e: Exception => {
+                val stackTrace = StackTrace.ThrowableTraceString(e)
+                logger.debug("\nStackTrace:"+stackTrace)
+                var apiResult = new ApiResult(ErrorCodeConstants.Failure, s"${'"'}UpdateModel(type = $sourceLang)${'"'}", null, "Error :" + e.toString() + ErrorCodeConstants.Update_Model_Failed)
+                apiResult.toString()
+            }
         }
-        logger.info("Begin uploading dependent Jars, please wait.")
-        UploadJarsToDB(modDef)
-        logger.info("Finished uploading dependent Jars.")
-        val apiResult = AddModel(modDef)
-        var objectsUpdated = new Array[BaseElemDef](0)
-        var operations = new Array[String](0)
-        if (latestVersion != None) {
-          objectsUpdated = objectsUpdated :+ latestVersion.get
-          operations = operations :+ "Remove"
-        }
-        objectsUpdated = objectsUpdated :+ modDef
-        operations = operations :+ "Add"
-        NotifyEngine(objectsUpdated, operations)
-        apiResult
-      } else {
-        val reasonForFailure: String = if (modDef != null) ErrorCodeConstants.Add_Model_Failed_Higher_Version_Required else ErrorCodeConstants.Add_Model_Failed
-        val modDefName: String = if (modDef != null) modDef.FullName else "(source compile failed)"
-        val modDefVer: String = if (modDef != null) MdMgr.Pad0s2Version(modDef.Version) else MdMgr.UnknownVersion
-        var apiResult = new ApiResult(ErrorCodeConstants.Failure, "UpdateModel", null, reasonForFailure + ":" + modDefName + "." + modDefVer)
-        apiResult.toString()
-      }
-    } catch {
-      case e: ModelCompilationFailedException => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.debug("\nStackTrace:" + stackTrace)
-        var apiResult = new ApiResult(ErrorCodeConstants.Failure, "UpdateModel", null, "Error :" + e.toString() + ErrorCodeConstants.Update_Model_Failed)
-        apiResult.toString()
-      }
-      case e: AlreadyExistsException => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.debug("\nStackTrace:" + stackTrace)
-        var apiResult = new ApiResult(ErrorCodeConstants.Failure, "UpdateModel", null, "Error :" + e.toString() + ErrorCodeConstants.Update_Model_Failed)
-        apiResult.toString()
-      }
-      case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.debug("\nStackTrace:" + stackTrace)
-        var apiResult = new ApiResult(ErrorCodeConstants.Failure, "UpdateModel", null, "Error :" + e.toString() + ErrorCodeConstants.Update_Model_Failed)
-        apiResult.toString()
-      }
     }
-  }
 
     /**
-     * UpdateModel
-     * @param pmmlText
-     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. If Security and/or Audit are configured, this value must be a value other than None.
-     * @return
+     * UpdateModel - Update a Kamanja Pmml model
+     *
+     * Current semantics are that the source supplied in pmmlText is compiled and a new model is reproduced. The Kamanja
+     * PMML version is specified in the PMML source itself in the header's Version attribute. The version of the updated
+     * model must be > the most recent cataloged one that is being updated. With this strategy ONLY the most recent
+     * version can be updated.
+     *
+     * @param modelType the type of the model submission... PMML in this case
+     * @param pmmlText the text element to be added dependent upon the modelType specified.
+     * @param optUserid the identity to be used by the security adapter to ascertain if this user has access permissions for this
+     *               method.
+     * @param optModelName the model's namespace.name (ignored in this implementation of the UpdatePmmlModel... only used in JPMML updates)
+     * @param optVersion the model's version (ignored in this implementation of the UpdatePmmlModel... only used in JPMML updates)
+     * @return  result string indicating success or failure of operation
      */
-  def UpdateModel(pmmlText: String, userid: Option[String]): String = {
-    try {
-      var compProxy = new CompilerProxy
-      //compProxy.setLoggerLevel(Level.TRACE)
-      var (classStr, modDef) = compProxy.compilePmml(pmmlText)
-      val latestVersion = if (modDef == null) None else GetLatestModel(modDef)
-      val isValid: Boolean = (modDef != null)
+    private def UpdatePmmlModel(modelType: ModelType.ModelType
+                             , pmmlText: String
+                             , optUserid: Option[String] = None
+                             , optModelName: Option[String] = None
+                             , optVersion: Option[String] = None ): String = {
+        try {
+            var compProxy = new CompilerProxy
+            //compProxy.setLoggerLevel(Level.TRACE)
+            var (classStr, modDef) = compProxy.compilePmml(pmmlText)
+            val optLatestVersion = if (modDef == null) None else GetLatestModel(modDef)
+            val latestVersion : ModelDef = optLatestVersion.orNull
 
-      if (isValid && modDef != null) {
-        logAuditRec(userid, Some(AuditConstants.WRITE), AuditConstants.UPDATEOBJECT, pmmlText, AuditConstants.SUCCESS, "", modDef.FullNameWithVer)
-        val key = MdMgr.MkFullNameWithVersion(modDef.nameSpace, modDef.name, modDef.ver)
+            /**
+             * FIXME: The current strategy is that only the most recent version can be updated.
+             * FIXME: This is not a satisfactory condition. It may be desirable to have 10 PMML models all with
+             * FIXME: the same name but differing only in their version numbers. If someone wants to tune
+             * FIXME: #6 of the 10, that number six is not the latest.  It is just a unique model.
+             *
+             * For this reason, the version of the model that is to be changed should be supplied here and in the
+             * more generic interface implementation that calls here.
+             */
 
-        // when a version number changes, latestVersion  has different namespace making it unique
-        // latest version may not be found in the cache. So need to remove it
-        if (latestVersion != None) {
-          RemoveModel(latestVersion.get.nameSpace, latestVersion.get.name, latestVersion.get.ver, None)
+            val isValid: Boolean = (modDef != null && latestVersion != null && latestVersion.Version <  modDef.Version)
+
+            if (isValid && modDef != null) {
+                logAuditRec(optUserid, Some(AuditConstants.WRITE), AuditConstants.UPDATEOBJECT, pmmlText, AuditConstants.SUCCESS, "", modDef.FullNameWithVer)
+                val key = MdMgr.MkFullNameWithVersion(modDef.nameSpace, modDef.name, modDef.ver)
+
+                // when a version number changes, latestVersion  has different namespace making it unique
+                // latest version may not be found in the cache. So need to remove it
+                if( latestVersion != None ) {
+                    RemoveModel(latestVersion.nameSpace, latestVersion.name, latestVersion.ver, None)
+                }
+
+                UploadJarsToDB(modDef)
+                val result = AddModel(modDef,optUserid)
+                var objectsUpdated = new Array[BaseElemDef](0)
+                var operations = new Array[String](0)
+
+                if( latestVersion != None ){
+                    objectsUpdated = objectsUpdated :+ latestVersion
+                    operations = operations :+ "Remove"
+                }
+
+                objectsUpdated = objectsUpdated :+ modDef
+                operations = operations :+ "Add"
+                NotifyEngine(objectsUpdated, operations)
+                result
+
+            } else {
+                val reasonForFailure: String = if (modDef != null) ErrorCodeConstants.Update_Model_Failed_Invalid_Version else ErrorCodeConstants.Update_Model_Failed
+                val modDefName: String = if (modDef != null) modDef.FullName else "(pmml compile failed)"
+                val modDefVer: String = if (modDef != null) MdMgr.Pad0s2Version(modDef.Version) else MdMgr.UnknownVersion
+                var apiResult = new ApiResult(ErrorCodeConstants.Failure, s"UpdateModel(type = PMML)", null, reasonForFailure + ":" + modDefName + "." + modDefVer)
+                apiResult.toString()
+            }
+        } catch {
+            case e: ObjectNotFoundException => {
+                val stackTrace = StackTrace.ThrowableTraceString(e)
+                logger.debug("\nStackTrace:" + stackTrace)
+                var apiResult = new ApiResult(ErrorCodeConstants.Failure, s"UpdateModel(type = PMML)", null, "Error :" + e.toString() + ErrorCodeConstants.Update_Model_Failed)
+                apiResult.toString()
+            }
+            case e: Exception => {
+                val stackTrace = StackTrace.ThrowableTraceString(e)
+                logger.debug("\nStackTrace:" + stackTrace)
+                var apiResult = new ApiResult(ErrorCodeConstants.Failure, s"UpdateModel(type = PMML)", null, "Error :" + e.toString() + ErrorCodeConstants.Update_Model_Failed)
+                apiResult.toString()
+            }
         }
-
-        UploadJarsToDB(modDef)
-        val result = AddModel(modDef,userid)
-        var objectsUpdated = new Array[BaseElemDef](0)
-        var operations = new Array[String](0)
-
-        if (latestVersion != None) {
-          objectsUpdated = objectsUpdated :+ latestVersion.get
-          operations = operations :+ "Remove"
-        }
-
-        objectsUpdated = objectsUpdated :+ modDef
-        operations = operations :+ "Add"
-        NotifyEngine(objectsUpdated, operations)
-        result
-      } else {
-        val reasonForFailure: String = if (modDef != null) ErrorCodeConstants.Update_Model_Failed_Invalid_Version else ErrorCodeConstants.Update_Model_Failed
-        val modDefName: String = if (modDef != null) modDef.FullName else "(pmml compile failed)"
-        val modDefVer: String = if (modDef != null) MdMgr.Pad0s2Version(modDef.Version) else MdMgr.UnknownVersion
-        var apiResult = new ApiResult(ErrorCodeConstants.Failure, "AddModel", null, reasonForFailure + ":" + modDefName + "." + modDefVer)
-        apiResult.toString()
-      }
-    } catch {
-      case e: ObjectNotFoundException => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.debug("\nStackTrace:" + stackTrace)
-        var apiResult = new ApiResult(ErrorCodeConstants.Failure, "UpdateModel", null, "Error :" + e.toString() + ErrorCodeConstants.Update_Model_Failed)
-        apiResult.toString()
-      }
-      case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.debug("\nStackTrace:" + stackTrace)
-        var apiResult = new ApiResult(ErrorCodeConstants.Failure, "Update Model", null, "Error :" + e.toString() + ErrorCodeConstants.Update_Model_Failed)
-        apiResult.toString()
-      }
-    }
   }
 
     /**
      * getBaseType
-     * @param typ
+     * @param typ a type to be determined
      * @return
      */
   private def getBaseType(typ: BaseTypeDef): BaseTypeDef = {
@@ -4549,7 +4857,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
      * we should never add the model into metadata manager more than once
      * and there is no need to use this function in main code flow
      * This is just a utility function being used during these initial phases
-     * @param modDef
+     * @param modDef the model def to be tested
      * @return
      */
   def DoesModelAlreadyExist(modDef: ModelDef): Boolean = {
@@ -5614,10 +5922,6 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     val nmspcNodes : Array[String] = nameNodes.splitAt(nameNodes.size -1)._1
     val buffer : StringBuilder = new StringBuilder
     val nameSpace : String = nmspcNodes.addString(buffer, ".").toString
-<<<<<<< HEAD
-=======
-    GetContainerDefFromCache(nameSpace, objectName, formatType, version, userid)
->>>>>>> Fatafat 218 JpmmlAdapter get MdMgr
     GetContainerDef(nameSpace, objectName, formatType, version, userid)
   }
 
@@ -5904,11 +6208,8 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
      * GetType
      * @param objectName name of the desired object, possibly namespace qualified
      * @param formatType format of the return value, either JSON or XML
-<<<<<<< HEAD
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. If Security and/or Audit are configured, this value must be a value other than None.
-=======
->>>>>>> Fatafat 218 JpmmlAdapter get MdMgr
      * @return
      */
   // Get types for a given name
@@ -7022,8 +7323,6 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     /**
      * Read metadata api configuration properties
      * @param configFile the MetadataAPI configuration file 
-     * @throws com.ligadata.Exceptions.MissingPropertyException
-     * @throws com.ligadata.Exceptions.InvalidPropertyException
      */
   @throws(classOf[MissingPropertyException])
   @throws(classOf[InvalidPropertyException])
@@ -7101,8 +7400,6 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     /**
      * Read the default configuration property values from config file.
      * @param cfgFile
-     * @throws com.ligadata.Exceptions.MissingPropertyException
-     * @throws com.ligadata.Exceptions.LoadAPIConfigException
      */
   @throws(classOf[MissingPropertyException])
   @throws(classOf[LoadAPIConfigException])

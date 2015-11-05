@@ -480,9 +480,9 @@ trait MetadataAPI {
               , msgVer : Option[String] = Some("-1")
               ): String
 
-  /** Update model given pmmlText.  Like the Add model, the ''modelType'' controls the processing and describes which
-    * sort of content has been supplied in the ''input'' argument.  The ''modelType'' values are:
-   *
+  /** Update model given the supplied input.  Like the Add model, the ''modelType'' controls the processing and describes the
+    * sort of content that has been supplied in the ''input'' argument.  The current ''modelType'' values are:
+    *
     *   - SCALA - a Scala source string
     *   - JAVA - a Java source string
     *   - PMML - a Kamanja Pmml source string
@@ -490,7 +490,7 @@ trait MetadataAPI {
     *   - BINARY - the path to a jar containing the model
     *
     * The remaining arguments, while noted as optional, are required for some model types.  In particular,
-    * the ''modelName'', ''version'', and ''msgConsumed'' must be specified for the JPMML model type.  The ''userid'' is
+    * the ''modelName'' and ''version'' must be specified for the JPMML model type.  The ''userid'' is
     * required for systems that have been configured with a SecurityAdapter or AuditAdapter.
     * @see [[http://kamanja.org/security/ security wiki]] for more information. The audit adapter, if configured,
     *       will also be invoked to take note of this user's action.
@@ -500,9 +500,10 @@ trait MetadataAPI {
     * @param input the text element to be added dependent upon the modelType specified.
     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
     *               method. If Security and/or Audit are configured, this value must be a value other than None
-    * @param modelName the namespace.name of the JPMML model to be added to the Kamanja metadata
-    * @param version the model version to be used to describe this JPMML model
-    * @param msgConsumed the namespace.name of the message to be consumed by a JPMML model
+    * @param modelName appropriate for JPMML, the namespace.name of the JPMML model to be added to the Kamanja metadata
+    * @param version appropriate for JPMML, the model version to be assigned
+    * @param optVersionBeingUpdated not used .. reserved for future release where explicit modelnamespace.modelname.modelversion
+    *                               can be updated (not just the latest version)
     * @return the result as a JSON String of object ApiResult where ApiResult.statusCode
     * indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
     * ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
@@ -512,7 +513,7 @@ trait MetadataAPI {
                   , userid: Option[String] = None
                   , modelName: Option[String] = None
                   , version: Option[String] = None
-                  , msgConsumed: Option[String] = None ): String
+                  , optVersionBeingUpdated : Option[String] = None): String
 
   /** Remove model with the supplied ''modelName'' and ''version''.  If the SecurityAdapter and/or AuditAdapter have
     * been configured, the ''userid'' must also be supplied.
@@ -528,7 +529,7 @@ trait MetadataAPI {
     * indicates success or failure of operation: 0 for success, Non-zero for failure. The Value of
     * ApiResult.statusDescription and ApiResult.resultData indicate the nature of the error in case of failure
     */
-  def RemoveModel(modelName:String, version:Long, userid: Option[String] = None): String
+  def RemoveModel(modelName :String, version : String, userid : Option[String] = None): String
 
   /** Retrieve All available ModelDefs from Metadata Store
    *

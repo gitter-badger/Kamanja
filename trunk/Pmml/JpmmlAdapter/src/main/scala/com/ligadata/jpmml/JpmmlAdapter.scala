@@ -25,7 +25,11 @@ import scala.collection.concurrent.TrieMap
 
 /**
  * JpmmlAdapter serves a "shim" between the engine and a JPMML evaluator that will perform the actual message
- * scoring.
+ * scoring. It exhibits the "adapter" pattern as discussed in "Design Patterns" by Gamma, Helm, Johnson, and Vlissitudes.
+ *
+ * Kamanja messages are presented to the adapter and transformed to a Map[FieldName, FieldValue] for consumption by
+ * the JPMML evaluator associated with the JpmmlAdapter instance. The target fields (or predictions) and the output fields
+ * are returned in the MappedModelResults instance to the engine for further transformation and dispatch.
  */
 class JpmmlAdapter( modelContext: ModelContext, factory : ModelBaseObj, modelEvaluator: ModelEvaluator[_]) extends ModelBase(modelContext,factory) {
 
@@ -118,9 +122,9 @@ class JpmmlAdapter( modelContext: ModelContext, factory : ModelBaseObj, modelEva
  * don't manage multiple models, this is not an issue.  It will possibly be an issue only for the factories that
  * are managing multiple models (like JpmmlAdapter).''
  *
- * When a replacement is made like this during message processing the FactoryInitialize(mdmgr : MdMgr, mutexLockNeeded : Boolean)
- * method should be called with the flag set to true.  For initialization at cluster startup before the messages are flying,
- * this flag should be false.
+ * When a replacement is made like this during message processing the JpmmlModelsHaveChanged method should be
+ * called to update the Factory with the changes.  For initialization at cluster startup before the messages are flying,
+ * it is unnecessary to set the 'lockNeeded' flag.  It may be false.
  */
 
 object JpmmlAdapter extends ModelBaseObj {
@@ -334,7 +338,7 @@ object JpmmlAdapter extends ModelBaseObj {
      * @return the model name
      */
     def ModelName(): String = {
-        factoryName
+        if (factoryName != null) factoryName else "com.ligadata.jpmml.JpmmlAdapter"
     }
 
     /**
@@ -342,7 +346,7 @@ object JpmmlAdapter extends ModelBaseObj {
      * @return the model version
      */
     def Version(): String = {
-        factoryVersion
+        if (factoryVersion != null) factoryVersion else "000000.000001.000000"
     }
 
     /**

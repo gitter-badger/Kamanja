@@ -3259,10 +3259,10 @@ object MdMgr extends LogTrait {
 		val numPattern = "[0-9]+".r
 		val verParts = numPattern.findAllIn(verInfo).toList
 	*/
-    val verParts = verInfo.split("\\.")
-    var major = (if (verParts.size > 0) verParts(0).toInt else 0)
-    var mini = (if (verParts.size > 1) verParts(1).toInt else 0)
-    var micro = (if (verParts.size > 2) verParts(2).toInt else 0)
+    val verParts = verInfo.split('.')
+    val major = (if (verParts.size > 0) verParts(0).toInt else 0)
+    val mini = (if (verParts.size > 1) verParts(1).toInt else 0)
+    val micro = (if (verParts.size > 2) verParts(2).toInt else 0)
 
     CheckVerDigits(major, verInfo)
     CheckVerDigits(mini, verInfo)
@@ -3288,8 +3288,9 @@ object MdMgr extends LogTrait {
     val retVerInfo = "%06d.%06d.%06d".format(major, mini, micro)
     retVerInfo
   }
-  
-  def UnknownVersion : String = "000000000000000000000"
+
+    def UnknownVersion : String = "000000000000000000000"
+    def LatestVersion : String = "111111.111111.111111"
 
   def Pad0s2Version(verInfo: Long): String = {
     var remVer = verInfo
