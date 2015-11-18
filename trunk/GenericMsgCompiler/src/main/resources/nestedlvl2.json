@@ -1,0 +1,21 @@
+{
+  "Message": {
+    "namespace": "com.ligadata.types",
+    "name": "Message10",
+    "Version": "00.01.01",
+    "Description": "Temporary message",
+    "Persist": "true",
+    "Fixed": "true",
+    "fields": [
+      {"name": "field1","type": "System.Int"},
+      {"name": "Container1","type": {
+          "fields": [
+            {"name": "field1","type": "System.Int"},
+            {"name": "field2","type": "System.Int"}
+          ]
+        }
+      },
+      {"name": "custid","type": "System.Int" }
+     ]    
+  }
+}

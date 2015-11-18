@@ -1,0 +1,43 @@
+{
+  "message": {
+    "nameSpace": "com.ligadata.messages",
+    "name": "TestMessage",
+    "version": "00.01.01",
+    "description": "Test Message",
+    "persist": "true",
+    "fixed": "true",
+    "fields": [
+      {
+        "Name": "Field1",
+        "Type": "System.String"
+      },
+      {
+        "Name": "Field2",
+        "Type": "System.Long"
+      },
+      {
+        "Name": "Field3",
+        "Type": "System.Float"
+      },
+      {
+        "Name": "Field4",
+        "Type": "System.Int"
+      },
+      {
+        "Name": "Field5",
+        "Type": "System.Double"
+      },
+      {
+        "Name": "Field6",
+        "Type": "System.Bytes"
+      }
+    ],
+    "PartitionKey": [
+      "Field1"
+    ],
+    "PrimaryKey": [
+      "Field1",
+      "Field2"
+    ]
+  }
+}
