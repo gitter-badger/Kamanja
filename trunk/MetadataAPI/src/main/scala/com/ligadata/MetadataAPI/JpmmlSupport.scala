@@ -264,19 +264,19 @@ class JpmmlSupport(mgr : MdMgr
     private def DetermineMiningModelType(evaluator : ModelEvaluator[_]) : MiningModelType= {
 
         val modelType : MiningModelType = evaluator match {
-            case a:AssociationModelEvaluator => MiningModelType.AssociationModel
-            case c:ClusteringModelEvaluator => MiningModelType.ClusteringModel
-            case g:GeneralRegressionModelEvaluator => MiningModelType.GeneralRegressionModel
-            case m:MiningModelEvaluator => MiningModelType.MiningModel
-            case n:NaiveBayesModelEvaluator => MiningModelType.NaiveBayesModel
-            case nn:NearestNeighborModelEvaluator => MiningModelType.NearestNeighborModel
-            case nn1:NeuralNetworkEvaluator => MiningModelType.NeuralNetwork
-            case r:RegressionModelEvaluator => MiningModelType.RegressionModel
-            case rs:RuleSetModelEvaluator => MiningModelType.RuleSetModel
-            case sc:ScorecardEvaluator => MiningModelType.Scorecard
-            case svm:SupportVectorMachineModelEvaluator => MiningModelType.SupportVectorMachineModel
-            case sc:TreeModelEvaluator => MiningModelType.TreeModel
-            case _ => MiningModelType.Unknown
+            case a:AssociationModelEvaluator => MiningModelType.ASSOCIATIONMODEL
+            case c:ClusteringModelEvaluator => MiningModelType.CLUSTERINGMODEL
+            case g:GeneralRegressionModelEvaluator => MiningModelType.GENERALREGRESSIONMODEL
+            case m:MiningModelEvaluator => MiningModelType.MININGMODEL
+            case n:NaiveBayesModelEvaluator => MiningModelType.NAIVEBAYESMODEL
+            case nn:NearestNeighborModelEvaluator => MiningModelType.NEARESTNEIGHBORMODEL
+            case nn1:NeuralNetworkEvaluator => MiningModelType.NEURALNETWORK
+            case r:RegressionModelEvaluator => MiningModelType.REGRESSIONMODEL
+            case rs:RuleSetModelEvaluator => MiningModelType.RULESETMODEL
+            case sc:ScorecardEvaluator => MiningModelType.SCORECARD
+            case svm:SupportVectorMachineModelEvaluator => MiningModelType.SUPPORTVECTORMACHINEMODEL
+            case sc:TreeModelEvaluator => MiningModelType.TREEMODEL
+            case _ => MiningModelType.UNKNOWN
         }
         modelType
     }

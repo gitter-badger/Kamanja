@@ -586,7 +586,7 @@ class PmmlCompiler(val mgr : MdMgr, val clientName : String, val logger : Logger
         val isReusable : Boolean = true
         val msgConsumed : String = "" /** jpmml specific... ignored here */
         val jpmmlStr : String = ""    /** jpmml specific... ignored here */
-        val miningModelType : MiningModelType = MiningModelType.RuleSetModel /** FIXME: this should be discerned by compiler and cached in context */
+        val miningModelType : MiningModelType = MiningModelType.RULESETMODEL /** FIXME: this should be discerned by compiler and cached in context */
         val supportsInstanceSerialization: Boolean = false /** FIXME: NOT SUPPORTED YET */
         val modelDef : ModelDef = mgr.MakeModelDef(modelNamespace
                                                 , className

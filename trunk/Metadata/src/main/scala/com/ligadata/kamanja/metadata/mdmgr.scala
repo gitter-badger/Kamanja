@@ -2084,7 +2084,7 @@ class MdMgr {
                    , isReusable : Boolean = false
                    , msgConsumed: String = ""
                    , jpmmlStr : String = ""
-                   , miningModelType: MiningModelType = MiningModelType.Unknown
+                   , miningModelType: MiningModelType = MiningModelType.UNKNOWN
                    , inputVars: List[(String, String, String, String, Boolean, String)] = List[(String, String, String, String, Boolean, String)]()
                    , outputVars: List[(String, String, String)] = List[(String, String, String)]()
                    , ver: Long = 1

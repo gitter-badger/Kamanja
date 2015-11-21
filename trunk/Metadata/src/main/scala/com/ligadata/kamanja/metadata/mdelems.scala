@@ -690,7 +690,7 @@ class MacroDef extends FunctionDef {
 
 object MiningModelType extends Enumeration {
   type MiningModelType = Value
-  val BaselineModel,AssociationModel,ClusteringModel,GeneralRegressionModel,MiningModel,NaiveBayesModel,NearestNeighborModel,NeuralNetwork,RegressionModel,RuleSetModel,SequenceModel,Scorecard,SupportVectorMachineModel,TextModel,TimeSeriesModel,TreeModel, CustomScala, CustomJava, Unknown = Value
+  val BASELINEMODEL,ASSOCIATIONMODEL,CLUSTERINGMODEL,GENERALREGRESSIONMODEL,MININGMODEL,NAIVEBAYESMODEL,NEARESTNEIGHBORMODEL,NEURALNETWORK,REGRESSIONMODEL,RULESETMODEL,SEQUENCEMODEL,SCORECARD,SUPPORTVECTORMACHINEMODEL,TEXTMODEL,TIMESERIESMODEL,TREEMODEL, SCALA, JAVA, BINARY, PYTHON, UNKNOWN = Value
 
   def modelType(mdlType : String) : MiningModelType = {
     val typ : MiningModelType.MiningModelType = mdlType.trim.toLowerCase match {
@@ -720,16 +720,18 @@ object MiningModelType extends Enumeration {
 
 object ModelRepresentation extends Enumeration {
   type ModelRepresentation = Value
-  val JAR, JPMML = Value
+  val JAR, JPMML, PYTHON, UNKNOWN = Value
 
 object ModelInputType extends Enumeration {
   type ModelInputType = Value
   val JAR, JPMML = Value
 
   def modelRep(mdlRep: String): ModelRepresentation = {
-      val rep: ModelRepresentation = mdlRep match {
+      val rep: ModelRepresentation = mdlRep.toUpperCase match {
           case "JAR" => JAR
           case "JPMML" => JPMML
+          case "PYTHON" => PYTHON
+          case _ => UNKNOWN
       }
       rep
   }
@@ -755,7 +757,7 @@ object ModelInputType extends Enumeration {
  *                                      and out of band from the cluster bootstrap.  FIXME: NOT IMPLEMENTED YET
  */
 class ModelDef( val modelRepresentation: ModelRepresentation = ModelRepresentation.JAR
-                , val miningModelType : MiningModelType = MiningModelType.Unknown
+                , val miningModelType : MiningModelType = MiningModelType.UNKNOWN
                 , val inputVars : Array[BaseAttributeDef] = null
                 , val outputVars: Array[BaseAttributeDef] = null
                 , val isReusable: Boolean = false

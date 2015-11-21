@@ -204,7 +204,6 @@ object StartMetadataAPI {
                 ModelService.activateModel(param,userId)
             }
 
-
         case Action.DEACTIVATEMODEL => response =  {
           if (param.length == 0)
             ModelService.deactivateModel("",userId)

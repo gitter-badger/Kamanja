@@ -529,7 +529,7 @@ class CompilerProxy {
                    , supportsInstanceSerialization: Boolean): ModelDef = {
 
        */
-      val modelType : String = if (sourceLang.equalsIgnoreCase("scala")) "CustomScala" else "CustomJava"
+      val modelType : String = if (sourceLang.equalsIgnoreCase("scala")) "Scala" else "Java"
       val modDef: ModelDef = MdMgr.GetMdMgr.MakeModelDef(modelNamespace
                                                         , modelName
                                                         , pName

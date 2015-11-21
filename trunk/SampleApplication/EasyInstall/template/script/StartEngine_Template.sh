@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 KAMANJA_HOME={InstallDirectory}
 
 # Start the engine with hashdb backed metadata configuration.  The zookeeper and your queue software should be running
