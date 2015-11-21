@@ -34,7 +34,7 @@ import org.joda.time._
 
 object COPDRiskAssessment extends ModelBaseObj {
   override def IsValidMessage(msg: MessageContainerBase): Boolean = return msg.isInstanceOf[Beneficiary]
-  override def CreateNewModel(mdlCtxt: ModelContext): ModelBase = return new COPDRiskAssessment(mdlCtxt)
+  override def CreateNewModel(mdlCtxt: ModelContext, modelName : String, modelVersion : String): ModelBase = return new COPDRiskAssessment(mdlCtxt)
   override def ModelName: String = "COPDRisk" 
   override def Version: String = "0.0.1"
   override def CreateResultObject(): ModelResultBase = new MappedModelResults()

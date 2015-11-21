@@ -690,29 +690,31 @@ class MacroDef extends FunctionDef {
 
 object MiningModelType extends Enumeration {
   type MiningModelType = Value
-  val BaselineModel,AssociationModel,ClusteringModel,GeneralRegressionModel,MiningModel,NaiveBayesModel,NearestNeighborModel,NeuralNetwork,RegressionModel,RuleSetModel,SequenceModel,Scorecard,SupportVectorMachineModel,TextModel,TimeSeriesModel,TreeModel, CustomScala, CustomJava, Unknown = Value
+  val BASELINEMODEL,ASSOCIATIONMODEL,CLUSTERINGMODEL,GENERALREGRESSIONMODEL,MININGMODEL,NAIVEBAYESMODEL,NEARESTNEIGHBORMODEL,NEURALNETWORK,REGRESSIONMODEL,RULESETMODEL,SEQUENCEMODEL,SCORECARD,SUPPORTVECTORMACHINEMODEL,TEXTMODEL,TIMESERIESMODEL,TREEMODEL, SCALA, JAVA, BINARY, PYTHON, UNKNOWN = Value
 
   def modelType(mdlType : String) : MiningModelType = {
     val typ : MiningModelType.MiningModelType = mdlType match {
-      case "CustomScala" => CustomScala
-      case "CustomJava" => CustomJava
-      case "RuleSetModel" => RuleSetModel
-      case "TreeModel" => TreeModel
-      case "AssociationModel" => AssociationModel
-      case "BaselineModel" => BaselineModel
-      case "ClusteringModel" => ClusteringModel
-      case "GeneralRegressionModel" => GeneralRegressionModel
-      case "MiningModel" => MiningModel
-      case "NaiveBayesModel" => NaiveBayesModel
-      case "NearestNeighborModel" => NearestNeighborModel
-      case "NeuralNetwork" => NeuralNetwork
-      case "RegressionModel" => RegressionModel
-      case "SequenceModel" => SequenceModel
-      case "Scorecard" => Scorecard
-      case "SupportVectorMachineModel" => SupportVectorMachineModel
-      case "TextModel" => TextModel
-      case "TimeSeriesModel" => TimeSeriesModel
-      case _ => Unknown
+      case "SCALA" => SCALA
+      case "JAVA" => JAVA
+      case "BINARY" => BINARY
+      case "PYTHON" => PYTHON
+      case "RULESETMODEL" => RULESETMODEL
+      case "TREEMODEL" => TREEMODEL
+      case "ASSOCIATIONMODEL" => ASSOCIATIONMODEL
+      case "BASELINEMODEL" => BASELINEMODEL
+      case "CLUSTERINGMODEL" => CLUSTERINGMODEL
+      case "GENERALREGRESSIONMODEL" => GENERALREGRESSIONMODEL
+      case "MININGMODEL" => MININGMODEL
+      case "NAIVEBAYESMODEL" => NAIVEBAYESMODEL
+      case "NEARESTNEIGHBORMODEL" => NEARESTNEIGHBORMODEL
+      case "NEURALNETWORK" => NEURALNETWORK
+      case "REGRESSIONMODEL" => REGRESSIONMODEL
+      case "SEQUENCEMODEL" => SEQUENCEMODEL
+      case "SCORECARD" => SCORECARD
+      case "SUPPORTVECTORMACHINEMODEL" => SUPPORTVECTORMACHINEMODEL
+      case "TEXTMODEL" => TEXTMODEL
+      case "TIMESERIESMODEL" => TIMESERIESMODEL
+      case _ => UNKNOWN
     }
     typ
   }
@@ -720,12 +722,14 @@ object MiningModelType extends Enumeration {
 
 object ModelRepresentation extends Enumeration {
   type ModelRepresentation = Value
-  val JAR, JPMML = Value
+  val JAR, JPMML, PYTHON, UNKNOWN = Value
 
   def modelRep(mdlRep: String): ModelRepresentation = {
-      val rep: ModelRepresentation = mdlRep match {
+      val rep: ModelRepresentation = mdlRep.toUpperCase match {
           case "JAR" => JAR
           case "JPMML" => JPMML
+          case "PYTHON" => PYTHON
+          case _ => UNKNOWN
       }
       rep
   }
@@ -751,7 +755,7 @@ object ModelRepresentation extends Enumeration {
  *                                      and out of band from the cluster bootstrap.  FIXME: NOT IMPLEMENTED YET
  */
 class ModelDef( val modelRepresentation: ModelRepresentation = ModelRepresentation.JAR
-                , val miningModelType : MiningModelType = MiningModelType.Unknown
+                , val miningModelType : MiningModelType = MiningModelType.UNKNOWN
                 , val inputVars : Array[BaseAttributeDef] = null
                 , val outputVars: Array[BaseAttributeDef] = null
                 , val isReusable: Boolean = false

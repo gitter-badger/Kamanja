@@ -225,20 +225,6 @@ object StartMetadataAPI {
                   ModelService.getModel(param, userId)
           }
 
-          case Action.UPDATEMODELJAVA => {
-              if (param.length == 0)
-                  response = ModelService.updateModeljava(input, "", userId)
-              else
-                  response = ModelService.updateModeljava(input, param, userId)
-          }
-
-          case Action.GETALLMODELS => response = ModelService.getAllModels(userId)
-          case Action.GETMODEL => response = {
-              if (param.length == 0)
-                  ModelService.getModel("", userId)
-              else
-                  ModelService.getModel(param, userId)
-          }
 
           //container management
           case Action.ADDCONTAINER => response = ContainerService.addContainer(input)

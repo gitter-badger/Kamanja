@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 if [ "$KAFKA_HOME" = "" ]; then
     echo "Please set KAFKA_HOME"
     exit 1
