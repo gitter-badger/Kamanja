@@ -29,23 +29,25 @@ object MessageCompiler {
 
   val logger = this.getClass.getName
   lazy val log = Logger.getLogger(logger)
+  var msgGen: MessageGenerator = new MessageGenerator
 
   /*
    * parse the message definition json,  add messages to metadata and create the Fixed and Mapped Mesages
    */
-  def processMsgDef(jsonstr: String, msgDfType: String, mdMgr: MdMgr, recompile: Boolean = false): Message = {
+  def processMsgDef(jsonstr: String, msgDfType: String, mdMgr: MdMgr, recompile: Boolean = false): String = {
 
     var messageParser = new MessageParser
     var message: Message = null
+    var generatedMsg: String = ""
 
     try {
       if (mdMgr == null)
         throw new Exception("MdMgr is not found")
       if (msgDfType.equals("JSON")) {
         message = messageParser.processJson(jsonstr, mdMgr, recompile).asInstanceOf[Message]
+        generatedMsg = msgGen.generateMessage(message)
       } else throw new Exception("MsgDef Type JSON is only supported")
 
-      return message
     } catch {
       case e: Exception => {
         val stackTrace = StackTrace.ThrowableTraceString(e)
@@ -53,20 +55,18 @@ object MessageCompiler {
         throw e
       }
     }
+    return generatedMsg
   }
 
   def main(args: Array[String]) {
     var msgDfType: String = "JSON"
-  //  val jsonstr: String = Source.fromFile("src/main/resources/message1.json").getLines.mkString
-    val jsonstr: String = Source.fromFile("src/main/resources/nestedlvl2.json").getLines.mkString
+    val jsonstr: String = Source.fromFile("src/main/resources/message1.json").getLines.mkString
+    // val jsonstr: String = Source.fromFile("src/main/resources/nestedlvl2.json").getLines.mkString
 
-    val message: Message = MessageCompiler.processMsgDef(jsonstr, msgDfType, MdMgr.GetMdMgr, false)
-    log.info("message name: " + message.Name)
-    log.info("message name space: " + message.NameSpace)
-    log.info("message fields" + message.Elements.size)
-    message.Elements.foreach(e => {
-      log.info("elements: " + e.Name + "  : " + e.NameSpace + ": " + e.Ttype + " : " + e.FieldOrdinal)
-    })
+    val message = MessageCompiler.processMsgDef(jsonstr, msgDfType, MdMgr.GetMdMgr, false)
+    log.info("============== Generated Message Start==============")
+    log.info(message)
+    log.info("============== Generated Message End ==============")
 
   }
 
