@@ -55,11 +55,11 @@ sbt clean package KamanjaManager/assembly MetadataAPI/assembly KVInit/assembly M
 echo "copy the fat jars to $KAMANJALIBPATH ..."
 
 cd $srcPath
-cp Utils/KVInit/target/scala-2.10/KVInit* $KAMANJALIBPATH
-cp MetadataAPI/target/scala-2.10/MetadataAPI* $KAMANJALIBPATH
-cp KamanjaManager/target/scala-2.10/KamanjaManager* $KAMANJALIBPATH
-cp Pmml/MethodExtractor/target/scala-2.10/MethodExtractor* $KAMANJALIBPATH
-cp Utils/SimpleKafkaProducer/target/scala-2.10/SimpleKafkaProducer* $KAMANJALIBPATH
+cp Utils/KVInit/target/scala-2.11/KVInit* $KAMANJALIBPATH
+cp MetadataAPI/target/scala-2.11/MetadataAPI* $KAMANJALIBPATH
+cp KamanjaManager/target/scala-2.11/KamanjaManager* $KAMANJALIBPATH
+cp Pmml/MethodExtractor/target/scala-2.11/MethodExtractor* $KAMANJALIBPATH
+cp Utils/SimpleKafkaProducer/target/scala-2.11/SimpleKafkaProducer* $KAMANJALIBPATH
 
 # *******************************
 # Copy jars required (more than required if the fat jars are used)
@@ -67,34 +67,34 @@ cp Utils/SimpleKafkaProducer/target/scala-2.10/SimpleKafkaProducer* $KAMANJALIBP
 
 # Base Types and Functions, InputOutput adapters, and original versions of things
 echo "copy Base Types and Functions, InputOutput adapters..."
-cp $srcPath/BaseFunctions/target/scala-2.10/basefunctions_2.10-0.1.0.jar $KAMANJALIBPATH
-cp $srcPath/BaseTypes/target/scala-2.10/basetypes_2.10-0.1.0.jar $KAMANJALIBPATH
-cp $srcPath/InputOutputAdapters/FileSimpleInputOutputAdapters/target/scala-2.10/filesimpleinputoutputadapters_2.10-1.0.jar $KAMANJALIBPATH
-cp $srcPath/InputOutputAdapters/KafkaSimpleInputOutputAdapters/target/scala-2.10/kafkasimpleinputoutputadapters_2.10-1.0.jar $KAMANJALIBPATH
-cp $srcPath/EnvContexts/SimpleEnvContextImpl/target/scala-2.10/simpleenvcontextimpl_2.10-1.0.jar $KAMANJALIBPATH
-cp $srcPath/MetadataBootstrap/Bootstrap/target/scala-2.10/bootstrap_2.10-1.0.jar $KAMANJALIBPATH
+cp $srcPath/BaseFunctions/target/scala-2.11/basefunctions_2.11-0.1.0.jar $KAMANJALIBPATH
+cp $srcPath/BaseTypes/target/scala-2.11/basetypes_2.11-0.1.0.jar $KAMANJALIBPATH
+cp $srcPath/InputOutputAdapters/FileSimpleInputOutputAdapters/target/scala-2.11/filesimpleinputoutputadapters_2.11-1.0.jar $KAMANJALIBPATH
+cp $srcPath/InputOutputAdapters/KafkaSimpleInputOutputAdapters/target/scala-2.11/kafkasimpleinputoutputadapters_2.11-1.0.jar $KAMANJALIBPATH
+cp $srcPath/EnvContexts/SimpleEnvContextImpl/target/scala-2.11/simpleenvcontextimpl_2.11-1.0.jar $KAMANJALIBPATH
+cp $srcPath/MetadataBootstrap/Bootstrap/target/scala-2.11/bootstrap_2.11-1.0.jar $KAMANJALIBPATH
 
 # Storage jars
 echo "copy Storage jars..."
-cp $srcPath/Storage/target/scala-2.10/storage_2.10-0.0.0.2.jar $KAMANJALIBPATH
+cp $srcPath/Storage/target/scala-2.11/storage_2.11-0.0.0.2.jar $KAMANJALIBPATH
 
 # Metadata jars
 echo "copy Metadata jars..."
-cp $srcPath/Metadata/target/scala-2.10/metadata_2.10-1.0.jar $KAMANJALIBPATH
-cp $srcPath/MessageDef/target/scala-2.10/messagedef_2.10-1.0.jar $KAMANJALIBPATH
-cp $srcPath/MetadataAPI/target/scala-2.10/metadataapi_2.10-1.0.jar $KAMANJALIBPATH
-cp $srcPath/Pmml/MethodExtractor/target/scala-2.10/methodextractor_2.10-1.0.jar $KAMANJALIBPATH
+cp $srcPath/Metadata/target/scala-2.11/metadata_2.11-1.0.jar $KAMANJALIBPATH
+cp $srcPath/MessageDef/target/scala-2.11/messagedef_2.11-1.0.jar $KAMANJALIBPATH
+cp $srcPath/MetadataAPI/target/scala-2.11/metadataapi_2.11-1.0.jar $KAMANJALIBPATH
+cp $srcPath/Pmml/MethodExtractor/target/scala-2.11/methodextractor_2.11-1.0.jar $KAMANJALIBPATH
 
 # Kamanja jars
 echo "copy Kamanja jars..."
-cp $srcPath/KamanjaBase/target/scala-2.10/kamanjabase_2.10-1.0.jar $KAMANJALIBPATH
-cp $srcPath/KamanjaManager/target/scala-2.10/kamanjamanager_2.10-1.0.jar $KAMANJALIBPATH
+cp $srcPath/KamanjaBase/target/scala-2.11/kamanjabase_2.11-1.0.jar $KAMANJALIBPATH
+cp $srcPath/KamanjaManager/target/scala-2.11/kamanjamanager_2.11-1.0.jar $KAMANJALIBPATH
 
 # Pmml compile and runtime jars
 echo "copy Pmml compile and runtime jars..."
-cp $srcPath/Pmml/PmmlRuntime/target/scala-2.10/pmmlruntime_2.10-1.0.jar $KAMANJALIBPATH
-cp $srcPath/Pmml/PmmlUdfs/target/scala-2.10/pmmludfs_2.10-1.0.jar $KAMANJALIBPATH
-cp $srcPath/Pmml/PmmlCompiler/target/scala-2.10/pmmlcompiler_2.10-1.0.jar $KAMANJALIBPATH
+cp $srcPath/Pmml/PmmlRuntime/target/scala-2.11/pmmlruntime_2.11-1.0.jar $KAMANJALIBPATH
+cp $srcPath/Pmml/PmmlUdfs/target/scala-2.11/pmmludfs_2.11-1.0.jar $KAMANJALIBPATH
+cp $srcPath/Pmml/PmmlCompiler/target/scala-2.11/pmmlcompiler_2.11-1.0.jar $KAMANJALIBPATH
 
 # sample configs
 #echo "copy sample configs..."
@@ -103,7 +103,7 @@ cp $srcPath/Utils/KVInit/src/main/resources/*cfg $KAMANJALIBPATH
 # other jars 
 echo "copy other jars..."
 cp $srcPath/../externals/log4j/log4j-1.2.17.jar $KAMANJALIBPATH
-cp $srcPath/Utils/Serialize/target/scala-2.10/serialize_2.10-1.0.jar $KAMANJALIBPATH
+cp $srcPath/Utils/Serialize/target/scala-2.11/serialize_2.11-1.0.jar $KAMANJALIBPATH
 
 # env context jars
 echo "env context jars..."
@@ -121,7 +121,7 @@ cp $HOME/.ivy2/cache/com.github.stephenc.findbugs/findbugs-annotations/jars/find
 cp $HOME/.ivy2/cache/com.google.code.findbugs/jsr305/jars/jsr305-1.3.9.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/com.google.collections/google-collections/jars/google-collections-1.0.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/com.google.guava/guava/bundles/guava-16.0.1.jar $KAMANJALIBPATH
-cp $HOME/.ivy2/cache/com.google.protobuf/protobuf-java/bundles/protobuf-java-2.5.0.jar $KAMANJALIBPATH
+cp $HOME/.ivy2/cache/com.google.protobuf/protobuf-java/bundles/protobuf-java-2.6.0.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/com.google.protobuf/protobuf-java/bundles/protobuf-java-2.6.0.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/com.jamesmurty.utils/java-xmlbuilder/jars/java-xmlbuilder-0.4.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/com.jcraft/jsch/jars/jsch-0.1.42.jar $KAMANJALIBPATH
@@ -134,15 +134,15 @@ cp $HOME/.ivy2/cache/com.sun.jersey/jersey-server/bundles/jersey-server-1.9.jar 
 cp $HOME/.ivy2/cache/com.sun.xml.bind/jaxb-impl/jars/jaxb-impl-2.2.3-1.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/com.thoughtworks.paranamer/paranamer/jars/paranamer-2.3.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/com.thoughtworks.paranamer/paranamer/jars/paranamer-2.6.jar $KAMANJALIBPATH
-cp $HOME/.ivy2/cache/com.twitter/chill-java/jars/chill-java-0.3.6.jar $KAMANJALIBPATH
-cp $HOME/.ivy2/cache/com.twitter/chill_2.10/jars/chill_2.10-0.3.6.jar $KAMANJALIBPATH
+cp $HOME/.ivy2/cache/com.twitter/chill-java/jars/chill-java-0.5.0.jar $KAMANJALIBPATH
+cp $HOME/.ivy2/cache/com.twitter/chill_2.11/jars/chill_2.11-0.5.0.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/commons-beanutils/commons-beanutils-core/jars/commons-beanutils-core-1.8.0.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/commons-beanutils/commons-beanutils/jars/commons-beanutils-1.7.0.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/commons-cli/commons-cli/jars/commons-cli-1.2.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/commons-codec/commons-codec/jars/commons-codec-1.9.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/commons-collections/commons-collections/jars/commons-collections-3.2.1.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/commons-configuration/commons-configuration/jars/commons-configuration-1.6.jar $KAMANJALIBPATH
-cp $HOME/.ivy2/cache/commons-dbcp/commons-dbcp/jars/commons-dbcp-1.2.2.jar $KAMANJALIBPATH
+cp $HOME/.ivy2/cache/commons-dbcp/commons-dbcp/jars/commons-dbcp-1.4.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/commons-digester/commons-digester/jars/commons-digester-1.8.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/commons-el/commons-el/jars/commons-el-1.0.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/commons-httpclient/commons-httpclient/jars/commons-httpclient-3.1.jar $KAMANJALIBPATH
@@ -184,10 +184,10 @@ cp $HOME/.ivy2/cache/org.codehaus.jettison/jettison/bundles/jettison-1.1.jar $KA
 cp $HOME/.ivy2/cache/org.hamcrest/hamcrest-core/jars/hamcrest-core-1.3.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/org.jdom/jdom/jars/jdom-1.1.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/org.joda/joda-convert/jars/joda-convert-1.6.jar $KAMANJALIBPATH
-cp $HOME/.ivy2/cache/org.json4s/json4s-ast_2.10/jars/json4s-ast_2.10-3.2.9.jar $KAMANJALIBPATH
-cp $HOME/.ivy2/cache/org.json4s/json4s-core_2.10/jars/json4s-core_2.10-3.2.9.jar $KAMANJALIBPATH
-cp $HOME/.ivy2/cache/org.json4s/json4s-jackson_2.10/jars/json4s-jackson_2.10-3.2.9.jar $KAMANJALIBPATH
-cp $HOME/.ivy2/cache/org.json4s/json4s-native_2.10/jars/json4s-native_2.10-3.2.9.jar $KAMANJALIBPATH
+cp $HOME/.ivy2/cache/org.json4s/json4s-ast_2.11/jars/json4s-ast_2.11-3.2.9.jar $KAMANJALIBPATH
+cp $HOME/.ivy2/cache/org.json4s/json4s-core_2.11/jars/json4s-core_2.11-3.2.9.jar $KAMANJALIBPATH
+cp $HOME/.ivy2/cache/org.json4s/json4s-jackson_2.11/jars/json4s-jackson_2.11-3.2.9.jar $KAMANJALIBPATH
+cp $HOME/.ivy2/cache/org.json4s/json4s-native_2.11/jars/json4s-native_2.11-3.2.9.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/org.mapdb/mapdb/bundles/mapdb-1.0.6.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/org.mortbay.jetty/jetty-util/jars/jetty-util-6.1.26.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/org.mortbay.jetty/jetty/jars/jetty-6.1.26.jar $KAMANJALIBPATH
@@ -195,10 +195,10 @@ cp $HOME/.ivy2/cache/org.objenesis/objenesis/jars/objenesis-1.2.jar $KAMANJALIBP
 cp $HOME/.ivy2/cache/org.ow2.asm/asm-commons/jars/asm-commons-4.0.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/org.ow2.asm/asm-tree/jars/asm-tree-4.0.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/org.ow2.asm/asm/jars/asm-4.0.jar $KAMANJALIBPATH
-cp $HOME/.ivy2/cache/org.scala-lang/scalap/jars/scalap-2.10.0.jar $KAMANJALIBPATH
+cp $HOME/.ivy2/cache/org.scala-lang/scalap/jars/scalap-2.11.0.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/org.scala-sbt/test-interface/jars/test-interface-1.0.jar $KAMANJALIBPATH
-cp $HOME/.ivy2/cache/org.scalamacros/quasiquotes_2.10.4/jars/quasiquotes_2.10.4-2.0.0-M6.jar $KAMANJALIBPATH
-cp $HOME/.ivy2/cache/org.scalatest/scalatest_2.10/bundles/scalatest_2.10-2.2.0.jar $KAMANJALIBPATH
+cp $HOME/.ivy2/cache/org.scalameta/quasiquotes_2.11/jars/quasiquotes_2.11-0.0.3.jar $KAMANJALIBPATH
+cp $HOME/.ivy2/cache/org.scalatest/scalatest_2.11/bundles/scalatest_2.11-2.2.0.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/org.slf4j/slf4j-api/jars/slf4j-api-1.7.7.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/org.slf4j/slf4j-log4j12/jars/slf4j-log4j12-1.7.5.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/org.tukaani/xz/jars/xz-1.0.jar $KAMANJALIBPATH
@@ -208,8 +208,8 @@ cp $HOME/.ivy2/cache/tomcat/jasper-runtime/jars/jasper-runtime-5.5.23.jar $KAMAN
 cp $HOME/.ivy2/cache/voldemort/voldemort/jars/voldemort-0.96.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/xmlenc/xmlenc/jars/xmlenc-0.52.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/commons-pool/commons-pool/jars/commons-pool-1.5.2.jar $KAMANJALIBPATH
-cp $HOME/.ivy2/cache/com.twitter/chill_2.10/jars/chill_2.10-0.3.6.jar $KAMANJALIBPATH
-cp $HOME/.ivy2/cache/org.apache.kafka/kafka_2.10/jars/*.jar $KAMANJALIBPATH
+cp $HOME/.ivy2/cache/com.twitter/chill_2.11/jars/chill_2.11-0.5.0.jar $KAMANJALIBPATH
+cp $HOME/.ivy2/cache/org.apache.kafka/kafka_2.11/jars/*.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/net.sf.jopt-simple/jopt-simple/jars/jopt-simple-3.2.jar $KAMANJALIBPATH
 cp $HOME/.ivy2/cache/com.101tec/zkclient/jars/zkclient-0.3.jar $KAMANJALIBPATH
 

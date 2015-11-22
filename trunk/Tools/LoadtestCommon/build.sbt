@@ -14,7 +14,7 @@ name := "LoadtestCommon"
 
 version := "0.0.0.1"
 
-scalaVersion := "2.10.4"
+scalaVersion := "2.11.7"
 
 libraryDependencies += "org.joda" % "joda-convert" % "1.6"
 
@@ -24,11 +24,11 @@ resolvers += "spring-milestones" at "http://repo.springsource.org/libs-milestone
 
 resolvers += "mvnrepository" at "http://mvnrepository.com/artifact"
 
-libraryDependencies += "com.typesafe.akka" % "akka-actor_2.10" % "2.3.3"
+libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.3.3"
 
-libraryDependencies += "com.typesafe.akka" % "akka-remote_2.10" % "2.3.3"
+libraryDependencies += "com.typesafe.akka" %% "akka-remote" % "2.3.3"
 
-libraryDependencies += "net.debasishg" % "redisclient_2.10" % "2.13"
+libraryDependencies += "net.debasishg" %% "redisclient" % "2.13"
 
 libraryDependencies += "log4j" % "log4j" % "1.2.17"
 

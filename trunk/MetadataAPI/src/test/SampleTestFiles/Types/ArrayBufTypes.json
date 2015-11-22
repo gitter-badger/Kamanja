@@ -10,7 +10,7 @@
   "PhysicalName" : null,
   "Version" : 1,
   "JarName" : null,
-  "DependencyJars" : [ "basetypes_2.10-0.1.0.jar", "metadata_2.10-1.0.jar" ],
+  "DependencyJars" : [ "basetypes_2.11-0.1.0.jar", "metadata_2.11-1.0.jar" ],
   "Implementation" : null,
   "NumberOfDimensions" : 0
 },
@@ -24,7 +24,7 @@
   "PhysicalName" : null,
   "Version" : 1,
   "JarName" : null,
-  "DependencyJars" : [ "basetypes_2.10-0.1.0.jar", "metadata_2.10-1.0.jar" ],
+  "DependencyJars" : [ "basetypes_2.11-0.1.0.jar", "metadata_2.11-1.0.jar" ],
   "Implementation" : null,
   "NumberOfDimensions" : 0
 },
@@ -38,7 +38,7 @@
   "PhysicalName" : null,
   "Version" : 1,
   "JarName" : null,
-  "DependencyJars" : [ "basetypes_2.10-0.1.0.jar", "metadata_2.10-1.0.jar" ],
+  "DependencyJars" : [ "basetypes_2.11-0.1.0.jar", "metadata_2.11-1.0.jar" ],
   "Implementation" : null,
   "NumberOfDimensions" : 0
 },
@@ -52,7 +52,7 @@
   "PhysicalName" : null,
   "Version" : 1,
   "JarName" : null,
-  "DependencyJars" : [ "basetypes_2.10-0.1.0.jar", "metadata_2.10-1.0.jar" ],
+  "DependencyJars" : [ "basetypes_2.11-0.1.0.jar", "metadata_2.11-1.0.jar" ],
   "Implementation" : null,
   "NumberOfDimensions" : 0
 },
@@ -66,7 +66,7 @@
   "PhysicalName" : null,
   "Version" : 1,
   "JarName" : null,
-  "DependencyJars" : [ "basetypes_2.10-0.1.0.jar", "metadata_2.10-1.0.jar" ],
+  "DependencyJars" : [ "basetypes_2.11-0.1.0.jar", "metadata_2.11-1.0.jar" ],
   "Implementation" : null,
   "NumberOfDimensions" : 0
 },
@@ -80,7 +80,7 @@
   "PhysicalName" : null,
   "Version" : 1,
   "JarName" : null,
-  "DependencyJars" : [ "basetypes_2.10-0.1.0.jar", "metadata_2.10-1.0.jar" ],
+  "DependencyJars" : [ "basetypes_2.11-0.1.0.jar", "metadata_2.11-1.0.jar" ],
   "Implementation" : null,
   "NumberOfDimensions" : 0
 },
@@ -94,7 +94,7 @@
   "PhysicalName" : null,
   "Version" : 1,
   "JarName" : null,
-  "DependencyJars" : [ "basetypes_2.10-0.1.0.jar", "metadata_2.10-1.0.jar" ],
+  "DependencyJars" : [ "basetypes_2.11-0.1.0.jar", "metadata_2.11-1.0.jar" ],
   "Implementation" : null,
   "NumberOfDimensions" : 0
 } ]

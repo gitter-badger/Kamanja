@@ -46,7 +46,7 @@ ipFile="ip.txt"
 ipPathPairFile="ipPath.txt"
 ipIdCfgTargPathQuartetFileName="ipIdCfgTarg.txt"
 
-nodeInfoExtractDir="$currDirPath/Utils/NodeInfoExtract/target/scala-2.10"
+nodeInfoExtractDir="$currDirPath/Utils/NodeInfoExtract/target/scala-2.11"
 echo "...extract node information for the cluster to be installed from the Metadata and optional Kamanja config supplied"
 if  [ "$#" -eq 4 ]; then
     echo "...Command = $nodeInfoExtractDir/NodeInfoExtract-1.0 $name1 \"$val1\" $name2 \"$val2\"  --workDir \"$workDir\" --ipFileName \"$ipFile\" --ipPathPairFileName \"$ipPathPairFile\" --ipIdCfgTargPathQuartetFileName \"$ipIdCfgTargPathQuartetFileName\""

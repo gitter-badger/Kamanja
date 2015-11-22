@@ -16,7 +16,7 @@ Usage()
 }
 
 
-scalaversion="2.10"
+scalaversion="2.11"
 name1=$1
 
 if [ "$#" -eq 4 ]; then

@@ -51,13 +51,13 @@ name := "SimpleApacheShiroAdapter"
 
 version := "1.0"
 
-scalaVersion := "2.10.4"
+scalaVersion := "2.11.7"
 
 libraryDependencies += "org.joda" % "joda-convert" % "1.6"
 
 libraryDependencies += "joda-time" % "joda-time" % "2.8.2"
 
-libraryDependencies += "org.scalatest" % "scalatest_2.10" % "2.2.0"
+libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.0"
 
 libraryDependencies += "log4j" % "log4j" % "1.2.17"
 
@@ -70,8 +70,8 @@ libraryDependencies += "org.apache.zookeeper" % "zookeeper" % "3.4.6"
 libraryDependencies += "org.apache.curator" % "apache-curator" % "2.0.0-incubating"
 
 libraryDependencies ++= Seq(
-"com.twitter" %% "chill" % "0.3.6",
-"org.scalamacros" % "quasiquotes_2.10.4" % "2.0.0-M6",
+"com.twitter" %% "chill" % "0.5.0",
+"org.scalameta" %% "quasiquotes" % "0.0.3",
  "org.apache.shiro" % "shiro-core" % "1.2.3",
  "org.apache.shiro" % "shiro-root" % "1.2.3"
 )

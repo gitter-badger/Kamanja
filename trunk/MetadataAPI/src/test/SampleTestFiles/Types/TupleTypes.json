@@ -10,7 +10,7 @@
   "PhysicalName" : null,
   "Version" : 1,
   "JarName" : null,
-  "DependencyJars" : [ "basetypes_2.10-0.1.0.jar", "metadata_2.10-1.0.jar" ],
+  "DependencyJars" : [ "basetypes_2.11-0.1.0.jar", "metadata_2.11-1.0.jar" ],
   "Implementation" : null,
   "TupleDefinitions": [ 
 {
@@ -22,8 +22,8 @@
   "TypeName" : "String",
   "PhysicalName" : "String",
   "Version" : 100,
-  "JarName" : "basetypes_2.10-0.1.0.jar",
-  "DependencyJars" : [ "metadata_2.10-1.0.jar" ],
+  "JarName" : "basetypes_2.11-0.1.0.jar",
+  "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.StringImpl"
 },
 {
@@ -35,8 +35,8 @@
   "TypeName" : "String",
   "PhysicalName" : "String",
   "Version" : 100,
-  "JarName" : "basetypes_2.10-0.1.0.jar",
-  "DependencyJars" : [ "metadata_2.10-1.0.jar" ],
+  "JarName" : "basetypes_2.11-0.1.0.jar",
+  "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.StringImpl"
 } ]
 } ]

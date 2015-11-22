@@ -69,8 +69,8 @@ trait MetadataAPI {
    * "TypeName" : "Char",
    * "PhysicalName" : "Char",
    * "Version" : 100,
-   * "JarName" : "basetypes_2.10-0.1.0.jar",
-   * "DependencyJars" : [ "metadata_2.10-1.0.jar" ],
+   * "JarName" : "basetypes_2.11-0.1.0.jar",
+   * "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
    * "Implementation" : "com.ligadata.BaseTypes.CharImpl"
    * }
    * """
@@ -102,8 +102,8 @@ trait MetadataAPI {
    * "TypeName" : "Char",
    * "PhysicalName" : "Char",
    * "Version" : 101,
-   * "JarName" : "basetypes_2.10-0.1.0.jar",
-   * "DependencyJars" : [ "metadata_2.10-1.0.jar" ],
+   * "JarName" : "basetypes_2.11-0.1.0.jar",
+   * "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
    * "Implementation" : "com.ligadata.BaseTypes.CharImpl"
    * }
    * """
@@ -172,7 +172,7 @@ trait MetadataAPI {
    *  } ],
    *  "Version" : 1,
    *  "JarName" : null,
-   *  "DependantJars" : [ "basetypes_2.10-0.1.0.jar", "metadata_2.10-1.0.jar" ]
+   *  "DependantJars" : [ "basetypes_2.11-0.1.0.jar", "metadata_2.11-1.0.jar" ]
    *  }
    *"""
    *    var apiResult = MetadataAPIImpl.AddFunction(sampleFunctionStr,"JSON")
@@ -209,7 +209,7 @@ trait MetadataAPI {
    *  } ],
    *  "Version" : 1,
    *  "JarName" : null,
-   *  "DependantJars" : [ "basetypes_2.10-0.1.0.jar", "metadata_2.10-1.0.jar" ]
+   *  "DependantJars" : [ "basetypes_2.11-0.1.0.jar", "metadata_2.11-1.0.jar" ]
    *  }
    *"""
    *    var apiResult = MetadataAPIImpl.UpdateFunction(sampleFunctionStr,"JSON")

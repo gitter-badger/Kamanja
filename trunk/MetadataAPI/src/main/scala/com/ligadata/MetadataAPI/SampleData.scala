@@ -28,8 +28,8 @@ object SampleData {
   "TypeName" : "Char",
   "PhysicalName" : "Char",
   "Version" : 100,
-  "JarName" : "basetypes_2.10-0.1.0.jar",
-  "DependencyJars" : [ "metadata_2.10-1.0.jar" ],
+  "JarName" : "basetypes_2.11-0.1.0.jar",
+  "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.CharImpl"
   }
 """
@@ -44,8 +44,8 @@ object SampleData {
   "TypeName" : "Char",
   "PhysicalName" : "Char",
   "Version" : 101,
-  "JarName" : "basetypes_2.10-0.1.0.jar",
-  "DependencyJars" : [ "metadata_2.10-1.0.jar" ],
+  "JarName" : "basetypes_2.11-0.1.0.jar",
+  "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.CharImpl"
   }
 """
@@ -61,7 +61,7 @@ object SampleData {
     "PhysicalName" : null,
     "Version" : 1,
     "JarName" : null,
-    "DependencyJars" : [ "basetypes_2.10-0.1.0.jar", "metadata_2.10-1.0.jar" ],
+    "DependencyJars" : [ "basetypes_2.11-0.1.0.jar", "metadata_2.11-1.0.jar" ],
     "Implementation" : null,
     "TupleDefinitions": [ 
       {
@@ -73,8 +73,8 @@ object SampleData {
 	"TypeName" : "String",
 	"PhysicalName" : "String",
 	"Version" : 100,
-	"JarName" : "basetypes_2.10-0.1.0.jar",
-	"DependencyJars" : [ "metadata_2.10-1.0.jar" ],
+	"JarName" : "basetypes_2.11-0.1.0.jar",
+	"DependencyJars" : [ "metadata_2.11-1.0.jar" ],
 	"Implementation" : "com.ligadata.BaseTypes.StringImpl"
       },
       {
@@ -86,8 +86,8 @@ object SampleData {
 	"TypeName" : "String",
 	"PhysicalName" : "String",
 	"Version" : 100,
-	"JarName" : "basetypes_2.10-0.1.0.jar",
-	"DependencyJars" : [ "metadata_2.10-1.0.jar" ],
+	"JarName" : "basetypes_2.11-0.1.0.jar",
+	"DependencyJars" : [ "metadata_2.11-1.0.jar" ],
 	"Implementation" : "com.ligadata.BaseTypes.StringImpl"
       } ]
   }
@@ -121,7 +121,7 @@ object SampleData {
   } ],
   "Version" : 1,
   "JarName" : null,
-  "DependantJars" : [ "basetypes_2.10-0.1.0.jar", "metadata_2.10-1.0.jar" ]
+  "DependantJars" : [ "basetypes_2.11-0.1.0.jar", "metadata_2.11-1.0.jar" ]
   }
 """
 
@@ -144,7 +144,7 @@ object SampleData {
   } ],
   "Version" : 1,
   "JarName" : null,
-  "DependantJars" : [ "basetypes_2.10-0.1.0.jar", "metadata_2.10-1.0.jar" ]
+  "DependantJars" : [ "basetypes_2.11-0.1.0.jar", "metadata_2.11-1.0.jar" ]
   },
   "Attributes": [ 
 {
@@ -161,8 +161,8 @@ object SampleData {
   "TypeName" : "string",
   "PhysicalName" : "String",
   "Version" : 100,
-  "JarName" : "basetypes_2.10-0.1.0.jar",
-  "DependencyJars" : [ "metadata_2.10-1.0.jar" ],
+  "JarName" : "basetypes_2.11-0.1.0.jar",
+  "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.StringImpl"
 }},
 {
@@ -179,8 +179,8 @@ object SampleData {
   "TypeName" : "string",
   "PhysicalName" : "String",
   "Version" : 100,
-  "JarName" : "basetypes_2.10-0.1.0.jar",
-  "DependencyJars" : [ "metadata_2.10-1.0.jar" ],
+  "JarName" : "basetypes_2.11-0.1.0.jar",
+  "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.StringImpl"
 }},
 {
@@ -197,8 +197,8 @@ object SampleData {
   "TypeName" : "string",
   "PhysicalName" : "String",
   "Version" : 100,
-  "JarName" : "basetypes_2.10-0.1.0.jar",
-  "DependencyJars" : [ "metadata_2.10-1.0.jar" ],
+  "JarName" : "basetypes_2.11-0.1.0.jar",
+  "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.StringImpl"
 }},
 {
@@ -215,8 +215,8 @@ object SampleData {
   "TypeName" : "long",
   "PhysicalName" : "Long",
   "Version" : 100,
-  "JarName" : "basetypes_2.10-0.1.0.jar",
-  "DependencyJars" : [ "metadata_2.10-1.0.jar" ],
+  "JarName" : "basetypes_2.11-0.1.0.jar",
+  "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.LongImpl"
 }},
 {
@@ -233,8 +233,8 @@ object SampleData {
   "TypeName" : "double",
   "PhysicalName" : "Double",
   "Version" : 100,
-  "JarName" : "basetypes_2.10-0.1.0.jar",
-  "DependencyJars" : [ "metadata_2.10-1.0.jar" ],
+  "JarName" : "basetypes_2.11-0.1.0.jar",
+  "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.DoubleImpl"
 }} ]
   }
