@@ -54,7 +54,7 @@ class MessageGenerator {
     var msgVariables = new StringBuilder(8 * 1024)
     try {
       message.Elements.foreach(field => {
-        msgVariables.append(" %s private var %s: %s = _; %s".format(pad1, field.Name, field.Ttype, newline))
+        msgVariables.append(" %s private var %s: %s = _; %s".format(pad1, field.Name, field.FieldTypePhysicalName, newline))
       })
     } catch {
       case e: Exception => {
@@ -92,8 +92,8 @@ class MessageGenerator {
 
     try {
       message.Elements.foreach(element => {
-        msgConsStr.append("%s: %s, ".format(element.Name, element.Ttype))
-        constructorStmts.append("%s this.%s = %s; %s ".format(pad2, element.Name, element.Ttype, newline))
+        msgConsStr.append("%s: %s, ".format(element.Name, element.FieldTypePhysicalName))
+        constructorStmts.append("%s this.%s = %s; %s ".format(pad2, element.Name, element.Name, newline))
       })
       val msgStr = msgConsStr.toString
       log.info("constructor Generation ===================" + msgStr.substring(0, msgStr.length() - 1))
@@ -117,7 +117,7 @@ class MessageGenerator {
     try {
       fields.foreach(field => {
         getmethodStr = """
-        def get""" + field.Name.capitalize + """: """ + field.Ttype + """= {
+        def get""" + field.Name.capitalize + """: """ + field.FieldTypePhysicalName + """= {
         	return this.""" + field.Name + """;
         }          
         """
@@ -142,7 +142,7 @@ class MessageGenerator {
     try {
       fields.foreach(field => {
         setmethodStr = """
-        def set""" + field.Name.capitalize + """(value: """ + field.Ttype + """): Unit = {
+        def set""" + field.Name.capitalize + """(value: """ + field.FieldTypePhysicalName + """): Unit = {
         	this.""" + field.Name + """ = value;
         }
         """
@@ -165,7 +165,7 @@ class MessageGenerator {
     var getFuncByOffset: String = ""
     getFuncByOffset = """
       def get(field$ : Int) : Any = {
-      	field$.match {
+      	field$ match {
   """ + getByOffset(fields) + """
       	 case _ => throw new Exception("Bad index");
     	}
@@ -181,7 +181,7 @@ class MessageGenerator {
     var getByOffset = new StringBuilder(8 * 1024)
     try {
       fields.foreach(field => {
-        getByOffset.append("%s case %s => return %s; %s".format(pad1, field.FieldOrdinal, field.Name, newline))
+        getByOffset.append("%s case %s => return this.%s; %s".format(pad1, field.FieldOrdinal, field.Name, newline))
       })
     } catch {
       case e: Exception => {
@@ -200,7 +200,7 @@ class MessageGenerator {
     var getFuncByOffset: String = ""
     getFuncByOffset = """
       def set(field$ : Int, value :Any): Unit = {
-      	field$.match {
+      	field$ match {
   """ + setByOffset(fields) + """
       	 case _ => throw new Exception("Bad index");
     	}
@@ -216,7 +216,7 @@ class MessageGenerator {
     var setByOffset = new StringBuilder(8 * 1024)
     try {
       fields.foreach(field => {
-        setByOffset.append("%s case %s => {this.%s = value.asInstanceOf[%s]}; %s".format(pad1, field.FieldOrdinal, field.Name, field.Ttype, newline))
+        setByOffset.append("%s case %s => {this.%s = value.asInstanceOf[%s]}; %s".format(pad1, field.FieldOrdinal, field.Name, field.FieldTypePhysicalName, newline))
       })
     } catch {
       case e: Exception => {

@@ -22,7 +22,7 @@ class Messages(var messages: List[Message])
 class Message(var MsgType: String, var NameSpace: String, var Name: String, var PhysicalName: String, var Version: String, var Description: String, var Fixed: String, var Persist: Boolean, var Elements: List[Element], var TDataExists: Boolean, var TrfrmData: TransformData, var Jarset: Set[String], var Pkg: String, var Ctype: String, var CCollectiontype: String, var Containers: List[String], var PartitionKey: List[String], var PrimaryKeys: List[String], var ClsNbr: Long, var MsgLvel: Int)
 class TransformData(var input: Array[String], var output: Array[String], var keys: Array[String])
 class Field(var NameSpace: String, var Name: String, var Ttype: String, var CollectionType: String, var Fieldtype: String, var FieldtypeVer: String)
-class Element(var NameSpace: String, var Name: String, var Ttype: String, var CollectionType: String, var ElemType: String, var FieldtypeVer: String, var FieldOrdinal: Int)
+class Element(var NameSpace: String, var Name: String, var Ttype: String, var CollectionType: String, var ElemType: String, var FieldtypeVer: String, var FieldOrdinal: Int, var FldMetaataType: BaseTypeDef, var FieldTypePhysicalName: String)
 class MessageGenObj(var verScalaClassStr: String, var verJavaClassStr: String, var containerDef: ContainerDef, var noVerScalaClassStr: String, var noVerJavaClassStr: String, var argsList: List[(String, String, String, String, Boolean, String)])
 
 object MessageCompiler {
@@ -30,6 +30,7 @@ object MessageCompiler {
   val logger = this.getClass.getName
   lazy val log = Logger.getLogger(logger)
   var msgGen: MessageGenerator = new MessageGenerator
+  var handleMsgFieldTypes: MessageFieldTypesHandler = new MessageFieldTypesHandler
 
   /*
    * parse the message definition json,  add messages to metadata and create the Fixed and Mapped Mesages
@@ -45,6 +46,11 @@ object MessageCompiler {
         throw new Exception("MdMgr is not found")
       if (msgDfType.equals("JSON")) {
         message = messageParser.processJson(jsonstr, mdMgr, recompile).asInstanceOf[Message]
+        //simple check to get metadata types for the fields in message
+
+        message = handleMsgFieldTypes.handleFieldTypes(message, mdMgr)
+        // end getting the metadata types for fields
+
         generatedMsg = msgGen.generateMessage(message)
       } else throw new Exception("MsgDef Type JSON is only supported")
 
@@ -56,18 +62,6 @@ object MessageCompiler {
       }
     }
     return generatedMsg
-  }
-
-  def main(args: Array[String]) {
-    var msgDfType: String = "JSON"
-    val jsonstr: String = Source.fromFile("src/main/resources/message1.json").getLines.mkString
-    // val jsonstr: String = Source.fromFile("src/main/resources/nestedlvl2.json").getLines.mkString
-
-    val message = MessageCompiler.processMsgDef(jsonstr, msgDfType, MdMgr.GetMdMgr, false)
-    log.info("============== Generated Message Start==============")
-    log.info(message)
-    log.info("============== Generated Message End ==============")
-
   }
 
 }

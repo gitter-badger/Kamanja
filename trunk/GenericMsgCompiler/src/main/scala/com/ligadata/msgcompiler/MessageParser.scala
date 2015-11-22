@@ -226,9 +226,9 @@ class MessageParser {
           throw new Exception("Either Fields or Elements or Concepts  do not exist in " + message.get("name").get.toString())
 
         if (elements != null)
-          elements = elements :+ new Element("", "transactionId", "system.long", "", "Fields", null, -1)
+          elements = elements :+ new Element("", "transactionId", "system.long", "", "Fields", null, -1, null, null)
         else
-          elements = List(new Element("", "transactionId", "system.long", "", "Fields", null, -1))
+          elements = List(new Element("", "transactionId", "system.long", "", "Fields", null, -1, null, null))
 
         // ele.foreach(f => log.debug("====" + f.Name))
 
@@ -440,7 +440,7 @@ class MessageParser {
           if (field.contains("version") && (field.get("version").get.isInstanceOf[string])) {
             fldTypeVer = field.get("version").get.asInstanceOf[String].toLowerCase()
           }
-          fld = new Element(namespace, name, ttype, collectionType, key, fldTypeVer, ordinal)
+          fld = new Element(namespace, name, ttype, collectionType, key, fldTypeVer, ordinal, null, null)
 
         } else if (fieldtype.isInstanceOf[Map[String, Any]]) {
           log.info("Child Container ========== Start ==============  ")
@@ -452,7 +452,7 @@ class MessageParser {
           childFld.foreach(kv => { field(kv._1.toLowerCase()) = kv._2 })
           childMessage = getChildRecord(field, name, namespace, msgLevel + 1)
           // msgBuffer += message
-          fld = new Element(namespace, name, ttype, collectionType, key, fldTypeVer, ordinal)
+          fld = new Element(namespace, name, ttype, collectionType, key, fldTypeVer, ordinal, null, null)
 
           log.info("Child Container ==========  End  ============== ")
         }
