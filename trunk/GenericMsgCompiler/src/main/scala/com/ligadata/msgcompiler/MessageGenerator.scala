@@ -4,6 +4,8 @@ import com.ligadata.Exceptions.StackTrace;
 import org.apache.log4j.Logger;
 
 class MessageGenerator {
+  
+  var builderGenerator = new MessageBuilderGenerator
   val logger = this.getClass.getName
   lazy val log = Logger.getLogger(logger)
   val newline: String = "\n"
@@ -28,6 +30,7 @@ class MessageGenerator {
       messageGenerator = messageGenerator.append(setFuncGeneration(message.Elements))
       messageGenerator = messageGenerator.append(getFuncByOffset(message.Elements))
       messageGenerator = messageGenerator.append(setFuncByOffset(message.Elements))
+      messageGenerator = messageGenerator.append(builderGenerator.generatorBuilder(message))
       messageGenerator = messageGenerator.append(newline + closeBrace)
 
     } catch {
