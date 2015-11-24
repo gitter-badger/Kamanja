@@ -3913,44 +3913,39 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
                             , optModelName: Option[String] = None
                             , optVersion: Option[String] = None
                             , optVersionBeingUpdated : Option[String] = None): String = {
-        try {
+        /**
+         * FIXME: The current strategy is that only the most recent version can be updated.
+         * FIXME: This is not a satisfactory condition. It may be desirable to have 10 models all with
+         * FIXME: the same name but differing only in their version numbers. If someone wants to tune
+         * FIXME: #6 of the 10, that number six is not the latest.  It is just a unique model.
+         *
+         * For this reason, the version of the model that is to be changed should be supplied here and all of the
+         * associated handler functions that service update for the various model types should be amended to
+         * consider which model it is that is to be updated exactly.  The removal of the model being replaced
+         * must be properly handled to remove the one with the version supplied.
+         */
 
-            /**
-             * FIXME: The current strategy is that only the most recent version can be updated.
-             * FIXME: This is not a satisfactory condition. It may be desirable to have 10 models all with
-             * FIXME: the same name but differing only in their version numbers. If someone wants to tune
-             * FIXME: #6 of the 10, that number six is not the latest.  It is just a unique model.
-             *
-             * For this reason, the version of the model that is to be changed should be supplied here and all of the
-             * associated handler functions that service update for the various model types should be amended to
-             * consider which model it is that is to be updated exactly.  The removal of the model being replaced
-             * must be properly handled to remove the one with the version supplied.
-             */
-
-            val modelResult: String = modelType match {
-                case ModelType.PMML => {
-                    val result: String = UpdatePmmlModel(modelType, input, optUserid, optModelName, optVersion)
-                    result
-                }
-                case ModelType.JAVA | ModelType.SCALA => {
-                    val result: String = UpdateCustomModel(modelType, input, optUserid, optModelName, optVersion)
-                    result
-                }
-                case ModelType.JPMML => {
-                    val result : String = UpdateJpmmlModel(modelType, input, optUserid, optModelName, optVersion, optVersionBeingUpdated)
-                    result
-                }
-                case ModelType.BINARY =>
-                    new ApiResult(ErrorCodeConstants.Failure, "AddModel", null, s"BINARY model type NOT SUPPORTED YET ...${ErrorCodeConstants.Add_Model_Failed}").toString
-                case _ => {
-                    val apiResult = new ApiResult(ErrorCodeConstants.Failure, "AddModel", null, s"Unknown model type ${modelType.toString} error = ${ErrorCodeConstants.Add_Model_Failed}")
-                    apiResult.toString
-                }
+        val modelResult: String = modelType match {
+            case ModelType.PMML => {
+                val result: String = UpdatePmmlModel(modelType, input, optUserid, optModelName, optVersion)
+                result
             }
-            modelResult
-
-
+            case ModelType.JAVA | ModelType.SCALA => {
+                val result: String = UpdateCustomModel(modelType, input, optUserid, optModelName, optVersion)
+                result
+            }
+            case ModelType.JPMML => {
+                val result : String = UpdateJpmmlModel(modelType, input, optUserid, optModelName, optVersion, optVersionBeingUpdated)
+                result
+            }
+            case ModelType.BINARY =>
+                new ApiResult(ErrorCodeConstants.Failure, "AddModel", null, s"BINARY model type NOT SUPPORTED YET ...${ErrorCodeConstants.Add_Model_Failed}").toString
+            case _ => {
+                val apiResult = new ApiResult(ErrorCodeConstants.Failure, "AddModel", null, s"Unknown model type ${modelType.toString} error = ${ErrorCodeConstants.Add_Model_Failed}")
+                apiResult.toString
+            }
         }
+        modelResult
 
     }
 
@@ -4162,7 +4157,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
                 val apiResult = AddModel(modDef, userid)
                 var objectsUpdated = new Array[BaseElemDef](0)
                 var operations = new Array[String](0)
-                if( latestVersion != None ){
+                if( latestVersion != None ) {
                     objectsUpdated = objectsUpdated :+ latestVersion.get
                     operations = operations :+ "Remove"
                 }
@@ -4254,7 +4249,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
                 var objectsUpdated = new Array[BaseElemDef](0)
                 var operations = new Array[String](0)
 
-                if( latestVersion != None ){
+                if( latestVersion != None ) {
                     objectsUpdated = objectsUpdated :+ latestVersion
                     operations = operations :+ "Remove"
                 }

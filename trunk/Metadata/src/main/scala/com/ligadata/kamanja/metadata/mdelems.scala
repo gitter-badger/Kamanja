@@ -694,37 +694,33 @@ object MiningModelType extends Enumeration {
 
   def modelType(mdlType : String) : MiningModelType = {
     val typ : MiningModelType.MiningModelType = mdlType.trim.toLowerCase match {
-      case "customscala" => CustomScala
-      case "customjava" => CustomJava
-      case "rulesetmodel" => RuleSetModel
-      case "treemodel" => TreeModel
-      case "associationmodel" => AssociationModel
-      case "baselinemodel" => BaselineModel
-      case "clusteringmodel" => ClusteringModel
-      case "generalregressionmodel" => GeneralRegressionModel
-      case "miningmodel" => MiningModel
-      case "naivebayesmodel" => NaiveBayesModel
-      case "nearestneighbormodel" => NearestNeighborModel
-      case "neuralnetwork" => NeuralNetwork
-      case "regressionmodel" => RegressionModel
-      case "sequencemodel" => SequenceModel
-      case "scorecard" => Scorecard
-      case "supportvectormachinemodel" => SupportVectorMachineModel
-      case "textmodel" => TextModel
-      case "timeseriesmodel" => TimeSeriesModel
-      case _ => Unknown
+        case "customscala" => SCALA
+        case "customjava" => JAVA
+        case "rulesetmodel" => RULESETMODEL
+        case "treemodel" => TREEMODEL
+        case "associationmodel" => ASSOCIATIONMODEL
+        case "baselinemodel" => BASELINEMODEL
+        case "clusteringmodel" => CLUSTERINGMODEL
+        case "generalregressionmodel" => GENERALREGRESSIONMODEL
+        case "miningmodel" => MININGMODEL
+        case "naivebayesmodel" => NAIVEBAYESMODEL
+        case "nearestneighbormodel" => NEARESTNEIGHBORMODEL
+        case "neuralnetwork" => NEURALNETWORK
+        case "regressionmodel" => REGRESSIONMODEL
+        case "sequencemodel" => SEQUENCEMODEL
+        case "scorecard" => SCORECARD
+        case "supportvectormachinemodel" => SUPPORTVECTORMACHINEMODEL
+        case "textmodel" => TEXTMODEL
+        case "timeseriesmodel" => TIMESERIESMODEL
+        case _ => UNKNOWN
     }
     typ
   }
 }
 
 object ModelRepresentation extends Enumeration {
-  type ModelRepresentation = Value
-  val JAR, JPMML, PYTHON, UNKNOWN = Value
-
-object ModelInputType extends Enumeration {
-  type ModelInputType = Value
-  val JAR, JPMML = Value
+    type ModelRepresentation = Value
+    val JAR, JPMML, PYTHON, UNKNOWN = Value
 
   def modelRep(mdlRep: String): ModelRepresentation = {
       val rep: ModelRepresentation = mdlRep.toUpperCase match {
