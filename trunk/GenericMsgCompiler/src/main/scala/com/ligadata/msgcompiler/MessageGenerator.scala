@@ -24,7 +24,6 @@ class MessageGenerator {
 
     var messageGenerator = new StringBuilder(8 * 1024)
     try {
-      
       messageGenerator = messageGenerator.append(msgConstants.newline + msgConstants.packageStr.format(message.Pkg, msgConstants.newline));
       messageGenerator = messageGenerator.append(msgConstants.importStatements + msgConstants.newline);
       messageGenerator = messageGenerator.append(msgObjectGenerator.generateMessageObject(message) + msgConstants.newline)
