@@ -225,10 +225,12 @@ class MessageParser {
         if (MsgUtils.isTrue(MsgUtils.LowerCase(Fixed)) && elements == null)
           throw new Exception("Either Fields or Elements or Concepts  do not exist in " + message.get("name").get.toString())
 
+        /*
         if (elements != null)
           elements = elements :+ new Element("", "transactionId", "system.long", "", "Fields", null, -1, null, null)
         else
           elements = List(new Element("", "transactionId", "system.long", "", "Fields", null, -1, null, null))
+		*/
 
         // ele.foreach(f => log.debug("====" + f.Name))
 

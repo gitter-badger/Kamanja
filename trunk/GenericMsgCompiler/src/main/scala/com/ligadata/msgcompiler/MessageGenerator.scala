@@ -1,37 +1,42 @@
 package com.ligadata.msgcompiler
+
 import com.ligadata.Exceptions._;
 import com.ligadata.Exceptions.StackTrace;
 import org.apache.log4j.Logger;
 
 class MessageGenerator {
-  
+
   var builderGenerator = new MessageBuilderGenerator
+  var msgObjectGenerator = new MessageObjectGenerator
+  var msgConstants = new MessageConstants
   val logger = this.getClass.getName
   lazy val log = Logger.getLogger(logger)
-  val newline: String = "\n"
-  val pad1: String = "\t"
-  val pad2: String = "\t\t"
-  val closeBrace = "}"
 
   /*
+   * add import stamts -- still need to add
    * Generate Message Class
    * Message Class lines generation
    * Generate all the getter methods in the class generation
    * Generation all the setter methods in class generation
+   * 
    */
   def generateMessage(message: Message): String = {
 
     var messageGenerator = new StringBuilder(8 * 1024)
     try {
-      messageGenerator = messageGenerator.append(classGen(message) + newline)
+      messageGenerator = messageGenerator.append(msgConstants.newline + msgConstants.packageStr.format(message.Pkg, msgConstants.newline));
+      messageGenerator = messageGenerator.append(msgConstants.importStatements + msgConstants.newline);
+      messageGenerator = messageGenerator.append(msgObjectGenerator.generateMessageObject(message) + msgConstants.newline)
+      messageGenerator = messageGenerator.append(classGen(message) + msgConstants.newline)
+      messageGenerator = messageGenerator.append(messageContructor(message))
       messageGenerator = messageGenerator.append(msgClassConstructorGen(message))
-      messageGenerator = messageGenerator.append(newline + generatedMsgVariables(message))
+      messageGenerator = messageGenerator.append(msgConstants.newline + generatedMsgVariables(message))
       messageGenerator = messageGenerator.append(getFuncGeneration(message.Elements))
       messageGenerator = messageGenerator.append(setFuncGeneration(message.Elements))
       messageGenerator = messageGenerator.append(getFuncByOffset(message.Elements))
       messageGenerator = messageGenerator.append(setFuncByOffset(message.Elements))
       messageGenerator = messageGenerator.append(builderGenerator.generatorBuilder(message))
-      messageGenerator = messageGenerator.append(newline + closeBrace)
+      messageGenerator = messageGenerator.append(msgConstants.newline + msgConstants.closeBrace)
 
     } catch {
       case e: Exception => {
@@ -46,7 +51,18 @@ class MessageGenerator {
    * Message Class
    */
   private def classGen(message: Message): String = {
-    return "class " + message.Name + " { ";
+    var baseMsgType: String = ""
+    val msgType = message.MsgType
+    if (msgType == null || msgType.trim() == "")
+      throw new Exception("Message Definition root element should be either Message or Container")
+
+    if (msgType.equalsIgnoreCase(msgConstants.messageStr))
+      baseMsgType = msgConstants.baseMsg
+    else if (msgType.equalsIgnoreCase(msgConstants.containerStr))
+      baseMsgType = msgConstants.baseContainer
+
+    // (var transactionId: Long, other: CustAlertHistory) extends BaseContainer {
+    return msgConstants.classStr.format(message.Name, message.Name, baseMsgType, msgConstants.newline)
 
   }
 
@@ -57,7 +73,7 @@ class MessageGenerator {
     var msgVariables = new StringBuilder(8 * 1024)
     try {
       message.Elements.foreach(field => {
-        msgVariables.append(" %s private var %s: %s = _; %s".format(pad1, field.Name, field.FieldTypePhysicalName, newline))
+        msgVariables.append(" %s private var %s: %s = _; %s".format(msgConstants.pad1, field.Name, field.FieldTypePhysicalName, msgConstants.newline))
       })
     } catch {
       case e: Exception => {
@@ -96,7 +112,7 @@ class MessageGenerator {
     try {
       message.Elements.foreach(element => {
         msgConsStr.append("%s: %s, ".format(element.Name, element.FieldTypePhysicalName))
-        constructorStmts.append("%s this.%s = %s; %s ".format(pad2, element.Name, element.Name, newline))
+        constructorStmts.append("%s this.%s = %s; %s ".format(msgConstants.pad2, element.Name, element.Name, msgConstants.newline))
       })
       val msgStr = msgConsStr.toString
       log.info("constructor Generation ===================" + msgStr.substring(0, msgStr.length() - 1))
@@ -184,7 +200,7 @@ class MessageGenerator {
     var getByOffset = new StringBuilder(8 * 1024)
     try {
       fields.foreach(field => {
-        getByOffset.append("%s case %s => return this.%s; %s".format(pad1, field.FieldOrdinal, field.Name, newline))
+        getByOffset.append("%s case %s => return this.%s; %s".format(msgConstants.pad1, field.FieldOrdinal, field.Name, msgConstants.newline))
       })
     } catch {
       case e: Exception => {
@@ -219,7 +235,7 @@ class MessageGenerator {
     var setByOffset = new StringBuilder(8 * 1024)
     try {
       fields.foreach(field => {
-        setByOffset.append("%s case %s => {this.%s = value.asInstanceOf[%s]}; %s".format(pad1, field.FieldOrdinal, field.Name, field.FieldTypePhysicalName, newline))
+        setByOffset.append("%s case %s => {this.%s = value.asInstanceOf[%s]}; %s".format(msgConstants.pad1, field.FieldOrdinal, field.Name, field.FieldTypePhysicalName, msgConstants.newline))
       })
     } catch {
       case e: Exception => {
@@ -229,5 +245,21 @@ class MessageGenerator {
       }
     }
     return setByOffset.toString
+  }
+
+  private def messageContructor(message: Message): String = {
+    """
+   def this(txnId: Long) = {
+    this(txnId, null)
+  }
+  def this(other: """ + message.Name + """) = {
+    this(0, other)
+  }
+  def this() = {
+    this(0, null)
+  }
+   
+    
+  """
   }
 }
