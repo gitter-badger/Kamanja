@@ -28,8 +28,10 @@ class MessageGenerator {
       messageGenerator = messageGenerator.append(msgConstants.importStatements + msgConstants.newline);
       messageGenerator = messageGenerator.append(msgObjectGenerator.generateMessageObject(message) + msgConstants.newline)
       messageGenerator = messageGenerator.append(classGen(message) + msgConstants.newline)
+      messageGenerator = messageGenerator.append(getMessgeBasicDetails(message))
+      messageGenerator = messageGenerator.append(methodsFromBaseMsg(message))
       messageGenerator = messageGenerator.append(messageContructor(message))
-      messageGenerator = messageGenerator.append(msgClassConstructorGen(message))
+      //messageGenerator = messageGenerator.append(msgClassConstructorGen(message))
       messageGenerator = messageGenerator.append(msgConstants.newline + generatedMsgVariables(message))
       messageGenerator = messageGenerator.append(getFuncGeneration(message.Elements))
       messageGenerator = messageGenerator.append(setFuncGeneration(message.Elements))
@@ -261,5 +263,64 @@ class MessageGenerator {
    
     
   """
+  }
+
+  /*
+   * message basic details in class
+   */
+  private def getMessgeBasicDetails(message: Message): String = {
+    """ 
+  override def IsFixed: Boolean = """ + message.Name + """.IsFixed;
+  override def IsKv: Boolean = """ + message.Name + """.IsKv;
+  override def CanPersist: Boolean = """ + message.Name + """.CanPersist;
+  override def FullName: String = """ + message.Name + """.FullName
+  override def NameSpace: String = """ + message.Name + """.NameSpace
+  override def Name: String = """ + message.Name + """.Name
+  override def Version: String = """ + message.Name + """.Version
+  """
+  }
+
+  /*
+   * some overridable methods from BaseMsg
+   */
+  private def methodsFromBaseMsg(message: Message): String = {
+    """
+  override def Save: Unit = { """ + message.Name + """.saveOne(this) }
+  override def PartitionKeyData: Array[String] = null
+  override def PrimaryKeyData: Array[String] = null
+  override def set(key: String, value: Any): Unit = {}
+  override def get(key: String): Any = null
+  override def getOrElse(key: String, default: Any): Any = { throw new Exception("getOrElse function is not yet implemented") }
+  private def getByName(key: String): Any = null
+  private def getWithReflection(key: String): Any = null
+  override def AddMessage(childPath: Array[(String, String)], msg: BaseMsg): Unit = {}
+  override def GetMessage(childPath: Array[(String, String)], primaryKey: Array[String]): com.ligadata.KamanjaBase.BaseMsg = null
+  def populate(inputdata: InputData) = {}
+  private def populateCSV(inputdata: DelimitedData): Unit = {}
+  private def populateJson(json: JsonData): Unit = {}
+  def CollectionAsArrString(v: Any): Array[String] = null
+  private def assignJsonData(json: JsonData): Unit = {}
+  private def populateXml(xmlData: XmlData): Unit = {}
+  override def Serialize(dos: DataOutputStream): Unit = {}
+  override def Deserialize(dis: DataInputStream, mdResolver: MdBaseResolveInfo, loader: java.lang.ClassLoader, savedDataVersion: String): Unit = {}
+  def ConvertPrevToNewVerObj(obj: Any): Unit = {}
+  override def getNativeKeyValues(): scala.collection.immutable.Map[String, (String, Any)] = null
+  
+  override def hasPrimaryKey(): Boolean = {
+    """ + message.Name + """.hasPrimaryKey;
+  }
+
+  override def hasPartitionKey(): Boolean = {
+    """ + message.Name + """.hasPartitionKey;
+  }
+
+  override def hasTimeParitionInfo(): Boolean = {
+    """ + message.Name + """.hasTimeParitionInfo;
+  }
+    
+  def Clone(): MessageContainerBase = {
+     """ + message.Name + """.build(this)
+  }
+    """
   }
 }
