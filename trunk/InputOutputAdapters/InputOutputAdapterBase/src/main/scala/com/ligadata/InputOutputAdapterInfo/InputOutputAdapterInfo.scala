@@ -59,12 +59,12 @@ trait InputAdapter {
   val callerCtxt: InputAdapterCallerContext
 
   def UniqueName: String = { // Making String from key
-    return "{\"Name\" : \"%s\"}".format(inputConfig.Name)
+    "{\"Name\" : \"%s\"}".format(inputConfig.Name)
   }
 
   def Category = "Input"
-  def Shutdown: Unit
-  def StopProcessing: Unit
+  def Shutdown(): Unit
+  def StopProcessing(): Unit
   def StartProcessing(partitionInfo: Array[StartProcPartInfo], ignoreFirstMsg: Boolean): Unit // each value in partitionInfo is (PartitionUniqueRecordKey, PartitionUniqueRecordValue, Long, PartitionUniqueRecordValue). // key, processed value, Start transactionid, Ignore Output Till given Value (Which is written into Output Adapter) & processing Transformed messages (processing & total)
   def GetAllPartitionUniqueRecordKey: Array[PartitionUniqueRecordKey]
   def DeserializeKey(k: String): PartitionUniqueRecordKey
@@ -92,7 +92,7 @@ trait OutputAdapter {
   // To send an array of messages. messages.size should be same as partKeys.size
   def send(messages: Array[Array[Byte]], partKeys: Array[Array[Byte]]): Unit
   
-  def Shutdown: Unit
+  def Shutdown(): Unit
   def Category = "Output"
 }
 

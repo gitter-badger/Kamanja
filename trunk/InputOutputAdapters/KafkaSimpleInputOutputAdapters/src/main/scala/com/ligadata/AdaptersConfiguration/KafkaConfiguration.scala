@@ -17,16 +17,18 @@
 package com.ligadata.AdaptersConfiguration
 
 import com.ligadata.InputOutputAdapterInfo.{ AdapterConfiguration, PartitionUniqueRecordKey, PartitionUniqueRecordValue }
+import com.typesafe.config.ConfigFactory
 import org.json4s._
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods._
 
 class KafkaQueueAdapterConfiguration extends AdapterConfiguration {
+  val config = ConfigFactory.load()
   var hosts: Array[String] = _ // each host is HOST:PORT
   var topic: String = _ // topic name
-  var noDataSleepTimeInMs: Int = 300 // No Data Sleep Time in milli secs. Default is 300 ms
+  var noDataSleepTimeInMs: Int = config.getInt("kafkaQueueAdapter.noDataSleepTimeInMs") // No Data Sleep Time in milli secs. Default is 300 ms
   var instancePartitions: Set[Int] = _ // Valid only for Input Queues. These are the partitions we handle for this Queue. For now we are treating Partitions as Ints. (Kafka handle it as ints)
-  var otherconfigs = scala.collection.mutable.Map[String, String]() // Making the key is lowercase always
+  var otherConfigs = scala.collection.mutable.Map[String, String]() // Making the key is lowercase always
 }
 
 object KafkaConstants {
@@ -38,7 +40,7 @@ object KafkaConstants {
 
 object KafkaQueueAdapterConfiguration {
   def GetAdapterConfig(inputConfig: AdapterConfiguration): KafkaQueueAdapterConfiguration = {
-    if (inputConfig.adapterSpecificCfg == null || inputConfig.adapterSpecificCfg.size == 0) {
+    if (inputConfig.adapterSpecificCfg == null || inputConfig.adapterSpecificCfg.isEmpty) {
       val err = "Not found Host/Brokers and topicname for Kafka Adapter Config:" + inputConfig.Name
       throw new Exception(err)
     }
@@ -63,7 +65,7 @@ object KafkaQueueAdapterConfiguration {
 
     values.foreach(kv => {
       if (kv._1.compareToIgnoreCase("HostList") == 0) {
-        qc.hosts = kv._2.split(",").map(str => str.trim).filter(str => str.size > 0)
+        qc.hosts = kv._2.split(",").map(str => str.trim).filter(str => str.nonEmpty)
       } else if (kv._1.compareToIgnoreCase("TopicName") == 0) {
         qc.topic = kv._2.trim
       } else if (kv._1.compareToIgnoreCase("NoDataSleepTimeInMs") == 0) {
@@ -71,7 +73,7 @@ object KafkaQueueAdapterConfiguration {
         if (qc.noDataSleepTimeInMs < 0)
           qc.noDataSleepTimeInMs = 0
       } else {
-        qc.otherconfigs(kv._1.toLowerCase()) = kv._2;
+        qc.otherConfigs(kv._1.toLowerCase) = kv._2
       }
     })
 
@@ -108,7 +110,7 @@ class KafkaPartitionUniqueRecordKey extends PartitionUniqueRecordKey {
       TopicName = keyData.TopicName.get
       PartitionId = keyData.PartitionId.get
     }
-    // else { } // Not yet handling other versions
+    // TODO: else { } // Not yet handling other versions
   }
 }
 
@@ -131,7 +133,6 @@ class KafkaPartitionUniqueRecordValue extends PartitionUniqueRecordValue {
     if (recData.Version == Version) {
       Offset = recData.Offset.get
     }
-    // else { } // Not yet handling other versions
+    // TODO: else { } // Not yet handling other versions
   }
 }
-
