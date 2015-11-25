@@ -19,3 +19,5 @@ libraryDependencies += "org.json4s" %% "json4s-native" % "3.2.9"
 libraryDependencies += "org.scalatest" % "scalatest_2.10" % "2.2.4" % "test"
 
 libraryDependencies += "org.scalamock" %% "scalamock-scalatest-support" % "3.2" % "test"
+
+libraryDependencies += "com.typesafe" % "config" % "1.3.0"

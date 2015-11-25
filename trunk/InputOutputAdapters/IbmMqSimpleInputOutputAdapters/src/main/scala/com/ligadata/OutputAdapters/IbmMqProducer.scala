@@ -16,24 +16,21 @@
 
 package com.ligadata.OutputAdapters
 
-import java.util.Properties
-import org.apache.log4j.Logger
-import com.ligadata.InputOutputAdapterInfo.{ AdapterConfiguration, OutputAdapter, OutputAdapterObj, CountersAdapter }
 import com.ligadata.AdaptersConfiguration.IbmMqAdapterConfiguration
-import javax.jms.{ Connection, Destination, JMSException, Message, MessageProducer, Session, TextMessage, BytesMessage }
-import com.ibm.msg.client.jms.JmsConnectionFactory
-import com.ibm.msg.client.jms.JmsFactoryFactory
-import com.ibm.msg.client.wmq.WMQConstants
-import com.ibm.msg.client.wmq.common.CommonConstants
-import com.ibm.msg.client.jms.JmsConstants
 import com.ligadata.Exceptions.StackTrace
+import com.ligadata.InputOutputAdapterInfo.{ AdapterConfiguration, OutputAdapter, OutputAdapterObj, CountersAdapter }
+import com.ibm.msg.client.jms.JmsConstants
+import com.ibm.msg.client.jms.JmsFactoryFactory
+import com.ibm.msg.client.wmq.common.CommonConstants
+import javax.jms.{ Connection, Destination, JMSException, MessageProducer, Session }
+import org.apache.log4j.Logger
 
 object IbmMqProducer extends OutputAdapterObj {
   def CreateOutputAdapter(inputConfig: AdapterConfiguration, cntrAdapter: CountersAdapter): OutputAdapter = new IbmMqProducer(inputConfig, cntrAdapter)
 }
 
 class IbmMqProducer(val inputConfig: AdapterConfiguration, cntrAdapter: CountersAdapter) extends OutputAdapter {
-  private[this] val LOG = Logger.getLogger(getClass);
+  private[this] val LOG = Logger.getLogger(getClass)
 
   //BUGBUG:: Not Checking whether inputConfig is really QueueAdapterConfiguration or not. 
   private[this] val qc = IbmMqAdapterConfiguration.GetAdapterConfig(inputConfig)
@@ -64,7 +61,6 @@ class IbmMqProducer(val inputConfig: AdapterConfiguration, cntrAdapter: Counters
   var session: Session = null
   var destination: Destination = null
   var producer: MessageProducer = null
-  var retval = false
 
   try {
     val ff = JmsFactoryFactory.getInstance(JmsConstants.WMQ_PROVIDER)
@@ -109,14 +105,14 @@ class IbmMqProducer(val inputConfig: AdapterConfiguration, cntrAdapter: Counters
       messages.foreach(message => {
         // Do we need text Message or Bytes Message?
         if (qc.msgType == com.ligadata.AdaptersConfiguration.MessageType.fByteArray) {
-          val outmessage = session.createBytesMessage()
-          outmessage.writeBytes(message)
-          outmessage.setStringProperty("ContentType", qc.content_type)
-          producer.send(outmessage)
+          val outMessage = session.createBytesMessage()
+          outMessage.writeBytes(message)
+          outMessage.setStringProperty("ContentType", qc.content_type)
+          producer.send(outMessage)
         } else { // By default we are taking (qc.msgType == com.ligadata.AdaptersConfiguration.MessageType.fText)
-          val outmessage = session.createTextMessage(new String(message))
-          outmessage.setStringProperty("ContentType", qc.content_type)
-          producer.send(outmessage)
+          val outMessage = session.createTextMessage(new String(message))
+          outMessage.setStringProperty("ContentType", qc.content_type)
+          producer.send(outMessage)
         }
         val key = Category + "/" + qc.Name + "/evtCnt"
         cntrAdapter.addCntr(key, 1) // for now adding each row
@@ -166,4 +162,3 @@ class IbmMqProducer(val inputConfig: AdapterConfiguration, cntrAdapter: Counters
     }
   }
 }
-

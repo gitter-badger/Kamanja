@@ -16,27 +16,24 @@
 
 package com.ligadata.InputAdapters
 
-import scala.actors.threadpool.{ Executors, ExecutorService }
-import java.util.Properties
-import scala.collection.mutable.ArrayBuffer
-import org.apache.log4j.Logger
-import com.ligadata.InputOutputAdapterInfo.{ AdapterConfiguration, InputAdapter, InputAdapterObj, OutputAdapter, ExecContext, ExecContextObj, CountersAdapter, PartitionUniqueRecordKey, PartitionUniqueRecordValue, StartProcPartInfo, InputAdapterCallerContext }
 import com.ligadata.AdaptersConfiguration.{ IbmMqAdapterConfiguration, IbmMqPartitionUniqueRecordKey, IbmMqPartitionUniqueRecordValue }
-import javax.jms.{ Connection, Destination, JMSException, Message, MessageConsumer, Session, TextMessage, BytesMessage }
-import scala.util.control.Breaks._
-import org.json4s._
-import org.json4s.JsonDSL._
-import org.json4s.jackson.JsonMethods._
-import com.ibm.msg.client.jms.JmsConnectionFactory
-import com.ibm.msg.client.jms.JmsFactoryFactory
-import com.ibm.msg.client.wmq.WMQConstants
-import com.ibm.msg.client.wmq.common.CommonConstants
-import com.ibm.msg.client.jms.JmsConstants
 import com.ligadata.Exceptions.StackTrace
+import com.ligadata.InputOutputAdapterInfo._
 import com.ligadata.KamanjaBase.DataDelimiters
+import com.ibm.msg.client.jms.JmsConstants
+import com.ibm.msg.client.jms.JmsFactoryFactory
+import com.ibm.msg.client.wmq.common.CommonConstants
+import javax.jms.{ Connection, Destination, JMSException, MessageConsumer, Session, TextMessage, BytesMessage }
+import org.apache.log4j.Logger
+import scala.actors.threadpool.{ Executors, ExecutorService }
+import scala.util.control.Breaks._
 
 object IbmMqConsumer extends InputAdapterObj {
-  def CreateInputAdapter(inputConfig: AdapterConfiguration, callerCtxt: InputAdapterCallerContext, execCtxtObj: ExecContextObj, cntrAdapter: CountersAdapter): InputAdapter = new IbmMqConsumer(inputConfig, callerCtxt, execCtxtObj, cntrAdapter)
+  def CreateInputAdapter(inputConfig: AdapterConfiguration,
+                         callerCtxt: InputAdapterCallerContext,
+                         execCtxtObj: ExecContextObj,
+                         cntrAdapter: CountersAdapter)
+  : InputAdapter = new IbmMqConsumer(inputConfig, callerCtxt, execCtxtObj, cntrAdapter)
 }
 
 class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: InputAdapterCallerContext, val execCtxtObj: ExecContextObj, cntrAdapter: CountersAdapter) extends InputAdapter {
@@ -62,7 +59,7 @@ class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: Input
     }
   }
 
-  private[this] val LOG = Logger.getLogger(getClass);
+  private[this] val LOG = Logger.getLogger(getClass)
 
   //BUGBUG:: Not Checking whether inputConfig is really QueueAdapterConfiguration or not. 
   private[this] val qc = IbmMqAdapterConfiguration.GetAdapterConfig(inputConfig)
@@ -341,15 +338,14 @@ class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: Input
     vl
   }
 
-  // Not yet implemented
+  // TODO: Not yet implemented
   override def getAllPartitionBeginValues: Array[(PartitionUniqueRecordKey, PartitionUniqueRecordValue)] = {
     return Array[(PartitionUniqueRecordKey, PartitionUniqueRecordValue)]()
   }
 
-  // Not yet implemented
+  // TODO: Not yet implemented
   override def getAllPartitionEndValues: Array[(PartitionUniqueRecordKey, PartitionUniqueRecordValue)] = {
     return Array[(PartitionUniqueRecordKey, PartitionUniqueRecordValue)]()
   }
 
 }
-

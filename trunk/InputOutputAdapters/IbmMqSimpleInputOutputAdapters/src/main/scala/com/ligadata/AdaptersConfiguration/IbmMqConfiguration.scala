@@ -17,20 +17,11 @@
 package com.ligadata.AdaptersConfiguration
 
 import com.ligadata.InputOutputAdapterInfo.{ AdapterConfiguration, PartitionUniqueRecordKey, PartitionUniqueRecordValue }
+import com.typesafe.config.ConfigFactory
+import com.ibm.msg.client.wmq.common.CommonConstants
 import org.json4s._
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods._
-import javax.jms.Connection
-import javax.jms.Destination
-import javax.jms.JMSException
-import javax.jms.MessageProducer
-import javax.jms.Session
-import javax.jms.TextMessage
-import com.ibm.msg.client.jms.JmsConnectionFactory
-import com.ibm.msg.client.jms.JmsFactoryFactory
-import com.ibm.msg.client.wmq.WMQConstants
-import com.ibm.msg.client.wmq.common.CommonConstants
-import com.ibm.msg.client.jms.JmsConstants
 
 object MessageType extends Enumeration {
   type MsgType = Value
@@ -39,15 +30,16 @@ object MessageType extends Enumeration {
 import MessageType._
 
 class IbmMqAdapterConfiguration extends AdapterConfiguration {
+  val config = ConfigFactory.load()
   var host_name: String = _
-  var port: Int = 1414
+  var port: Int = config.getInt("ibmMqAdapter.port")
   var channel: String = _
   var connection_mode: Int = CommonConstants.WMQ_CM_CLIENT
   var queue_manager: String = _
   var application_name: String = _
   var queue_name: String = "" // queue name
   var topic_name: String = "" // topic name
-  var content_type: String = "application/json" // default content type for MQ
+  var content_type: String = config.getString("ibmMqAdapter.content_type") // default content type for MQ
   var ssl_cipher_suite: String = "" // ssl_cipher_suite
   var msgType = MessageType.fText // Default is Text message
 }
@@ -110,7 +102,14 @@ object IbmMqAdapterConfiguration {
   }
 }
 
-case class IbmMqKeyData(Version: Int, Type: String, Name: String, QueueManagerName: Option[String], ChannelName: Option[String], QueueName: Option[String], TopicName: Option[String]) // Using most of the values as optional values. Just thinking about future changes. Don't know the performance issues.
+case class IbmMqKeyData(Version: Int,
+                        Type: String,
+                        Name: String,
+                        QueueManagerName: Option[String],
+                        ChannelName: Option[String],
+                        QueueName: Option[String],
+                        TopicName: Option[String])
+// Using most of the values as optional values. Just thinking about future changes. Don't know the performance issues.
 
 class IbmMqPartitionUniqueRecordKey extends PartitionUniqueRecordKey {
   val Version: Int = 1
@@ -143,7 +142,7 @@ class IbmMqPartitionUniqueRecordKey extends PartitionUniqueRecordKey {
       QueueName = keyData.QueueName.get
       TopicName = keyData.TopicName.get
     }
-    // else { } // Not yet handling other versions
+    // TODO: else { } // Not yet handling other versions
   }
 }
 
@@ -166,7 +165,6 @@ class IbmMqPartitionUniqueRecordValue extends PartitionUniqueRecordValue {
     if (recData.Version == Version) {
       MessageId = recData.MessageId.get
     }
-    // else { } // Not yet handling other versions
+    // TODO: else { } // Not yet handling other versions
   }
 }
-
