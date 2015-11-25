@@ -35,7 +35,7 @@ class MessageObjectGenerator {
       msgObjeGenerator = msgObjeGenerator.append(msgObject(message))
       msgObjeGenerator = msgObjeGenerator.append(msgObjVarsGeneration(message))
       msgObjeGenerator = msgObjeGenerator.append(msgConstants.msgObjectBuildStmts)
-      msgObjeGenerator = msgObjeGenerator.append(keysCodeGeneration)
+      msgObjeGenerator = msgObjeGenerator.append(keysCodeGeneration(message))
       msgObjeGenerator = msgObjeGenerator.append(msgConstants.newline + msgConstants.closeBrace)
       log.info("========== Message object End==============")
 
@@ -120,12 +120,10 @@ class MessageObjectGenerator {
    * message object other methods
    */
 
-  private def keysCodeGeneration() = {
+  private def keysCodeGeneration(message: Message) = {
     """
-  
-  val partitionKeys: Array[String] = null;
-  val partKeyPos = Array(0)
-  val primaryKeys: Array[String] = null;
+    """ + getPartitionKeys(message) + """
+      """ + getPrimaryKeys(message) + """
    
 
   override def PartitionKeyData(inputdata: InputData): Array[String] = Array[String]()
@@ -148,6 +146,44 @@ class MessageObjectGenerator {
     (tmPartInfo != null && tmPartInfo._1 != null && tmPartInfo._2 != null && tmPartInfo._3 != null);
   }
   """
+  }
+
+  /*
+   * gete the primary keys and parition keys
+   */
+
+  private def getPartitionKeys(message: Message): String = {
+
+    var partitionInfo: String = ""
+    var paritionKeys = new StringBuilder(8 * 1024)
+    if (message.PartitionKey != null && message.PartitionKey.size > 0) {
+      message.PartitionKey.foreach(key => {
+        paritionKeys.append("\"" + key + "\", ")
+      })
+      partitionInfo = msgConstants.partitionKeys.format(msgConstants.pad1, "("+paritionKeys.toString.substring(0, paritionKeys.toString.length() - 2)+")", msgConstants.newline)
+
+    } else partitionInfo = msgConstants.partitionKeys.format(msgConstants.pad1, "[String]()", msgConstants.newline)
+
+    return partitionInfo
+  }
+
+  /*
+   * gete the primary keys and parition keys
+   */
+
+  private def getPrimaryKeys(message: Message): String = {
+
+    var primaryInfo: String = ""
+    var primaryKeys = new StringBuilder(8 * 1024)
+    if (message.PrimaryKeys != null && message.PrimaryKeys.size > 0) {
+      message.PrimaryKeys.foreach(key => {
+        primaryKeys.append("\"" + key + "\", ")
+      })
+      primaryInfo = msgConstants.primaryKeys.format(msgConstants.pad1, "("+primaryKeys.toString.substring(0, primaryKeys.toString.length() - 2)+")", msgConstants.newline)
+
+    } else primaryInfo = msgConstants.primaryKeys.format(msgConstants.pad1, "[String]()", msgConstants.newline)
+
+    return primaryInfo
   }
 
 }

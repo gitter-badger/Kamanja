@@ -412,6 +412,7 @@ class MessageParser {
     var ttype: String = ""
     var collectionType: String = ""
     type string = String;
+    type FieldMap = Map[String, Any]
     if (fieldMap == null) throw new Exception("element Map is null")
 
     log.info("Field " + fieldMap.toList)
@@ -444,7 +445,7 @@ class MessageParser {
           }
           fld = new Element(namespace, name, ttype, collectionType, key, fldTypeVer, ordinal, null, null)
 
-        } else if (fieldtype.isInstanceOf[Map[String, Any]]) {
+        } else if (fieldtype.isInstanceOf[FieldMap]) {
           log.info("Child Container ========== Start ==============  ")
 
           val childFld = fieldtype.asInstanceOf[Map[String, Any]]

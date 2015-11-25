@@ -30,6 +30,8 @@ class MessageGenerator {
       messageGenerator = messageGenerator.append(classGen(message) + msgConstants.newline)
       messageGenerator = messageGenerator.append(getMessgeBasicDetails(message))
       messageGenerator = messageGenerator.append(methodsFromBaseMsg(message))
+      messageGenerator = messageGenerator.append(msgConstants.newline + generateParitionKeys(message) + msgConstants.newline)
+      messageGenerator = messageGenerator.append(msgConstants.newline + generatePrimaryKeys(message) + msgConstants.newline)
       messageGenerator = messageGenerator.append(messageContructor(message))
       //messageGenerator = messageGenerator.append(msgClassConstructorGen(message))
       messageGenerator = messageGenerator.append(msgConstants.newline + generatedMsgVariables(message))
@@ -286,8 +288,6 @@ class MessageGenerator {
   private def methodsFromBaseMsg(message: Message): String = {
     """
   override def Save: Unit = { """ + message.Name + """.saveOne(this) }
-  override def PartitionKeyData: Array[String] = null
-  override def PrimaryKeyData: Array[String] = null
   override def set(key: String, value: Any): Unit = {}
   override def get(key: String): Any = null
   override def getOrElse(key: String, default: Any): Any = { throw new Exception("getOrElse function is not yet implemented") }
@@ -323,4 +323,74 @@ class MessageGenerator {
   }
     """
   }
+
+  /*
+    override def PartitionKeyData(): Array[String] = {
+    var partitionKeysData: scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer[String]()
+    partitionKeysData += com.ligadata.BaseTypes.StringImpl.toString(getField1)
+    partitionKeysData += com.ligadata.BaseTypes.LongImpl.toString(getField2)
+    partitionKeysData.toArray
+  }
+
+  val PartitionKeys: Array[String] = Array("field1", "field2")
+   
+   */
+
+  /*
+   * parititon keys code generation
+   */
+
+  private def generateParitionKeys(message: Message): String = {
+    var paritionKeysGen = new StringBuilder(8 * 1024)
+    var returnPartitionKeyStr: String = ""
+    val arryOfStr: String = "Array[String]()";
+
+    if (message.PartitionKey != null && message.PartitionKey.size > 0) {
+      paritionKeysGen.append("{" + msgConstants.newline)
+      paritionKeysGen.append(msgConstants.partitionKeyVar.format(msgConstants.pad1, msgConstants.newline))
+      message.PartitionKey.foreach(key => {
+        message.Elements.foreach(element => {
+          if (element.Name.equalsIgnoreCase(key)) {
+            paritionKeysGen.append("%s partitionKeysData += %s.toString(get%s);%s".format(msgConstants.pad1, element.FldMetaataType.implementationName, element.Name.capitalize, msgConstants.newline)) //"+ com.ligadata.BaseTypes.StringImpl+".toString(get"+element.Name.capitalize+") ")
+          }
+        })
+      })
+      paritionKeysGen.append("%s partitionKeysData.toArray; %s".format(msgConstants.pad1, msgConstants.newline))
+      paritionKeysGen.append("%s } %s".format(msgConstants.pad1, msgConstants.newline))
+
+      returnPartitionKeyStr = msgConstants.paritionKeyData.format(paritionKeysGen.toString)
+    } else {
+      returnPartitionKeyStr = msgConstants.paritionKeyData.format(arryOfStr)
+    }
+
+    returnPartitionKeyStr
+  }
+
+  /*
+   * primary keys code generation
+   */
+  private def generatePrimaryKeys(message: Message): String = {
+    var primaryKeysGen = new StringBuilder(8 * 1024)
+    var returnPrimaryKeyStr: String = ""
+    val arryOfStr: String = "Array[String]()";
+
+    if (message.PrimaryKeys != null && message.PrimaryKeys.size > 0) {
+      primaryKeysGen.append("{" + msgConstants.newline)
+      primaryKeysGen.append(msgConstants.primaryKeyVar.format(msgConstants.pad1, msgConstants.newline))
+      message.PrimaryKeys.foreach(key => {
+        message.Elements.foreach(element => {
+          if (element.Name.equalsIgnoreCase(key)) {
+            primaryKeysGen.append("%s primaryKeysData += %s.toString(get%s);%s".format(msgConstants.pad1, element.FldMetaataType.implementationName, element.Name.capitalize, msgConstants.newline)) //"+ com.ligadata.BaseTypes.StringImpl+".toString(get"+element.Name.capitalize+") ")
+          }
+        })
+      })
+      primaryKeysGen.append("%s primaryKeysData.toArray; %s".format(msgConstants.pad1, msgConstants.newline))
+      primaryKeysGen.append("%s } %s".format(msgConstants.pad1, msgConstants.newline))
+      returnPrimaryKeyStr = msgConstants.primaryKeyData.format(primaryKeysGen.toString)
+    } else {
+      returnPrimaryKeyStr = msgConstants.primaryKeyData.format(arryOfStr)
+    }
+    returnPrimaryKeyStr
+  }
+
 }

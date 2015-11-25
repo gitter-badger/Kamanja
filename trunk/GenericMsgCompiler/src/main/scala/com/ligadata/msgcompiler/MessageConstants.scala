@@ -32,6 +32,14 @@ class MessageConstants {
   val getFullName: String = "%s override def getFullName = FullName; %s";
   val toJavaRDD: String = "%s override def toJavaRDDObject: JavaRDDObject[T] = JavaRDDObject.fromRDDObject[T](this); %s";
 
+  val paritionKeyData: String = "override def PartitionKeyData: Array[String] = %s ";
+  val primaryKeyData: String = "override def PrimaryKeyData: Array[String] = %s ";
+  val partitionKeys: String = "%s val partitionKeys : Array[String] = Array%s; %s";
+  val primaryKeys: String = "%s val primaryKeys : Array[String] = Array%s; %s";
+  val partitionKeyVar: String = "%s var partitionKeysData: scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer[String]();%s"
+  val primaryKeyVar: String = "%s var primaryKeysData: scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer[String]();%s"
+
+
   def importStatements() = {
     """
 import org.json4s.jackson.JsonMethods._
