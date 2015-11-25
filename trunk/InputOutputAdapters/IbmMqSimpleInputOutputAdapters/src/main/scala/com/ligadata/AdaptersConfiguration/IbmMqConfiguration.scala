@@ -27,7 +27,6 @@ object MessageType extends Enumeration {
   type MsgType = Value
   val fText, fByteArray = Value
 }
-import MessageType._
 
 class IbmMqAdapterConfiguration extends AdapterConfiguration {
   val config = ConfigFactory.load()
@@ -46,7 +45,7 @@ class IbmMqAdapterConfiguration extends AdapterConfiguration {
 
 object IbmMqAdapterConfiguration {
   def GetAdapterConfig(inputConfig: AdapterConfiguration): IbmMqAdapterConfiguration = {
-    if (inputConfig.adapterSpecificCfg == null || inputConfig.adapterSpecificCfg.size == 0) {
+    if (inputConfig.adapterSpecificCfg == null || inputConfig.adapterSpecificCfg.isEmpty) {
       val err = "Not found IBM MQ information for Adapter Config:" + inputConfig.Name
       throw new Exception(err)
     }
@@ -91,9 +90,9 @@ object IbmMqAdapterConfiguration {
       } else if (kv._1.compareToIgnoreCase("message_type") == 0) {
         val typ = kv._2.trim.toLowerCase
         typ match {
-          case "text" => { qc.msgType = MessageType.fText }
-          case "bytearray" => { qc.msgType = MessageType.fByteArray }
-          case _ => { qc.msgType = MessageType.fText /* Default is Text message */ }
+          case "text" => qc.msgType = MessageType.fText
+          case "bytearray" => qc.msgType = MessageType.fByteArray
+          case _ => qc.msgType = MessageType.fText // Default is Text message
         }
       }
     })

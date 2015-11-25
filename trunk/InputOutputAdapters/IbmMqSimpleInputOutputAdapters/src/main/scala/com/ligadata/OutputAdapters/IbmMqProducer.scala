@@ -37,10 +37,9 @@ class IbmMqProducer(val inputConfig: AdapterConfiguration, cntrAdapter: Counters
 
   private def printFailure(ex: Exception) {
     if (ex != null) {
-      if (ex.isInstanceOf[JMSException]) {
-        processJMSException(ex.asInstanceOf[JMSException])
-      } else {
-        LOG.error(ex)
+      ex match {
+        case _: JMSException => processJMSException(ex.asInstanceOf[JMSException])
+        case _ => LOG.error(ex)
       }
     }
   }
@@ -70,14 +69,14 @@ class IbmMqProducer(val inputConfig: AdapterConfiguration, cntrAdapter: Counters
     cf.setStringProperty(CommonConstants.WMQ_CHANNEL, qc.channel)
     cf.setIntProperty(CommonConstants.WMQ_CONNECTION_MODE, qc.connection_mode)
     cf.setStringProperty(CommonConstants.WMQ_QUEUE_MANAGER, qc.queue_manager)
-    if (qc.ssl_cipher_suite.size > 0)
+    if (qc.ssl_cipher_suite.nonEmpty)
       cf.setStringProperty(CommonConstants.WMQ_SSL_CIPHER_SUITE, qc.ssl_cipher_suite)
     // cf.setStringProperty(WMQConstants.WMQ_APPLICATIONNAME, qc.application_name)
     connection = cf.createConnection()
     session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE)
-    if (qc.queue_name != null && qc.queue_name.size > 0)
+    if (qc.queue_name != null && qc.queue_name.nonEmpty)
       destination = session.createQueue(qc.queue_name)
-    else if (qc.topic_name != null && qc.topic_name.size > 0)
+    else if (qc.topic_name != null && qc.topic_name.nonEmpty)
       destination = session.createTopic(qc.topic_name)
     else {
       // Throw error
@@ -94,11 +93,11 @@ class IbmMqProducer(val inputConfig: AdapterConfiguration, cntrAdapter: Counters
 
   // To send an array of messages. messages.size should be same as partKeys.size
   override def send(messages: Array[Array[Byte]], partKeys: Array[Array[Byte]]): Unit = {
-    if (messages.size != partKeys.size) {
-      LOG.error("Message and Partition Keys hould has same number of elements. Message has %d and Partition Keys has %d".format(messages.size, partKeys.size))
+    if (messages.length != partKeys.length) {
+      LOG.error("Message and Partition Keys hould has same number of elements. Message has %d and Partition Keys has %d".format(messages.length, partKeys.length))
       return
     }
-    if (messages.size == 0) return
+    if (messages.isEmpty) return
 
     try {
       // Op is not atomic

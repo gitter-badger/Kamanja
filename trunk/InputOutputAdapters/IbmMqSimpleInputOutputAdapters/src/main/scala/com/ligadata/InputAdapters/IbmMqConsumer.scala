@@ -39,10 +39,9 @@ object IbmMqConsumer extends InputAdapterObj {
 class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: InputAdapterCallerContext, val execCtxtObj: ExecContextObj, cntrAdapter: CountersAdapter) extends InputAdapter {
   private def printFailure(ex: Exception) {
     if (ex != null) {
-      if (ex.isInstanceOf[JMSException]) {
-        processJMSException(ex.asInstanceOf[JMSException])
-      } else {
-        LOG.error(ex)
+      ex match {
+        case _: JMSException => processJMSException(ex.asInstanceOf[JMSException])
+        case _ => LOG.error(ex)
       }
     }
   }
@@ -74,11 +73,11 @@ class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: Input
   var executor: ExecutorService = _
   val input = this
 
-  override def Shutdown: Unit = lock.synchronized {
-    StopProcessing
+  override def Shutdown(): Unit = lock.synchronized {
+    StopProcessing()
   }
 
-  override def StopProcessing: Unit = lock.synchronized {
+  override def StopProcessing(): Unit = lock.synchronized {
     LOG.debug("===============> Called StopProcessing")
     //BUGBUG:: Make sure we finish processing the current running messages.
     if (consumer != null) {
@@ -117,7 +116,7 @@ class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: Input
 
     if (executor != null) {
       executor.shutdownNow()
-      while (executor.isTerminated == false) {
+      while (!executor.isTerminated) {
         Thread.sleep(100) // sleep 100ms and then check
       }
     }
@@ -132,7 +131,7 @@ class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: Input
   // Each value in partitionInfo is (PartitionUniqueRecordKey, PartitionUniqueRecordValue, Long, PartitionUniqueRecordValue) key, processed value, Start transactionid, Ignore Output Till given Value (Which is written into Output Adapter) 
   override def StartProcessing(partitionInfo: Array[StartProcPartInfo], ignoreFirstMsg: Boolean): Unit = lock.synchronized {
     LOG.debug("===============> Called StartProcessing")
-    if (partitionInfo == null || partitionInfo.size == 0)
+    if (partitionInfo == null || partitionInfo.isEmpty)
       return
 
     val partInfo = partitionInfo.map(quad => { (quad._key.asInstanceOf[IbmMqPartitionUniqueRecordKey], quad._val.asInstanceOf[IbmMqPartitionUniqueRecordValue], quad._validateInfoVal.asInstanceOf[IbmMqPartitionUniqueRecordValue]) })
@@ -145,14 +144,14 @@ class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: Input
       cf.setStringProperty(CommonConstants.WMQ_CHANNEL, qc.channel)
       cf.setIntProperty(CommonConstants.WMQ_CONNECTION_MODE, qc.connection_mode)
       cf.setStringProperty(CommonConstants.WMQ_QUEUE_MANAGER, qc.queue_manager)
-      if (qc.ssl_cipher_suite.size > 0)
+      if (qc.ssl_cipher_suite.nonEmpty)
         cf.setStringProperty(CommonConstants.WMQ_SSL_CIPHER_SUITE, qc.ssl_cipher_suite)
       // cf.setStringProperty(WMQConstants.WMQ_APPLICATIONNAME, qc.application_name)
       connection = cf.createConnection()
       session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE)
-      if (qc.queue_name != null && qc.queue_name.size > 0)
+      if (qc.queue_name != null && qc.queue_name.nonEmpty)
         destination = session.createQueue(qc.queue_name)
-      else if (qc.topic_name != null && qc.topic_name.size > 0)
+      else if (qc.topic_name != null && qc.topic_name.nonEmpty)
         destination = session.createTopic(qc.topic_name)
       else {
         // Throw error
@@ -179,7 +178,7 @@ class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: Input
     // create the consumer streams
     executor = Executors.newFixedThreadPool(threads)
 
-    kvs.clear
+    kvs.clear()
 
     partInfo.foreach(quad => {
       kvs(quad._1.Name) = quad
@@ -217,7 +216,7 @@ class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: Input
                     val readTmNs = System.nanoTime
                     val readTmMs = System.currentTimeMillis
 
-                    executeCurMsg = (receivedMessage != null)
+                    executeCurMsg = receivedMessage != null
 
                     if (checkForPartition) {
                       checkForPartition = false
@@ -230,16 +229,17 @@ class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: Input
                         var msgData: Array[Byte] = null
                         var msgId: String = null
 
-                        if (receivedMessage.isInstanceOf[BytesMessage]) {
-                          val bytmsg = receivedMessage.asInstanceOf[BytesMessage]
-                          val tmpmsg = new Array[Byte](bytmsg.getBodyLength().toInt)
-                          bytmsg.readBytes(tmpmsg)
-                          msgData = tmpmsg
-                          msgId = bytmsg.getJMSMessageID()
-                        } else if (receivedMessage.isInstanceOf[TextMessage]) {
-                          val strmsg = receivedMessage.asInstanceOf[TextMessage]
-                          msgData = strmsg.getText.getBytes
-                          msgId = strmsg.getJMSMessageID()
+                        receivedMessage match {
+                          case _: BytesMessage =>
+                            val bytmsg = receivedMessage.asInstanceOf[BytesMessage]
+                            val tmpmsg = new Array[Byte](bytmsg.getBodyLength.toInt)
+                            bytmsg.readBytes(tmpmsg)
+                            msgData = tmpmsg
+                            msgId = bytmsg.getJMSMessageID
+                          case _: TextMessage =>
+                            val strmsg = receivedMessage.asInstanceOf[TextMessage]
+                            msgData = strmsg.getText.getBytes
+                            msgId = strmsg.getJMSMessageID
                         }
 
                         if (msgData != null) {
@@ -251,7 +251,7 @@ class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: Input
                           cntrAdapter.addCntr(key, 1) // for now adding each row
 
                         } else {
-                          LOG.error("Found unhandled message :" + receivedMessage.getClass().getName())
+                          LOG.error("Found unhandled message :" + receivedMessage.getClass.getName)
                         }
                       } catch {
                         case e: Exception => {
@@ -268,7 +268,7 @@ class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: Input
                     }
                   }
                   if (executor.isShutdown) {
-                    break
+                    break()
                   }
                 }
               }
@@ -280,7 +280,7 @@ class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: Input
             }
             LOG.debug("===========================> Exiting Thread")
           }
-        });
+        })
       }
     } catch {
       case e: Exception => {
@@ -340,12 +340,12 @@ class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: Input
 
   // TODO: Not yet implemented
   override def getAllPartitionBeginValues: Array[(PartitionUniqueRecordKey, PartitionUniqueRecordValue)] = {
-    return Array[(PartitionUniqueRecordKey, PartitionUniqueRecordValue)]()
+    Array[(PartitionUniqueRecordKey, PartitionUniqueRecordValue)]()
   }
 
   // TODO: Not yet implemented
   override def getAllPartitionEndValues: Array[(PartitionUniqueRecordKey, PartitionUniqueRecordValue)] = {
-    return Array[(PartitionUniqueRecordKey, PartitionUniqueRecordValue)]()
+    Array[(PartitionUniqueRecordKey, PartitionUniqueRecordValue)]()
   }
 
 }

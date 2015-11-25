@@ -118,5 +118,3 @@ trait PartitionUniqueRecordValue {
   def Serialize: String // Making String from Value
   def Deserialize(key: String): Unit // Making Value from Serialized String
 }
-
-
