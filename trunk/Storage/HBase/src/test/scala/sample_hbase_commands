@@ -1,0 +1,6 @@
+sudo service hbase-master stop
+sudo service hbase-master start
+
+alter 'unit_tests:sys_customer1', {NAME=> 'dummyfamily', METHOD => 'delete'}
+alter 'unit_tests:sys_customer1', {NAME=> 'dummyfamily'}
+

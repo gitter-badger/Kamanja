@@ -30,6 +30,7 @@ import org.apache.hadoop.hbase.client.Delete
 import org.apache.hadoop.hbase.client.HConnection
 import org.apache.hadoop.hbase.client.HConnectionManager
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
@@ -64,11 +65,29 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
   val logger = Logger.getLogger(loggerName)
   private[this] val lock = new Object
   private var containerList: scala.collection.mutable.Set[String] = scala.collection.mutable.Set[String]()
+  private var msg:String = ""
 
-  //logger.setLevel(Level.DEBUG)
+  private def CreateConnectionException(msg: String, ie: Exception): StorageConnectionException = {
+    logger.error(msg)
+    val ex = new StorageConnectionException("Failed to connect to Database", ie)
+    ex
+  }
+
+  private def CreateDMLException(msg: String, ie: Exception): StorageDMLException = {
+    logger.error(msg)
+    val ex = new StorageDMLException("Failed to execute select/insert/delete/update operation on Database", ie)
+    ex
+  }
+
+  private def CreateDDLException(msg: String, ie: Exception): StorageDDLException = {
+    logger.error(msg)
+    val ex = new StorageDDLException("Failed to execute create/drop operations on Database", ie)
+    ex
+  }
 
   if (adapterConfig.size == 0) {
-    throw new Exception("Not found valid HBase Configuration.")
+    msg = "Invalid HBase Json Configuration string:" + adapterConfig
+    throw CreateConnectionException(msg, new Exception("Invalid Configuration"))
   }
 
   logger.debug("HBase configuration:" + adapterConfig)
@@ -76,14 +95,14 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
   try {
     val json = parse(adapterConfig)
     if (json == null || json.values == null) {
-      logger.error("Failed to parse HBase JSON configuration string:" + adapterConfig)
-      throw new Exception("Failed to parse HBase JSON configuration string:" + adapterConfig)
+      var msg = "Failed to parse HBase JSON configuration string:" + adapterConfig
+      throw CreateConnectionException(msg, new Exception("Invalid Configuration"))
     }
     parsed_json = json.values.asInstanceOf[Map[String, Any]]
   } catch {
     case e: Exception => {
-      logger.error("Failed to parse HBase JSON configuration string:%s. Reason:%s Message:%s".format(adapterConfig, e.getCause, e.getMessage))
-      throw e
+      var msg = "Failed to parse HBase JSON configuration string:%s. Message:%s".format(adapterConfig, e.getMessage)
+      throw CreateConnectionException(msg, e)
     }
   }
 
@@ -96,14 +115,14 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       try {
         val json = parse(adapterSpecificStr)
         if (json == null || json.values == null) {
-          logger.error("Failed to parse Cassandra Adapter Specific JSON configuration string:" + adapterSpecificStr)
-          throw new Exception("Failed to parse Cassandra Adapter Specific JSON configuration string:" + adapterSpecificStr)
+	  msg = "Failed to parse HBase JSON configuration string:" + adapterSpecificStr
+	  throw CreateConnectionException(msg, new Exception("Invalid Configuration"))
         }
         adapterSpecificConfig_json = json.values.asInstanceOf[Map[String, Any]]
       } catch {
         case e: Exception => {
-          logger.error("Failed to parse Cassandra Adapter Specific JSON configuration string:%s. Reason:%s Message:%s".format(adapterSpecificStr, e.getCause, e.getMessage))
-          throw e
+          msg = "Failed to parse HBase Adapter Specific JSON configuration string:%s. Message:%s".format(adapterSpecificStr, e.getMessage)
+          throw CreateConnectionException(msg, e)
         }
       }
     }
@@ -137,9 +156,7 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       admin.createNamespace(NamespaceDescriptor.create(nameSpace).build)
     } catch{
       case e: Exception => {
-      val stackTrace = StackTrace.ThrowableTraceString(e)
-      logger.debug("StackTrace:"+stackTrace)
-      throw new ConnectionFailedException("Unable to create hbase name space " + nameSpace + ":" + e.getMessage())
+	throw CreateConnectionException("Unable to create hbase name space " + nameSpace + ":" + e.getMessage(),e)
       }
     }
   }
@@ -185,26 +202,22 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
         ugi = UserGroupInformation.getLoginUser
       } catch {
         case e: Exception => {
-          logger.error("HBase issue from JSON configuration string:%s. Reason:%s Message:%s".format(adapterConfig, e.getCause, e.getMessage))
-          throw e
+          throw CreateConnectionException("HBase issue from JSON configuration string:%s. Reason:%s Message:%s".format(adapterConfig, e.getCause, e.getMessage),e)
         }
       }
     } else {
-      logger.error("Not handling any authentication other than KERBEROS. AdapterSpecificConfig:" + adapterConfig)
-      throw new Exception("Not handling any authentication other than KERBEROS. AdapterSpecificConfig:" + adapterConfig)
+      throw CreateConnectionException("Not handling any authentication other than KERBEROS. AdapterSpecificConfig:" + adapterConfig, new Exception("Authentication Exception"))
     }
-  } else {
-    logger.debug("HBase info => Hosts:" + hostnames + ", Namespace:" + namespace)
   }
+
+  logger.info("HBase info => Hosts:" + hostnames + ", Namespace:" + namespace)
 
   var connection: HConnection = _
   try {
     connection = HConnectionManager.createConnection(config);
   } catch {
     case e: Exception => {
-      val stackTrace = StackTrace.ThrowableTraceString(e)
-      logger.error("Stacktrace:" + stackTrace)
-      throw new ConnectionFailedException("Unable to connect to hbase at " + hostnames + ":" + e.getMessage())
+      throw CreateConnectionException("Unable to connect to hbase at " + hostnames + ":" + e.getMessage(),e)
     }
   }
   val admin = new HBaseAdmin(config);
@@ -223,33 +236,51 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
   }
 
   private def createTable(tableName: String): Unit = {
-    relogin
-    if (!admin.tableExists(tableName)) {
-      val tableDesc = new HTableDescriptor(TableName.valueOf(tableName));
-      val colDesc1 = new HColumnDescriptor("key".getBytes())
-      val colDesc2 = new HColumnDescriptor("serializerType".getBytes())
-      val colDesc3 = new HColumnDescriptor("serializedInfo".getBytes())
-      tableDesc.addFamily(colDesc1)
-      tableDesc.addFamily(colDesc2)
-      tableDesc.addFamily(colDesc3)
-      admin.createTable(tableDesc);
+    try{
+      relogin
+      if (!admin.tableExists(tableName)) {
+	val tableDesc = new HTableDescriptor(TableName.valueOf(tableName));
+	val colDesc1 = new HColumnDescriptor("key".getBytes())
+	val colDesc2 = new HColumnDescriptor("serializerType".getBytes())
+	val colDesc3 = new HColumnDescriptor("serializedInfo".getBytes())
+	tableDesc.addFamily(colDesc1)
+	tableDesc.addFamily(colDesc2)
+	tableDesc.addFamily(colDesc3)
+	admin.createTable(tableDesc);
+      }
+    }catch {
+      case e: Exception => {
+        throw CreateDDLException("Failed to create table " + tableName + ":" + e.getMessage(), e)
+      }
     }
   }
 
   private def dropTable(tableName: String): Unit = {
-    relogin
-    if (admin.tableExists(tableName)) {
-      admin.disableTable(tableName)
-      admin.deleteTable(tableName)
+    try{
+      relogin
+      if (admin.tableExists(tableName)) {
+	admin.disableTable(tableName)
+	admin.deleteTable(tableName)
+      }
+    }catch {
+      case e: Exception => {
+        throw CreateDDLException("Failed to drop table " + tableName + ":" + e.getMessage(), e)
+      }
     }
   }
 
   private def CheckTableExists(containerName: String): Unit = {
-    if (containerList.contains(containerName)) {
-      return
-    } else {
-      CreateContainer(containerName)
-      containerList.add(containerName)
+    try{
+      if (containerList.contains(containerName)) {
+	return
+      } else {
+	CreateContainer(containerName)
+	containerList.add(containerName)
+      }
+    } catch {
+      case e: Exception => {
+        throw new Exception("Failed to create table  " + toTableName(containerName) + ":" + e.getMessage())
+      }
     }
   }
 
@@ -267,9 +298,7 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       admin.deleteNamespace(namespace)
     } catch{
       case e: Exception => {
-      val stackTrace = StackTrace.ThrowableTraceString(e)
-      logger.debug("StackTrace:"+stackTrace)
-      throw new ConnectionFailedException("Unable to delete hbase name space " + namespace + ":" + e.getMessage())
+	throw CreateDDLException("Unable to delete hbase name space " + namespace + ":" + e.getMessage(),e)
       }
     }
   }
@@ -294,8 +323,7 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       createTable(fullTableName)
     } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+	throw e
       }
     }
   }
@@ -316,10 +344,11 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
     
   override def put(containerName: String, key: Key, value: Value): Unit = {
     var tableName = toFullTableName(containerName)
+    var tableHBase:HTableInterface = null
     try{
       relogin
       CheckTableExists(containerName)
-      val tableHBase = connection.getTable(tableName);
+      tableHBase = connection.getTable(tableName);
       var kba = MakeCompositeKey(key)
       var p = new Put(kba)
       p.add(Bytes.toBytes("serializerType"),Bytes.toBytes("base"),Bytes.toBytes(value.serializerType))
@@ -327,21 +356,24 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       tableHBase.put(p)
     } catch {
       case e:Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.debug("Stacktrace:"+stackTrace)
-	throw new Exception("Failed to save an object in HBase table " + tableName + ":" + e.getMessage())
+	throw CreateDMLException("Failed to save an object in table " + tableName + ":" + e.getMessage(),e)
+      }
+    } finally {
+      if( tableHBase != null ){
+	tableHBase.close()
       }
     }
   }
 
   override def put(data_list: Array[(String, Array[(Key, Value)])]): Unit = {
+    var tableHBase:HTableInterface = null
     try{
       relogin
       data_list.foreach(li => {
         var containerName = li._1
 	CheckTableExists(containerName)
 	var tableName = toFullTableName(containerName)
-	val tableHBase = connection.getTable(tableName);
+	tableHBase = connection.getTable(tableName);
         var keyValuePairs = li._2
 	var puts = new Array[Put](0)
         keyValuePairs.foreach(keyValuePair => {
@@ -353,25 +385,35 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
 	  p.add(Bytes.toBytes("serializedInfo"),Bytes.toBytes("base"),value.serializedInfo)
 	  puts = puts :+ p
 	})
-	if( puts.length > 0 ){
-	  tableHBase.put(puts.toList)
+	try{
+	  if( puts.length > 0 ){
+	    tableHBase.put(puts.toList)
+	  }
+	} catch {
+	  case e:Exception => {
+	    throw CreateDMLException("Failed to save an object in table " + tableName + ":" + e.getMessage(),e)
+	  }
 	}
       })
     } catch {
-      case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+      case e:Exception => {
+	throw CreateDMLException("Failed to save a list of objects in table(s) "  + ":" + e.getMessage(),e)
+      }
+    } finally {
+      if( tableHBase != null ){
+	tableHBase.close()
       }
     }
   }
 
   // delete operations
   override def del(containerName: String, keys: Array[Key]): Unit = {
+    var tableName = toFullTableName(containerName)
+    var tableHBase:HTableInterface = null
     try{
       relogin
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      val tableHBase = connection.getTable(tableName);
+      tableHBase = connection.getTable(tableName);
       var dels = new Array[Delete](0)
 
       keys.foreach(key => {
@@ -393,19 +435,23 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       }
     } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+	throw CreateDMLException("Failed to delete object(s) from table " + tableName + ":" + e.getMessage(),e)
+      }
+    } finally {
+      if( tableHBase != null ){
+	tableHBase.close()
       }
     }
   }
 
 
   override def del(containerName: String, time: TimeRange, bucketKeys: Array[Array[String]]): Unit = {
+    var tableName = toFullTableName(containerName)
+    var tableHBase:HTableInterface = null
     try{
       relogin
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      val tableHBase = connection.getTable(tableName);
+      tableHBase = connection.getTable(tableName);
       var bucketKeyMap: scala.collection.mutable.Map[String,Boolean] = new scala.collection.mutable.HashMap()      
       bucketKeys.foreach(bucketKey => {
 	var bkey = bucketKey.mkString(".")
@@ -435,72 +481,104 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       if( dels.length > 0 ){
 	val dl = new java.util.ArrayList(dels.toList)
 	tableHBase.delete(dl)
-	// tableHBase.delete(dels.toList)
       }
       else{
 	logger.info("No rows found for the delete operation")
       }
     } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+	throw CreateDMLException("Failed to delete object(s) from table " + tableName + ":" + e.getMessage(),e)
+      }
+    }finally {
+      if( tableHBase != null ){
+	tableHBase.close()
       }
     }
   }
 
   // get operations
   def getRowCount(containerName: String): Long = {
-    relogin
-    var tableName = toFullTableName(containerName)
-    val tableHBase = connection.getTable(tableName);
-
-    var scan = new Scan();
-    scan.setFilter(new FirstKeyOnlyFilter());
-    var rs = tableHBase.getScanner(scan);
-    val it = rs.iterator()
-    var cnt = 0
-    while( it.hasNext() ){
-      var r = it.next()
-      cnt = cnt + 1
-    }
-    return cnt
-  }
-
-  private def processRow(k:String,st:String, si:Array[Byte],callbackFunction: (Key, Value) => Unit){
-    var keyArray = k.split('|').toArray
-    var timePartition = keyArray(0).toLong
-    var keyStr = keyArray(1)
-    var tId = keyArray(2).toLong
-    var rId = keyArray(3).toInt
-    // format the data to create Key/Value
-    val bucketKey = if (keyStr != null) keyStr.split('.').toArray else new Array[String](0)
-    var key = new Key(timePartition, bucketKey, tId, rId)
-    var value = new Value(st, si)
-    (callbackFunction)(key, value)
-  }
-
-  private def processRow(key: Key, st:String, si:Array[Byte],callbackFunction: (Key, Value) => Unit){
-    var value = new Value(st, si)
-    (callbackFunction)(key, value)
-  }
-
-  private def processKey(k: String,callbackFunction: (Key) => Unit){
-    var keyArray = k.split('|').toArray
-    var timePartition = keyArray(0).toLong
-    var keyStr = keyArray(1)
-    var tId = keyArray(2).toLong
-    var rId = keyArray(3).toInt
-    // format the data to create Key/Value
-    val bucketKey = if (keyStr != null) keyStr.split('.').toArray else new Array[String](0)
-    var key = new Key(timePartition, bucketKey, tId, rId)
-    (callbackFunction)(key)
-  }
-
-  override def get(containerName: String, callbackFunction: (Key, Value) => Unit): Unit = {
+    var tableHBase:HTableInterface = null
     try{
       relogin
       var tableName = toFullTableName(containerName)
-      val tableHBase = connection.getTable(tableName);
+      tableHBase = connection.getTable(tableName);
+
+      var scan = new Scan();
+      scan.setFilter(new FirstKeyOnlyFilter());
+      var rs = tableHBase.getScanner(scan);
+      val it = rs.iterator()
+      var cnt = 0
+      while( it.hasNext() ){
+	var r = it.next()
+	cnt = cnt + 1
+      }
+      return cnt
+    } catch {
+      case e:Exception => {
+	throw e
+      }
+    }finally {
+      if( tableHBase != null ){
+	tableHBase.close()
+      }
+    }
+  }
+
+  private def processRow(k:String,st:String, si:Array[Byte],callbackFunction: (Key, Value) => Unit){
+    try{
+      var keyArray = k.split('|').toArray
+      var timePartition = keyArray(0).toLong
+      var keyStr = keyArray(1)
+      var tId = keyArray(2).toLong
+      var rId = keyArray(3).toInt
+      // format the data to create Key/Value
+      val bucketKey = if (keyStr != null) keyStr.split('.').toArray else new Array[String](0)
+      var key = new Key(timePartition, bucketKey, tId, rId)
+      var value = new Value(st, si)
+      (callbackFunction)(key, value)
+    } catch {
+      case e:Exception => {
+	throw e
+      }
+    }
+  }
+
+  private def processRow(key: Key, st:String, si:Array[Byte],callbackFunction: (Key, Value) => Unit){
+    try{
+      var value = new Value(st, si)
+      (callbackFunction)(key, value)
+    } catch {
+      case e:Exception => {
+	throw e
+      }
+    }
+  }
+
+  private def processKey(k: String,callbackFunction: (Key) => Unit){
+    try{
+      var keyArray = k.split('|').toArray
+      var timePartition = keyArray(0).toLong
+      var keyStr = keyArray(1)
+      var tId = keyArray(2).toLong
+      var rId = keyArray(3).toInt
+      // format the data to create Key/Value
+      val bucketKey = if (keyStr != null) keyStr.split('.').toArray else new Array[String](0)
+      var key = new Key(timePartition, bucketKey, tId, rId)
+      (callbackFunction)(key)
+    } catch {
+      case e:Exception => {
+	throw e
+      }
+    }
+  }
+
+  override def get(containerName: String, callbackFunction: (Key, Value) => Unit): Unit = {
+    var tableName = toFullTableName(containerName)
+    var tableHBase:HTableInterface = null
+    try{
+      relogin
+      tableHBase = connection.getTable(tableName);
       var scan = new Scan();
       var rs = tableHBase.getScanner(scan);
       val it = rs.iterator()
@@ -526,17 +604,21 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       }
     }catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to fetch data from the table " + tableName +  ":" + e.getMessage(), e)
+      }
+    }finally {
+      if( tableHBase != null ){
+	tableHBase.close()
       }
     }
   }
 
   override def getKeys(containerName: String, callbackFunction: (Key) => Unit): Unit = {
+    var tableName = toFullTableName(containerName)
+    var tableHBase:HTableInterface = null
     try{
       relogin
-      var tableName = toFullTableName(containerName)
-      val tableHBase = connection.getTable(tableName);
+      tableHBase = connection.getTable(tableName);
       var scan = new Scan();
       scan.setFilter(new FirstKeyOnlyFilter());
       var rs = tableHBase.getScanner(scan);
@@ -548,17 +630,21 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       }
     }catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to fetch data from the table " + tableName +  ":" + e.getMessage(), e)
+      }
+    }finally {
+      if( tableHBase != null ){
+	tableHBase.close()
       }
     }
   }
 
   override def getKeys(containerName: String, keys: Array[Key], callbackFunction: (Key) => Unit): Unit = {
+    var tableName = toFullTableName(containerName)
+    var tableHBase:HTableInterface = null
     try{
       relogin
-      var tableName = toFullTableName(containerName)
-      val tableHBase = connection.getTable(tableName);
+      tableHBase = connection.getTable(tableName);
 
       val filters = new java.util.ArrayList[Filter]()
       keys.foreach(key => {
@@ -579,17 +665,21 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       }
     }catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to fetch data from the table " + tableName +  ":" + e.getMessage(), e)
+      }
+    }finally {
+      if( tableHBase != null ){
+	tableHBase.close()
       }
     }
   }
 
   override def get(containerName: String, keys: Array[Key], callbackFunction: (Key, Value) => Unit): Unit = {
+    var tableName = toFullTableName(containerName)
+    var tableHBase:HTableInterface = null
     try{
       relogin
-      var tableName = toFullTableName(containerName)
-      val tableHBase = connection.getTable(tableName);
+      tableHBase = connection.getTable(tableName);
 
       val filters = new java.util.ArrayList[Filter]()
       keys.foreach(key => {
@@ -625,18 +715,22 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       }
     }catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to fetch data from the table " + tableName +  ":" + e.getMessage(), e)
+      }
+    }finally {
+      if( tableHBase != null ){
+	tableHBase.close()
       }
     }
   }
 
   override def get(containerName: String, time_ranges: Array[TimeRange], callbackFunction: (Key, Value) => Unit): Unit = {
+    var tableName = toFullTableName(containerName)
+    var tableHBase:HTableInterface = null
     try{
       relogin
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      val tableHBase = connection.getTable(tableName);
+      tableHBase = connection.getTable(tableName);
 
       time_ranges.foreach(time_range => {	
 	// try scan with beginRow and endRow
@@ -668,18 +762,22 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       })
     }catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to fetch data from the table " + tableName +  ":" + e.getMessage(), e)
+      }
+    }finally {
+      if( tableHBase != null ){
+	tableHBase.close()
       }
     }
   }
 
   override def getKeys(containerName: String, time_ranges: Array[TimeRange], callbackFunction: (Key) => Unit): Unit = {
+    var tableName = toFullTableName(containerName)
+    var tableHBase:HTableInterface = null
     try{
       relogin
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      val tableHBase = connection.getTable(tableName);
+      tableHBase = connection.getTable(tableName);
 
       time_ranges.foreach(time_range => {	
 	// try scan with beginRow and endRow
@@ -696,26 +794,29 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       })
     }catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to fetch data from the table " + tableName +  ":" + e.getMessage(), e)
+      }
+    }finally {
+      if( tableHBase != null ){
+	tableHBase.close()
       }
     }
   }
 
 
-  override def get(containerName: String, time_ranges: Array[TimeRange], bucketKeys: Array[Array[String]], callbackFunction: (Key, Value) => Unit): Unit = {
+  override def get(containerName: String, time_ranges: Array[TimeRange], bucketKeys: Array[Array[String]], 
+		   callbackFunction: (Key, Value) => Unit): Unit = {
+    var tableName = toFullTableName(containerName)
+    var tableHBase:HTableInterface = null
     try{
       relogin
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      val tableHBase = connection.getTable(tableName);
-
+      tableHBase = connection.getTable(tableName);
       var bucketKeyMap: scala.collection.mutable.Map[String,Boolean] = new scala.collection.mutable.HashMap()      
       bucketKeys.foreach(bucketKey => {
 	var bkey = bucketKey.mkString(".")
 	bucketKeyMap.put(bkey,true)
       })
-
       time_ranges.foreach(time_range => {	
 	// try scan with beginRow and endRow
 	var scan = new Scan()
@@ -750,18 +851,23 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       })
     }catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to fetch data from the table " + tableName +  ":" + e.getMessage(), e)
+      }
+    }finally {
+      if( tableHBase != null ){
+	tableHBase.close()
       }
     }
   }
 
-  override def getKeys(containerName: String, time_ranges: Array[TimeRange], bucketKeys: Array[Array[String]], callbackFunction: (Key) => Unit): Unit = {
+  override def getKeys(containerName: String, time_ranges: Array[TimeRange], bucketKeys: Array[Array[String]], 
+		       callbackFunction: (Key) => Unit): Unit = {
+    var tableName = toFullTableName(containerName)
+    var tableHBase:HTableInterface = null
     try{
       relogin
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      val tableHBase = connection.getTable(tableName);
+      tableHBase = connection.getTable(tableName);
 
       var bucketKeyMap: scala.collection.mutable.Map[String,Boolean] = new scala.collection.mutable.HashMap()      
       bucketKeys.foreach(bucketKey => {
@@ -788,18 +894,22 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       })
     }catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to fetch data from the table " + tableName +  ":" + e.getMessage(), e)
+      }
+    }finally {
+      if( tableHBase != null ){
+	tableHBase.close()
       }
     }
   }
 
   override def get(containerName: String, bucketKeys: Array[Array[String]], callbackFunction: (Key, Value) => Unit): Unit = {
+    var tableName = toFullTableName(containerName)
+    var tableHBase:HTableInterface = null
     try{
       relogin
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      val tableHBase = connection.getTable(tableName);
+      tableHBase = connection.getTable(tableName);
       var bucketKeyMap: scala.collection.mutable.Map[String,Boolean] = new scala.collection.mutable.HashMap()      
       bucketKeys.foreach(bucketKey => {
 	var bkey = bucketKey.mkString(".")
@@ -837,18 +947,22 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       }
     } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to fetch data from the table " + tableName +  ":" + e.getMessage(), e)
+      }
+    }finally {
+      if( tableHBase != null ){
+	tableHBase.close()
       }
     }
   }
 
   override def getKeys(containerName: String, bucketKeys: Array[Array[String]], callbackFunction: (Key) => Unit): Unit = {
+    var tableName = toFullTableName(containerName)
+    var tableHBase:HTableInterface = null
     try{
       relogin
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      val tableHBase = connection.getTable(tableName);
+      tableHBase = connection.getTable(tableName);
       var bucketKeyMap: scala.collection.mutable.Map[String,Boolean] = new scala.collection.mutable.HashMap()      
       bucketKeys.foreach(bucketKey => {
 	var bkey = bucketKey.mkString(".")
@@ -869,8 +983,11 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       }
     } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to fetch data from the table " + tableName +  ":" + e.getMessage(), e)
+      }
+    }finally {
+      if( tableHBase != null ){
+	tableHBase.close()
       }
     }
   }
@@ -894,11 +1011,12 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
   }
 
   private def TruncateContainer(containerName: String): Unit = {
+    var tableName = toFullTableName(containerName)
+    var tableHBase:HTableInterface = null
     try{
       relogin
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      val tableHBase = connection.getTable(tableName);
+      tableHBase = connection.getTable(tableName);
       var dels = new Array[Delete](0)
       var scan = new Scan()
       val rs = tableHBase.getScanner(scan);
@@ -911,8 +1029,11 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       tableHBase.delete(dl)
     } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to truncate the table " + tableName + ":" + e.getMessage(), e)
+      }
+    }finally {
+      if( tableHBase != null ){
+	tableHBase.close()
       }
     }
   }
@@ -926,16 +1047,14 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
   }
 
   private def DropContainer(containerName: String): Unit = lock.synchronized {
+    var fullTableName = toFullTableName(containerName)
     try {
       relogin
       CheckTableExists(containerName)
-      var tableName = toTableName(containerName)
-      var fullTableName = toFullTableName(containerName)
       dropTable(fullTableName)
     } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDDLException("Failed to drop the table " + fullTableName + ":" + e.getMessage(), e)
       }
     }
   }

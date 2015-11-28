@@ -38,6 +38,8 @@ import com.ligadata.Utils.{ KamanjaClassLoader, KamanjaLoaderInfo }
 import com.ligadata.StorageBase.StorageAdapterObj
 import com.ligadata.keyvaluestore.HBaseAdapter
 
+import com.ligadata.Exceptions._
+
 case class Customer(name:String, address: String, homePhone: String)
 
 @Ignore
@@ -57,20 +59,12 @@ class HBaseAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAfterAl
 
   private val kvManagerLoader = new KamanjaLoaderInfo
   private var hbaseAdapter:HBaseAdapter = null
+  serializer = SerializerManager.GetSerializer("kryo")
+  val dataStoreInfo = """{"StoreType": "hbase","SchemaName": "unit_tests","Location":"localhost"}"""
 
-  override def beforeAll = {
-    try {
-      logger.info("starting...");
-
-      serializer = SerializerManager.GetSerializer("kryo")
-      logger.info("Initialize HBaseAdapter")
-      val dataStoreInfo = """{"StoreType": "hbase","SchemaName": "unit_tests","Location":"localhost"}"""
-      adapter = HBaseAdapter.CreateStorageAdapter(kvManagerLoader, dataStoreInfo)
-   }
-    catch {
-      case e: Exception => throw new Exception("Failed to execute set up properly\n" + e)
-    }
-  }
+  private val maxConnectionAttempts = 10;
+  var cnt:Long = 0
+  private val containerName = "sys.customer1"
 
   private def RoundDateToSecs(d:Date): Date = {
     var c = Calendar.getInstance()
@@ -116,6 +110,55 @@ class HBaseAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAfterAl
     }
   }
 
+  private def ProcessException(e: Exception) = {
+      e match {
+	case e1: StorageDMLException => {
+	  logger.error("Inner Message:%s: Message:%s".format(e1.cause.getMessage,e1.getMessage))
+	}
+	case e2: StorageDDLException => {
+	  logger.error("Innser Message:%s: Message:%s".format(e2.cause.getMessage,e2.getMessage))
+	}
+	case e3: StorageConnectionException => {
+	  logger.error("Inner Message:%s: Message:%s".format(e3.cause.getMessage,e3.getMessage))
+	}
+	case _ => {
+	  logger.error("Message:%s".format(e.getMessage))
+	}
+      }
+      var stackTrace = StackTrace.ThrowableTraceString(e)
+      logger.info("StackTrace:"+stackTrace)
+  }	  
+
+  private def CreateAdapter: DataStore = {
+    var connectionAttempts = 0
+    while (connectionAttempts < maxConnectionAttempts) {
+      try {
+        adapter = HBaseAdapter.CreateStorageAdapter(kvManagerLoader, dataStoreInfo)
+        return adapter
+      } catch {
+        case e: Exception => {
+	  ProcessException(e)
+          logger.error("will retry after one minute ...")
+          Thread.sleep(60 * 1000L)
+          connectionAttempts = connectionAttempts + 1
+        }
+      }
+    }
+    return null;
+  }
+
+  override def beforeAll = {
+    try {
+      logger.info("starting...");
+      logger.info("Initialize HBaseAdapter")
+      adapter = CreateAdapter
+   }
+    catch {
+      case e: Exception => throw new Exception("Failed to execute set up properly\n" + e)
+    }
+  }
+
+
   describe("Unit Tests for all hbaseadapter operations") {
 
     // validate property setup
@@ -136,6 +179,24 @@ class HBaseAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAfterAl
 	adapter.CreateContainer(containers)
       }
 
+      And("Test Put api throwing DDL Exception - use invalid container name")
+      var ex2 = the [com.ligadata.Exceptions.StorageDMLException] thrownBy {
+	var keys = new Array[Key](0) // to be used by a delete operation later on
+	var currentTime = new Date()
+	var keyArray = new Array[String](0)
+	// pick a bucketKey values longer than 1024 characters
+	var custName = "customer1"
+	keyArray = keyArray :+ custName
+	var key = new Key(currentTime.getTime(),keyArray,1,1)
+	var custAddress = "1000"  + ",Main St, Redmond WA 98052"
+	var custNumber = "4256667777"
+	var obj = new Customer(custName,custAddress,custNumber)
+	var v = serializer.SerializeObjectToByteArray(obj)
+	var value = new Value("kryo",v)
+	adapter.put("&&",key,value)
+      }
+      stackTrace = StackTrace.ThrowableTraceString(ex2.cause)
+      logger.info("StackTrace:"+stackTrace)
 
       And("Test Put api")
       var keys = new Array[Key](0) // to be used by a delete operation later on
@@ -165,7 +226,7 @@ class HBaseAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAfterAl
       hbaseAdapter = adapter.asInstanceOf[HBaseAdapter]
 
       And("Check the row count after adding a bunch")
-      var cnt = hbaseAdapter.getRowCount(containerName)
+      cnt = hbaseAdapter.getRowCount(containerName)
       assert(cnt == 10)
 
       And("Get all the keys for the rows that were just added")

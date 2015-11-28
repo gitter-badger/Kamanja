@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.ligadata.automation.unittests.sqlserveradapter
+package com.ligadata.automation.unittests.cassandraadapter
 
 import org.scalatest._
 import Matchers._
@@ -36,12 +36,12 @@ import com.ligadata.Serialize._
 import com.ligadata.Utils.Utils._
 import com.ligadata.Utils.{ KamanjaClassLoader, KamanjaLoaderInfo }
 import com.ligadata.StorageBase.StorageAdapterObj
-import com.ligadata.keyvaluestore.SqlServerAdapter
+import com.ligadata.keyvaluestore.CassandraAdapter
 
 import com.ligadata.Exceptions._
 
 @Ignore
-class SqlServerPerfTestSpec extends FunSpec with BeforeAndAfter with BeforeAndAfterAll with GivenWhenThen {
+class CassandraPerfTestSpec extends FunSpec with BeforeAndAfter with BeforeAndAfterAll with GivenWhenThen {
   var res: String = null;
   var statusCode: Int = -1;
   var adapter: DataStore = null
@@ -55,16 +55,18 @@ class SqlServerPerfTestSpec extends FunSpec with BeforeAndAfter with BeforeAndAf
   // set the timezone to UTC for all time values
   TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
   
-  val dataStoreInfo = """{"StoreType": "sqlserver","hostname": "192.168.56.1","instancename":"KAMANJA","portnumber":"1433","database": "test_db","user":"bofauser1","SchemaName":"bofauser","password":"bofauser2","jarpaths":"/media/home2/jdbc","jdbcJar":"sqljdbc4-2.0.jar"}"""
+  val dataStoreInfo = """{"StoreType": "cassandra","SchemaName": "unit_tests","Location":"localhost"}"""
   private val kvManagerLoader = new KamanjaLoaderInfo
   private val maxConnectionAttempts = 10;
-  var cnt = 0
+  var cnt:Long = 0
+
+  private val containerName = "sys.customer1"
 
   private def CreateAdapter: DataStore = {
     var connectionAttempts = 0
     while (connectionAttempts < maxConnectionAttempts) {
       try {
-        adapter = SqlServerAdapter.CreateStorageAdapter(kvManagerLoader, dataStoreInfo)
+        adapter = CassandraAdapter.CreateStorageAdapter(kvManagerLoader, dataStoreInfo)
         return adapter
       } catch {
         case e: StorageConnectionException => {
@@ -87,7 +89,7 @@ class SqlServerPerfTestSpec extends FunSpec with BeforeAndAfter with BeforeAndAf
       logger.info("starting...");
 
       serializer = SerializerManager.GetSerializer("kryo")
-      logger.info("Initialize SqlServerAdapter")
+      logger.info("Initialize CassandraAdapter")
       adapter = CreateAdapter
     } catch {
       case e: StorageConnectionException => {
@@ -111,24 +113,6 @@ class SqlServerPerfTestSpec extends FunSpec with BeforeAndAfter with BeforeAndAf
     }
   }
 
-  def readCallBack(key: Key, value: Value) {
-    logger.info("timePartition => " + key.timePartition)
-    logger.info("bucketKey => " + key.bucketKey.mkString(","))
-    logger.info("transactionId => " + key.transactionId)
-    logger.info("rowId => " + key.rowId)
-    logger.info("serializerType => " + value.serializerType)
-    logger.info("serializedInfo length => " + value.serializedInfo.length)
-    logger.info("----------------------------------------------------")
-  }
-
-  def readKeyCallBack(key: Key) {
-    logger.info("timePartition => " + key.timePartition)
-    logger.info("bucketKey => " + key.bucketKey.mkString(","))
-    logger.info("transactionId => " + key.transactionId)
-    logger.info("rowId => " + key.rowId)
-    logger.info("----------------------------------------------------")
-  }
-
   def deleteFile(path: File): Unit = {
     if (path.exists()) {
       if (path.isDirectory) {
@@ -140,15 +124,41 @@ class SqlServerPerfTestSpec extends FunSpec with BeforeAndAfter with BeforeAndAf
     }
   }
 
+  object ReadCount {
+    var rec_count = 0
+    def increment: Unit ={
+      rec_count = rec_count + 1
+      if(rec_count % 1000 == 0 ){
+	logger.info("Read " + rec_count + " so far ...")
+      }
+    }
+  }
+
+  def readCallBack(key:Key, value: Value) {
+    logger.info("timePartition => " + key.timePartition)
+    logger.info("bucketKey => " + key.bucketKey.mkString(","))
+    logger.info("transactionId => " + key.transactionId)
+    logger.info("rowId => " + key.rowId)
+    logger.info("serializerType => " + value.serializerType)
+    logger.info("serializedInfo length => " + value.serializedInfo.length)
+    val cust = serializer.DeserializeObjectFromByteArray(value.serializedInfo).asInstanceOf[Customer]
+    logger.info("serializedObject => " + cust)
+    logger.info("----------------------------------------------------")
+  }
+
+
+  def readCallBack1(key:Key, value: Value) {
+    ReadCount.increment
+  }
+
   private def GetCurDtTmStr: String = {
     new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new java.util.Date(System.currentTimeMillis))
   }
 
-  describe("Load Tests for sqlserver adapter") {
+  describe("Load Tests for the adapter") {
 
     // validate property setup
-    it("Load test api operations") {
-      val containerName = "sys.customer1"
+    it("Load data operations") {
 
       And("Test drop container")
       noException should be thrownBy {
@@ -200,27 +210,59 @@ class SqlServerPerfTestSpec extends FunSpec with BeforeAndAfter with BeforeAndAf
 	    case e: Exception => {
 	      val stackTrace = StackTrace.ThrowableTraceString(e)
 	      logger.info("StackTrace:"+stackTrace)
+	      Thread.sleep(10000)
 	      successful = false
 	    }
 	  }
 	}
       }
 
-      val sqlServerAdapter = adapter.asInstanceOf[SqlServerAdapter]
+      val cassandraAdapter = adapter.asInstanceOf[CassandraAdapter]
 
       And("Check the row count after adding a bunch")
-      cnt = sqlServerAdapter.getRowCount(containerName, null)
+      cnt = cassandraAdapter.getRowCount(containerName,null)
       assert(cnt == 1000000)
+    }
 
+    it("Bulk Read Operations"){
+      And("Read 1000 records at a time")
+      for (batch <- 1 to 1000) {
+	var successful = false
+	while ( ! successful ){
+          var keyStringList = new Array[Array[String]](0)
+          for (i <- 1 to 1000) {
+            var keyArray = new Array[String](0)
+            var custName = "batch-" + batch + "-customer-" + i
+            keyArray = keyArray :+ custName
+            keyStringList = keyStringList :+ keyArray
+	  }
+	  try{
+	    adapter.get(containerName,keyStringList,readCallBack1 _)
+	    logger.info(GetCurDtTmStr + ": Fetched " + batch * 1000 + " objects ")
+	    successful = true
+	  }
+	  catch{
+	    case e: Exception => {
+	      val stackTrace = StackTrace.ThrowableTraceString(e)
+	      logger.info("StackTrace:"+stackTrace)
+	      successful = false
+	    }
+	  }
+	}
+      }
+    }
+    
+    ignore("Cleanup Operations"){
       And("Test drop container again, cleanup")
       noException should be thrownBy {
         var containers = new Array[String](0)
         containers = containers :+ containerName
         adapter.DropContainer(containers)
       }
-
     }
+
   }
+
   override def afterAll = {
     var logFile = new java.io.File("logs")
     if (logFile != null) {

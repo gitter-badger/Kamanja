@@ -32,7 +32,6 @@ No schema setup
 
  */
 
-
 package com.ligadata.keyvaluestore
 
 import com.ligadata.KvBase.{ Key, Value, TimeRange }
@@ -46,21 +45,43 @@ import com.ligadata.Exceptions._
 import org.json4s._
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
-import com.ligadata.Utils.{KamanjaLoaderInfo}
+import com.ligadata.Utils.{ KamanjaLoaderInfo }
+
+import com.ligadata.Exceptions._
 
 class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: String) extends DataStore {
   val adapterConfig = if (datastoreConfig != null) datastoreConfig.trim else ""
   val loggerName = this.getClass.getName
   val logger = Logger.getLogger(loggerName)
+
   private[this] val lock = new Object
   private var containerList: scala.collection.mutable.Set[String] = scala.collection.mutable.Set[String]()
+  private var msg:String = ""
 
-  private var dbStoreMap: scala.collection.mutable.Map[String,DB] = new scala.collection.mutable.HashMap()
+  private var tablesMap: scala.collection.mutable.Map[String, BTreeMap[Array[Byte], Array[Byte]]] = new scala.collection.mutable.HashMap()
+  private var dbStoreMap: scala.collection.mutable.Map[String, DB] = new scala.collection.mutable.HashMap()
 
-  private var tablesMap: scala.collection.mutable.Map[String,BTreeMap[Array[Byte], Array[Byte]]] = new scala.collection.mutable.HashMap()
+  private def CreateConnectionException(msg: String, ie: Exception): StorageConnectionException = {
+    logger.error(msg)
+    val ex = new StorageConnectionException("Failed to connect to Database", ie)
+    ex
+  }
+
+  private def CreateDMLException(msg: String, ie: Exception): StorageDMLException = {
+    logger.error(msg)
+    val ex = new StorageDMLException("Failed to execute select/insert/delete/update operation on Database", ie)
+    ex
+  }
+
+  private def CreateDDLException(msg: String, ie: Exception): StorageDDLException = {
+    logger.error(msg)
+    val ex = new StorageDDLException("Failed to execute create/drop operations on Database", ie)
+    ex
+  }
 
   if (adapterConfig.size == 0) {
-    throw new Exception("Not found valid TreeMap Configuration.")
+    msg = "Invalid Cassandra Json Configuration string:" + adapterConfig
+    throw CreateConnectionException(msg, new Exception("Invalid Configuration"))
   }
 
   logger.debug("TreeMap configuration:" + adapterConfig)
@@ -74,8 +95,8 @@ class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
     parsed_json = json.values.asInstanceOf[Map[String, Any]]
   } catch {
     case e: Exception => {
-      logger.error("Failed to parse TreeMap JSON configuration string:%s. Reason:%s Message:%s".format(adapterConfig, e.getCause, e.getMessage))
-      throw e
+      var msg = "Failed to parse Cassandra JSON configuration string:%s. Message:%s".format(adapterConfig, e.getMessage)
+      throw CreateConnectionException(msg, e)
     }
   }
 
@@ -88,14 +109,14 @@ class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
       try {
         val json = parse(adapterSpecificStr)
         if (json == null || json.values == null) {
-          logger.error("Failed to parse Cassandra Adapter Specific JSON configuration string:" + adapterSpecificStr)
-          throw new Exception("Failed to parse Cassandra Adapter Specific JSON configuration string:" + adapterSpecificStr)
+	  msg = "Failed to parse Cassandra JSON configuration string:" + adapterSpecificStr
+	  throw CreateConnectionException(msg, new Exception("Invalid Configuration"))
         }
         adapterSpecificConfig_json = json.values.asInstanceOf[Map[String, Any]]
       } catch {
         case e: Exception => {
-          logger.error("Failed to parse Cassandra Adapter Specific JSON configuration string:%s. Reason:%s Message:%s".format(adapterSpecificStr, e.getCause, e.getMessage))
-          throw e
+          msg = "Failed to parse Cassandra Adapter Specific JSON configuration string:%s. Message:%s".format(adapterSpecificStr, e.getMessage)
+          throw CreateConnectionException(msg, e)
         }
       }
     }
@@ -119,38 +140,46 @@ class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
   val InMemory = getOptionalField("inmemory", parsed_json, adapterSpecificConfig_json, "false").toString.trim.toBoolean
   val withTransactions = getOptionalField("withtransaction", parsed_json, adapterSpecificConfig_json, "false").toString.trim.toBoolean
 
+  logger.info("Datastore initialization complete")
+
   private def createTable(tableName: String): Unit = {
-    var db: DB = null
-    if (InMemory == true) {
-      db = DBMaker.newMemoryDB().make()
-    } else {
-      val dir = new File(path);
-      if (!dir.exists()) {
-	// attempt to create the directory here
-	dir.mkdir();
+    try{
+      var db: DB = null
+      if (InMemory == true) {
+	db = DBMaker.newMemoryDB().make()
+      } else {
+	val dir = new File(path);
+	if (!dir.exists()) {
+          // attempt to create the directory here
+          dir.mkdir();
+	}
+	db = DBMaker.newFileDB(new File(path + "/" + tableName + ".hdb"))
+          .closeOnJvmShutdown()
+          .mmapFileEnable()
+          .transactionDisable()
+          .commitFileSyncDisable()
+          .make()
+	dbStoreMap.put(tableName, db)
+	var map = db.createTreeMap(tableName)
+	  .comparator(Fun.BYTE_ARRAY_COMPARATOR)
+          .makeOrGet[Array[Byte], Array[Byte]]();
+	tablesMap.put(tableName, map)
       }
-      db = DBMaker.newFileDB(new File(path + "/" + tableName + ".db"))
-	.closeOnJvmShutdown()
-	.mmapFileEnable()
-	.transactionDisable()
-	.commitFileSyncDisable()
-	.make()
-      dbStoreMap.put(tableName,db)
-      var map = db.createTreeMap(tableName)
-	.comparator(Fun.BYTE_ARRAY_COMPARATOR)
-	.makeOrGet[Array[Byte], Array[Byte]]();
-      tablesMap.put(tableName,map)
+    } catch {
+      case e: Exception => {
+        throw CreateDDLException("Failed to create table " + tableName + ":" + e.getMessage(), e)
+      }
     }
   }
 
   @throws(classOf[FileNotFoundException])
-  def deleteFile(file:File):Unit = {
-    if(file.exists()){
+  def deleteFile(file: File): Unit = {
+    if (file.exists()) {
       var ret = true
-      if (file.isDirectory){
-	for(f <- file.listFiles) {
+      if (file.isDirectory) {
+        for (f <- file.listFiles) {
           deleteFile(f)
-	}
+        }
       }
       logger.debug("cleanup: Deleting file '" + file + "'")
       file.delete()
@@ -158,9 +187,9 @@ class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
   }
 
   private def dropTable(tableName: String): Unit = {
-    var f = new File(path + "/" + tableName + ".db")
+    var f = new File(path + "/" + tableName + ".hdb")
     deleteFile(f)
-    f = new File(path + "/" + tableName + ".db.p")
+    f = new File(path + "/" + tableName + ".hdb.p")
     deleteFile(f)
   }
 
@@ -208,20 +237,16 @@ class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
   }
 
   private def MakeCompositeKey(key: Key): Array[Byte] = {
-    var compKey = key.timePartition.toString + "|" + key.bucketKey.mkString(".") + 
-		  "|" + key.transactionId.toString + "|" + key.rowId.toString
+    var compKey = key.timePartition.toString + "|" + key.bucketKey.mkString(".") +
+      "|" + key.transactionId.toString + "|" + key.rowId.toString
     compKey.getBytes()
   }
 
-
-  private def ValueToByteArray(value: Value): Array[Byte] = {
-    var byteOs = new ByteArrayOutputStream();
-    var out = new DataOutputStream(byteOs);
+  private def ValueToByteArray(value: Value, out: DataOutputStream): Unit = {
     out.writeInt(value.serializerType.length);
     out.write(value.serializerType.getBytes());
     out.writeInt(value.serializedInfo.length);
     out.write(value.serializedInfo);
-    byteOs.toByteArray()
   }
 
   private def ByteArrayToValue(byteArray: Array[Byte]): Value = {
@@ -240,108 +265,126 @@ class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
   }
 
   private def Commit: Unit = {
-    //if (withTransactions)
-    dbStoreMap.foreach(db => {
-      logger.debug("Committing transactions for db " + db._1)
-      db._2.commit();
-    })
-    //db.commit() //persist changes into disk
+    if (withTransactions) {
+      dbStoreMap.foreach(db => {
+        logger.debug("Committing transactions for db " + db._1)
+        db._2.commit();
+      })
+    }
+  }
+
+  private def Commit(tableName: String): Unit = {
+    if (withTransactions) {
+      var db = dbStoreMap(tableName)
+      db.commit();
+    }
   }
 
   override def put(containerName: String, key: Key, value: Value): Unit = {
     var tableName = toFullTableName(containerName)
-    try{
+    var byteOs = new ByteArrayOutputStream(1024 * 1024);
+    var out = new DataOutputStream(byteOs);
+
+    try {
       CheckTableExists(containerName)
-      var kba = MakeCompositeKey(key)
-      var vba = ValueToByteArray(value)
-      var map = tablesMap(tableName)
-      map.put(kba,vba)
-      Commit
+      val kba = MakeCompositeKey(key)
+      ValueToByteArray(value, out)
+      val vba = byteOs.toByteArray()
+      val map = tablesMap(tableName)
+      map.put(kba, vba)
+      Commit(tableName)
     } catch {
-      case e:Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.debug("Stacktrace:"+stackTrace)
-	throw new Exception("Failed to save an object in TreeMap table " + tableName + ":" + e.getMessage())
+      case e: Exception => {
+        out.close()
+        byteOs.close()
+	throw CreateDMLException("Failed to save an object in table " + tableName + ":" + e.getMessage(),e)
       }
     }
+    out.close()
+    byteOs.close()
   }
 
   override def put(data_list: Array[(String, Array[(Key, Value)])]): Unit = {
-    try{
+    var byteOs = new ByteArrayOutputStream(1024 * 1024);
+    var out = new DataOutputStream(byteOs);
+    var tableName = ""
+    try {
       data_list.foreach(li => {
         var containerName = li._1
-	CheckTableExists(containerName)
-	var tableName = toFullTableName(containerName)
-	var map = tablesMap(tableName)
+        CheckTableExists(containerName)
+        tableName = toFullTableName(containerName)
+        var map = tablesMap(tableName)
         var keyValuePairs = li._2
         keyValuePairs.foreach(keyValuePair => {
-          var key = keyValuePair._1
-          var value = keyValuePair._2
-	  var kba = MakeCompositeKey(key)
-	  var vba = ValueToByteArray(value)
-	  map.put(kba,vba)
-	})
+          val kba = MakeCompositeKey(keyValuePair._1)
+          byteOs.reset()
+          ValueToByteArray(keyValuePair._2, out)
+          var vba = byteOs.toByteArray()
+          map.put(kba, vba)
+        })
       })
       Commit
-   } catch {
+    } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+	throw CreateDMLException("Failed to save an object in table " + tableName + ":" + e.getMessage(),e)
+        out.close()
+        byteOs.close()
       }
     }
+    out.close()
+    byteOs.close()
   }
 
   // delete operations
   override def del(containerName: String, keys: Array[Key]): Unit = {
-    try{
+    var tableName = ""
+    try {
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      var map = tablesMap(tableName)      
+      tableName = toFullTableName(containerName)
+      var map = tablesMap(tableName)
       keys.foreach(key => {
-	var kba = MakeCompositeKey(key)
-	map.remove(kba)
+        var kba = MakeCompositeKey(key)
+        map.remove(kba)
       })
       Commit
     } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+	throw CreateDMLException("Failed to delete object(s) from table " + tableName + ":" + e.getMessage(),e)
       }
     }
   }
 
-
   override def del(containerName: String, time: TimeRange, bucketKeys: Array[Array[String]]): Unit = {
-    try{
+    var tableName = ""
+    try {
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      var bucketKeyMap: scala.collection.mutable.Map[String,Boolean] = new scala.collection.mutable.HashMap()      
+      tableName = toFullTableName(containerName)
+      var bucketKeyMap: scala.collection.mutable.Map[String, Boolean] = new scala.collection.mutable.HashMap()
       bucketKeys.foreach(bucketKey => {
-	var bkey = bucketKey.mkString(".")
-	bucketKeyMap.put(bkey,true)
+        var bkey = bucketKey.mkString(".")
+        bucketKeyMap.put(bkey, true)
       })
-	
-      var map = tablesMap(tableName)      
+
+      var map = tablesMap(tableName)
       var iter = map.keySet().iterator()
       while (iter.hasNext()) {
-	val kba = iter.next()
-	val k = new String(kba)
-	var keyArray = k.split('|')
-	var tp = keyArray(0).toLong
-	var bkey = keyArray(1)
-	if ( tp >= time.beginTime && tp <= time.endTime ){
-	  logger.info("searching for " + keyArray(1))
-	  var keyExists = bucketKeyMap.getOrElse(bkey,null)
-	  if (keyExists != null ){
-	    map.remove(kba)
-	  }
-	}
+        val kba = iter.next()
+        val k = new String(kba)
+        var keyArray = k.split('|')
+        var tp = keyArray(0).toLong
+        var bkey = keyArray(1)
+        if (tp >= time.beginTime && tp <= time.endTime) {
+          logger.info("searching for " + keyArray(1))
+          var keyExists = bucketKeyMap.getOrElse(bkey, null)
+          if (keyExists != null) {
+            map.remove(kba)
+          }
+        }
       }
       Commit
     } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+	throw CreateDMLException("Failed to delete object(s) from table " + tableName + ":" + e.getMessage(),e)
       }
     }
   }
@@ -349,7 +392,7 @@ class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
   // get operations
   def getRowCount(containerName: String): Long = {
     var tableName = toFullTableName(containerName)
-    var map = tablesMap(tableName)      
+    var map = tablesMap(tableName)
     var iter = map.keySet().iterator()
     var cnt = 0
     while (iter.hasNext()) {
@@ -359,7 +402,7 @@ class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
     return cnt
   }
 
-  private def processRow(k:String,value:Value,callbackFunction: (Key, Value) => Unit){
+  private def processRow(k: String, value: Value, callbackFunction: (Key, Value) => Unit) {
     var keyArray = k.split('|').toArray
     var timePartition = keyArray(0).toLong
     var keyStr = keyArray(1)
@@ -371,11 +414,11 @@ class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
     (callbackFunction)(key, value)
   }
 
-  private def processRow(key: Key, value:Value,callbackFunction: (Key, Value) => Unit){
+  private def processRow(key: Key, value: Value, callbackFunction: (Key, Value) => Unit) {
     (callbackFunction)(key, value)
   }
 
-  private def processKey(k: String,callbackFunction: (Key) => Unit){
+  private def processKey(k: String, callbackFunction: (Key) => Unit) {
     var keyArray = k.split('|').toArray
     var timePartition = keyArray(0).toLong
     var keyStr = keyArray(1)
@@ -388,59 +431,60 @@ class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
   }
 
   override def get(containerName: String, callbackFunction: (Key, Value) => Unit): Unit = {
-    try{
+    var tableName = ""
+    try {
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      var map = tablesMap(tableName)      
+      tableName = toFullTableName(containerName)
+      var map = tablesMap(tableName)
       var iter = map.keySet().iterator()
       while (iter.hasNext()) {
-	val kba = iter.next()
-	val k = new String(kba)
-	var vba = map.get(kba)
-	var v = ByteArrayToValue(vba)
-	processRow(k,v,callbackFunction)
+        val kba = iter.next()
+        val k = new String(kba)
+        var vba = map.get(kba)
+        var v = ByteArrayToValue(vba)
+        processRow(k, v, callbackFunction)
       }
-    }catch {
+    } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to fetch data from the table " + tableName +  ":" + e.getMessage(), e)
       }
     }
   }
 
   override def getKeys(containerName: String, callbackFunction: (Key) => Unit): Unit = {
-    try{
+    var tableName = ""
+    try {
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      var map = tablesMap(tableName)      
+      tableName = toFullTableName(containerName)
+      var map = tablesMap(tableName)
       var iter = map.keySet().iterator()
       while (iter.hasNext()) {
-	val kba = iter.next()
-	val k = new String(kba)
-	processKey(k,callbackFunction)
+        val kba = iter.next()
+        val k = new String(kba)
+        processKey(k, callbackFunction)
       }
-    }catch {
+    } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to fetch data from the table " + tableName +  ":" + e.getMessage(), e)
       }
     }
   }
 
   override def getKeys(containerName: String, keys: Array[Key], callbackFunction: (Key) => Unit): Unit = {
-    try{
+    var tableName = ""
+    try {
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      var map = tablesMap(tableName)      
+      tableName = toFullTableName(containerName)
+      var map = tablesMap(tableName)
       keys.foreach(key => {
-	var kba = MakeCompositeKey(key)
-	var k = new String(kba)
-	var vba = map.get(kba)
-	if( vba != null ){
-	  processKey(k,callbackFunction)
-	}
+        var kba = MakeCompositeKey(key)
+        var k = new String(kba)
+        var vba = map.get(kba)
+        if (vba != null) {
+          processKey(k, callbackFunction)
+        }
       })
-    }catch {
+    } catch {
       case e: Exception => {
         val stackTrace = StackTrace.ThrowableTraceString(e)
         logger.error("Stacktrace:" + stackTrace)
@@ -449,221 +493,220 @@ class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
   }
 
   override def get(containerName: String, keys: Array[Key], callbackFunction: (Key, Value) => Unit): Unit = {
-    try{
+    var tableName = ""
+    try {
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      var map = tablesMap(tableName)      
+      tableName = toFullTableName(containerName)
+      var map = tablesMap(tableName)
       keys.foreach(key => {
-	var kba = MakeCompositeKey(key)
-	var vba = map.get(kba)
-	if( vba != null ){
-	  var value = ByteArrayToValue(vba)
-	  processRow(key,value,callbackFunction)
-	}
+        var kba = MakeCompositeKey(key)
+        var vba = map.get(kba)
+        if (vba != null) {
+          var value = ByteArrayToValue(vba)
+          processRow(key, value, callbackFunction)
+        }
       })
-    }catch {
+    } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to fetch data from the table " + tableName +  ":" + e.getMessage(), e)
       }
     }
   }
 
   override def get(containerName: String, time_ranges: Array[TimeRange], callbackFunction: (Key, Value) => Unit): Unit = {
-    try{
+    var tableName = ""
+    try {
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      var map = tablesMap(tableName)      
+      tableName = toFullTableName(containerName)
+      var map = tablesMap(tableName)
 
       var iter = map.keySet().iterator()
       while (iter.hasNext()) {
-	val kba = iter.next()
-	val key = new String(kba)
-	time_ranges.foreach(timeRange => {
-	  var keyArray = key.split('|')
-	  var tp = keyArray(0).toLong
-	  if ( tp >= timeRange.beginTime && tp <= timeRange.endTime ){	
-	    var vba = map.get(kba)
-	    if( vba != null ){
-	      var value = ByteArrayToValue(vba)
-	      processRow(key,value,callbackFunction)
-	    }
-	  }
-	})
+        val kba = iter.next()
+        val key = new String(kba)
+        time_ranges.foreach(timeRange => {
+          var keyArray = key.split('|')
+          var tp = keyArray(0).toLong
+          if (tp >= timeRange.beginTime && tp <= timeRange.endTime) {
+            var vba = map.get(kba)
+            if (vba != null) {
+              var value = ByteArrayToValue(vba)
+              processRow(key, value, callbackFunction)
+            }
+          }
+        })
       }
-    }catch {
+    } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to fetch data from the table " + tableName +  ":" + e.getMessage(), e)
       }
     }
   }
 
   override def getKeys(containerName: String, time_ranges: Array[TimeRange], callbackFunction: (Key) => Unit): Unit = {
-    try{
+    var tableName = ""
+    try {
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      var map = tablesMap(tableName)      
+      tableName = toFullTableName(containerName)
+      var map = tablesMap(tableName)
 
       var iter = map.keySet().iterator()
       while (iter.hasNext()) {
-	val kba = iter.next()
-	val key = new String(kba)
-	time_ranges.foreach(timeRange => {
-	  var keyArray = key.split('|')
-	  var tp = keyArray(0).toLong
-	  if ( tp >= timeRange.beginTime && tp <= timeRange.endTime ){	
-	    processKey(key,callbackFunction)
-	  }
-	})
+        val kba = iter.next()
+        val key = new String(kba)
+        time_ranges.foreach(timeRange => {
+          var keyArray = key.split('|')
+          var tp = keyArray(0).toLong
+          if (tp >= timeRange.beginTime && tp <= timeRange.endTime) {
+            processKey(key, callbackFunction)
+          }
+        })
       }
-    }catch {
+    } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to fetch data from the table " + tableName +  ":" + e.getMessage(), e)
       }
     }
   }
 
-
   override def get(containerName: String, time_ranges: Array[TimeRange], bucketKeys: Array[Array[String]], callbackFunction: (Key, Value) => Unit): Unit = {
-    try{
-      var bucketKeyMap: scala.collection.mutable.Map[String,Boolean] = new scala.collection.mutable.HashMap()      
+    var tableName = ""
+    try {
+      var bucketKeyMap: scala.collection.mutable.Map[String, Boolean] = new scala.collection.mutable.HashMap()
       bucketKeys.foreach(bucketKey => {
-	var bkey = bucketKey.mkString(".")
-	bucketKeyMap.put(bkey,true)
+        var bkey = bucketKey.mkString(".")
+        bucketKeyMap.put(bkey, true)
       })
 
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      var map = tablesMap(tableName)      
+      tableName = toFullTableName(containerName)
+      var map = tablesMap(tableName)
 
       var iter = map.keySet().iterator()
       while (iter.hasNext()) {
-	val kba = iter.next()
-	val key = new String(kba)
-	time_ranges.foreach(timeRange => {
-	  var keyArray = key.split('|')
-	  var tp = keyArray(0).toLong
-	  if ( tp >= timeRange.beginTime && tp <= timeRange.endTime ){	
-	    var bkey = keyArray(1)
-	    var keyExists = bucketKeyMap.getOrElse(bkey,null)
-	    if( keyExists != null ){
-	      var vba = map.get(kba)
-	      if( vba != null ){
-		var value = ByteArrayToValue(vba)
-		processRow(key,value,callbackFunction)
-	      }
-	    }
-	  }
-	})
+        val kba = iter.next()
+        val key = new String(kba)
+        time_ranges.foreach(timeRange => {
+          var keyArray = key.split('|')
+          var tp = keyArray(0).toLong
+          if (tp >= timeRange.beginTime && tp <= timeRange.endTime) {
+            var bkey = keyArray(1)
+            var keyExists = bucketKeyMap.getOrElse(bkey, null)
+            if (keyExists != null) {
+              var vba = map.get(kba)
+              if (vba != null) {
+                var value = ByteArrayToValue(vba)
+                processRow(key, value, callbackFunction)
+              }
+            }
+          }
+        })
       }
-    }catch {
+    } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to fetch data from the table " + tableName +  ":" + e.getMessage(), e)
       }
     }
   }
 
   override def getKeys(containerName: String, time_ranges: Array[TimeRange], bucketKeys: Array[Array[String]], callbackFunction: (Key) => Unit): Unit = {
-    try{
-      var bucketKeyMap: scala.collection.mutable.Map[String,Boolean] = new scala.collection.mutable.HashMap()      
+    var tableName = ""
+    try {
+      var bucketKeyMap: scala.collection.mutable.Map[String, Boolean] = new scala.collection.mutable.HashMap()
       bucketKeys.foreach(bucketKey => {
-	var bkey = bucketKey.mkString(".")
-	bucketKeyMap.put(bkey,true)
+        var bkey = bucketKey.mkString(".")
+        bucketKeyMap.put(bkey, true)
       })
 
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      var map = tablesMap(tableName)      
+      tableName = toFullTableName(containerName)
+      var map = tablesMap(tableName)
 
       var iter = map.keySet().iterator()
       while (iter.hasNext()) {
-	val kba = iter.next()
-	val key = new String(kba)
-	time_ranges.foreach(timeRange => {
-	  var keyArray = key.split('|')
-	  var tp = keyArray(0).toLong
-	  if ( tp >= timeRange.beginTime && tp <= timeRange.endTime ){	
-	    var bkey = keyArray(1)
-	    var keyExists = bucketKeyMap.getOrElse(bkey,null)
-	    if( keyExists != null ){
-	      processKey(key,callbackFunction)
-	    }
-	  }
-	})
+        val kba = iter.next()
+        val key = new String(kba)
+        time_ranges.foreach(timeRange => {
+          var keyArray = key.split('|')
+          var tp = keyArray(0).toLong
+          if (tp >= timeRange.beginTime && tp <= timeRange.endTime) {
+            var bkey = keyArray(1)
+            var keyExists = bucketKeyMap.getOrElse(bkey, null)
+            if (keyExists != null) {
+              processKey(key, callbackFunction)
+            }
+          }
+        })
       }
-    }catch {
+    } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to fetch data from the table " + tableName +  ":" + e.getMessage(), e)
       }
     }
   }
 
   override def get(containerName: String, bucketKeys: Array[Array[String]], callbackFunction: (Key, Value) => Unit): Unit = {
-    try{
-      var bucketKeyMap: scala.collection.mutable.Map[String,Boolean] = new scala.collection.mutable.HashMap()      
+    var tableName = ""
+    try {
+      var bucketKeyMap: scala.collection.mutable.Map[String, Boolean] = new scala.collection.mutable.HashMap()
       bucketKeys.foreach(bucketKey => {
-	var bkey = bucketKey.mkString(".")
-	bucketKeyMap.put(bkey,true)
+        var bkey = bucketKey.mkString(".")
+        bucketKeyMap.put(bkey, true)
       })
 
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      var map = tablesMap(tableName)      
+      tableName = toFullTableName(containerName)
+      var map = tablesMap(tableName)
 
       var iter = map.keySet().iterator()
       while (iter.hasNext()) {
-	val kba = iter.next()
-	val key = new String(kba)
-	var keyArray = key.split('|')
-	var bkey = keyArray(1)
-	var keyExists = bucketKeyMap.getOrElse(bkey,null)
-	if( keyExists != null ){
-	  var vba = map.get(kba)
-	  if( vba != null ){
-	    var value = ByteArrayToValue(vba)
-	    processRow(key,value,callbackFunction)
-	  }
-	}
+        val kba = iter.next()
+        val key = new String(kba)
+        var keyArray = key.split('|')
+        var bkey = keyArray(1)
+        var keyExists = bucketKeyMap.getOrElse(bkey, null)
+        if (keyExists != null) {
+          var vba = map.get(kba)
+          if (vba != null) {
+            var value = ByteArrayToValue(vba)
+            processRow(key, value, callbackFunction)
+          }
+        }
       }
     } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to fetch data from the table " + tableName +  ":" + e.getMessage(), e)
       }
     }
   }
 
   override def getKeys(containerName: String, bucketKeys: Array[Array[String]], callbackFunction: (Key) => Unit): Unit = {
-    try{
-      var bucketKeyMap: scala.collection.mutable.Map[String,Boolean] = new scala.collection.mutable.HashMap()      
+    var tableName = ""
+    try {
+      var bucketKeyMap: scala.collection.mutable.Map[String, Boolean] = new scala.collection.mutable.HashMap()
       bucketKeys.foreach(bucketKey => {
-	var bkey = bucketKey.mkString(".")
-	bucketKeyMap.put(bkey,true)
+        var bkey = bucketKey.mkString(".")
+        bucketKeyMap.put(bkey, true)
       })
 
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
-      var map = tablesMap(tableName)      
+      tableName = toFullTableName(containerName)
+      var map = tablesMap(tableName)
 
       var iter = map.keySet().iterator()
       while (iter.hasNext()) {
-	val kba = iter.next()
-	val key = new String(kba)
-	var keyArray = key.split('|')
-	var bkey = keyArray(1)
-	var keyExists = bucketKeyMap.getOrElse(bkey,null)
-	if( keyExists != null ){
-	  processKey(key,callbackFunction)
-	}
+        val kba = iter.next()
+        val key = new String(kba)
+        var keyArray = key.split('|')
+        var bkey = keyArray(1)
+        var keyExists = bucketKeyMap.getOrElse(bkey, null)
+        if (keyExists != null) {
+          processKey(key, callbackFunction)
+        }
       }
     } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Failed to fetch data from the table " + tableName +  ":" + e.getMessage(), e)
       }
     }
   }
@@ -679,45 +722,43 @@ class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
   override def rollbackTx(tx: Transaction): Unit = {}
 
   override def Shutdown(): Unit = {
-    logger.info("Trying to shutdown treemap db")
+    logger.info("Trying to shutdown hashmap db")
     try {
       logger.info("Commit any outstanding transactions")
       dbStoreMap.foreach(db => {
-	logger.info("Committing transactions for db " + db._1)
-	db._2.commit();
+        logger.info("Committing transactions for db " + db._1)
+        db._2.commit();
       })
       logger.info("Close all map objects")
       tablesMap.foreach(map => {
-	logger.info("Closing the map " + map._1)
+        logger.info("Closing the map " + map._1)
         map._2.close();
       })
     } catch {
       case e: NullPointerException => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDDLException("Failed to shutdown map " +  ":" + e.getMessage(), e)
       }
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDDLException("Failed to shutdown map " +  ":" + e.getMessage(), e)
       }
     }
   }
-  
+
   private def TruncateContainer(containerName: String): Unit = {
-    try{
+    var tableName = ""
+    try {
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
+      tableName = toFullTableName(containerName)
       var map = tablesMap(tableName)
       var iter = map.keySet().iterator()
       while (iter.hasNext()) {
-	val kba = iter.next()
-	map.remove(kba)
+        val kba = iter.next()
+        map.remove(kba)
       }
       Commit
     } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDMLException("Unable to truncate table " + tableName + ":" + e.getMessage(),e)
       }
     }
   }
@@ -731,14 +772,14 @@ class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
   }
 
   private def DropContainer(containerName: String): Unit = lock.synchronized {
+    var tableName = ""
     try {
       CheckTableExists(containerName)
-      var tableName = toFullTableName(containerName)
+      tableName = toFullTableName(containerName)
       dropTable(tableName)
     } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        logger.error("Stacktrace:" + stackTrace)
+        throw CreateDDLException("Unable to drop table " + tableName + ":" + e.getMessage(),e)
       }
     }
   }
