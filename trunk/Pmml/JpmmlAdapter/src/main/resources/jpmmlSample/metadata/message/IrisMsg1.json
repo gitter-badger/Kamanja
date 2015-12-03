@@ -2,7 +2,7 @@
   "Message": {
     "NameSpace": "System",
     "Name": "IrisMsg",
-    "Version": "00.01.01",
+    "Version": "00.01.02",
     "Description": "Iris data message",
     "Fixed": "true",
     "Persist": "true",
@@ -52,4 +52,3 @@
     ]
   }
 }
-

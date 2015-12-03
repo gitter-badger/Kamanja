@@ -81,7 +81,7 @@ object AlternateCmdParser extends JavaTokenParsers {
                 case Success(parms, _) => {
                     val (cmdName, keyValPairs): (String, List[(String, String)]) = parms
 
-                    val m: Map[String, String] = keyValPairs.map(pair => (pair._1.trim, pair._2.trim)).toMap
+                    val m: Map[String, String] = keyValPairs.map(pair => (pair._1.trim.toLowerCase, pair._2.trim)).toMap
                     (Some(cmdName), m)
                 }
                 case NoSuccess(msg, remaining) => {
@@ -166,3 +166,4 @@ object AlternateCmdParser extends JavaTokenParsers {
     }
 
 }
+

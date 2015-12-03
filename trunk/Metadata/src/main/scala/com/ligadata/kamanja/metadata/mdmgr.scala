@@ -16,27 +16,24 @@
 
 package com.ligadata.kamanja.metadata
 
-//import com.ligadata.kamanja.metadata.ClusterInfo
 import com.ligadata.kamanja.metadata.MiningModelType.MiningModelType
 import com.ligadata.kamanja.metadata.ModelRepresentation.ModelRepresentation
 
 import scala.Enumeration
+import com.ligadata.Exceptions.StackTrace
+
 import scala.collection.immutable.List
-import scala.collection.mutable.{ Map, HashMap, MultiMap, Set, SortedSet, ArrayBuffer }
-import scala.io.Source._
+import scala.collection.mutable.{HashMap, MultiMap, Map, Set, ArrayBuffer}
 import scala.util.control.Breaks._
 import com.ligadata.Exceptions._
 
-import java.util._
-import java.lang.RuntimeException
+import java.util.Date
 import java.util.NoSuchElementException
 
 import org.apache.log4j._
 
-import ObjTypeType._
 import ObjType._
 
-import com.ligadata.Exceptions.StackTrace
 
 /**
  * class MdMgr
@@ -3272,37 +3269,131 @@ object MdMgr extends LogTrait {
     retVerInfo
   }
 
-  // Expecting Formatted version as input
-  def ConvertVersionToLong(verInfo: String): Long = {
-    FormatVersion(verInfo).replaceAll("[.]", "").toLong
-  }
+    /**
+      * Convert the supplied version string to a Long.  Should it have '.' in it, they are squeezed out.
+      * @param verInfo a version string (possibly with '.' ... e.g., 000000.000001.000001 -> 1000001)
+      * @return long formed from decimal digits in the string
+      */
+    def ConvertVersionToLong(verInfo: String): Long = {
+        val hasDots : Boolean = (verInfo != null && verInfo.contains('.'))
+        val longVer : Long = if (hasDots) {
+            FormatVersion(verInfo).replaceAll("[.]", "").toLong
+        } else {
+            if (IsNumeric(verInfo)) {
+                verInfo.toLong
+            } else { // oh oh
+                0
+            }
+        }
+        longVer
+    }
 
-  def ConvertLongVersionToString(verInfo: Long): String = {
-    var remVer = verInfo
-   
-    var major = remVer / 1000000000000L  // Not expecting more than 6 digits here. Do we need to add check for that?????
-    remVer = remVer % 1000000000000L
-    var mini = remVer / 1000000L
-    var micro = remVer % 1000000L
+    /** Answer if the string contains only decimal digits
+      *
+      */
+    def IsNumeric(str : String) : Boolean = {
+        (str != null && str.filter(c => c >= '0' && c <= '9').length == str.length)
+    }
+    /**
+      * Convert the supplied version to a formatted string in three parts with form "%06d.%06d.%06d"
+      * @param verInfo a long version
+      * @param withDots if true (the default) string returned is of form "%06d.%06d.%06d"
+      * @return a formatted string from the long in the form "%06d.%06d.%06d" or %06d%06d%06d"
+      */
+    def ConvertLongVersionToString(verInfo: Long, withDots : Boolean = true): String = {
+        var remVer = verInfo
 
-    val retVerInfo = "%06d.%06d.%06d".format(major, mini, micro)
-    retVerInfo
-  }
+        val major = remVer / 1000000000000L  // Not expecting more than 6 digits here. Do we need to add check for that?????
+        remVer = remVer % 1000000000000L
+        val mini = remVer / 1000000L
+        val micro = remVer % 1000000L
 
+        val desiredFmt : String = if (withDots) "%06d.%06d.%06d" else "%06d%06d%06d"
+        val retVerInfo = desiredFmt.format(major, mini, micro)
+        retVerInfo
+    }
+
+    /** Answer the unknown version as a string.
+      *
+      * @return "000000000000000000000"
+      */
     def UnknownVersion : String = "000000000000000000000"
-    def LatestVersion : String = "111111.111111.111111"
 
-  def Pad0s2Version(verInfo: Long): String = {
-    var remVer = verInfo
-   
-    var major = remVer / 1000000000000L  // Not expecting more than 6 digits here. Do we need to add check for that?????
-    remVer = remVer % 1000000000000L
-    var mini = remVer / 1000000L
-    var micro = remVer % 1000000L
+    /**
+      * Answer the "latest" version key as a string.
+      * @return ConvertLongVersionToString(-1)
+      */
+    def LatestVersion : String = ConvertLongVersionToString(-1)
 
-    val retVerInfo = "%06d%06d%06d".format(major, mini, micro)
-    retVerInfo
-  }
+    /**
+      * @deprecated("Use MdMgr.ConvertLongVersionToString(Long) instead.","2015-Nov-11")
+      *
+      * Convert the supplied version to a formatted string in three parts with form "%06d.%06d.%06d"
+      *
+      * @param verInfo a long version
+      * @return a string from the long in the form "%06d.%06d.%06d"
+      */
+    def Pad0s2Version(verInfo: Long): String = {
+        var remVer = verInfo
+
+        val major = remVer / 1000000000000L  // Not expecting more than 6 digits here. Do we need to add check for that?????
+        remVer = remVer % 1000000000000L
+        val mini = remVer / 1000000L
+        val micro = remVer % 1000000L
+
+        val retVerInfo = "%06d%06d%06d".format(major, mini, micro)
+        retVerInfo
+    }
+
+    /**
+      * Split a three part name (namespace.name.version) into its respective parts. A null input parameter or strings with
+      * less than three '.' delimited nodes produce (null,null,null). The name and version consume the last two '.'
+      * delimited nodes with the remaining nodes prefixing them considered the namespace.  That is, the namespace can
+      * have multiple '.' delimited nodes in it.
+      *
+      * For Namespace.Name type nodes, use the SplitFullName(String) function
+      * @see SplitFullName(String)
+      *
+      * @param mdName a Namespace.Name.Version name.
+      * @return (namespace, name, version) triple
+      */
+    def  SplitFullNameWithVersion(mdName : String) : (String,String,String) = {
+        val nameparts = if (mdName != null) mdName.split('.') else null
+        val split_names : (String,String,String) = if (nameparts == null || nameparts.length < 3) {
+            (null,null,null)
+        } else {
+            val buffer: StringBuilder = new StringBuilder
+            val nameNodes: Array[String] = mdName.split('.')
+            val ver: String = nameNodes.last
+            val nameNodesSansVer : Array[String] = nameNodes.dropRight(1)
+            val name : String = nameNodesSansVer.last
+            nameNodesSansVer.take(nameNodesSansVer.size - 1).addString(buffer, ".")
+            val nmSpace: String = buffer.toString
+            (nmSpace,name,ver)
+        }
+        split_names
+    }
+
+    /** Split a '.' delimited Namespace.Name string into its namespace and name.  The last name is considered as the name and
+      * the remaining '.' delimited nodes that prefix it are considered the namespace.  Arguments that are null, have no length
+      * or no '.' are rejected and a (null,null) pair is returned.
+      *
+      * If the name supplied has a version suffix, use SplitFullNameWithVersion(String) instead of this function.
+      * @see SplitFullNameWithVersion(String)
+      *
+      * @param mdName a "full" name (namespace.name) string.
+      * @return (namespace, name) pair
+      *
+      */
+
+    def SplitFullName(mdName : String) : (String, String) = {
+        val buffer: StringBuilder = new StringBuilder
+        val nameNodes: Array[String] = mdName.split('.')
+        val modelNm: String = nameNodes.last
+        nameNodes.take(nameNodes.size - 1).addString(buffer, ".")
+        val modelNmSpace: String = buffer.toString
+        (modelNmSpace,modelNm)
+    }
 }
 
 

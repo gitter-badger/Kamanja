@@ -501,7 +501,8 @@ trait MetadataAPI {
     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
     *               method. If Security and/or Audit are configured, this value must be a value other than None
     * @param modelName appropriate for JPMML, the namespace.name of the JPMML model to be added to the Kamanja metadata
-    * @param version appropriate for JPMML, the model version to be assigned
+    * @param version appropriate for JPMML, the model version to be assigned. This version ''must'' be greater than the
+    *                version in use and unique for models with the modelName
     * @param optVersionBeingUpdated not used .. reserved for future release where explicit modelnamespace.modelname.modelversion
     *                               can be updated (not just the latest version)
     * @return the result as a JSON String of object ApiResult where ApiResult.statusCode

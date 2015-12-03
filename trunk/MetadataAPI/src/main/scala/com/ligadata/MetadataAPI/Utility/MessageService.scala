@@ -104,10 +104,9 @@ object MessageService {
 
   def updateMessage(input: String): String = {
     var response = ""
-    var msgFileDir: String = ""
     //val gitMsgFile = "https://raw.githubusercontent.com/ligadata-dhaval/Kamanja/master/HelloWorld_Msg_Def.json"
     if (input == "") {
-      msgFileDir = MetadataAPIImpl.GetMetadataAPIConfig.getProperty("MESSAGE_FILES_DIR")
+      val msgFileDir = MetadataAPIImpl.GetMetadataAPIConfig.getProperty("MESSAGE_FILES_DIR")
       if (msgFileDir == null) {
         response = "MESSAGE_FILES_DIR property missing in the metadata API configuration"
       } else {
@@ -139,7 +138,7 @@ object MessageService {
       //input provided
       var message = new File(input.toString)
       val messageDef = Source.fromFile(message).mkString
-      response = MetadataAPIImpl.AddContainer(messageDef, "JSON", userid)
+      response = MetadataAPIImpl.UpdateMessage(messageDef, "JSON", userid)
     }
     //Got the message. Now add them
     response

@@ -744,7 +744,7 @@ object ModelRepresentation extends Enumeration {
  * @param inputVars an array of the input variables that are consumed by this model (used for dag construction)
  * @param outputVars an array of the output variables published by this model (also used for dag construction)
  * @param isReusable Whether the model execution is referentially transparent
- * @param msgConsumed Namespace.name(.ver?) of message consumed by this model...for now only one messages is consumed by
+ * @param msgConsumed Namespace.name.ver of message consumed by this model...for now only one messages is consumed by
  *                    any given model
  * @param supportsInstanceSerialization when true, ModelDef instances are serialized and cached for retrieval by
  *                                      the engine and other consumers of ModelDefs.  This mechanism is useful

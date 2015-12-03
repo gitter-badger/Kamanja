@@ -74,12 +74,12 @@ class LearningEngine(val input: InputAdapter, val curPartitionKey: PartitionUniq
           }
         } catch {
           case e: Exception => {
-            LOG.error("Model Failed => " + md.mdl.ModelName() + ". Reason: " + e.getCause + ". Message: " + e.getMessage)
+            LOG.error("Model Failed => " + modelInfo.mdl.ModelName() + ". Reason: " + e.getCause + ". Message: " + e.getMessage)
             val stackTrace = StackTrace.ThrowableTraceString(e)
             LOG.error("StackTrace:" + stackTrace)
           }
           case t: Throwable => {
-            LOG.error("Model Failed => " + md.mdl.ModelName() + ". Reason: " + t.getCause + ". Message: " + t.getMessage)
+            LOG.error("Model Failed => " + modelInfo.mdl.ModelName() + ". Reason: " + t.getCause + ". Message: " + t.getMessage)
             val stackTrace = StackTrace.ThrowableTraceString(t)
             LOG.error("StackTrace:" + stackTrace)
           }

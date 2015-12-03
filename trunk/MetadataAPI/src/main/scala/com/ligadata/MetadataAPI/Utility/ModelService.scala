@@ -16,9 +16,11 @@
 
 package com.ligadata.MetadataAPI.Utility
 
-import java.io.File
+import java.io.{FileNotFoundException, File}
 
+import com.ligadata.Exceptions.StackTrace
 import com.ligadata.MetadataAPI.MetadataAPI.ModelType
+import com.ligadata.MetadataAPI.MetadataAPI.ModelType.ModelType
 import com.ligadata.MetadataAPI.MetadataAPIImpl
 import scala.io.Source
 import org.apache.log4j._
@@ -389,6 +391,47 @@ object ModelService {
   }
 
     /**
+      * Update a Jpmml model with the pmml text model found at ''pmmlPath''.  The model namespace, name and version
+      * are required.  The userid should have a valid value when authentication and auditing has been enabled on
+      * the cluster.
+      *
+      * @param pmmlPath
+      * @param userid
+      * @param modelNamespaceName
+      * @param newVersion
+      * @return result string
+      */
+  def updateModelJPmml(pmmlPath : String
+                      ,userid : Option[String]
+                      ,modelNamespaceName : String
+                      ,newVersion : String) : String = {
+
+      val response : String = try {
+          val jpmmlPath : File = new File(pmmlPath.toString)
+              val pmmlText : String = Source.fromFile(jpmmlPath).mkString
+
+              MetadataAPIImpl.UpdateModel(ModelType.JPMML
+                              , pmmlText
+                              , userid
+                              , Some(modelNamespaceName)
+                              , Some(newVersion))
+      } catch {
+        case fnf : FileNotFoundException => {
+            val msg : String = s"updateModelJPmml... supplied file path not found ... path = $pmmlPath"
+            logger.error(msg)
+            msg
+        }
+        case e : Exception => {
+            val stackTrace = StackTrace.ThrowableTraceString(e)
+            val msg : String = s"updateModelJPmml... exception e = ${e.toString}"
+            logger.error(s"$msg\nstack = \n$stackTrace")
+            msg
+        }
+      }
+      response
+  }
+
+    /**
      * Update a model in the metadata with the supplied Java model
      * @param input the path of the model to be used in the model update
      * @param dep the model compile config indication
@@ -572,6 +615,7 @@ object ModelService {
                   }
                   response+= MetadataAPIImpl.UpdateModel(ModelType.SCALA, modelDef, userid, Some(modelConfig))
                 }
+                response+= MetadataAPIImpl.UpdateModel(ModelType.JAVA, modelDef, userid, Some(modelConfig))
               }
             }
           }
@@ -648,191 +692,6 @@ object ModelService {
         }
         response
     }
-
-    /**
-     * Add the supplied model to the metadata.
-     * @param input the path of the model to be ingested
-     * @param dep model configuration indicator
-     * @param userid the optional userId. If security and auditing in place this parameter is required.
-     * @return the result of the operation
-     */
-     def addModelScala(input: String
-                    , dep: String = ""
-                    , userid: Option[String] = Some("metadataapi")
-                    ): String = {
-        var modelDefs= Array[String]()
-        var modelConfig=""
-        var modelDef=""
-        var response: String = ""
-        var modelFileDir: String = ""
-        if (input == "") {
-          //get the messages location from the config file. If error get the location from github
-          modelFileDir = MetadataAPIImpl.GetMetadataAPIConfig.getProperty("MODEL_FILES_DIR")
-          if (modelFileDir == null) {
-            response = "MODEL_FILES_DIR property missing in the metadata API configuration"
-          } else {
-            //verify the directory where messages can be present
-            IsValidDir(modelFileDir) match {
-              case true => {
-                //get all files with json extension
-                val models: Array[File] = new java.io.File(modelFileDir).listFiles.filter(_.getName.endsWith(".scala"))
-                models.length match {
-                  case 0 => {
-                    val errorMsg = "Models not found at " + modelFileDir
-                    response = errorMsg
-                  }
-                  case option => {
-                    modelDefs=getUserInputFromMainMenu(models)
-                  }
-                }
-              }
-              case false => {
-                //println("Message directory is invalid.")
-                response = "Model directory is invalid."
-              }
-            }
-          }
-        } else {
-          var model = new File(input.toString)
-          if(model.exists()){
-            modelDef = Source.fromFile(model).mkString
-            modelDefs=modelDefs:+modelDef
-          }else{
-            response="File does not exist"
-          }
-        }
-        if(modelDefs.nonEmpty) {
-          for (modelDef <- modelDefs){
-            println("Adding the next model in the queue.")
-            if (dep.length > 0) {
-              response+= MetadataAPIImpl.AddModel(ModelType.SCALA, modelDef, userid, Some(userid.get+"."+dep))
-            } else {
-              //before adding a model, add its config file.
-              var configKeys = MetadataAPIImpl.getModelConfigNames
-              if(configKeys.isEmpty){
-                response="No model configuration loaded in the metadata!"
-              }else{
-                var srNo = 0
-                println("\nPick a Model Definition file(s) from below choices\n")
-                for (configkey <- configKeys) {
-                  srNo += 1
-                  println("[" + srNo + "]" + configkey)
-                }
-                print("\nEnter your choice: \n")
-                var userOption = Console.readInt()
-
-                userOption match {
-                  case x if ((1 to srNo).contains(userOption)) => {
-                    //find the file location corresponding to the config file
-                    modelConfig=configKeys(userOption.toInt - 1)
-                    println("Model config selected is "+modelConfig)
-                  }
-                  case _ => {
-                    val errorMsg = "Incorrect input " + userOption + ". Please enter the correct option."
-                    println(errorMsg)
-                    errorMsg
-                  }
-                }
-                response+= MetadataAPIImpl.AddModel(ModelType.SCALA, modelDef, userid, Some(modelConfig))
-              }
-            }
-          }
-        }
-        response
-     }
-
-    /**
-     * Add the supplied model to the metadata.
-     * @param input The input path of the model to be ingested
-     * @param dep model configuration
-     * @param userid the optional userId. If security and auditing in place this parameter is required.
-     * @return the result of the operation
-     */
-    def addModelJava(input: String, dep: String = ""
-                   , userid: Option[String] = Some("metadataapi")
-                   ): String = {
-        var modelDefs= Array[String]()
-        var modelConfig=""
-        var modelDef=""
-        var response: String = ""
-        var modelFileDir: String = ""
-
-        if (input == "") {
-          //get the messages location from the config file. If error get the location from github
-          modelFileDir = MetadataAPIImpl.GetMetadataAPIConfig.getProperty("MODEL_FILES_DIR")
-          if (modelFileDir == null) {
-            response = "MODEL_FILES_DIR property missing in the metadata API configuration"
-          } else {
-            //verify the directory where messages can be present
-            IsValidDir(modelFileDir) match {
-              case true => {
-                //get all files with json extension
-                val models: Array[File] = new java.io.File(modelFileDir).listFiles.filter(_.getName.endsWith(".java"))
-                models.length match {
-                  case 0 => {
-                    val errorMsg = "Models not found at " + modelFileDir
-                    response = errorMsg
-                  }
-                  case option => {
-
-                    modelDefs=getUserInputFromMainMenu(models)
-                  }
-                }
-              }
-              case false => {
-                //println("Message directory is invalid.")
-                response = "Model directory is invalid."
-              }
-            }
-          }
-        } else {
-          var model = new File(input.toString)
-          if(model.exists()){
-            modelDef = Source.fromFile(model).mkString
-            modelDefs=modelDefs:+modelDef
-          }else{
-            response="File does not exist"
-          }
-        }
-        if(modelDefs.nonEmpty) {
-          for (modelDef <- modelDefs){
-            println("Adding the next model in the queue.")
-            if (dep.length > 0) {
-              response+= MetadataAPIImpl.AddModel(ModelType.SCALA, modelDef, userid, Some(userid.get+"."+dep))
-            } else {
-              var configKeys = MetadataAPIImpl.getModelConfigNames
-              println("--> got these many back "+configKeys.size)
-              if(configKeys.isEmpty){
-                response="No model configuration loaded in the metadata!"
-              }else{
-                var srNo = 0
-                println("\nPick a Model Definition file(s) from below choices\n")
-                for (configkey <- configKeys) {
-                  srNo += 1
-                  println("[" + srNo + "]" + configkey)
-                }
-                print("\nEnter your choice: \n")
-                var userOption = Console.readInt()
-
-                userOption match {
-                  case x if ((1 to srNo).contains(userOption)) => {
-                    //find the file location corresponding to the config file
-                    modelConfig=configKeys(userOption.toInt - 1)
-                    println("Model config selected is "+modelConfig)
-                  }
-                  case _ => {
-                    val errorMsg = "Incorrect input " + userOption + ". Please enter the correct option."
-                    println(errorMsg)
-                    errorMsg
-                  }
-                }
-                response+= MetadataAPIImpl.AddModel(ModelType.JAVA, modelDef, userid, Some(modelConfig))
-              }
-            }
-          }
-        }
-        response
-  }
 
     /**
      * Remove the model with the supplied namespace.name.ver from the metadata.
