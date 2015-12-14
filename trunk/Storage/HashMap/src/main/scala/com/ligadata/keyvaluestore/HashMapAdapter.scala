@@ -138,7 +138,7 @@ class HashMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
 
   val path = if (parsed_json.contains("path")) parsed_json.getOrElse("path", ".").toString.trim else parsed_json.getOrElse("Location", ".").toString.trim
   val InMemory = getOptionalField("inmemory", parsed_json, adapterSpecificConfig_json, "false").toString.trim.toBoolean
-  val withTransactions = getOptionalField("withtransaction", parsed_json, adapterSpecificConfig_json, "false").toString.trim.toBoolean
+  val withTransactions = getOptionalField("withtransaction", parsed_json, adapterSpecificConfig_json, "true").toString.trim.toBoolean
 
   logger.info("Datastore initialization complete")
 
@@ -322,8 +322,8 @@ class HashMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
           var vba = byteOs.toByteArray()
           map.put(kba, vba)
         })
+	Commit(tableName)
       })
-      Commit
     } catch {
       case e: Exception => {
 	throw CreateDMLException("Failed to save an object in table " + tableName + ":" + e.getMessage(),e)
@@ -346,7 +346,7 @@ class HashMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
         var kba = MakeCompositeKey(key)
         map.remove(kba)
       })
-      Commit
+      Commit(tableName)
     } catch {
       case e: Exception => {
 	throw CreateDMLException("Failed to delete object(s) from table " + tableName + ":" + e.getMessage(),e)
@@ -381,7 +381,7 @@ class HashMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
           }
         }
       }
-      Commit
+      Commit(tableName)
     } catch {
       case e: Exception => {
 	throw CreateDMLException("Failed to delete object(s) from table " + tableName + ":" + e.getMessage(),e)
