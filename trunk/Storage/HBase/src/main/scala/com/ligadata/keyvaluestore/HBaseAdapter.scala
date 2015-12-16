@@ -259,7 +259,9 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
     try{
       relogin
       if (admin.tableExists(tableName)) {
-	admin.disableTable(tableName)
+	if( admin.isTableEnabled(tableName)){
+	  admin.disableTable(tableName)
+	}
 	admin.deleteTable(tableName)
       }
     }catch {

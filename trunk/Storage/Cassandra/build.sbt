@@ -23,3 +23,5 @@ libraryDependencies += "log4j" % "log4j" % "1.2.17"
 libraryDependencies += "commons-dbcp" % "commons-dbcp" % "1.4"
 
 libraryDependencies += "org.apache.thrift" % "libthrift" % "0.9.2"
+
+parallelExecution := false

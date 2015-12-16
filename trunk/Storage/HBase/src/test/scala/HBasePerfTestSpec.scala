@@ -221,7 +221,7 @@ class HBasePerfTestSpec extends FunSpec with BeforeAndAfter with BeforeAndAfterA
 
       And("Check the row count after adding a bunch")
       cnt = hbaseAdapter.getRowCount(containerName)
-      assert(cnt == 1000000)
+      assert(cnt == 10000)
     }
 
     it("Bulk Read Operations"){

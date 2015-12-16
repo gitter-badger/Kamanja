@@ -194,11 +194,15 @@ class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
   }
 
   private def CheckTableExists(containerName: String): Unit = {
+    logger.debug("CheckTableExists: " + containerName + ",this => " + this)
     if (containerList.contains(containerName)) {
       return
-    } else {
-      CreateContainer(containerName)
-      containerList.add(containerName)
+    }
+    lock.synchronized {
+      if (containerList.contains(containerName) == false) {
+        CreateContainer(containerName)
+        containerList.add(containerName)
+      }
     }
   }
 

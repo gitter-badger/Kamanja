@@ -195,7 +195,7 @@ class HBaseAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAfterAl
 	var value = new Value("kryo",v)
 	adapter.put("&&",key,value)
       }
-      stackTrace = StackTrace.ThrowableTraceString(ex2.cause)
+      var stackTrace = StackTrace.ThrowableTraceString(ex2.cause)
       logger.info("StackTrace:"+stackTrace)
 
       And("Test Put api")
