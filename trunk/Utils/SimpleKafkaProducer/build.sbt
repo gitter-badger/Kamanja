@@ -17,6 +17,7 @@ mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
   {
     // case PathList("javax", "servlet", xs @ _*)         => MergeStrategy.first
     // case PathList(ps @ _*) if ps.last endsWith ".html" => MergeStrategy.first
+case PathList("META-INF", "maven","jline","jline", ps) if ps.startsWith("pom") => MergeStrategy.discard
     case PathList(ps @ _*) if ps.last endsWith ".html" => MergeStrategy.first
     case x if x endsWith "google/common/annotations/GwtCompatible.class" => MergeStrategy.first
     case x if x endsWith "google/common/annotations/GwtIncompatible.class" => MergeStrategy.first
@@ -39,7 +40,7 @@ name := "SimpleKafkaProducer"
 
 version := "0.1.0"
 
-scalaVersion := "2.10.4"
+scalaVersion := "2.11.7"
 
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 
@@ -49,7 +50,7 @@ libraryDependencies += "org.apache.logging.log4j" % "log4j-core" % "2.4.1"
 
 resolvers += "Apache repo" at "https://repository.apache.org/content/repositories/releases"
 
-libraryDependencies ++= Seq("org.apache.kafka" % "kafka_2.10" % "0.8.1.1"
+libraryDependencies ++= Seq("org.apache.kafka" %% "kafka" % "0.8.2.1"
                               exclude("javax.jms", "jms")
                               exclude("com.sun.jdmk", "jmxtools")
                               exclude("com.sun.jmx", "jmxri")

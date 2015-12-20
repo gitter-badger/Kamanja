@@ -10,7 +10,7 @@
   "PhysicalName" : null,
   "Version" : "000000000000000001",
   "JarName" : null,
-  "DependencyJars" : [ "basetypes_2.10-0.1.0.jar", "metadata_2.10-1.0.jar" ],
+  "DependencyJars" : [ "basetypes_2.11-0.1.0.jar", "metadata_2.11-1.0.jar" ],
   "Implementation" : null,
   "NumberOfDimensions" : 1,
   "TransactionId" : 0
@@ -24,8 +24,8 @@
   "TypeName" : "long",
   "PhysicalName" : "Long",
   "Version" : "000000000000000001",
-  "JarName" : "basetypes_2.10-0.1.0.jar",
-  "DependencyJars" : [ "metadata_2.10-1.0.jar" ],
+  "JarName" : "basetypes_2.11-0.1.0.jar",
+  "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.LongImpl",
   "TransactionId" : 0
 } ]

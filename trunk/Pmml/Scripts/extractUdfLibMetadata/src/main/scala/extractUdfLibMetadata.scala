@@ -58,7 +58,7 @@ extractUdfLibMetadata.scala --sbtProject <projectName>
         
         b. The full object path supplied must have at least two nodes.  Unqualified object names are not acceptable.
         
-        c. This script executes the fat jar version of the MethodExtractor (`pwd`/trunk/Pmml/MethodExtractor/target/scala-2.10/MethodExtractor-1.0)
+        c. This script executes the fat jar version of the MethodExtractor (`pwd`/trunk/Pmml/MethodExtractor/target/scala-2.11/MethodExtractor-1.0)
 
         d. Only one full object path may be specified in this version. 
 """
@@ -145,7 +145,7 @@ extractUdfLibMetadata.scala --sbtProject <projectName>
 		val classPathStr : String = Process(classPathCmdSeq).!!.trim
 		println(s"classPathStr = $classPathStr")
 
-		val extractCmd = s"$pwd/Pmml/MethodExtractor/target/scala-2.10/MethodExtractor-1.0"
+		val extractCmd = s"$pwd/Pmml/MethodExtractor/target/scala-2.11/MethodExtractor-1.0"
 		/** Pass deps without quotes... the Seq takes care of presenting it as a "string" */
     
     val extractCmdSeq : Seq[String] = {

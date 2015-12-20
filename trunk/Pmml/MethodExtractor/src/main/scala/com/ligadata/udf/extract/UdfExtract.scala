@@ -343,16 +343,16 @@ Usage: scala com.ligadata.udf.extract.MethodExtract --object <fully qualifed sca
     val mgr: MdMgr = MdMgr.GetMdMgr
 
     /** seed essential types */
-    mgr.AddScalar(MdMgr.sysNS, "Any", ObjType.tAny, "Any", versionNumber, "basetypes_2.10-0.1.0.jar", Array("metadata_2.10-1.0.jar"), "com.ligadata.BaseTypes.AnyImpl")
-    mgr.AddScalar(MdMgr.sysNS, "String", ObjType.tString, "String", versionNumber, "basetypes_2.10-0.1.0.jar", Array("metadata_2.10-1.0.jar"), "com.ligadata.BaseTypes.StringImpl")
-    mgr.AddScalar(MdMgr.sysNS, "Int", ObjType.tInt, "Int", versionNumber, "basetypes_2.10-0.1.0.jar", Array("metadata_2.10-1.0.jar"), "com.ligadata.BaseTypes.IntImpl")
-    mgr.AddScalar(MdMgr.sysNS, "Integer", ObjType.tInt, "Int", versionNumber, "basetypes_2.10-0.1.0.jar", Array("metadata_2.10-1.0.jar"), "com.ligadata.BaseTypes.IntImpl")
-    mgr.AddScalar(MdMgr.sysNS, "Long", ObjType.tLong, "Long", versionNumber, "basetypes_2.10-0.1.0.jar", Array("metadata_2.10-1.0.jar"), "com.ligadata.BaseTypes.LongImpl")
-    mgr.AddScalar(MdMgr.sysNS, "Boolean", ObjType.tBoolean, "Boolean", versionNumber, "basetypes_2.10-0.1.0.jar", Array("metadata_2.10-1.0.jar"), "com.ligadata.BaseTypes.BoolImpl")
-    mgr.AddScalar(MdMgr.sysNS, "Bool", ObjType.tBoolean, "Boolean", versionNumber, "basetypes_2.10-0.1.0.jar", Array("metadata_2.10-1.0.jar"), "com.ligadata.BaseTypes.BoolImpl")
-    mgr.AddScalar(MdMgr.sysNS, "Double", ObjType.tDouble, "Double", versionNumber, "basetypes_2.10-0.1.0.jar", Array("metadata_2.10-1.0.jar"), "com.ligadata.BaseTypes.DoubleImpl")
-    mgr.AddScalar(MdMgr.sysNS, "Float", ObjType.tFloat, "Float", versionNumber, "basetypes_2.10-0.1.0.jar", Array("metadata_2.10-1.0.jar"), "com.ligadata.BaseTypes.FloatImpl")
-    mgr.AddScalar(MdMgr.sysNS, "Char", ObjType.tChar, "Char", versionNumber, "basetypes_2.10-0.1.0.jar", Array("metadata_2.10-1.0.jar"), "com.ligadata.BaseTypes.CharImpl")
+    mgr.AddScalar(MdMgr.sysNS, "Any", ObjType.tAny, "Any", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.AnyImpl")
+    mgr.AddScalar(MdMgr.sysNS, "String", ObjType.tString, "String", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.StringImpl")
+    mgr.AddScalar(MdMgr.sysNS, "Int", ObjType.tInt, "Int", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.IntImpl")
+    mgr.AddScalar(MdMgr.sysNS, "Integer", ObjType.tInt, "Int", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.IntImpl")
+    mgr.AddScalar(MdMgr.sysNS, "Long", ObjType.tLong, "Long", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.LongImpl")
+    mgr.AddScalar(MdMgr.sysNS, "Boolean", ObjType.tBoolean, "Boolean", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.BoolImpl")
+    mgr.AddScalar(MdMgr.sysNS, "Bool", ObjType.tBoolean, "Boolean", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.BoolImpl")
+    mgr.AddScalar(MdMgr.sysNS, "Double", ObjType.tDouble, "Double", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.DoubleImpl")
+    mgr.AddScalar(MdMgr.sysNS, "Float", ObjType.tFloat, "Float", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.FloatImpl")
+    mgr.AddScalar(MdMgr.sysNS, "Char", ObjType.tChar, "Char", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.CharImpl")
 
     mgr.AddFixedContainer(MdMgr.sysNS, "Context", "com.ligadata.pmml.runtime.Context", List())
 

@@ -8,10 +8,10 @@
 		 "DatabaseHost" : "localhost",
 		 "DatabaseLocation" : "/tmp/KamanjaInstall",
 		 "JarTargetDir"	: "/tmp/KamanjaInstall",
-		 "ScalaHome"  	: "/usr/local/Cellar/scala210/2.10.4",
+		 "ScalaHome"  	: "/usr/local/Cellar/scala210/2.11",
 		 "JavaHome"  	: "/usr",
 		 "ManifestPath"	: "/users/wtarver/Development/Kamanja/trunk/MetadataAPI/src/test/SampleTestFiles/Models/manifest.mf",
-		 "ClassPath"  	: "/tmp/KamanjaInstall/metadata_2.10-1.0.jar:/tmp/KamanjaInstall/basefunctions_2.10-0.1.0.jar:/tmp/KamanjaInstall/messagedef_2.10-1.0.jar:/tmp/KamanjaInstall/methodextractor_2.10-1.0.jar:/tmp/KamanjaInstall/pmmlcompiler_2.10-1.0.jar:/tmp/KamanjaInstall/kamanjabase_2.10-1.0.jar:/tmp/KamanjaInstall/bootstrap_2.10-1.0.jar:/tmp/KamanjaInstall/joda-time-2.8.2.jar:/tmp/KamanjaInstall/joda-convert-1.6.jar:/tmp/KamanjaInstall/basetypes_2.10-0.1.0.jar:/tmp/KamanjaInstall/pmmludfs_2.10-1.0.jar:/tmp/KamanjaInstall/pmmlruntime_2.10-1.0.jar:/tmp/KamanjaInstall/json4s-native_2.10-3.2.9.jar:/tmp/KamanjaInstall/json4s-core_2.10-3.2.9.jar:/tmp/KamanjaInstall/json4s-ast_2.10-3.2.9.jar:/tmp/KamanjaInstall/jackson-databind-2.3.1.jar:/tmp/KamanjaInstall/jackson-annotations-2.3.0.jar:/tmp/KamanjaInstall/json4s-jackson_2.10-3.2.9.jar:/tmp/KamanjaInstall/jackson-core-2.3.1.jar:/tmp/KamanjaInstall/log4j-1.2.17.jar",
+		 "ClassPath"  	: "/tmp/KamanjaInstall/metadata_2.11-1.0.jar:/tmp/KamanjaInstall/basefunctions_2.11-0.1.0.jar:/tmp/KamanjaInstall/messagedef_2.11-1.0.jar:/tmp/KamanjaInstall/methodextractor_2.11-1.0.jar:/tmp/KamanjaInstall/pmmlcompiler_2.11-1.0.jar:/tmp/KamanjaInstall/kamanjabase_2.11-1.0.jar:/tmp/KamanjaInstall/bootstrap_2.11-1.0.jar:/tmp/KamanjaInstall/joda-time-2.8.2.jar:/tmp/KamanjaInstall/joda-convert-1.6.jar:/tmp/KamanjaInstall/basetypes_2.11-0.1.0.jar:/tmp/KamanjaInstall/pmmludfs_2.11-1.0.jar:/tmp/KamanjaInstall/pmmlruntime_2.11-1.0.jar:/tmp/KamanjaInstall/json4s-native_2.11-3.2.9.jar:/tmp/KamanjaInstall/json4s-core_2.11-3.2.9.jar:/tmp/KamanjaInstall/json4s-ast_2.11-3.2.9.jar:/tmp/KamanjaInstall/jackson-databind-2.3.1.jar:/tmp/KamanjaInstall/jackson-annotations-2.3.0.jar:/tmp/KamanjaInstall/json4s-jackson_2.11-3.2.9.jar:/tmp/KamanjaInstall/jackson-core-2.3.1.jar:/tmp/KamanjaInstall/log4j-1.2.17.jar",
 		 "NotifyEngine" : "NO",
 		 "ZnodePath" : "/kamanja/metadata",
 		 "ZooKeeperConnectString" : "localhost:2181"

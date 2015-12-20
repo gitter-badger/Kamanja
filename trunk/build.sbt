@@ -5,7 +5,7 @@ sbtPlugin := true
 
 version := "0.0.0.1"
 
-scalaVersion := "2.10.4"
+scalaVersion := "2.11.7"
 
 shellPrompt := { state =>  "sbt (%s)> ".format(Project.extract(state).currentProject.id) }
 

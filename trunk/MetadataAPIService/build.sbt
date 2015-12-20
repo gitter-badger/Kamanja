@@ -17,6 +17,7 @@ mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
   {
     // case PathList("javax", "servlet", xs @ _*)         => MergeStrategy.first
     // case PathList(ps @ _*) if ps.last endsWith ".html" => MergeStrategy.first
+case PathList("META-INF", "maven","jline","jline", ps) if ps.startsWith("pom") => MergeStrategy.discard
     case PathList(ps @ _*) if ps.last endsWith ".html" => MergeStrategy.first
     case x if x endsWith "google/common/annotations/GwtCompatible.class" => MergeStrategy.first
     case x if x endsWith "google/common/annotations/GwtIncompatible.class" => MergeStrategy.first
@@ -58,7 +59,7 @@ name := "MetadataAPIService"
 
 version := "1.0"
 
-scalaVersion := "2.10.4"
+scalaVersion := "2.11.7"
 
 scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 
@@ -67,14 +68,14 @@ resolvers ++= Seq(
 )
 
 libraryDependencies ++= {
-  val sprayVersion = "1.3.1"
-  val akkaVersion = "2.3.2"
+  val sprayVersion = "1.3.3"
+  val akkaVersion = "2.3.9"
   Seq(
-  "io.spray" % "spray-can" % sprayVersion,
-  "io.spray" % "spray-routing" % sprayVersion,
-  "io.spray" % "spray-testkit" % sprayVersion,
-  "io.spray" % "spray-client" % sprayVersion,
-  "io.spray" %%  "spray-json" % "1.2.5",
+  "io.spray" %% "spray-can" % sprayVersion,
+  "io.spray" %% "spray-routing" % sprayVersion,
+  "io.spray" %% "spray-testkit" % sprayVersion,
+  "io.spray" %% "spray-client" % sprayVersion,
+  "io.spray" %%  "spray-json" % "1.3.2",
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
 //  "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
   "ch.qos.logback" % "logback-classic" % "1.0.12",

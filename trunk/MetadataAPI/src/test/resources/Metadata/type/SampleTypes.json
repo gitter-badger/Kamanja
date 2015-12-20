@@ -9,8 +9,8 @@
   "TypeName" : "boolean",
   "PhysicalName" : "Boolean",
   "Version" : 1,
-  "JarName" : "basetypes_2.10-0.1.0.jar",
-  "DependencyJars" : [ "metadata_2.10-1.0.jar" ],
+  "JarName" : "basetypes_2.11-0.1.0.jar",
+  "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.BoolImpl",
   "TransactionId" : 0
 },
@@ -23,8 +23,8 @@
   "TypeName" : "string",
   "PhysicalName" : "String",
   "Version" : 1,
-  "JarName" : "basetypes_2.10-0.1.0.jar",
-  "DependencyJars" : [ "metadata_2.10-1.0.jar" ],
+  "JarName" : "basetypes_2.11-0.1.0.jar",
+  "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.StringImpl",
   "TransactionId" : 0
 },
@@ -37,8 +37,8 @@
   "TypeName" : "any",
   "PhysicalName" : "Any",
   "Version" : 1,
-  "JarName" : "basetypes_2.10-0.1.0.jar",
-  "DependencyJars" : [ "metadata_2.10-1.0.jar" ],
+  "JarName" : "basetypes_2.11-0.1.0.jar",
+  "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.AnyImpl",
   "TransactionId" : 0
 },
@@ -51,8 +51,8 @@
   "TypeName" : "int",
   "PhysicalName" : "Int",
   "Version" : 1,
-  "JarName" : "basetypes_2.10-0.1.0.jar",
-  "DependencyJars" : [ "metadata_2.10-1.0.jar" ],
+  "JarName" : "basetypes_2.11-0.1.0.jar",
+  "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.IntImpl",
   "TransactionId" : 0
 },
@@ -65,8 +65,8 @@
   "TypeName" : "long",
   "PhysicalName" : "Long",
   "Version" : 1,
-  "JarName" : "basetypes_2.10-0.1.0.jar",
-  "DependencyJars" : [ "metadata_2.10-1.0.jar" ],
+  "JarName" : "basetypes_2.11-0.1.0.jar",
+  "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.LongImpl",
   "TransactionId" : 0
 } ]

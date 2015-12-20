@@ -2,9 +2,9 @@ name := "ZooKeeperClient"
 
 version := "1.0"
 
-scalaVersion := "2.10.4"
+scalaVersion := "2.11.7"
 
-libraryDependencies += "org.scalatest" % "scalatest_2.10" % "2.2.0"
+libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.0"
 
 libraryDependencies += "org.apache.logging.log4j" % "log4j-api" % "2.4.1"
 
