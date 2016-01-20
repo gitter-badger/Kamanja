@@ -54,3 +54,25 @@ Pmml/JpmmlAdapter/src/main/resources/bin/pmml-evaluator-test.sh $KAMANJA_SRCDIR/
 ##**SAS models**
 
 Pmml/JpmmlAdapter/src/main/resources/bin/pmml-evaluator-test.sh $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/metadata/model/Sas/LogisticRegressionIris.pmml $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/data/iris.raw.csv >$KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/jpmmlResults/Sas/LogisticRegressionIris.tsv
+
+
+##**<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<**
+##**Produce model results for ''Auto dataset'' models using jpmml-evaluator's test tool**
+##**<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<**
+
+##**You must set these Env variables before invoking tests**
+export JPMML_TEST_BASE=/home/rich/github/dev/jpmml-evaluator/pmml-evaluator-example
+export KAMANJA_SRCDIR=/home/rich/github/dev/jpmml/kamanja/trunk
+cd $KAMANJA_SRCDIR
+
+
+##**R/Rattle models**
+Pmml/JpmmlAdapter/src/main/resources/bin/pmml-evaluator-test.sh $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/metadata/model/Rattle/DecisionTreeAuto.pmml $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/data/auto.raw.csv >$KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/jpmmlResults/Rattle/DecisionTreeAuto.tsv
+Pmml/JpmmlAdapter/src/main/resources/bin/pmml-evaluator-test.sh $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/metadata/model/Rattle/GeneralRegressionXformAuto.pmml $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/data/auto.raw.csv >$KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/jpmmlResults/Rattle/GeneralRegressionXformAuto.tsv
+Pmml/JpmmlAdapter/src/main/resources/bin/pmml-evaluator-test.sh $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/metadata/model/Rattle/LibSVMAuto.pmml $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/data/auto.raw.csv >$KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/jpmmlResults/Rattle/LibSVMAuto.tsv
+Pmml/JpmmlAdapter/src/main/resources/bin/pmml-evaluator-test.sh $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/metadata/model/Rattle/RandomForestAuto.pmml $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/data/auto.raw.csv >$KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/jpmmlResults/Rattle/RandomForestAuto.tsv
+Pmml/JpmmlAdapter/src/main/resources/bin/pmml-evaluator-test.sh $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/metadata/model/Rattle/RegressionXformAuto.pmml $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/data/auto.raw.csv >$KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/jpmmlResults/Rattle/RegressionXformAuto.tsv
+Pmml/JpmmlAdapter/src/main/resources/bin/pmml-evaluator-test.sh $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/metadata/model/Rattle/GeneralRegressionAuto.pmml $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/data/auto.raw.csv >$KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/jpmmlResults/Rattle/GeneralRegressionAuto.tsv
+Pmml/JpmmlAdapter/src/main/resources/bin/pmml-evaluator-test.sh $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/metadata/model/Rattle/KernlabSVMAuto.pmml $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/data/auto.raw.csv >$KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/jpmmlResults/Rattle/KernlabSVMAuto.tsv
+Pmml/JpmmlAdapter/src/main/resources/bin/pmml-evaluator-test.sh $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/metadata/model/Rattle/NeuralNetworkAuto.pmml $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/data/auto.raw.csv >$KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/jpmmlResults/Rattle/NeuralNetworkAuto.tsv
+Pmml/JpmmlAdapter/src/main/resources/bin/pmml-evaluator-test.sh $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/metadata/model/Rattle/RegressionAuto.pmml $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/data/auto.raw.csv >$KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/jpmmlResults/Rattle/RegressionAuto.tsv

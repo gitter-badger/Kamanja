@@ -1,0 +1,72 @@
+{
+  "Message": {
+    "NameSpace": "system",
+    "Name": "automsg",
+    "Version": "00.01.01",
+    "Description": "Auto data message",
+    "Fixed": "true",
+    "Persist": "true",
+    "Elements": [
+      {
+        "Field": {
+          "Name": "serialnumber",
+          "Type": "system.Double"
+        }
+      },
+       {
+        "Field": {
+          "Name": "mpg",
+          "Type": "system.Double"
+        }
+      },
+      {
+        "Field": {
+          "Name": "cylinders",
+          "Type": "system.String"
+        }
+      },
+      {
+        "Field": {
+          "Name": "displacement",
+          "Type": "system.Double"
+        }
+      },
+      {
+        "Field": {
+          "Name": "horsepower",
+          "Type": "system.Double"
+        }
+      },
+      {
+        "Field": {
+          "Name": "weight",
+          "Type": "system.Double"
+        }
+      },
+      {
+        "Field": {
+          "Name": "acceleration",
+          "Type": "system.Double"
+        }
+      },
+      {
+        "Field": {
+          "Name": "model_year",
+          "Type": "system.String"
+        }
+      },
+      {
+        "Field": {
+          "Name": "origin",
+          "Type": "system.String"
+        }
+      }
+    ],
+    "PartitionKey": [
+      "serialnumber"
+    ],
+    "PrimaryKey": [
+      "serialnumber"
+    ]
+  }
+}
