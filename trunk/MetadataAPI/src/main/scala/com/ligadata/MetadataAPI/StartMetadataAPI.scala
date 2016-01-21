@@ -282,6 +282,7 @@ object StartMetadataAPI {
         }
 
         case Action.GETALLMODELS => response = ModelService.getAllModels(userId)
+        case Action.GETALLMODELTYPES => response = ModelService.getAllModelTypes(userId)
         case Action.GETMODEL => response = {
           if (param.length == 0)
             ModelService.getModel("", userId)

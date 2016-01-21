@@ -19,7 +19,7 @@ package com.ligadata.MetadataAPI.Utility
 import java.io.{FileNotFoundException, File}
 
 import com.ligadata.AuditAdapterInfo.AuditConstants
-import com.ligadata.kamanja.metadata.MdMgr
+import com.ligadata.kamanja.metadata.{ModelDef, MdMgr}
 
 import scala.io.Source
 
@@ -687,43 +687,65 @@ object ModelService {
         response
   }
 
-    /**
-     * Get all the (active) models.
-     * @param userid the optional userId. If security and auditing in place this parameter is required.
-     * @return
-     */
-    def getAllModels(userid: Option[String] = Some("metadataapi")) : String = {
-      val isActive : Boolean = true
-      val activeModelAndTypeList : Array[(String,String)] = try {
-        val modDefs = MdMgr.GetMdMgr.Models(isActive, true)
-        modDefs match {
-          case None =>
-            Array[(String, String)]()
-          case Some(ms) =>
-            val msa = ms.toArray
-            ms.map(model => {
-              (model.FullNameWithVer, model.miningModelType.toString)
-            }).toArray
-        }
-      } catch {
-          case e: Exception => {
-            val stackTrace = StackTrace.ThrowableTraceString(e)
-            logger.debug("\nStackTrace:" + stackTrace)
-            Array[(String, String)]()
-          }
+  /**
+    *
+    * @param userid the optional userId. If security and auditing in place this parameter is required.
+    * @return
+    */
+  def getAllModels(userid: Option[String] = Some("metadataapi")) : String ={
+    var response=""
+    val modelKeys = MetadataAPIImpl.GetAllModelsFromCache(true, userid)
+    if (modelKeys.length == 0) {
+      response="Sorry, No models available in the Metadata"
+    }else{
+      var srNo = 0
+      for(modelKey <- modelKeys){
+        srNo += 1
+        response+="[" + srNo + "]" + modelKey+"\n"
       }
-
-      val buffer = new StringBuilder
-      buffer.append("Active Models\n")
-      if (activeModelAndTypeList.size > 0) {
-        val interim : Array[String] = activeModelAndTypeList.map(pair => s"${pair._1} (${pair._2})")
-        interim.addString(buffer,"\n")
-      } else {
-        "(no active models)"
-      }
-
-      buffer.toString
     }
+    response
+  }
+
+
+
+  /**
+   * Get all the (active) model names and their types..
+   * @param userid the optional userId. If security and auditing in place this parameter is required.
+   * @return
+   */
+  def getAllModelTypes(userid: Option[String] = Some("metadataapi")) : String = {
+    val isActive : Boolean = true
+    val activeModelAndTypeList : Array[(String,String)] = try {
+      val modDefs : Option[scala.collection.immutable.Set[ModelDef]] = MdMgr.GetMdMgr.Models(isActive, true)
+      modDefs match {
+        case None =>
+          Array[(String, String)]()
+        case Some(ms) =>
+          val msa = ms.toArray
+          ms.map(model => {
+            (model.FullNameWithVer, model.miningModelType.toString)
+          }).toArray
+      }
+    } catch {
+        case e: Exception => {
+          val stackTrace = StackTrace.ThrowableTraceString(e)
+          logger.debug("\nStackTrace:" + stackTrace)
+          Array[(String, String)]()
+        }
+    }
+
+    val buffer = new StringBuilder
+    buffer.append("Active Models\n")
+    if (activeModelAndTypeList.size > 0) {
+      val interim : Array[String] = activeModelAndTypeList.map(pair => s"${pair._1} (${pair._2})")
+      interim.addString(buffer,"\n")
+    } else {
+      "(no active models)"
+    }
+
+    buffer.toString
+  }
 
     /**
      * Remove the model with the supplied namespace.name.ver from the metadata.

@@ -49,6 +49,7 @@ object Action extends Enumeration {
   val UPDATEMODELSCALA=Value("updatemodelscala")
   val UPDATEMODELJAVA=Value("updatemodeljava")
   val GETALLMODELS=Value("getallmodels")
+  val GETALLMODELTYPES=Value("getallmodeltypes")
   val GETMODEL=Value("getmodel")
   //container management
   val ADDCONTAINER = Value("addcontainer")
