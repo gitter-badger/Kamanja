@@ -195,7 +195,7 @@ $KAMANJA_SRCDIR/Pmml/JpmmlAdapter/src/main/resources/bin/JpmmlPushKafka.sh $useC
 
 ##**Env setup**
 export KAMANJA_HOME=/tmp/drdigital
-export KAMANJA_SRCDIR=/home/rich/github/dev/jpmml/kamanja/trunk
+export KAMANJA_SRCDIR=/home/rich/github/dev/Sprint8FeaturesWithJpmml/kamanja/trunk
 cd $KAMANJA_HOME
 
 ##**Establish queues**
@@ -256,5 +256,6 @@ $KAMANJA_HOME/bin/kamanja $KAMANJA_HOME/config/MetadataAPIConfig.properties add 
 
 #**Get all models, messages**
 $KAMANJA_HOME/bin/kamanja $KAMANJA_HOME/config/MetadataAPIConfig.properties getallmodels
+$KAMANJA_HOME/bin/kamanja $KAMANJA_HOME/config/MetadataAPIConfig.properties getallmodeltypes
 $KAMANJA_HOME/bin/kamanja $KAMANJA_HOME/config/MetadataAPIConfig.properties getallmessages
 
