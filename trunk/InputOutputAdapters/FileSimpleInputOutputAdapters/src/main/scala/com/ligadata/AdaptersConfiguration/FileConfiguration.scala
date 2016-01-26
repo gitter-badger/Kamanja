@@ -39,7 +39,9 @@ object FileAdapterConfiguration {
 
     val fc = new FileAdapterConfiguration
     fc.Name = inputConfig.Name
-    fc.formatOrInputAdapterName = inputConfig.formatOrInputAdapterName
+    fc.formatName = inputConfig.formatName
+    fc.validateAdapterName = inputConfig.validateAdapterName
+    fc.failedEventsAdapterName = inputConfig.failedEventsAdapterName
     fc.className = inputConfig.className
     fc.jarName = inputConfig.jarName
     fc.dependencyJars = inputConfig.dependencyJars

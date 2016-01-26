@@ -22,7 +22,7 @@ case PathList("META-INF", "maven","jline","jline", ps) if ps.startsWith("pom") =
     case x if x endsWith "google/common/annotations/GwtCompatible.class" => MergeStrategy.first
     case x if x endsWith "google/common/annotations/GwtIncompatible.class" => MergeStrategy.first
     case x if x endsWith "/apache/commons/beanutils/BasicDynaBean.class" => MergeStrategy.first
-	case x if x endsWith "org/apache/commons/beanutils/BasicDynaBean.class" => MergeStrategy.last
+	  case x if x endsWith "org/apache/commons/beanutils/BasicDynaBean.class" => MergeStrategy.last
     case x if x contains "org/apache/commons/collections" =>  MergeStrategy.last
     case x if x contains "org\\apache\\commons\\collections" =>  MergeStrategy.last
     case "log4j.properties" => MergeStrategy.first
@@ -32,7 +32,7 @@ case PathList("META-INF", "maven","jline","jline", ps) if ps.startsWith("pom") =
 }
 
 excludedJars in assembly <<= (fullClasspath in assembly) map { cp => 
-  val excludes = Set("commons-beanutils-1.7.0.jar", "google-collections-1.0.jar", "commons-collections4-4.0.jar" )
+  val excludes = Set("commons-beanutils-1.7.0.jar", "google-collections-1.0.jar", "commons-collections4-4.0.jar", "minlog-1.2.jar" )
   cp filter { jar => excludes(jar.data.getName) }
 }
 
@@ -51,11 +51,11 @@ libraryDependencies += "org.apache.logging.log4j" % "log4j-core" % "2.4.1"
 resolvers += "Apache repo" at "https://repository.apache.org/content/repositories/releases"
 
 libraryDependencies ++= Seq("org.apache.kafka" %% "kafka" % "0.8.2.2"
+
                               exclude("javax.jms", "jms")
                               exclude("com.sun.jdmk", "jmxtools")
                               exclude("com.sun.jmx", "jmxri")
 )
-
 libraryDependencies <+= scalaVersion("org.scala-lang" % "scala-actors" % _)
 
 libraryDependencies += "org.json4s" %% "json4s-native" % "3.2.9" 

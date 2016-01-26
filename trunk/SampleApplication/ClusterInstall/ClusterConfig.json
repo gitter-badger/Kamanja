@@ -12,16 +12,6 @@
         "principal": "ligadata@INTRANET.LIGADATA.COM",
         "keytab": "/home/ligadata/keytab/ligadata.keytab"
       },
-      "StatusInfo": {
-        "StoreType": "hbase",
-        "SchemaName": "kamanja",
-        "Location": "localhost",
-        "authentication": "kerberos",
-        "regionserver_principal": "hbase/_HOST@INTRANET.LIGADATA.COM",
-        "master_principal": "hbase/_HOST@INTRANET.LIGADATA.COM",
-        "principal": "ligadata@INTRANET.LIGADATA.COM",
-        "keytab": "/home/ligadata/keytab/ligadata.keytab"
-      },
       "ZooKeeperInfo": {
         "ZooKeeperNodeBasePath": "/kamanja",
         "ZooKeeperConnectString": "localhost:2181",
@@ -179,6 +169,7 @@
           "DataFormat": "CSV",
           "ClassName": "com.ligadata.InputAdapters.KafkaSimpleConsumer$",
           "JarName": "kafkasimpleinputoutputadapters_2.11-1.0.jar",
+          "FailedEventsAdapter": "TestFailedEvents_1",
           "DependencyJars": [
             "jopt-simple-3.2.jar",
             "kafka_2.11-0.8.2.2.jar","kafka-clients-0.8.2.2.jar",
@@ -246,6 +237,24 @@
           "AdapterSpecificCfg": {
             "HostList": "localhost:9092",
             "TopicName": "teststatus_1"
+          }
+        },
+        {
+          "Name": "TestFailedEvents_1",
+          "TypeString": "FailedEvents",
+          "ClassName": "com.ligadata.OutputAdapters.KafkaProducer$",
+          "JarName": "kafkasimpleinputoutputadapters_2.11-1.0.jar",
+          "DependencyJars": [
+            "jopt-simple-3.2.jar",
+            "kafka_2.11-0.8.2.2.jar","kafka-clients-0.8.2.2.jar",
+            "metrics-core-2.2.0.jar",
+            "zkclient-0.3.jar",
+            "kamanjabase_2.11-1.0.jar",
+            "kvbase_2.11-0.1.0.jar"
+          ],
+          "AdapterSpecificCfg": {
+            "HostList": "localhost:9092",
+            "TopicName": "testfailedevents_1"
           }
         }
       ]

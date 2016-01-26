@@ -3,30 +3,6 @@
     {
       "ClusterId": "ligadata1",
       "DataStore": {"StoreType": "hashmap","SchemaName": "testdata","Location": "{InstallDirectory}/storage"},
-      "StatusInfo": {
-        "ClassName": "com.ligadata.keyvaluestore.HashMapAdapter$",
-        "JarName": "hashmap_2.11-0.1.0.jar",
-        "DependencyJars": [
-          "exceptions_2.11-1.0.jar",
-          "kamanjautils_2.11-1.0.jar",
-          "storagebase_2.11-1.0.jar",
-          "log4j-core-2.4.1.jar",
-          "log4j-api-2.4.1.jar",
-          "json4s-native_2.11-3.2.9.jar",
-          "json4s-core_2.11-3.2.9.jar",
-          "json4s-ast_2.11-3.2.9.jar",
-          "paranamer-2.6.jar",
-          "scalap-2.11.0.jar",
-          "json4s-jackson_2.11-3.2.9.jar",
-          "jackson-databind-2.3.1.jar",
-          "jackson-annotations-2.3.0.jar",
-          "jackson-core-2.3.1.jar",
-          "guava-16.0.1.jar",
-          "mapdb-1.0.6.jar"
-        ],
-        "SchemaName": "statusinfo",
-        "Location": "{InstallDirectory}/storage"
-      },
       "ZooKeeperInfo": {
         "ZooKeeperNodeBasePath": "/kamanja",
         "ZooKeeperConnectString": "localhost:2181",
@@ -184,6 +160,7 @@
           "DataFormat": "CSV",
           "ClassName": "com.ligadata.InputAdapters.KafkaSimpleConsumer$",
           "JarName": "kafkasimpleinputoutputadapters_2.11-1.0.jar",
+          "FailedEventsAdapter": "TestFailedEvents_1",
           "DependencyJars": [
             "jopt-simple-3.2.jar",
             "kafka_2.11-0.8.2.2.jar","kafka-clients-0.8.2.2.jar",
@@ -251,6 +228,24 @@
           "AdapterSpecificCfg": {
             "HostList": "localhost:9092",
             "TopicName": "teststatus_1"
+          }
+        },
+        {
+          "Name": "TestFailedEvents_1",
+          "TypeString": "FailedEvents",
+          "ClassName": "com.ligadata.OutputAdapters.KafkaProducer$",
+          "JarName": "kafkasimpleinputoutputadapters_2.11-1.0.jar",
+          "DependencyJars": [
+            "jopt-simple-3.2.jar",
+            "kafka_2.11-0.8.2.2.jar","kafka-clients-0.8.2.2.jar",
+            "metrics-core-2.2.0.jar",
+            "zkclient-0.3.jar",
+            "kamanjabase_2.11-1.0.jar",
+            "kvbase_2.11-0.1.0.jar"
+          ],
+          "AdapterSpecificCfg": {
+            "HostList": "localhost:9092",
+            "TopicName": "testfailedevents_1"
           }
         }
       ]

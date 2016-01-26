@@ -15,15 +15,13 @@
  */
 
 package com.ligadata.MetadataAPI
-import com.ligadata.Exceptions.InternalErrorException
+import com.ligadata.HeartBeat.MonitoringContext
 import com.ligadata.Serialize.JsonSerializer
-import org.apache.zookeeper.KeeperException.NoNodeException
 import org.json4s._
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
 import org.apache.logging.log4j._
-import scala.collection.JavaConverters._
-import org.apache.curator.framework.recipes.cache._
+import org.json4s.jackson.Serialization
 import scala.actors.threadpool.{ Executors, ExecutorService }
 
 
@@ -41,6 +39,12 @@ object MonitorAPIImpl {
   val ENGINE = "engine"
   val METADATA = "metadata"
   var _exec = Executors.newFixedThreadPool(1)
+
+  private var startTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
+  private var lastSeen = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
+  private var uniqueId: Long = 0
+  private var name = ""
+  private var metrics: scala.collection.mutable.MutableList[com.ligadata.HeartBeat.MonitorComponentInfo] = scala.collection.mutable.MutableList[com.ligadata.HeartBeat.MonitorComponentInfo]()
   
   private var healthInfo: scala.collection.mutable.Map[String,Any] = scala.collection.mutable.Map[String,Any]()
   
@@ -110,17 +114,48 @@ object MonitorAPIImpl {
      }
     return resultJson + "]"
    }
-   
-   /**
+
+  /**
+   * clockNewActivity - update Metadata health info, showing its still alive.
+   */
+  def clockNewActivity: Unit = {
+
+    lastSeen = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
+    uniqueId = MonitoringContext.monitorCount.incrementAndGet
+    implicit val formats = org.json4s.DefaultFormats
+
+    val dataJson =
+      ("Name" -> name) ~
+        ("UniqueId" -> uniqueId) ~
+        ("LastSeen" -> lastSeen) ~
+        ("StartTime" -> startTime) ~
+        ("Components" -> metrics.map(mci =>
+          ("Type" -> mci.typ) ~
+            ("Name" -> mci.name) ~
+            ("Description" -> mci.description) ~
+            ("LastSeen" -> mci.lastSeen) ~
+            ("StartTime" -> mci.startTime) ~
+            ("Metrics" -> mci.metricsJsonString)))
+
+    MetadataAPIImpl.zkc.setData().forPath(MetadataAPIImpl.zkHeartBeatNodePath, compact(render(dataJson)).getBytes)
+  }
+
+  def initMonitorValues(inName: String): Unit = {
+    startTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
+    uniqueId = 0
+    name = inName
+  }
+
+  /**
     * startMetadataHeartbeat - will be called internally by the MetadataAPI task to update the healthcheck every 5 seconds.
     */
    def startMetadataHeartbeat: Unit = {
      _exec.execute(new Runnable() {
        override def run() = {
          var startTime = System.currentTimeMillis
-         while (_exec.isShutdown == false) {
+         while (!_exec.isShutdown) {
+           clockNewActivity
            Thread.sleep(5000)
-           MetadataAPIImpl.clockNewActivity
          }
        }
       })

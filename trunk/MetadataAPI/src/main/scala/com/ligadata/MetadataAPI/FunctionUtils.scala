@@ -120,16 +120,16 @@ object FunctionUtils {
           // so grab the last one.
           val fDef = m.last.asInstanceOf[FunctionDef]
           logger.debug("function found => " + fDef.FullName + "." + MdMgr.Pad0s2Version(fDef.Version))
-          
+
           // Mark the transactionId for this transaction and delete object
           fDef.tranId = newTranId
           MetadataAPIImpl.DeleteObject(fDef)
-          
+
           // Notify everyone who cares about this change.
           var allObjectsArray =  Array[BaseElemDef](fDef)
           val operations = for (op <- allObjectsArray) yield "Remove"
           MetadataAPIImpl.NotifyEngine(allObjectsArray, operations)
-    
+
           // 'Saul Good'man
           var apiResult = new ApiResult(ErrorCodeConstants.Success, "RemoveFunction", null, ErrorCodeConstants.Remove_Function_Successfully + ":" + dispkey)
           return apiResult.toString()
@@ -231,7 +231,7 @@ object FunctionUtils {
       allJars.foreach(jar => {
         val jarName = com.ligadata.Utils.Utils.GetValidJarFile(jarPaths, jar)
         val f = new File(jarName)
-        if (!f.exists()) {  
+        if (!f.exists()) {
           try {
             val mObj = MetadataAPIImpl.GetObject(jar, "jar_store")
             // Nothing to do after getting the object.
@@ -257,24 +257,25 @@ object FunctionUtils {
         var apiResult = new ApiResult(ErrorCodeConstants.Not_Implemented_Yet, "AddFunctions", functionsText, ErrorCodeConstants.Not_Implemented_Yet_Msg)
         apiResult.toString()
       } else {
-        var funcList = JsonSerializer.parseFunctionList(functionsText, "JSON")
+        var funcList= JsonSerializer.parseFunctionList(functionsText, "JSON")
         // Check for the Jars
         val missingJars = scala.collection.mutable.Set[String]()
         funcList.foreach(func => {
-          MetadataAPIImpl.logAuditRec(userid,Some(AuditConstants.WRITE),AuditConstants.INSERTOBJECT,functionsText,AuditConstants.SUCCESS,"",func.FullNameWithVer)  
+          MetadataAPIImpl.logAuditRec(userid,Some(AuditConstants.WRITE),AuditConstants.INSERTOBJECT,functionsText,AuditConstants.SUCCESS,"",func.FullNameWithVer)
           if (MetadataAPIImpl.SaveObject(func, MdMgr.GetMdMgr))
             missingJars ++= CheckForMissingJar(func)
           else {
-            if (!aggFailures.equalsIgnoreCase("")) aggFailures = aggFailures + ","  
-            aggFailures = aggFailures + func.FullNameWithVer           
+            if (!aggFailures.equalsIgnoreCase("")) aggFailures = aggFailures + ","
+            aggFailures = aggFailures + func.FullNameWithVer
           }
         })
+
         if (missingJars.size > 0) {
           var apiResult = new ApiResult(ErrorCodeConstants.Failure, "AddFunctions", null, "Error : Not found required jars " + missingJars.mkString(",") + "\n" + ErrorCodeConstants.Add_Function_Failed + ":" + functionsText)
           return apiResult.toString()
         }
 
-        val alreadyCheckedJars = scala.collection.mutable.Set[String]()        
+        val alreadyCheckedJars = scala.collection.mutable.Set[String]()
         funcList.foreach(func => { MetadataAPIImpl.UploadJarsToDB(func, false, alreadyCheckedJars) })
 
         if (funcList.size > 0)

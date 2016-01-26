@@ -16,6 +16,8 @@
 
 package com.ligadata.InputAdapters
 
+import org.json4s.jackson.Serialization
+
 import scala.actors.threadpool.{ Executors, ExecutorService }
 import java.util.Properties
 import scala.collection.mutable.ArrayBuffer
@@ -34,12 +36,20 @@ import com.ibm.msg.client.wmq.common.CommonConstants
 import com.ibm.msg.client.jms.JmsConstants
 import com.ligadata.Exceptions.StackTrace
 import com.ligadata.KamanjaBase.DataDelimiters
+import com.ligadata.HeartBeat.{Monitorable, MonitorComponentInfo}
 
 object IbmMqConsumer extends InputAdapterObj {
+  val ADAPTER_DESCRIPTION = "IBM MQ Consumer"
   def CreateInputAdapter(inputConfig: AdapterConfiguration, callerCtxt: InputAdapterCallerContext, execCtxtObj: ExecContextObj, cntrAdapter: CountersAdapter): InputAdapter = new IbmMqConsumer(inputConfig, callerCtxt, execCtxtObj, cntrAdapter)
 }
 
 class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: InputAdapterCallerContext, val execCtxtObj: ExecContextObj, cntrAdapter: CountersAdapter) extends InputAdapter {
+
+  private var startTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
+  private var lastSeen = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
+  private var metrics: scala.collection.mutable.Map[String,Any] = scala.collection.mutable.Map[String,Any]()
+
+
   private def printFailure(ex: Exception) {
     if (ex != null) {
       if (ex.isInstanceOf[JMSException]) {
@@ -79,6 +89,11 @@ class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: Input
 
   override def Shutdown: Unit = lock.synchronized {
     StopProcessing
+  }
+
+  override  def getComponentStatusAndMetrics: MonitorComponentInfo = {
+    implicit val formats = org.json4s.DefaultFormats
+    return new MonitorComponentInfo(AdapterConfiguration.TYPE_INPUT, qc.Name, IbmMqConsumer.ADAPTER_DESCRIPTION, startTime, lastSeen,  Serialization.write(metrics).toString)
   }
 
   override def StopProcessing: Unit = lock.synchronized {
@@ -247,7 +262,7 @@ class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: Input
 
                         if (msgData != null) {
                           uniqueVal.MessageId = msgId
-                          execThread.execute(msgData, qc.formatOrInputAdapterName, uniqueKey, uniqueVal, readTmNs, readTmMs, false, qc.associatedMsg, delimiters)
+                          execThread.execute(msgData, qc.formatName, uniqueKey, uniqueVal, readTmNs, readTmMs, false, qc.associatedMsg, delimiters)
                           // consumerConnector.commitOffsets // BUGBUG:: Bad way of calling to save all offsets
                           cntr += 1
                           val key = Category + "/" + qc.Name + "/evtCnt"

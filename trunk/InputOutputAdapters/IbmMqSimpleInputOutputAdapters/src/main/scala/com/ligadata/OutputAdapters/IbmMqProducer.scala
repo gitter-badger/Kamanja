@@ -27,13 +27,19 @@ import com.ibm.msg.client.wmq.WMQConstants
 import com.ibm.msg.client.wmq.common.CommonConstants
 import com.ibm.msg.client.jms.JmsConstants
 import com.ligadata.Exceptions.StackTrace
+import com.ligadata.HeartBeat.{Monitorable, MonitorComponentInfo}
+import org.json4s.jackson.Serialization
 
 object IbmMqProducer extends OutputAdapterObj {
+  val ADAPTER_DESCRIPTION = "IBM MQ Producer"
   def CreateOutputAdapter(inputConfig: AdapterConfiguration, cntrAdapter: CountersAdapter): OutputAdapter = new IbmMqProducer(inputConfig, cntrAdapter)
 }
 
 class IbmMqProducer(val inputConfig: AdapterConfiguration, cntrAdapter: CountersAdapter) extends OutputAdapter {
-  private[this] val LOG = LogManager.getLogger(getClass);
+  private[this] val LOG = LogManager.getLogger(getClass)
+  private var startTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
+  private var lastSeen = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
+  private var metrics: scala.collection.mutable.Map[String,Any] = scala.collection.mutable.Map[String,Any]()
 
   //BUGBUG:: Not Checking whether inputConfig is really QueueAdapterConfiguration or not. 
   private[this] val qc = IbmMqAdapterConfiguration.GetAdapterConfig(inputConfig)
@@ -94,6 +100,11 @@ class IbmMqProducer(val inputConfig: AdapterConfiguration, cntrAdapter: Counters
       val stackTrace = StackTrace.ThrowableTraceString(jmsex)
       LOG.debug("StackTrace:" + stackTrace)
     }
+  }
+
+  override  def getComponentStatusAndMetrics: MonitorComponentInfo = {
+    implicit val formats = org.json4s.DefaultFormats
+    return new MonitorComponentInfo(AdapterConfiguration.TYPE_OUTPUT, qc.Name, IbmMqProducer.ADAPTER_DESCRIPTION, startTime, lastSeen,  Serialization.write(metrics).toString)
   }
 
   // To send an array of messages. messages.size should be same as partKeys.size

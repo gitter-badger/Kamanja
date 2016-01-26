@@ -179,8 +179,8 @@ class JpmmlSupport(mgr : MdMgr
                         val isReusable: Boolean = true
                         val supportsInstanceSerialization: Boolean = false // FIXME: not yet
 
-                        val withDots: Boolean = false
-                        val msgVersionFormatted: String = MdMgr.ConvertLongVersionToString(msgver, withDots)
+                        val withDots: Boolean = true
+                        val msgVersionFormatted: String = MdMgr.ConvertLongVersionToString(inputMsg.Version, ! withDots)
                         val model: ModelDef = mgr.MakeModelDef(modelNamespace
                                                             , modelName
                                                             , phyName

@@ -16,6 +16,9 @@
 
 package com.ligadata.SimpleEnvContextImpl
 
+import org.json4s.jackson.Serialization
+
+import scala.actors.threadpool.{Executors, ExecutorService}
 import scala.collection.immutable.Map
 import scala.collection.mutable._
 import scala.util.control.Breaks._
@@ -35,9 +38,7 @@ import org.json4s.jackson.JsonMethods._
 import com.ligadata.Exceptions._
 import com.ligadata.keyvaluestore.KeyValueManager
 import java.io.{ ByteArrayInputStream, DataInputStream, DataOutputStream, ByteArrayOutputStream }
-import java.util.{ TreeMap, Date };
-// import collection._
-// import JavaConverters._
+import java.util.{ TreeMap, Date }
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 trait LogTrait {
@@ -53,6 +54,39 @@ case class AdapterUniqueValueDes(T: Long, V: String, Out: Option[List[List[Strin
  *  The SimpleEnvContextImpl supports kv stores that are based upon MapDb hash tables.
  */
 object SimpleEnvContextImpl extends EnvContext with LogTrait {
+
+  val CLASSNAME = "com.ligadata.SimpleEnvContextImpl.SimpleEnvContextImpl$"
+  private var hbExecutor: ExecutorService =  Executors.newFixedThreadPool(1)
+  private var isShutdown = false
+  private var metrics: collection.mutable.Map[String,Long] = collection.mutable.Map[String,Long]()
+  private var startTime: String = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
+  private var lastSeen: String = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
+  private val STORAGE_READ_COUNT = "READS"
+  private val STORAGE_WRITE_COUNT = "WRITES"
+
+  // Init begin monitor values
+  metrics(STORAGE_READ_COUNT) = 0
+  metrics(STORAGE_WRITE_COUNT) = 0
+
+  // Start the heartbeat.
+  hbExecutor.execute(new Runnable() {
+    override def run(): Unit = {
+      while(!isShutdown) {
+        try {
+          lastSeen = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
+          Thread.sleep(5000)
+        } catch {
+          case e: Exception => logger.warn("SimpleEnvContext heartbeat interrupted.")
+        }
+      }
+    }
+  })
+
+  override def getComponentStatusAndMetrics: com.ligadata.HeartBeat.MonitorComponentInfo ={
+    implicit val formats = org.json4s.DefaultFormats
+    return new com.ligadata.HeartBeat.MonitorComponentInfo("STORAGE_ADAPTER", "SimpleEnvContext", "v1.3", startTime, lastSeen,  Serialization.write(metrics).toString)
+  }
+
   private def ResolveEnableEachTransactionCommit: Unit = {
     if (_mgr != null) {
       var foundIt = false
@@ -69,10 +103,12 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
               }
             }
           }
+
         }
       })
     }
   }
+
 
   override def setMdMgr(inMgr: MdMgr): Unit = {
     _mgr = inMgr
@@ -546,7 +582,6 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
   private[this] var _kryoSer: com.ligadata.Serialize.Serializer = null
   private[this] var _classLoader: java.lang.ClassLoader = null
   private[this] var _defaultDataStore: DataStore = null
-  private[this] var _statusinfoDataStore: DataStore = null
   private[this] var _mdres: MdBaseResolveInfo = null
   private[this] var _enableEachTransactionCommit = true
   private[this] var _jarPaths: collection.immutable.Set[String] = null // Jar paths where we can resolve all jars (including dependency jars).
@@ -1195,6 +1230,9 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
 
   //BUGBUG:: May be we need to lock before we do anything here
   override def Shutdown: Unit = {
+
+    isShutdown = true
+
     if (_modelsRsltBuckets != null) {
       for (i <- 0 until _parallelBuciets) {
         _modelsRsltBktlocks(i).writeLock().lock()
@@ -1228,12 +1266,12 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
     if (_defaultDataStore != null)
       _defaultDataStore.Shutdown
     _defaultDataStore = null
-
-    if (_statusinfoDataStore != null)
-      _statusinfoDataStore.Shutdown
-    _statusinfoDataStore = null
-
     // _messagesOrContainers.clear
+
+    hbExecutor.shutdownNow
+    while (!hbExecutor.isTerminated) {
+      Thread.sleep(100) // sleep 100ms and then check
+    }
   }
 
   /*
@@ -1259,14 +1297,6 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
       logger.debug("DefaultDatastore Information:%s".format(dataDataStoreInfo))
     if (_defaultDataStore == null) { // Doing it only once
       _defaultDataStore = GetDataStoreHandle(_jarPaths, dataDataStoreInfo)
-    }
-  }
-
-  override def SetStatusInfoDatastore(statusDataStoreInfo: String): Unit = {
-    if (statusDataStoreInfo != null)
-      logger.debug("DefaultDatastore Information:%s".format(statusDataStoreInfo))
-    if (_statusinfoDataStore == null) { // Doing it only once
-      _statusinfoDataStore = GetDataStoreHandle(_jarPaths, statusDataStoreInfo)
     }
   }
 
@@ -2029,6 +2059,7 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
     while (!doneSave) {
       try {
         dataStore.put(data_list)
+        incrementWriteCount
         doneSave = true
       } catch {
         case e: FatalAdapterException => {
@@ -2081,6 +2112,7 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
     while (!doneGet) {
       try {
         dataStore.get(containerName, callbackFunction)
+        incrementReadCount
         doneGet = true
       } catch {
         case e @ (_: ObjectNotFoundException | _: KeyNotFoundException) => {
@@ -2134,6 +2166,7 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
     while (!doneGet) {
       try {
         dataStore.get(containerName, keys, callbackFunction)
+        incrementReadCount
         doneGet = true
       } catch {
         case e @ (_: ObjectNotFoundException | _: KeyNotFoundException) => {
@@ -2187,6 +2220,7 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
     while (!doneGet) {
       try {
         dataStore.get(containerName, timeRanges, callbackFunction)
+        incrementReadCount
         doneGet = true
       } catch {
         case e @ (_: ObjectNotFoundException | _: KeyNotFoundException) => {
@@ -2240,6 +2274,7 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
     while (!doneGet) {
       try {
         dataStore.get(containerName, timeRanges, bucketKeys, callbackFunction)
+        incrementReadCount
         doneGet = true
       } catch {
         case e @ (_: ObjectNotFoundException | _: KeyNotFoundException) => {
@@ -2293,6 +2328,7 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
     while (!doneGet) {
       try {
         dataStore.get(containerName, bucketKeys, callbackFunction)
+        incrementReadCount
         doneGet = true
       } catch {
         case e @ (_: ObjectNotFoundException | _: KeyNotFoundException) => {
@@ -2339,4 +2375,22 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
   }
 
   def EnableEachTransactionCommit: Boolean = _enableEachTransactionCommit
+
+  private def incrementReadCount: Unit = {
+    val curr: Long = metrics.getOrElse(SimpleEnvContextImpl.STORAGE_READ_COUNT, 0)
+    if (curr == 0) {
+      metrics(SimpleEnvContextImpl.STORAGE_READ_COUNT) = 1
+      return
+    }
+    metrics(SimpleEnvContextImpl.STORAGE_READ_COUNT) = curr + 1
+  }
+
+  private def incrementWriteCount: Unit = {
+    val curr: Long = metrics.getOrElse(SimpleEnvContextImpl.STORAGE_WRITE_COUNT, 0)
+    if (curr == 0) {
+      metrics(SimpleEnvContextImpl.STORAGE_WRITE_COUNT) = 1
+      return
+    }
+    metrics(SimpleEnvContextImpl.STORAGE_WRITE_COUNT) = curr + 1
+  }
 }

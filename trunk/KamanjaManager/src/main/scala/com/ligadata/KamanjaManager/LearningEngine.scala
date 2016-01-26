@@ -31,7 +31,7 @@ import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
 import com.ligadata.outputmsg.OutputMsgGenerator
 import com.ligadata.InputOutputAdapterInfo.{ ExecContext, InputAdapter, PartitionUniqueRecordKey, PartitionUniqueRecordValue }
-import com.ligadata.Exceptions.StackTrace
+import com.ligadata.Exceptions.{ StackTrace, MessagePopulationException }
 
 class LearningEngine(val input: InputAdapter, val curPartitionKey: PartitionUniqueRecordKey) {
   val LOG = LogManager.getLogger(getClass);
@@ -173,27 +173,19 @@ class LearningEngine(val input: InputAdapter, val curPartitionKey: PartitionUniq
             }
           } catch {
             case e: Exception => {
-              LOG.error("Model Failed => " + md.mdl.getModelName() + ". Reason: " + e.getCause + ". Message: " + e.getMessage)
-              val stackTrace = StackTrace.ThrowableTraceString(e)
-              LOG.error("StackTrace:" + stackTrace)
+              LOG.error("Model Failed => " + md.mdl.getModelName(), e)
             }
             case t: Throwable => {
-              LOG.error("Model Failed => " + md.mdl.getModelName() + ". Reason: " + t.getCause + ". Message: " + t.getMessage)
-              val stackTrace = StackTrace.ThrowableTraceString(t)
-              LOG.error("StackTrace:" + stackTrace)
+              LOG.error("Model Failed => " + md.mdl.getModelName(), t)
             }
           }
         })
       } catch {
         case e: Exception => {
-          LOG.error("Failed to execute models. Reason: " + e.getCause + ". Message: " + e.getMessage)
-          val stackTrace = StackTrace.ThrowableTraceString(e)
-          LOG.error("StackTrace:" + stackTrace)
+          LOG.error("Failed to execute models.", e)
         }
         case t: Throwable => {
-          LOG.error("Failed to execute models. Reason: " + t.getCause + ". Message: " + t.getMessage)
-          val stackTrace = StackTrace.ThrowableTraceString(t)
-          LOG.error("StackTrace:" + stackTrace)
+          LOG.error("Failed to execute models.", t)
         }
       } finally {
         ThreadLocalStorage.txnContextInfo.remove
@@ -214,30 +206,55 @@ class LearningEngine(val input: InputAdapter, val curPartitionKey: PartitionUniq
     LOG.debug("Processing uniqueKey:%s, uniqueVal:%s".format(uk, uv))
     val returnOutput = ArrayBuffer[(String, String, String)]() // Adapter/Queue name, PartitionKey & output message 
 
+    var isValidMsg = false
+    var msg: BaseMsg = null
+    var createdNewMsg = false
+    var isValidPartitionKey = false
+    var partKeyDataList: List[String] = null
+
     try {
       if (msgInfo != null && inputdata != null) {
         val partKeyData = if (msgInfo.contmsgobj.asInstanceOf[BaseMsgObj].CanPersist) msgInfo.contmsgobj.asInstanceOf[BaseMsgObj].PartitionKeyData(inputdata) else null
-        val isValidPartitionKey = (partKeyData != null && partKeyData.size > 0)
-        val partKeyDataList = if (isValidPartitionKey) partKeyData.toList else null
+        isValidPartitionKey = (partKeyData != null && partKeyData.size > 0)
+        partKeyDataList = if (isValidPartitionKey) partKeyData.toList else null
         val primaryKey = if (isValidPartitionKey) msgInfo.contmsgobj.asInstanceOf[BaseMsgObj].PrimaryKeyData(inputdata) else null
         val primaryKeyList = if (primaryKey != null && primaryKey.size > 0) primaryKey.toList else null
 
-        var msg: BaseMsg = null
         if (isValidPartitionKey && primaryKeyList != null) {
-          val fndmsg = txnCtxt.getNodeCtxt.getEnvCtxt.getObject(transId, msgType, partKeyDataList, primaryKeyList)
-          if (fndmsg != null) {
-            msg = fndmsg.asInstanceOf[BaseMsg]
-            LOG.debug("Found %s message for given partitionkey:%s, primarykey:%s. Msg partitionkey:%s, primarykey:%s".format(msgType, if (partKeyDataList != null) partKeyDataList.mkString(",") else "", if (primaryKeyList != null) primaryKeyList.mkString(",") else "", msg.PartitionKeyData.mkString(","), msg.PrimaryKeyData.mkString(",")))
-          } else {
-            LOG.debug("Not Found %s message for given partitionkey:%s, primarykey:%s.".format(msgType, if (partKeyDataList != null) partKeyDataList.mkString(",") else "", if (primaryKeyList != null) primaryKeyList.mkString(",") else ""))
+          try {
+            val fndmsg = txnCtxt.getNodeCtxt.getEnvCtxt.getObject(transId, msgType, partKeyDataList, primaryKeyList)
+            if (fndmsg != null) {
+              msg = fndmsg.asInstanceOf[BaseMsg]
+              LOG.debug("Found %s message for given partitionkey:%s, primarykey:%s. Msg partitionkey:%s, primarykey:%s".format(msgType, if (partKeyDataList != null) partKeyDataList.mkString(",") else "", if (primaryKeyList != null) primaryKeyList.mkString(",") else "", msg.PartitionKeyData.mkString(","), msg.PrimaryKeyData.mkString(",")))
+            } else {
+              LOG.debug("Not Found %s message for given partitionkey:%s, primarykey:%s.".format(msgType, if (partKeyDataList != null) partKeyDataList.mkString(",") else "", if (primaryKeyList != null) primaryKeyList.mkString(",") else ""))
+            }
+          } catch {
+            // Treating we did not find the message
+            case e: Exception => {}
+            case e: Throwable => {}
           }
         }
-        var createdNewMsg = false
         if (msg == null) {
           createdNewMsg = true
           msg = msgInfo.contmsgobj.asInstanceOf[BaseMsgObj].CreateNewMessage
         }
         msg.populate(inputdata)
+        isValidMsg = true
+      } else {
+        LOG.error("Recieved null message object for input:" + inputdata.dataInput)
+      }
+    } catch {
+      case e: Exception => {
+        throw MessagePopulationException("Failed to Populate message", e)
+      }
+      case e: Throwable => {
+        throw MessagePopulationException("Failed to Populate message", e)
+      }
+    }
+
+    try {
+      if (isValidMsg) {
         var allMdlsResults: scala.collection.mutable.Map[String, SavedMdlResult] = null
         if (isValidPartitionKey) {
           txnCtxt.getNodeCtxt.getEnvCtxt.setObject(transId, msgType, partKeyDataList, msg) // Whether it is newmsg or oldmsg, we are still doing createdNewMsg
@@ -289,14 +306,14 @@ class LearningEngine(val input: InputAdapter, val curPartitionKey: PartitionUniq
             txnCtxt.getNodeCtxt.getEnvCtxt.saveModelsResult(transId, partKeyDataList, allMdlsResults)
           }
         }
-      } else {
-        LOG.error("Recieved null message object for input:" + inputdata.dataInput)
       }
       return returnOutput.toArray
     } catch {
       case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        LOG.error("Failed to create and run message. Reason:%s Message:%s\nStackTrace:%s".format(e.getCause, e.getMessage, stackTrace))
+        LOG.error("Failed to execute models after creating message", e)
+      }
+      case e: Throwable => {
+        LOG.error("Failed to execute models after creating message", e)
       }
     }
     return Array[(String, String, String)]()

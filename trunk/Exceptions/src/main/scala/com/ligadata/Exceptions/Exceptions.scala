@@ -75,3 +75,6 @@ case class StorageConnectionException(msg: String, cause: Throwable) extends Kam
 case class StorageFetchException(msg: String, cause: Throwable) extends KamanjaException(msg, cause)
 case class StorageDMLException(msg: String, cause: Throwable) extends KamanjaException(msg, cause)
 case class StorageDDLException(msg: String, cause: Throwable) extends KamanjaException(msg, cause)
+
+case class MessagePopulationException(msg: String, cause: Throwable) extends KamanjaException(msg, cause)
+

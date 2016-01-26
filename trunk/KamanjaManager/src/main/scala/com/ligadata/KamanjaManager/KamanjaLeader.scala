@@ -78,6 +78,7 @@ object KamanjaLeader {
   private[this] var outputAdapters: ArrayBuffer[OutputAdapter] = _
   private[this] var statusAdapters: ArrayBuffer[OutputAdapter] = _
   private[this] var validateInputAdapters: ArrayBuffer[InputAdapter] = _
+  private[this] var failedEventsAdapters: ArrayBuffer[OutputAdapter] = _
   private[this] var envCtxt: EnvContext = _
   private[this] var updatePartitionsFlag = false
   private[this] var distributionExecutor = Executors.newFixedThreadPool(1)
@@ -109,6 +110,7 @@ object KamanjaLeader {
     outputAdapters = null
     statusAdapters = null
     validateInputAdapters = null
+    failedEventsAdapters = null
     envCtxt = null
     updatePartitionsFlag = false
     distributionExecutor = Executors.newFixedThreadPool(1)
@@ -290,18 +292,15 @@ object KamanjaLeader {
       } catch {
         case fae: FatalAdapterException => {
           // Adapter could not get partition information and can't reconver.
-          val causeStackTrace = StackTrace.ThrowableTraceString(fae.cause)
-          LOG.error("Failed to get partitions from validate adapter " + ia.UniqueName + ", cause: \n" + causeStackTrace)
+          LOG.error("Failed to get partitions from validate adapter " + ia.UniqueName, fae)
         }
         case e: Exception => {
           // Adapter could not get partition information and can't reconver.
-          val causeStackTrace = StackTrace.ThrowableTraceString(e)
-          LOG.error("Failed to get partitions from validate adapter " + ia.UniqueName + ", cause: \n" + causeStackTrace)
+          LOG.error("Failed to get partitions from validate adapter " + ia.UniqueName, e)
         }
         case e: Throwable => {
           // Adapter could not get partition information and can't reconver.
-          val causeStackTrace = StackTrace.ThrowableTraceString(e)
-          LOG.error("Failed to get partitions from validate adapter " + ia.UniqueName + ", cause: \n" + causeStackTrace)
+          LOG.error("Failed to get partitions from validate adapter " + ia.UniqueName, e)
         }
       }
     })
@@ -351,18 +350,15 @@ object KamanjaLeader {
       } catch {
         case e: FatalAdapterException => {
           // If validate adapter is not able to connect, just ignoring it for now
-          val causeStackTrace = StackTrace.ThrowableTraceString(e.cause)
-          LOG.error("Validate Adapter " + via.UniqueName + " failed to start processing. Message:" + e.getMessage + ", Reason:" + e.getCause + ". Internal Cause: \n" + causeStackTrace)
+          LOG.error("Validate Adapter " + via.UniqueName + " failed to start processing", e)
         }
         case e: Exception => {
           // If validate adapter is not able to connect, just ignoring it for now
-          val causeStackTrace = StackTrace.ThrowableTraceString(e)
-          LOG.error("Validate Adapter " + via.UniqueName + " failed to start processing. Message:" + e.getMessage + ", Reason:" + e.getCause + ". Internal Cause: \n" + causeStackTrace)
+          LOG.error("Validate Adapter " + via.UniqueName + " failed to start processing", e)
         }
         case e: Throwable => {
           // If validate adapter is not able to connect, just ignoring it for now
-          val causeStackTrace = StackTrace.ThrowableTraceString(e)
-          LOG.error("Validate Adapter " + via.UniqueName + " failed to start processing. Message:" + e.getMessage + ", Reason:" + e.getCause + ". Internal Cause: \n" + causeStackTrace)
+          LOG.error("Validate Adapter " + via.UniqueName + " failed to start processing", e)
         }
       }
     })
@@ -373,8 +369,7 @@ object KamanjaLeader {
         Thread.sleep(1000) // sleep 1000 ms and then check
       } catch {
         case e: Exception => {
-          val stackTrace = StackTrace.ThrowableTraceString(e)
-          LOG.debug("StackTrace:" + stackTrace)
+          LOG.debug("Failed to sleep the thread", e)
         }
       }
       if ((System.nanoTime - CollectKeyValsFromValidation.getLastUpdateTime) < 1000 * 1000000) // 1000ms
@@ -1125,7 +1120,7 @@ object KamanjaLeader {
     uniqPartKeysValues.toArray
   }
 
-  def Init(nodeId1: String, zkConnectString1: String, engineLeaderZkNodePath1: String, engineDistributionZkNodePath1: String, adaptersStatusPath1: String, inputAdap: ArrayBuffer[InputAdapter], outputAdap: ArrayBuffer[OutputAdapter], statusAdap: ArrayBuffer[OutputAdapter], validateInputAdap: ArrayBuffer[InputAdapter], enviCxt: EnvContext, zkSessionTimeoutMs1: Int, zkConnectionTimeoutMs1: Int, dataChangeZkNodePath1: String): Unit = {
+  def Init(nodeId1: String, zkConnectString1: String, engineLeaderZkNodePath1: String, engineDistributionZkNodePath1: String, adaptersStatusPath1: String, inputAdap: ArrayBuffer[InputAdapter], outputAdap: ArrayBuffer[OutputAdapter], statusAdap: ArrayBuffer[OutputAdapter], validateInputAdap: ArrayBuffer[InputAdapter], failedEvntsAdap: ArrayBuffer[OutputAdapter], enviCxt: EnvContext, zkSessionTimeoutMs1: Int, zkConnectionTimeoutMs1: Int, dataChangeZkNodePath1: String): Unit = {
     nodeId = nodeId1.toLowerCase
     zkConnectString = zkConnectString1
     engineLeaderZkNodePath = engineLeaderZkNodePath1
@@ -1138,6 +1133,7 @@ object KamanjaLeader {
     outputAdapters = outputAdap
     statusAdapters = statusAdap
     validateInputAdapters = validateInputAdap
+    failedEventsAdapters = failedEvntsAdap
     envCtxt = enviCxt
 
     if (zkConnectString != null && zkConnectString.isEmpty() == false && engineLeaderZkNodePath != null && engineLeaderZkNodePath.isEmpty() == false && engineDistributionZkNodePath != null && engineDistributionZkNodePath.isEmpty() == false && dataChangeZkNodePath != null && dataChangeZkNodePath.isEmpty() == false) {

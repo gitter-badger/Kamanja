@@ -17,10 +17,18 @@
 package com.ligadata.InputOutputAdapterInfo
 
 import com.ligadata.KamanjaBase.DataDelimiters
+import com.ligadata.HeartBeat._
+
+object AdapterConfiguration {
+  val TYPE_INPUT = "Input_Adapter"
+  val TYPE_OUTPUT = "Output_Adapter"
+}
 
 class AdapterConfiguration {
   var Name: String = _ // Name of the Adapter, KafkaQueue Name/MQ Name/File Adapter Logical Name/etc
-  var formatOrInputAdapterName: String = _ // CSV/JSON/XML for input adapter. For output it is just corresponding input adapter name. For Status it is default
+  var formatName: String = _ // CSV/JSON/XML for input adapter.
+  var validateAdapterName: String = _ // For output adapter it is just corresponding validate adapter name.
+  var failedEventsAdapterName: String = _ // For input adapter it is just corresponding failed events adapter name.
   var associatedMsg: String = _ // Queue Associated Message
   var className: String = _ // Class where the Adapter can be loaded (Object derived from InputAdapterObj)
   var jarName: String = _ // Jar where the className can be found
@@ -54,7 +62,7 @@ class StartProcPartInfo {
 }
 
 // Input Adapter
-trait InputAdapter {
+trait InputAdapter extends Monitorable {
   val inputConfig: AdapterConfiguration // Configuration
   val callerCtxt: InputAdapterCallerContext
 
@@ -79,7 +87,7 @@ trait OutputAdapterObj {
 }
 
 // Output Adapter
-trait OutputAdapter {
+trait OutputAdapter extends Monitorable {
   val inputConfig: AdapterConfiguration // Configuration
 
   def send(message: String, partKey: String): Unit = send(Array(message.getBytes("UTF8")), Array(partKey.getBytes("UTF8")))

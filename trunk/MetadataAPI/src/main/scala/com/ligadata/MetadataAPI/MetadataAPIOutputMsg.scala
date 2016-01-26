@@ -261,10 +261,11 @@ object MetadataAPIOutputMsg {
         case Some(o) =>
           logger.debug("output message found => " + o.asInstanceOf[OutputMsgDef].FullNameWithVer)
           if (userid != None) MetadataAPIImpl.logAuditRec(userid, Some(AuditConstants.WRITE), AuditConstants.DELETEOBJECT, "Model", AuditConstants.SUCCESS, "", o.asInstanceOf[OutputMsgDef].FullNameWithVer)
-
           MetadataAPIImpl.DeleteObject(o.asInstanceOf[OutputMsgDef])
           var objectsUpdated = new Array[BaseElemDef](0)
-          objectsUpdated = objectsUpdated :+ o.asInstanceOf[OutputMsgDef]
+          var ob = o.asInstanceOf[OutputMsgDef]
+          ob.tranId = MetadataAPIImpl.GetNewTranId
+          objectsUpdated = objectsUpdated :+ ob
           var operations = for (op <- objectsUpdated) yield "Remove"
           MetadataAPIImpl.NotifyEngine(objectsUpdated, operations)
           var apiResult = new ApiResult(ErrorCodeConstants.Success, "RemoveOutputMsg", null, ErrorCodeConstants.Remove_OutputMessage_Successful + ":" + key)

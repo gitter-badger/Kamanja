@@ -262,7 +262,6 @@ class MdMgr {
             var newElems = new scala.collection.mutable.ArrayBuffer[T]()
             var newBaseElemsIdxs = scala.collection.mutable.Map[String, Int]()
             es.foreach(e => {
-              /** FIXME: This code cannot pull just the inactive models ... it needs revision */
               if (!e.IsDeleted &&
                 (onlyActive == false || (onlyActive && e.IsActive))) {
                 val fnm = if (e.isInstanceOf[FunctionDef]) e.asInstanceOf[FunctionDef].typeString else e.FullName
@@ -3039,8 +3038,8 @@ class MdMgr {
   }
 
   def MakeAdapter(name: String, typeString: String, dataFormat: String, className: String,
-    jarName: String, dependencyJars: List[String], adapterSpecificCfg: String, inputAdapterToVerify: String, 
-    keyAndValueDelimiter: String, fieldDelimiter: String, valueDelimiter: String, associatedMsg: String): AdapterInfo = {
+    jarName: String, dependencyJars: List[String], adapterSpecificCfg: String, inputAdapterToValidate: String, 
+    keyAndValueDelimiter: String, fieldDelimiter: String, valueDelimiter: String, associatedMsg: String, failedEventsAdapter: String): AdapterInfo = {
     val ai = new AdapterInfo
     ai.name = name
     ai.typeString = typeString
@@ -3055,7 +3054,8 @@ class MdMgr {
     ai.valueDelimiter = valueDelimiter // Delimiter String for valueDelimiter
     ai.associatedMsg = associatedMsg // Queue Associated Message
     ai.adapterSpecificCfg = adapterSpecificCfg
-    ai.inputAdapterToVerify = inputAdapterToVerify
+    ai.inputAdapterToValidate = inputAdapterToValidate
+    ai.failedEventsAdapter = failedEventsAdapter
     ai
   }
 

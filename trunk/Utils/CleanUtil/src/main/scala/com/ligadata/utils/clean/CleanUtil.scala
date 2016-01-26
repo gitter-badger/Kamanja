@@ -30,7 +30,7 @@ object CleanUtil {
   private val helpStr: String = Source.fromInputStream(stream).mkString
 
   private val usage =
-    """Usage: CleanUtil --config /path/to/MetadataAPIConfig.properties [--clean-kafka] [--clean-zookeeper] [--clean-testdata [List of messages/containers]] [--clean-metadata] [--cleanstatusinfo]
+    """Usage: CleanUtil --config /path/to/MetadataAPIConfig.properties [--clean-kafka] [--clean-zookeeper] [--clean-testdata [List of messages/containers]] [--clean-metadata] 
        or CleanUtil --config /path/to/MetadataAPIConfig.properties [--clean-all [List of messages/containers]]
        or CleanUtil --help
     """.stripMargin

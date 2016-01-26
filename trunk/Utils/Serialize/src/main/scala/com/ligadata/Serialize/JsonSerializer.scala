@@ -81,11 +81,6 @@ case class ZooKeeperTransaction(Notifications: List[ZooKeeperNotification], tran
 
 case class JDataStore(StoreType: String, SchemaName: String, Location: String, AdapterSpecificConfig: Option[String])
 case class JZKInfo(ZooKeeperNodeBasePath: String, ZooKeeperConnectString: String, ZooKeeperSessionTimeoutMs: Option[String], ZooKeeperConnectionTimeoutMs: Option[String])
-// case class JNodeInfo(NodeId: String, NodePort: Int, NodeIpAddr: String, JarPaths: List[String], Scala_home: String, Java_home: String, Classpath: String, Roles: Option[List[String]])
-// case class JClusterCfg(DataStore: String, StatusInfo: String, ZooKeeperInfo: String, EnvironmentContext: String)
-// case class JClusterInfo(ClusterId: String, Config: Option[JClusterCfg], Nodes: List[JNodeInfo])
-// case class JAdapterInfo(Name: String, TypeString: String, DataFormat: Option[String], InputAdapterToVerify: Option[String], ClassName: String, JarName: String, DependencyJars: Option[List[String]], AdapterSpecificCfg: Option[String], DelimiterString: Option[String], AssociatedMessage: Option[String])
-// case class EngineConfig(Clusters: Option[List[JClusterInfo]])
 case class JEnvCtxtJsonStr(classname: String, jarname: String, dependencyjars: Option[List[String]])
 case class MetadataApiArg(ObjectType: String, NameSpace: String, Name: String, Version: String, FormatType: String)
 case class MetadataApiArgList(ArgList: List[MetadataApiArg])
@@ -973,10 +968,15 @@ object JsonSerializer {
         pretty(render(json))
       }
       case o: AdapterInfo => {
+        
+        val inputAdapterToValidate = if (o.inputAdapterToValidate != null) o.inputAdapterToValidate else ""
+        val failedEventsAdapter = if (o.failedEventsAdapter != null) o.failedEventsAdapter else ""
+
         val json = (("Name" -> o.name) ~
           ("TypeString" -> o.typeString) ~
           ("DataFormat" -> o.dataFormat) ~
-          ("InputAdapterToVerify" -> o.inputAdapterToVerify) ~
+          ("InputAdapterToVerify" -> inputAdapterToValidate) ~
+          ("FailedEventsAdapter" -> failedEventsAdapter) ~
           ("ClassName" -> o.className) ~
           ("JarName" -> o.jarName) ~
           ("DependencyJars" -> o.dependencyJars.toList) ~

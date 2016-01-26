@@ -122,6 +122,9 @@ object TypeUtils {
       var value = JsonSerializer.SerializeObjectToJson(typeDef);
       logger.debug("key => " + key + ",value =>" + value);
       MetadataAPIImpl.SaveObject(typeDef, MdMgr.GetMdMgr)
+
+      MetadataAPIImpl.UpdateTranId(Array(typeDef))
+
       var apiResult = new ApiResult(ErrorCodeConstants.Success, "AddType", null, ErrorCodeConstants.Add_Type_Successful + ":" + dispkey)
       apiResult.toString()
     } catch {
@@ -143,11 +146,15 @@ object TypeUtils {
         var typeList = JsonSerializer.parseTypeList(typesText, "JSON")
         if (typeList.length > 0) {
           logger.debug("Found " + typeList.length + " type objects ")
+          var typs = new ArrayBuffer[BaseElemDef]
+
           typeList.foreach(typ => {
             MetadataAPIImpl.logAuditRec(userid, Some(AuditConstants.WRITE), AuditConstants.INSERTOBJECT, typesText, AuditConstants.SUCCESS, "", typ.FullNameWithVer)
             MetadataAPIImpl.SaveObject(typ, MdMgr.GetMdMgr)
+            typs +=typ
             logger.debug("Type object name => " + typ.FullName + "." + MdMgr.Pad0s2Version(typ.Version))
           })
+          MetadataAPIImpl.UpdateTranId(typs.toArray)
           /** Only report the ones actually saved... if there were others, they are in the log as "fail to add" due most likely to already being defined */
           val typesSavedAsJson: String = JsonSerializer.SerializeObjectListToJson(typeList)
           var apiResult = new ApiResult(ErrorCodeConstants.Success, "AddTypes", typesText, ErrorCodeConstants.Add_Type_Successful)
@@ -182,6 +189,8 @@ object TypeUtils {
           apiResult.toString()
         case Some(ts) =>
           MetadataAPIImpl.DeleteObject(ts.asInstanceOf[BaseElemDef])
+          ts.tranId = MetadataAPIImpl.GetNewTranId
+          MetadataAPIImpl.UpdateTranId(Array(ts))
           var apiResult = new ApiResult(ErrorCodeConstants.Success, "RemoveType", null, ErrorCodeConstants.Remove_Type_Successful + ":" + dispkey)
           apiResult.toString()
       }

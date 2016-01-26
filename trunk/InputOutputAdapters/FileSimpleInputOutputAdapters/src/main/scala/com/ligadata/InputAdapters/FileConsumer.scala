@@ -16,6 +16,8 @@
 
 package com.ligadata.InputAdapters
 
+import org.json4s.jackson.Serialization
+
 import scala.actors.threadpool.{ Executors, ExecutorService }
 import org.apache.logging.log4j.{ Logger, LogManager }
 import java.io.{ InputStream, FileInputStream }
@@ -26,8 +28,10 @@ import com.ligadata.AdaptersConfiguration.{ FileAdapterConfiguration, FilePartit
 import scala.util.control.Breaks._
 import com.ligadata.Exceptions.StackTrace
 import com.ligadata.KamanjaBase.DataDelimiters
+import com.ligadata.HeartBeat.{Monitorable, MonitorComponentInfo}
 
 object FileConsumer extends InputAdapterObj {
+  val ADAPTER_DESCRIPTION = "File Consumer"
   def CreateInputAdapter(inputConfig: AdapterConfiguration, callerCtxt: InputAdapterCallerContext, execCtxtObj: ExecContextObj, cntrAdapter: CountersAdapter): InputAdapter = new FileConsumer(inputConfig, callerCtxt, execCtxtObj, cntrAdapter)
 }
 
@@ -37,14 +41,13 @@ class FileConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: InputA
   private[this] val fc = FileAdapterConfiguration.GetAdapterConfig(inputConfig)
   private[this] var uniqueKey: FilePartitionUniqueRecordKey = new FilePartitionUniqueRecordKey
   private[this] val lock = new Object()
+  private var startTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
+  private var lastSeen = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
+  private var metrics: scala.collection.mutable.Map[String,Any] = scala.collection.mutable.Map[String,Any]()
 
   uniqueKey.Name = "File"
 
   var executor: ExecutorService = _
-
-  // LOG.debug("FileConsumer")
-
-  //BUGBUG:: Not validating the values in FileAdapterConfiguration 
 
   val input = this
 
@@ -54,6 +57,13 @@ class FileConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: InputA
     var totalLines: Long = 0;
     var totalSent: Long = 0
   }
+
+  override  def getComponentStatusAndMetrics: MonitorComponentInfo = {
+    implicit val formats = org.json4s.DefaultFormats
+    return new MonitorComponentInfo(AdapterConfiguration.TYPE_OUTPUT, fc.Name, FileConsumer.ADAPTER_DESCRIPTION, startTime, lastSeen,  Serialization.write(metrics).toString)
+  }
+
+
 
   private def ProcessFile(sFileName: String, format: String, msg: String, st: Stats, ignorelines: Int, AddTS2MsgFlag: Boolean, isGz: Boolean): Unit = {
     var is: InputStream = null
@@ -221,21 +231,9 @@ class FileConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: InputA
     if (partitionInfo == null || partitionInfo.size == 0)
       return
 
-    // BUGBUG:: Not really handling partitionUniqueRecordKeys & partitionUniqueRecordValues
-
-    /*
-    val keys = partitionUniqueRecordKeys.map(k => {
-      val key = new FilePartitionUniqueRecordKey
-      key.Deserialize(k)
-      key
-    })
-*/
-
     executor = Executors.newFixedThreadPool(1)
     executor.execute(new Runnable() {
       override def run() {
-
-        // LOG.debug("FileConsumer.run")
 
         val s = System.nanoTime
 
@@ -246,7 +244,7 @@ class FileConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: InputA
         val isGz = (compString != null && compString.compareToIgnoreCase("gz") == 0)
         fc.Files.foreach(fl => {
           if (isTxt || isGz) {
-            tm = tm + elapsedTm(ProcessFile(fl, fc.formatOrInputAdapterName, fc.MessagePrefix, st, fc.IgnoreLines, fc.AddTS2MsgFlag, isGz))
+            tm = tm + elapsedTm(ProcessFile(fl, fc.formatName, fc.MessagePrefix, st, fc.IgnoreLines, fc.AddTS2MsgFlag, isGz))
           } else {
             throw new Exception("Not yet handled other than text & GZ files")
           }
@@ -257,16 +255,6 @@ class FileConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: InputA
             LOG.debug("File:%s ElapsedTime:%.02fms".format(fl, tm / 1000000.0))
           }
         })
-        /*
-      if (st.totalLines > 0) {
-        val rem = (st.totalLines - (st.totalLines / 100) * 100)
-        if (rem > 0) {
-          val key = Category + "/" + fc.Name + "/evtCnt"
-          cntrAdapter.addCntr(key, rem)
-
-        }
-      }
-*/
         LOG.debug("Done. ElapsedTime:%.02fms".format((System.nanoTime - s) / 1000000.0))
       }
     });

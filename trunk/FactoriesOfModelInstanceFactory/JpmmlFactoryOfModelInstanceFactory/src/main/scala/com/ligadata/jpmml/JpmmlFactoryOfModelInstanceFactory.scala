@@ -243,7 +243,7 @@ class JpmmlAdapter(factory : ModelInstanceFactory, modelEvaluator: ModelEvaluato
                               , msg: MessageContainerBase
                               , evaluator: ModelEvaluator[_]) : Map[FieldName, FieldValue] = {
         activeFields.asScala.foldLeft(Map.empty[FieldName, FieldValue])((map, activeField) => {
-            val key = activeField.getValue
+            val key = activeField.getValue.toLowerCase
             Option(msg.get(key)).fold(map)(value => {
                 val fieldValue : FieldValue = EvaluatorUtil.prepare(evaluator, activeField, value)
                 map.updated(activeField, fieldValue)

@@ -23,10 +23,12 @@ import java.nio.file.{ Paths, Files }
 import com.ligadata.InputOutputAdapterInfo.{ AdapterConfiguration, OutputAdapter, OutputAdapterObj, CountersAdapter }
 import com.ligadata.AdaptersConfiguration.FileAdapterConfiguration
 import com.ligadata.Exceptions.{FatalAdapterException, StackTrace}
-
+import com.ligadata.HeartBeat.{Monitorable, MonitorComponentInfo}
+import org.json4s.jackson.Serialization
 
 
 object FileProducer extends OutputAdapterObj {
+  val ADAPTER_DESCRIPTION = "File Producer"
   def CreateOutputAdapter(inputConfig: AdapterConfiguration, cntrAdapter: CountersAdapter): OutputAdapter = new FileProducer(inputConfig, cntrAdapter)
 }
 
@@ -41,6 +43,9 @@ class FileProducer(val inputConfig: AdapterConfiguration, cntrAdapter: CountersA
   private var numOfRetries = 0
   private var MAX_RETRIES = 3
   private val GZ = "gz"
+  private var startTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
+  private var lastSeen = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
+  private var metrics: scala.collection.mutable.Map[String,Any] = scala.collection.mutable.Map[String,Any]()
 
   //BUGBUG:: Not validating the values in FileAdapterConfiguration 
 
@@ -80,6 +85,10 @@ class FileProducer(val inputConfig: AdapterConfiguration, cntrAdapter: CountersA
     numOfRetries = 0
   }
 
+  override  def getComponentStatusAndMetrics: MonitorComponentInfo = {
+    implicit val formats = org.json4s.DefaultFormats
+    return new MonitorComponentInfo(AdapterConfiguration.TYPE_OUTPUT, fc.Name, FileProducer.ADAPTER_DESCRIPTION, startTime, lastSeen,  Serialization.write(metrics).toString)
+  }
 
   // Locking before we write into file
   // To send an array of messages. messages.size should be same as partKeys.size
@@ -137,5 +146,6 @@ class FileProducer(val inputConfig: AdapterConfiguration, cntrAdapter: CountersA
     if (os != null)
       os.close
   }
+
 }
 
