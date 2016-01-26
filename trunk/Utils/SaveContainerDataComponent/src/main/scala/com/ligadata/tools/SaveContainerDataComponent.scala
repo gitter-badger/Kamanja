@@ -419,22 +419,31 @@ class SaveContainerDataCompImpl extends LogTrait with MdBaseResolveInfo {
     _transService.getNextTransId
   }
 
+  //FIXME:: changeExistingPrimaryKey not yet handled
   @throws(classOf[Exception])
-  def SaveMessageContainerBase(typ: String, data: Array[MessageContainerBase], setNewTransactionId: Boolean, setNewRowNumber: Boolean): Unit = {
+  def SaveMessageContainerBase(typAndData: Array[(String, Array[MessageContainerBase])], setNewTransactionId: Boolean, setNewRowNumber: Boolean, changeExistingPrimaryKey: Boolean): Unit = {
     if (_initialized == false) {
       val msgStr = "SaveContainerDataComponent is not yet initialized"
       logger.error(msgStr)
       throw new Exception(msgStr)
     }
 
-    if (data == null || data.size == 0)
-      return
-
-    if (typ == null) {
-      val msgStr = "Not expecting NULL type"
+    if (changeExistingPrimaryKey) {
+      val msgStr = "Not yet loading and updating primary key message/container."
       logger.error(msgStr)
       throw new Exception(msgStr)
     }
+
+    var dataCnt = 0
+
+    typAndData.foreach(td => {
+      if (td._1 == null) {
+        val msgStr = "Not expecting NULL type"
+        logger.error(msgStr)
+        throw new Exception(msgStr)
+      }
+      dataCnt += td._2.size
+    })
 
     var transId: Long = 0
 
@@ -442,39 +451,58 @@ class SaveContainerDataCompImpl extends LogTrait with MdBaseResolveInfo {
       transId = GetNewTransactionId
 
     var rowNumber = 0
+    val storeObjsMap = collection.mutable.Map[String, ArrayBuffer[(Key, Value)]]()
 
-    val storeObjects = data.map(d => {
-      if (setNewRowNumber) {
-        rowNumber += 1
-        d.RowNumber(rowNumber)
-      }
+    typAndData.foreach(td => {
+      val typ = td._1.toLowerCase
+      val data = td._2
 
-      if (setNewTransactionId)
-        d.TransactionId(transId)
+      val tmpArrBuf = storeObjsMap.getOrElse(typ, null)
 
-      val keyData = d.PartitionKeyData
-      val timeVal = d.TimePartitionData
-      val k = Key(timeVal, keyData, d.TransactionId, d.RowNumber)
-      val v = Value("manual", SerializeDeserialize.Serialize(d))
-      (k, v)
+      val arrBuf = if (tmpArrBuf != null) tmpArrBuf else ArrayBuffer[(Key, Value)]()
+
+      data.foreach(d => {
+        if (setNewRowNumber) {
+          rowNumber += 1
+          d.RowNumber(rowNumber)
+        }
+
+        if (setNewTransactionId)
+          d.TransactionId(transId)
+
+        val keyData = d.PartitionKeyData
+        val timeVal = d.TimePartitionData
+        val k = Key(timeVal, keyData, d.TransactionId, d.RowNumber)
+        val v = Value("manual", SerializeDeserialize.Serialize(d))
+        arrBuf += ((k, v))
+      })
+
+      storeObjsMap(typ) = arrBuf
     })
 
-    try {
-      logger.debug("Going to save " + storeObjects.size + " objects")
-      storeObjects.foreach(kv => {
-        logger.debug("ObjKey:(" + kv._1.timePartition + ":" + kv._1.bucketKey.mkString(",") + ":" + kv._1.transactionId + ") Value Size: " + kv._2.serializedInfo.size)
-      })
-      _dataStore.put(Array((typ.toLowerCase, storeObjects)))
-    } catch {
-      case e: Exception => {
-        logger.error("Failed to write data for type:" + typ)
-        throw e
+    storeObjsMap.foreach(typData => {
+      val typ = typData._1
+      val storeObjects = typData._2.toArray
+      try {
+        if (logger.isDebugEnabled()) {
+          logger.debug("Going to save " + storeObjects.size + " objects")
+          storeObjects.foreach(kv => {
+            logger.debug("ObjKey:(" + kv._1.timePartition + ":" + kv._1.bucketKey.mkString(",") + ":" + kv._1.transactionId + ") Value Size: " + kv._2.serializedInfo.size)
+          })
+        }
+        _dataStore.put(Array((typ, storeObjects)))
+      } catch {
+        case e: Exception => {
+          logger.error("Failed to write data for type:" + typ)
+          throw e
+        }
+        case e: Throwable => {
+          logger.error("Failed to write data for type:" + typ)
+          throw e
+        }
       }
-      case e: Throwable => {
-        logger.error("Failed to write data for type:" + typ)
-        throw e
-      }
-    }
+    })
+
   }
 
   def Shutdown: Unit = {
@@ -519,7 +547,13 @@ class SaveContainerDataComponent {
   /* Save given Message/Container data Instances for the given container name. Caller can request to set new transactionid (so that he does not need to set it) and new rownumber. */
   @throws(classOf[Exception])
   def SaveMessageContainerBase(typ: String, data: Array[MessageContainerBase], setNewTransactionId: Boolean, setNewRowNumber: Boolean): Unit = {
-    impl.SaveMessageContainerBase(typ, data, setNewTransactionId, setNewRowNumber)
+    impl.SaveMessageContainerBase(Array((typ, data)), setNewTransactionId, setNewRowNumber, false)
+  }
+
+  /* Save given Message/Container data Instances for the given container name. Caller can request to set new transactionid (so that he does not need to set it) and new rownumber. */
+  @throws(classOf[Exception])
+  def SaveMessageContainerBase(typAndData: Array[(String, Array[MessageContainerBase])], setNewTransactionId: Boolean, setNewRowNumber: Boolean): Unit = {
+    impl.SaveMessageContainerBase(typAndData, setNewTransactionId, setNewRowNumber, false)
   }
 
   /* Shutdown services and reset everything */

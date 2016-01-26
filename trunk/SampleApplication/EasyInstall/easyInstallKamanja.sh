@@ -87,7 +87,7 @@ echo $bin
 echo "clean, package and assemble $srcPath ..."
 
 cd $srcPath
-sbt clean package KamanjaManager/assembly MetadataAPI/assembly KVInit/assembly MethodExtractor/assembly SimpleKafkaProducer/assembly NodeInfoExtract/assembly ExtractData/assembly MetadataAPIService/assembly JdbcDataCollector/assembly FileDataConsumer/assembly SaveContainerDataComponent/assembly CleanUtil/assembly
+sbt clean package KamanjaManager/assembly MetadataAPI/assembly KVInit/assembly MethodExtractor/assembly SimpleKafkaProducer/assembly NodeInfoExtract/assembly ExtractData/assembly MetadataAPIService/assembly JdbcDataCollector/assembly FileDataConsumer/assembly SaveContainerDataComponent/assembly CleanUtil/assembly MigrateManager/assembly
 
 # recreate eclipse projects
 #echo "refresh the eclipse projects ..."
@@ -108,6 +108,7 @@ cp Utils/JdbcDataCollector/target/scala-2.11/JdbcDataCollector* $bin
 cp MetadataAPIService/target/scala-2.11/MetadataAPIService* $bin
 cp FileDataConsumer/target/scala-2.11/FileDataConsumer* $bin
 cp Utils/CleanUtil/target/scala-2.11/CleanUtil* $bin
+cp Utils/Migrate/MigrateManager/target/MigrateManager* $bin
 
 # *******************************
 # Copy jars required (more than required if the fat jars are used)
@@ -342,7 +343,6 @@ cp $ivyPath/cache/org.scalameta/tokens_2.11/jars/tokens_2.11-0.0.3.jar $systemli
 cp $ivyPath/cache/org.slf4j/slf4j-log4j12/jars/slf4j-log4j12-1.7.10.jar $systemlib
 cp $srcPath/OutputMsgDef/target/scala-2.11/outputmsgdef_2.11-1.0.jar $systemlib
 cp $ivyPath/cache/org.jpmml/pmml-model/jars/pmml-model-1.2.9.jar $systemlib
-cp $ivyPath/cache/commons-codec/commons-codec/jars/commons-codec-1.6.jar $systemlib
 cp $ivyPath/cache/org.apache.httpcomponents/httpcore/jars/httpcore-4.2.4.jar $systemlib
 cp $ivyPath/cache/commons-configuration/commons-configuration/jars/commons-configuration-1.6.jar $systemlib
 cp $ivyPath/cache/log4j/log4j/bundles/log4j-1.2.17.jar $systemlib
@@ -517,10 +517,16 @@ cp $ivyPath/cache/com.101tec/zkclient/jars/zkclient-0.6.jar $systemlib
 
 
 
+
 cp $ivyPath/cache/io.spray/spray-json_2.11/bundles/spray-json_2.11-1.3.2.jar $systemlib
 cp $ivyPath/cache/com.codahale.metrics/metrics-core/bundles/metrics-core-3.0.2.jar $systemlib
 cp $ivyPath/cache/org.json4s/json4s-ast_2.11/jars/json4s-ast_2.11-3.2.9.jar $systemlib
 cp $ivyPath/cache/io.spray/spray-testkit_2.11/jars/spray-testkit_2.11-1.3.3.jar $systemlib
+
+cp $srcPath/Utils/Migrate/MigrateBase/target/migratebase-1.0.jar $systemlib
+cp $srcPath/Utils/Migrate/SourceVersion/MigrateFrom_V_1_1/target/scala-2.10/migratefrom_v_1_1_2.10-1.0.jar $systemlib
+cp $srcPath/Utils/Migrate/SourceVersion/MigrateFrom_V_1_2/target/scala-2.10/migratefrom_v_1_2_2.10-1.0.jar $systemlib
+cp $srcPath/Utils/Migrate/DestinationVersion/MigrateTo_V_1_3/target/scala-2.11/migrateto_v_1_3_2.11-1.0.jar $systemlib
 
 cp $srcPath/Storage/Cassandra/target/scala-2.11/*.jar $systemlib
 cp $srcPath/Storage/HashMap/target/scala-2.11/*.jar $systemlib

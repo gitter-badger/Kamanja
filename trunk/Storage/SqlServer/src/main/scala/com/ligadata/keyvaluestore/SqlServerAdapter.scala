@@ -303,7 +303,6 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
     }
   }
 
-
   // if the schema doesn't exist, we try to create one. It can still fail due to authorization issues
   if (!schemaExists) {
     logger.info("Unable to find the schema " + SchemaName + " in the database, attempt to create one ")
@@ -324,7 +323,7 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
   }
 
   private def getConnection: Connection = {
-    try{
+    try {
       var con = dataSource.getConnection
       con
     } catch {
@@ -334,7 +333,7 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
       }
     }
   }
-    
+
   private def IsSchemaExists(schemaName: String): Boolean = {
     var con: Connection = null
     var pstmt: PreparedStatement = null
@@ -358,7 +357,7 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
     } catch {
       case e: StorageConnectionException => {
         throw e
-      } 
+      }
       case e: Exception => {
         throw new Exception("Failed to verify schema existence for the schema " + schemaName + ":" + "query => " + query + ":" + e.getMessage())
       }
@@ -398,12 +397,12 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
   }
 
   private def CheckTableExists(containerName: String, apiType: String = "dml"): Unit = {
-    try{
+    try {
       if (containerList.contains(containerName)) {
-	return
+        return
       } else {
-	CreateContainer(containerName,apiType)
-	containerList.add(containerName)
+        CreateContainer(containerName, apiType)
+        containerList.add(containerName)
       }
     } catch {
       case e: Exception => {
@@ -454,6 +453,11 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
     SchemaName + "." + toTableName(containerName)
   }
 
+  // accessor used for testing
+  def getTableName(containerName: String): String = {
+    toTableName(containerName)
+  }
+
   override def put(containerName: String, key: Key, value: Value): Unit = {
     var con: Connection = null
     var pstmt: PreparedStatement = null
@@ -464,18 +468,18 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
       con = getConnection
       // put is sematically an upsert. An upsert is being implemented using a transact-sql update 
       // statement in sqlserver
-      sql = "if ( not exists(select * from " + tableName + 
-	    " where timePartition = ? and bucketKey = ?  and transactionId = ?  and rowId = ? ) ) " + 
-	    " begin " +
-	    " insert into " + tableName + "(timePartition,bucketKey,transactionId,rowId,serializerType,serializedInfo)" +
-	    " values(?,?,?,?,?,?)" + 
-	    " end " +
-	    " else " +
-	    " begin " +
-	    " update " + tableName + " set serializerType = ?, serializedInfo = ? where timePartition = ? and bucketKey = ?  and transactionId = ?  and rowId = ?  " + 
-	    " end ";
+      sql = "if ( not exists(select 1 from " + tableName +
+        " where timePartition = ? and bucketKey = ?  and transactionId = ?  and rowId = ? ) ) " +
+        " begin " +
+        " insert into " + tableName + "(timePartition,bucketKey,transactionId,rowId,serializerType,serializedInfo)" +
+        " values(?,?,?,?,?,?)" +
+        " end " +
+        " else " +
+        " begin " +
+        " update " + tableName + " set serializerType = ?, serializedInfo = ? where timePartition = ? and bucketKey = ?  and transactionId = ?  and rowId = ?  " +
+        " end ";
       logger.debug("sql => " + sql)
-      pstmt = con.prepareStatement(sql) 
+      pstmt = con.prepareStatement(sql)
       pstmt.setLong(1, key.timePartition)
       pstmt.setString(2, key.bucketKey.mkString(","))
       pstmt.setLong(3, key.transactionId)
@@ -491,21 +495,21 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
       pstmt.setLong(13, key.timePartition)
       pstmt.setString(14, key.bucketKey.mkString(","))
       pstmt.setLong(15, key.transactionId)
-      pstmt.setInt(16, key.rowId)          
+      pstmt.setInt(16, key.rowId)
       pstmt.executeUpdate();
     } catch {
       case e: Exception => {
-        if (con != null){
-	  try{
-	    // rollback has thrown exception in some special scenarios, capture it
+        if (con != null) {
+          try {
+            // rollback has thrown exception in some special scenarios, capture it
             con.rollback()
-	  }catch {
-	    case ie: Exception => {
-	      val stackTrace = StackTrace.ThrowableTraceString(ie)
-	      logger.error("StackTrace:"+stackTrace)
-	    }
-	  }
-	}
+          } catch {
+            case ie: Exception => {
+              val stackTrace = StackTrace.ThrowableTraceString(ie)
+              logger.error("StackTrace:" + stackTrace)
+            }
+          }
+        }
         throw CreateDMLException("Failed to save an object in the table " + tableName + ":" + "sql => " + sql + ":" + e.getMessage(), e)
       }
     } finally {
@@ -519,9 +523,9 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
   }
 
   private def IsSingleRowPut(data_list: Array[(String, Array[(Key, Value)])]): Boolean = {
-    if( data_list.length == 1 ){
-      if( data_list(0)._2.length == 1 ){
-	return true
+    if (data_list.length == 1) {
+      if (data_list(0)._2.length == 1) {
+        return true
       }
     }
     return false
@@ -533,37 +537,36 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
     var sql: String = null
     var totalRowsUpdated = 0;
     try {
-      if( IsSingleRowPut(data_list) ){
-	var containerName = data_list(0)._1
-	var keyValuePairs = data_list(0)._2
-	var key = keyValuePairs(0)._1
-	var value = keyValuePairs(0)._2
-	put(containerName,key,value)
-      }
-      else{
-	logger.debug("Get a new connection...")
-	con = getConnection
-	// we need to commit entire batch
-	con.setAutoCommit(false)
-	data_list.foreach(li => {
-	  var containerName = li._1
-	  CheckTableExists(containerName)
-	  var tableName = toFullTableName(containerName)
-	  var keyValuePairs = li._2
-	  logger.info("Input row count for the table " + tableName + " => " + keyValuePairs.length)
-	  sql = "if ( not exists(select * from " + tableName + 
-	  " where timePartition = ? and bucketKey = ?  and transactionId = ?  and rowId = ? ) ) " + 
-	  " begin " +
-	  " insert into " + tableName + "(timePartition,bucketKey,transactionId,rowId,serializerType,serializedInfo)" +
-	  " values(?,?,?,?,?,?)" + 
-	  " end " +
-	  " else " +
-	  " begin " +
-	  " update " + tableName + " set serializerType = ?, serializedInfo = ? where timePartition = ? and bucketKey = ?  and transactionId = ?  and rowId = ?  " + 
-	  " end ";
-	  logger.debug("sql => " + sql)
-	  pstmt = con.prepareStatement(sql) 
-	  keyValuePairs.foreach(keyValuePair => {
+      if (IsSingleRowPut(data_list)) {
+        var containerName = data_list(0)._1
+        var keyValuePairs = data_list(0)._2
+        var key = keyValuePairs(0)._1
+        var value = keyValuePairs(0)._2
+        put(containerName, key, value)
+      } else {
+        logger.debug("Get a new connection...")
+        con = getConnection
+        // we need to commit entire batch
+        con.setAutoCommit(false)
+        data_list.foreach(li => {
+          var containerName = li._1
+          CheckTableExists(containerName)
+          var tableName = toFullTableName(containerName)
+          var keyValuePairs = li._2
+          logger.info("Input row count for the table " + tableName + " => " + keyValuePairs.length)
+          sql = "if ( not exists(select 1 from " + tableName +
+            " where timePartition = ? and bucketKey = ?  and transactionId = ?  and rowId = ? ) ) " +
+            " begin " +
+            " insert into " + tableName + "(timePartition,bucketKey,transactionId,rowId,serializerType,serializedInfo)" +
+            " values(?,?,?,?,?,?)" +
+            " end " +
+            " else " +
+            " begin " +
+            " update " + tableName + " set serializerType = ?, serializedInfo = ? where timePartition = ? and bucketKey = ?  and transactionId = ?  and rowId = ?  " +
+            " end ";
+          logger.debug("sql => " + sql)
+          pstmt = con.prepareStatement(sql)
+          keyValuePairs.foreach(keyValuePair => {
             var key = keyValuePair._1
             var value = keyValuePair._2
             pstmt.setLong(1, key.timePartition)
@@ -583,40 +586,40 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
             pstmt.setLong(15, key.transactionId)
             pstmt.setInt(16, key.rowId)
             pstmt.addBatch()
-	  })
+          })
           logger.debug("Executing bulk upsert...")
           var updateCount = pstmt.executeBatch();
           updateCount.foreach(cnt => { totalRowsUpdated += cnt });
           if (pstmt != null) {
-	    pstmt.clearBatch();
+            pstmt.clearBatch();
             pstmt.close
-	    pstmt = null;
+            pstmt = null;
           }
           logger.info("Inserted/Updated " + totalRowsUpdated + " rows for " + tableName)
-	})
-	con.commit()
-	con.close
-	con = null
+        })
+        con.commit()
+        con.close
+        con = null
       }
     } catch {
       case e: Exception => {
-        if (con != null){
-	  try{
-	    // rollback has thrown exception in some special scenarios, capture it
+        if (con != null) {
+          try {
+            // rollback has thrown exception in some special scenarios, capture it
             con.rollback()
-	  }catch {
-	    case ie: Exception => {
-	      val stackTrace = StackTrace.ThrowableTraceString(ie)
-	      logger.error("StackTrace:"+stackTrace)
-	    }
-	  }
-	}
+          } catch {
+            case ie: Exception => {
+              val stackTrace = StackTrace.ThrowableTraceString(ie)
+              logger.error("StackTrace:" + stackTrace)
+            }
+          }
+        }
         throw CreateDMLException("Failed to save a batch of objects into the table :" + "sql => " + sql + ":" + e.getMessage(), e)
       }
     } finally {
       if (pstmt != null) {
         pstmt.close
-	pstmt = null
+        pstmt = null
       }
       if (con != null) {
         con.close
@@ -659,17 +662,17 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
       con = null
     } catch {
       case e: Exception => {
-        if (con != null){
-	  try{
-	    // rollback has thrown exception in some special scenarios, capture it
+        if (con != null) {
+          try {
+            // rollback has thrown exception in some special scenarios, capture it
             con.rollback()
-	  }catch {
-	    case ie: Exception => {
-	      val stackTrace = StackTrace.ThrowableTraceString(ie)
-	      logger.error("StackTrace:"+stackTrace)
-	    }
-	  }
-	}
+          } catch {
+            case ie: Exception => {
+              val stackTrace = StackTrace.ThrowableTraceString(ie)
+              logger.error("StackTrace:" + stackTrace)
+            }
+          }
+        }
         throw CreateDMLException("Failed to delete object(s) from the table " + tableName + ":" + "sql => " + sql + ":" + e.getMessage(), e)
       }
     } finally {
@@ -721,17 +724,17 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
       con = null
     } catch {
       case e: Exception => {
-        if (con != null){
-	  try{
-	    // rollback has thrown exception in some special scenarios, capture it
+        if (con != null) {
+          try {
+            // rollback has thrown exception in some special scenarios, capture it
             con.rollback()
-	  }catch {
-	    case ie: Exception => {
-	      val stackTrace = StackTrace.ThrowableTraceString(ie)
-	      logger.error("StackTrace:"+stackTrace)
-	    }
-	  }
-	}
+          } catch {
+            case ie: Exception => {
+              val stackTrace = StackTrace.ThrowableTraceString(ie)
+              logger.error("StackTrace:" + stackTrace)
+            }
+          }
+        }
         throw CreateDMLException("Failed to delete object(s) from the table " + tableName + ":" + "sql => " + sql + ":" + e.getMessage(), e)
       }
     } finally {
@@ -1204,12 +1207,11 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
     })
   }
 
-  private def DropContainer(containerName: String): Unit = lock.synchronized {
+  private def dropTable(tableName: String): Unit = lock.synchronized {
     var con: Connection = null
     var stmt: Statement = null
     var rs: ResultSet = null
-    var tableName = toTableName(containerName)
-    var fullTableName = toFullTableName(containerName)
+    var fullTableName = SchemaName + "." + tableName
     var query = ""
     try {
       con = getConnection
@@ -1217,7 +1219,7 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
       val dbm = con.getMetaData();
       rs = dbm.getTables(null, SchemaName, tableName, null);
       if (!rs.next()) {
-        logger.debug("The table " + fullTableName + " may have beem dropped already ")
+        logger.info("The table " + tableName + " doesn't exist in the schema " + SchemaName + "  may have beem dropped already ")
       } else {
         query = "drop table " + fullTableName
         stmt = con.createStatement()
@@ -1240,6 +1242,11 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
     }
   }
 
+  private def DropContainer(containerName: String): Unit = lock.synchronized {
+    var tableName = toTableName(containerName)
+    dropTable(tableName)
+  }
+
   override def DropContainer(containerNames: Array[String]): Unit = {
     logger.info("drop the container tables")
     containerNames.foreach(cont => {
@@ -1248,7 +1255,7 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
     })
   }
 
-  private def CreateContainer(containerName: String,apiType: String): Unit = lock.synchronized {
+  private def CreateContainer(containerName: String, apiType: String): Unit = lock.synchronized {
     var con: Connection = null
     var stmt: Statement = null
     var rs: ResultSet = null
@@ -1263,29 +1270,28 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
       if (rs.next()) {
         logger.debug("The table " + tableName + " already exists ")
       } else {
-	if( autoCreateTables.equalsIgnoreCase("NO") ){
-	  apiType match {
-	    case "dml" => {
+        if (autoCreateTables.equalsIgnoreCase("NO")) {
+          apiType match {
+            case "dml" => {
               throw new Exception("The option autoCreateTables is set to NO, So Can't create non-existent table automatically to support the requested DML operation")
-	    }
-	    case _ => {
-	      logger.info("proceed with creating table..")
-	    }
-	  }
-	}
+            }
+            case _ => {
+              logger.info("proceed with creating table..")
+            }
+          }
+        }
         query = "create table " + fullTableName + "(timePartition bigint,bucketKey varchar(1024), transactionId bigint, rowId Int, serializerType varchar(128), serializedInfo varbinary(max))"
         stmt = con.createStatement()
         stmt.executeUpdate(query);
         stmt.close
         var index_name = "ix_" + tableName
-	if( clusteredIndex.equalsIgnoreCase("YES") ){
-	  logger.info("Creating clustered index...")
+        if (clusteredIndex.equalsIgnoreCase("YES")) {
+          logger.info("Creating clustered index...")
           query = "create clustered index " + index_name + " on " + fullTableName + "(timePartition,bucketKey,transactionId,rowId)"
-	}
-	else{
-	  logger.info("Creating non-clustered index...")
+        } else {
+          logger.info("Creating non-clustered index...")
           query = "create index " + index_name + " on " + fullTableName + "(timePartition,bucketKey,transactionId,rowId)"
-	}
+        }
         stmt = con.createStatement()
         stmt.executeUpdate(query);
         stmt.close
@@ -1320,8 +1326,170 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
     logger.info("create the container tables")
     containerNames.foreach(cont => {
       logger.info("create the container " + cont)
-      CreateContainer(cont,"ddl")
+      CreateContainer(cont, "ddl")
     })
+  }
+
+  override def isTableExists(tableName: String): Boolean = {
+    // check whether corresponding table exists
+    var con: Connection = null
+    var rs: ResultSet = null
+    logger.info("Checking the existence of the table " + tableName)
+    try {
+      con = getConnection
+      val dbm = con.getMetaData();
+      rs = dbm.getTables(null, SchemaName, tableName, null);
+      if (rs.next()) {
+        return true
+      } else {
+        return false
+      }
+    } catch {
+      case e: Exception => {
+        throw CreateDMLException("Unable to verify table existence of table " + tableName + ":" + e.getMessage(), e)
+      }
+    } finally {
+      if (rs != null) {
+        rs.close
+      }
+      if (con != null) {
+        con.close
+      }
+    }
+  }
+
+  override def isTableExists(tableNamespace: String, tableName: String): Boolean = {
+    isTableExists(tableNamespace + "." + tableName)
+  }
+
+  def renameTable(srcTableName: String, destTableName: String, forceCopy: Boolean = false): Unit = lock.synchronized {
+    var con: Connection = null
+    var stmt: Statement = null
+    var rs: ResultSet = null
+    logger.info("renaming " + srcTableName + " to " + destTableName);
+    var query = ""
+    try {
+      // check whether source table exists
+      var exists = isTableExists(srcTableName)
+      if (!exists) {
+        throw CreateDDLException("Failed to rename the table " + srcTableName + ":", new Exception("Source Table doesn't exist"))
+      }
+      // check if the destination table already exists
+      exists = isTableExists(destTableName)
+      if (exists) {
+        logger.info("The table " + destTableName + " exists.. ")
+        if (forceCopy) {
+          dropTable(destTableName)
+        } else {
+          throw CreateDDLException("Failed to rename the table " + srcTableName + ":", new Exception("Destination Table already exist"))
+        }
+      }
+      con = getConnection
+      query = "sp_rename '" + SchemaName + "." + srcTableName + "' , '" + destTableName + "'"
+      stmt = con.createStatement()
+      stmt.executeUpdate(query);
+    } catch {
+      case e: Exception => {
+        throw CreateDDLException("Failed to rename the table " + srcTableName + ":" + "query => " + query + ":" + e.getMessage(), e)
+      }
+    } finally {
+      if (rs != null) {
+        rs.close
+      }
+      if (stmt != null) {
+        stmt.close
+      }
+      if (con != null) {
+        con.close
+      }
+    }
+  }
+
+  def backupContainer(containerName: String): Unit = lock.synchronized {
+    var tableName = toTableName(containerName)
+    var oldTableName = tableName
+    var newTableName = tableName + "_bak"
+    renameTable(oldTableName, newTableName)
+  }
+
+  def restoreContainer(containerName: String): Unit = lock.synchronized {
+    var tableName = toTableName(containerName)
+    var oldTableName = tableName + "_bak"
+    var newTableName = tableName
+    renameTable(oldTableName, newTableName)
+  }
+
+  override def isContainerExists(containerName: String): Boolean = {
+    // check whether corresponding table exists
+    var tableName = toTableName(containerName)
+    isTableExists(tableName)
+  }
+
+  override def copyContainer(srcContainerName: String, destContainerName: String, forceCopy: Boolean): Unit = lock.synchronized {
+    if (srcContainerName.equalsIgnoreCase(destContainerName)) {
+      throw CreateDDLException("Failed to copy the container " + srcContainerName, new Exception("Source Container Name can't be same as destination container name"))
+    }
+    var srcTableName = toTableName(srcContainerName)
+    var destTableName = toTableName(destContainerName)
+    try {
+      renameTable(srcTableName, destTableName, forceCopy)
+    } catch {
+      case e: Exception => {
+        throw CreateDDLException("Failed to copy the container " + srcContainerName, e)
+      }
+    }
+  }
+
+  override def getAllTables: Array[String] = {
+    var tbls = new Array[String](0)
+    // check whether corresponding table exists
+    var con: Connection = null
+    var rs: ResultSet = null
+    try {
+      con = getConnection
+      val dbm = con.getMetaData();
+      rs = dbm.getTables(null, SchemaName, null, null);
+      while (rs.next()) {
+        var t = rs.getString(3)
+        tbls = tbls :+ t
+      }
+      tbls
+    } catch {
+      case e: Exception => {
+        throw CreateDMLException("Unable to fetch the list of tables in the schema  " + SchemaName + ":" + e.getMessage(), e)
+      }
+    } finally {
+      if (rs != null) {
+        rs.close
+      }
+      if (con != null) {
+        con.close
+      }
+    }
+  }
+
+  override def dropTables(tbls: Array[String]): Unit = {
+    try {
+      tbls.foreach(t => {
+        dropTable(t)
+      })
+    } catch {
+      case e: Exception => {
+        throw CreateDDLException("Failed to drop table list  ", e)
+      }
+    }
+  }
+
+  override def dropTables(tbls: Array[(String, String)]): Unit = {
+    dropTables(tbls.map(t => t._1 + ':' + t._2))
+  }
+
+  override def copyTable(srcTableName: String, destTableName: String, forceCopy: Boolean): Unit = {
+    renameTable(srcTableName, destTableName, forceCopy)
+  }
+
+  override def copyTable(namespace: String, srcTableName: String, destTableName: String, forceCopy: Boolean): Unit = {
+    copyTable(namespace + '.' + srcTableName, namespace + '.' + destTableName, forceCopy)
   }
 }
 
@@ -1384,6 +1552,49 @@ class SqlServerAdapterTx(val parent: DataStore) extends Transaction {
 
   def getKeys(containerName: String, bucketKeys: Array[Array[String]], callbackFunction: (Key) => Unit): Unit = {
     parent.getKeys(containerName, bucketKeys, callbackFunction)
+  }
+
+  def backupContainer(containerName: String): Unit = {
+    parent.backupContainer(containerName: String)
+  }
+
+  def restoreContainer(containerName: String): Unit = {
+    parent.restoreContainer(containerName: String)
+  }
+
+  override def isContainerExists(containerName: String): Boolean = {
+    parent.isContainerExists(containerName)
+  }
+
+  override def copyContainer(srcContainerName: String, destContainerName: String, forceCopy: Boolean): Unit = {
+    parent.copyContainer(srcContainerName, destContainerName, forceCopy)
+  }
+
+  override def getAllTables: Array[String] = {
+    parent.getAllTables
+  }
+  override def dropTables(tbls: Array[String]): Unit = {
+    parent.dropTables(tbls)
+  }
+
+  override def copyTable(srcTableName: String, destTableName: String, forceCopy: Boolean): Unit = {
+    parent.copyTable(srcTableName, destTableName, forceCopy)
+  }
+
+  override def isTableExists(tableName: String): Boolean = {
+    parent.isTableExists(tableName)
+  }
+
+  override def isTableExists(tableNamespace: String, tableName: String): Boolean = {
+    isTableExists(tableNamespace, tableName)
+  }
+
+  override def dropTables(tbls: Array[(String, String)]): Unit = {
+    dropTables(tbls)
+  }
+
+  override def copyTable(namespace: String, srcTableName: String, destTableName: String, forceCopy: Boolean): Unit = {
+    copyTable(namespace, srcTableName, destTableName, forceCopy)
   }
 
 }

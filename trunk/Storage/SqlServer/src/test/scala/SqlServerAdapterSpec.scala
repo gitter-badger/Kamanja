@@ -434,6 +434,127 @@ class SqlServerAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAft
       noException should be thrownBy {
 	adapter.getKeys(containerName,timeRanges,keyStringList,readKeyCallBack _)
       }
+
+      And("Test the existence of the source container")
+      var exists = adapter.isContainerExists(containerName)
+      assert(exists == true)
+
+      var srcContainerName = containerName
+      var destContainerName = containerName
+
+      And("Test copy container with src and dest are same ")
+      var ex3 = the [com.ligadata.Exceptions.StorageDDLException] thrownBy {
+	adapter.copyContainer(srcContainerName,destContainerName,false)
+      }
+      logger.info("Exception => " + ex3.cause)
+
+      srcContainerName = containerName
+      destContainerName = containerName + "_bak"
+
+      And("Test copy container")
+      noException should be thrownBy {
+	adapter.copyContainer(srcContainerName,destContainerName,true)
+      }
+
+      And("Test the existence of the destination container")
+      exists = adapter.isContainerExists(destContainerName)
+      assert(exists == true)
+
+      // in Sqlserver we use sp_rename to backup the table
+      // when a table is renamed, we nolonger have any reference to old table
+      And("Test the non-existence of the source container")
+      exists = adapter.isContainerExists(srcContainerName)
+      assert(exists == false)
+
+      And("Test create container after renaming it")
+      noException should be thrownBy {
+	var containers = new Array[String](0)
+	containers = containers :+ containerName
+	adapter.CreateContainer(containers)
+      }
+
+      And("Test copy container without force option")
+      ex3 = the [com.ligadata.Exceptions.StorageDDLException] thrownBy {
+	adapter.copyContainer(srcContainerName,destContainerName,false)
+      }
+      logger.info("Exception => " + ex3.cause)
+
+      And("Test copy container with force")
+      noException should be thrownBy {
+	adapter.copyContainer(srcContainerName,destContainerName,true)
+      }
+
+      And("Test the non-existence of the source table")
+      var srcTableName = sqlServerAdapter.getTableName(srcContainerName)
+      exists = adapter.isTableExists(srcTableName)
+      assert(exists == false)
+
+      And("Test the existence of the destination table")
+      var destTableName = sqlServerAdapter.getTableName(destContainerName)
+      exists = adapter.isTableExists(destTableName)
+      assert(exists == true)
+
+      And("Test create container again after renaming it ")
+      noException should be thrownBy {
+	var containers = new Array[String](0)
+	containers = containers :+ containerName
+	adapter.CreateContainer(containers)
+      }
+
+      And("Copy source table to destination table using force option")
+      adapter.copyTable(srcTableName,destTableName,true)
+
+      And("get all tables")
+      var tbls = new Array[String](0)
+      noException should be thrownBy {
+	tbls = adapter.getAllTables
+      }
+      
+      And("drop all tables")
+      noException should be thrownBy {
+	adapter.dropTables(tbls)
+      }
+
+      And("Test the existence of the source table after dropTables")
+      exists = adapter.isTableExists(srcTableName)
+      assert(exists == false)
+
+      And("Test the existence of the destination table after dropTables")
+      exists = adapter.isTableExists(destTableName)
+      assert(exists == false)
+
+      And("Test drop container again, cleanup")
+      noException should be thrownBy {
+	var containers = new Array[String](0)
+	containers = containers :+ srcContainerName
+	containers = containers :+ destContainerName
+	adapter.DropContainer(containers)
+      }
+
+      And("Test the existence of the source container after DropContainer")
+      exists = adapter.isContainerExists(srcContainerName)
+      assert(exists == false)
+
+      And("Test the existence of the destination container after DropContainer")
+      exists = adapter.isContainerExists(destContainerName)
+      assert(exists == false)
+      
+      And("Test create container for backup/restore tests")
+      noException should be thrownBy {
+	var containers = new Array[String](0)
+	containers = containers :+ containerName
+	adapter.CreateContainer(containers)
+      }
+
+      And("Test backup container")
+      noException should be thrownBy {
+	adapter.backupContainer(containerName)
+      }
+
+      And("Test restore container")
+      noException should be thrownBy {
+	adapter.restoreContainer(containerName)
+      }
       
       And("Test drop container again, cleanup")
       noException should be thrownBy {

@@ -27,7 +27,7 @@ trait DataStoreOperations {
   def get(containerName: String, timeRanges: Array[TimeRange], bucketKeys: Array[Array[String]], callbackFunction: (Key, Value) => Unit): Unit
   def get(containerName: String, bucketKeys: Array[Array[String]], callbackFunction: (Key, Value) => Unit): Unit
 
-/*
+  /*
   // Passing filter to storage
   def get(containerName: String, filterFunction: (Key, Value) => Boolean, callbackFunction: (Key, Value) => Unit): Unit
   def get(containerName: String, timeRanges: Array[TimeRange], filterFunction: (Key, Value) => Boolean, callbackFunction: (Key, Value) => Unit): Unit // Range of dates
@@ -41,6 +41,20 @@ trait DataStoreOperations {
   def getKeys(containerName: String, timeRanges: Array[TimeRange], callbackFunction: (Key) => Unit): Unit // Range of dates
   def getKeys(containerName: String, timeRanges: Array[TimeRange], bucketKeys: Array[Array[String]], callbackFunction: (Key) => Unit): Unit
   def getKeys(containerName: String, bucketKeys: Array[Array[String]], callbackFunction: (Key) => Unit): Unit
+
+  def copyContainer(srcContainerName: String, destContainerName: String, forceCopy: Boolean): Unit
+  def isContainerExists(containerName: String): Boolean
+
+  def backupContainer(containerName: String): Unit
+  def restoreContainer(containerName: String): Unit
+
+  def getAllTables: Array[String] //namespace or schemaName is assumed to be attached to adapter object
+  def dropTables(tbls: Array[String]) // here tbls are full qualified name (including namespace)
+  def dropTables(tbls: Array[(String, String)])
+  def copyTable(srcTableName: String, destTableName: String, forceCopy: Boolean): Unit // here srcTableName & destTableName are full qualified name (including namespace)
+  def copyTable(namespace: String, srcTableName: String, destTableName: String, forceCopy: Boolean): Unit
+  def isTableExists(tableName: String): Boolean // here tableName is full qualified name (including namespace)
+  def isTableExists(tableNamespace: String, tableName: String): Boolean
 }
 
 trait DataStore extends DataStoreOperations {

@@ -799,6 +799,53 @@ class HashMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
       DropContainer(cont)
     })
   }
+
+  def backupContainer(containerName: String): Unit = {
+    logger.info("Not Implemeted yet")
+  }
+
+  def restoreContainer(containerName: String): Unit = {
+    logger.info("Not Implemeted yet")
+  }
+
+  override def isContainerExists(containerName: String): Boolean = {
+    throw CreateDDLException("Not Implemented yet :", new Exception("Failed to check container existence " + containerName))
+  }
+
+  override def copyContainer(srcContainerName: String, destContainerName: String, forceCopy: Boolean): Unit = {
+    throw CreateDDLException("Not Implemented yet :", new Exception("Failed to copy container " + srcContainerName))
+  }
+
+  override def getAllTables: Array[String] = {
+    logger.info("Not Implemeted yet")
+    new Array[String](0)
+  }
+
+  override def dropTables(tbls: Array[String]): Unit = {
+    logger.info("Not Implemeted yet")
+  }
+
+  override def dropTables(tbls: Array[(String, String)]): Unit = {
+    logger.info("Not Implemeted yet")
+  }
+
+  override def copyTable(srcTableName: String, destTableName: String, forceCopy: Boolean): Unit = {
+    logger.info("Not Implemeted yet")
+  }
+
+  override def copyTable(namespace: String, srcTableName: String, destTableName: String, forceCopy: Boolean): Unit = {
+    logger.info("Not Implemeted yet")
+  }
+
+  override def isTableExists(tableName: String): Boolean = {
+    logger.info("Not Implemeted yet")
+    false
+  }
+
+  override def isTableExists(tableNamespace: String, tableName: String): Boolean = {
+    logger.info("Not Implemeted yet")
+    false
+  }
 }
 
 class HashMapAdapterTx(val parent: DataStore) extends Transaction {
@@ -860,6 +907,53 @@ class HashMapAdapterTx(val parent: DataStore) extends Transaction {
 
   def getKeys(containerName: String, bucketKeys: Array[Array[String]], callbackFunction: (Key) => Unit): Unit = {
     parent.getKeys(containerName, bucketKeys, callbackFunction)
+  }
+
+  def backupContainer(containerName: String): Unit = {
+    parent.backupContainer(containerName: String)
+  }
+
+  def restoreContainer(containerName: String): Unit = {
+    parent.restoreContainer(containerName: String)
+  }
+
+  override def isContainerExists(containerName: String): Boolean = {
+    parent.isContainerExists(containerName)
+  }
+
+  override def copyContainer(srcContainerName: String, destContainerName: String, forceCopy: Boolean): Unit = {
+    parent.copyContainer(srcContainerName, destContainerName, forceCopy)
+  }
+
+  override def getAllTables: Array[String] = {
+    parent.getAllTables
+  }
+
+  // Here tables are full qualified names
+  override def dropTables(tbls: Array[String]): Unit = {
+    parent.dropTables(tbls)
+  }
+
+  override def dropTables(tbls: Array[(String, String)]): Unit = {
+    parent.dropTables(tbls)
+  }
+
+  // Here tables are full qualified names
+  override def copyTable(srcTableName: String, destTableName: String, forceCopy: Boolean): Unit = {
+    parent.copyTable(srcTableName, destTableName, forceCopy)
+  }
+
+  override def copyTable(namespace: String, srcTableName: String, destTableName: String, forceCopy: Boolean): Unit = {
+    parent.copyTable(namespace, srcTableName, destTableName, forceCopy)
+  }
+
+  // Here table is full qualified name
+  override def isTableExists(tableName: String): Boolean = {
+    parent.isTableExists(tableName)
+  }
+
+  override def isTableExists(tableNamespace: String, tableName: String): Boolean = {
+    parent.isTableExists(tableNamespace, tableName)
   }
 }
 
