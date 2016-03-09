@@ -88,7 +88,7 @@ public class PmmlTestTool extends PmmlTestToolBase {
             names = {"--version"},
             description = "print version and exit"
     )
-    private boolean _version = false;
+    private Boolean _version = null;
 
 
     static
@@ -164,9 +164,14 @@ public class PmmlTestTool extends PmmlTestToolBase {
             Map<FieldName, ?> inputRecord = inputRecords.get(0);
 
             Sets.SetView<FieldName> missingActiveFields = Sets.difference(new LinkedHashSet<>(activeFields), inputRecord.keySet());
-            if (missingActiveFields.size() > 0) {
-                throw new IllegalArgumentException("Missing active field(s): " + missingActiveFields.toString());
+            Sets.SetView<FieldName> requiredFields = Sets.intersection(new LinkedHashSet<>(activeFields), inputRecord.keySet());
+            boolean allFieldsAvailable = (requiredFields.size() == activeFields.size());
+            if (! allFieldsAvailable) {
+                throw new IllegalArgumentException("One or more of the model's input fields is missing: " + activeFields.toString());
             }
+            /*if (missingActiveFields.size() > 0) {   this is wrong... doesn't account for fields in input that are not used by the model
+                throw new IllegalArgumentException("Missing active field(s): " + missingActiveFields.toString());
+            }*/
 
             Sets.SetView<FieldName> missingGroupFields = Sets.difference(new LinkedHashSet<>(groupFields), inputRecord.keySet());
             if (missingGroupFields.size() > 0) {
