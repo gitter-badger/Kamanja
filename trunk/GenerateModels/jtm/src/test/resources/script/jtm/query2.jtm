@@ -1,0 +1,23 @@
+{
+  "eplquery": "select avg(score), count(score) from com.ligadata.kamanja.samples.messages.win:time(1 min) where score != -1 and score < 100",
+
+  "inputs": [
+    { "type":"com.ligadata.kamanja.samples.messages", "win.time": "1min"}
+  ],
+
+  "preagg": [
+    {"output" : "__filter__1", "type": "!=", "left": "score", "right": "-1"},
+    {"output" : "__filter__2", "type": "<", "left": "score", "right": "-100"},
+    {"output" : "__filter__" , "type": "or", "left": "__filter__1", "right": "__filter__2"}
+  ],
+
+  "agg" : [
+    {"output": "score", "type": "avg", "input": "score"},
+    {"output": "count", "type": "count", "input": "scorecnt"},
+    {"output": "countd", "type": "count distinct", "input": "scoreuniq"}
+  ],
+
+  "outputs": [
+    { "type":"com.ligadata.kamanja.samples.messagesavg" }
+  ]
+}

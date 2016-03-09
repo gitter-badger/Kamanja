@@ -1,0 +1,90 @@
+{
+  "header": {
+    "namespace": "com.ligadata.jtm.test.filter1",
+    "version": "0.0.1",
+    "language" : "scala",
+    "minVersion" : "2.11"
+  },
+
+  "aliases": {
+    "messages": {
+      "m1": "com.ligadata.kamanja.test.msg1",
+      "m2": "com.ligadata.kamanja.test.msg3",
+      "o1": "com.ligadata.kamanja.test.msg2",
+      "o2": "com.ligadata.kamanja.test.msg4"
+    }
+  },
+
+  "transformations": {
+    "test1": {
+      "dependsOn": [ ["m1"] ],
+      "computes": {
+        "out3":{ "type": "Int", "val": "$in1 + 1000", "comment": "in scala, type could be optional" }
+      },
+
+      "outputs": {
+        "o1": {
+          "mapping": {
+            "out1": "in1",
+            "out2": "t1",
+            "out4": "in3"
+          },
+
+          "where": "!($in2 != -1 && $in2 < 100)",
+
+          "computes": {
+            "t1": { "type": "String", "val": "\"s:\" + ($in2).toString()" }
+          }
+        },
+        "o2": {
+          "mapping": {
+            "out1": "in1",
+            "out2": "t1",
+            "out4": "in3"
+          },
+
+          "where": "!($in2 != -1 && $in2 < 100)",
+
+          "computes": {
+            "t1": { "type": "String", "val": "\"s:\" + ($in2).toString()" }
+          }
+        }
+      }
+    },
+    "test2": {
+      "dependsOn": [ ["m2"] ],
+      "computes": {
+        "out3":{ "type": "Int", "val": "$in1 + 1000", "comment": "in scala, type could be optional" }
+      },
+
+      "outputs": {
+        "o1": {
+          "mapping": {
+            "out1": "in1",
+            "out2": "t1",
+            "out4": "in3"
+          },
+
+          "where": "!($in2 != -1 && $in2 < 100)",
+
+          "computes": {
+            "t1": { "type": "String", "val": "\"s:\" + ($in2).toString()" }
+          }
+        },
+        "o2": {
+          "mapping": {
+            "out1": "in1",
+            "out2": "t1",
+            "out4": "in3"
+          },
+
+          "where": "!($in2 != -1 && $in2 < 100)",
+
+          "computes": {
+            "t1": { "type": "String", "val": "\"s:\" + ($in2).toString()" }
+          }
+        }
+      }
+    }
+  }
+}

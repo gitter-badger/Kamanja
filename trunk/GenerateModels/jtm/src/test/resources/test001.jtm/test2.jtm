@@ -1,0 +1,45 @@
+{
+  "header": {
+    "namespace": "com.ligadata.jtm.test.filter",
+    "version": "0.0.1",
+    "language" : "scala",
+    "minVersion" : "2.11"
+  },
+
+  "imports": {
+    "packages": [ "com.ligadata.Utils._", "com.ligadata.Utils._" ]
+  },
+
+  "aliases": {
+    "messages": {
+      "m1": "com.ligadata.kamanja.test.msg1",
+      "o1": "com.ligadata.kamanja.test.msg2",
+      "m2": "com.ligadata.kamanja.test.msg3"
+    }
+  },
+
+  "transformations": {
+    "test1": {
+      "dependsOn": [ ["m1"],  ["m2"]],
+      "computes": {
+        "out3":{ "type": "Int", "vals": ["$m1.in1 + 1000", "$m2.in1 + 2000"], "comment": "in scala, type could be optional" }
+      },
+
+      "outputs": {
+        "o1": {
+          "mapping": {
+            "out1": "in1",
+            "out2": "t1",
+            "out4": "in3"
+          },
+
+          "where": "!($in2 != -1 && $in2 < 100)",
+
+          "computes": {
+            "t1": { "type": "String", "val": "\"s:\" + ($in2).toString()" }
+          }
+        }
+      }
+    }
+  }
+}

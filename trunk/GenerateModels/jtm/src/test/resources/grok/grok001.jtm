@@ -1,0 +1,55 @@
+{
+  "header": {
+    "namespace": "com.ligadata.jtm.test.grok",
+    "version": "0.0.1",
+    "language" : "scala",
+    "minVersion" : "2.11"
+  },
+
+  "imports": {
+    "packages": [ "com.ligadata.Utils._", "com.ligadata.Utils._" ]
+  },
+
+  "aliases":   {
+    "m1": "com.ligadata.kamanja.test001.msg1",
+    "o1": "com.ligadata.kamanja.test001.msg2"
+  },
+
+  "grok": [ {
+      "name_grok_instance" : {
+        "builtInDictionary": true,
+        "match": "{EMAIL: email}",
+        "file": ["path"],
+        "patterns": {
+          "DOMAINTLD": "[a-zA-Z]+",
+          "EMAIL": "%{NOTSPACE}@%{WORD}\\.%{DOMAINTLD}"
+        }
+      }
+    }
+  ],
+
+  "transformations": {
+    "test1": {
+      "dependsOn": [ ["m1"] ],
+      "computes": {
+        "out3":{ "type": "Int", "val": "$in1 + 1000", "comment": "in scala, type could be optional" }
+      },
+
+      "outputs": {
+        "o1": {
+          "mapping": {
+            "out1": "in1",
+            "out2": "t1",
+            "out4": "name_grok_instance($in2).email"
+          },
+
+          "where": "!($in2 != -1 && $in2 < 100)",
+
+          "computes": {
+            "t1": { "type": "String", "val": "\"s:\" + ($in2).toString()" }
+          }
+        }
+      }
+    }
+  }
+}

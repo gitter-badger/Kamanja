@@ -87,7 +87,7 @@ lazy val MessageDef = project.in(file("MessageDef")) dependsOn(Metadata, Metadat
 
 // lazy val Loadtest = project.in(file("Tools/Loadtest")) dependsOn(StorageManager, Exceptions)
 
-lazy val PmmlRuntime = project.in(file("Pmml/PmmlRuntime")) dependsOn(Metadata, KamanjaBase, Exceptions) 
+lazy val PmmlRuntime = project.in(file("Pmml/PmmlRuntime")) dependsOn(Metadata, KamanjaBase, Exceptions)
 
 lazy val PmmlCompiler = project.in(file("Pmml/PmmlCompiler")) dependsOn(PmmlRuntime, PmmlUdfs, Metadata, KamanjaBase, MetadataBootstrap, Exceptions)
 
@@ -209,3 +209,4 @@ val root = (project in file(".")).
 
 */
 
+lazy val jtm = project.in(file("GenerateModels/jtm")) dependsOn(Metadata, KamanjaBase, Exceptions, MetadataBootstrap, MessageDef)

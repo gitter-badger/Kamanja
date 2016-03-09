@@ -1,0 +1,17 @@
+{
+  "eplquery": "select * from com.ligadata.kamanja.samples.messages where score != -1 and score < 100",
+
+  "inputs": [
+    { "type":"com.ligadata.kamanja.samples.messages" }
+  ],
+
+  "processing": [
+      {"output" : "__filter__1", "type": "!=", "left": "score", "right": "-1"},
+      {"output" : "__filter__2", "type": "<", "left": "score", "right": "-100"},
+      {"output" : "__filter__" , "type": "or", "left": "__filter__1", "right": "__filter__2"}
+  ],
+
+  "outputs": [
+    { "type":"c om.ligadata.kamanja.samples.messages" }
+  ]
+}

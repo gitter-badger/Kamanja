@@ -1,0 +1,35 @@
+{
+  "Message" : {
+    "NameSpace" : "com.ligadata.kamanja.test",
+    "Name" : "msg4",
+    "Version" : "00.01.00",
+    "Description" : "Test message com.ligadata.kamanja.test.msg4",
+    "Fixed" : "true",
+    "Elements" : [
+      {
+        "Field" : {
+          "Name" : "out1",
+          "Type" : "System.Int"
+        }
+      },
+      {
+        "Field" : {
+          "Name" : "out2",
+          "Type" : "System.String"
+        }
+      },
+      {
+        "Field" : {
+          "Name" : "out3",
+          "Type" : "System.Int"
+        }
+      },
+      {
+        "Field" : {
+          "Name" : "out4",
+          "Type" : "System.Int"
+        }
+      }
+    ]
+  }
+}
