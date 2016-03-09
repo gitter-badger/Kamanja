@@ -36,7 +36,7 @@ class Model(factory: ModelInstanceFactory) extends ModelInstance(factory) {
       def process_o1(): Array[Result] = {
         if (!(msg1.in2 != -1 && msg1.in2 < 100)) return Array.empty[Result]
         val t1: String = "s:" + (msg1.in2).toString()
-        Array[Result](new Result("transactionId", msg1.transactionId), new Result("out1", msg1.in1), new Result("out4", msg1.in3), new Result("out2", t1), new Result("out3", out3))
+        Array[Result](new Result("rowNumber", msg1.rowNumber), new Result("transactionId", msg1.transactionId), new Result("out1", msg1.in1), new Result("out4", msg1.in3), new Result("out2", t1), new Result("timePartitionData", msg1.timePartitionData), new Result("out3", out3))
       }
       process_o1()
     }
@@ -46,7 +46,7 @@ class Model(factory: ModelInstanceFactory) extends ModelInstance(factory) {
       def process_o1(): Array[Result] = {
         if (!(msg2.in2 != -1 && msg2.in2 < 100)) return Array.empty[Result]
         val t1: String = "s:" + (msg2.in2).toString()
-        Array[Result](new Result("out1", msg2.in1), new Result("out2", t1), new Result("out3", out3), new Result("out4", msg2.in3), new Result("transactionId", msg2.transactionId))
+        Array[Result](new Result("out1", msg2.in1), new Result("out2", t1), new Result("out3", out3), new Result("rowNumber", msg2.rowNumber), new Result("timePartitionData", msg2.timePartitionData), new Result("out4", msg2.in3), new Result("transactionId", msg2.transactionId))
       }
       process_o1()
     }

@@ -282,7 +282,7 @@ class Compiler(params: CompilerBuilder) extends LogTrait {
 
   // Casing of system columns is inconsistsent
   // provide a atch up map
-  val columnNamePatchUp = Map("transactionid" -> "transactionId")
+  val columnNamePatchUp = Map.empty[String, String] //Map("transactionid" -> "transactionId")
 
   def ColumnNames(mgr: MdMgr, classname: String): Set[String] = {
     val classinstance = md.Message(classname, 0, true)
