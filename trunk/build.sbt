@@ -41,6 +41,12 @@ coverageEnabled in ThisBuild := true
 
 val Organization = "com.ligadata"
 
+//newly added
+lazy val KamanjaDependencyLibs = project.in(file("KamanjaDependencyLibs")) dependsOn(Metadata, KamanjaBase, MetadataBootstrap, MetadataAPI, Serialize, ZooKeeperListener, ZooKeeperLeaderLatch, Exceptions, KamanjaUtils, TransactionService, DataDelimiters, InputOutputAdapterBase)
+
+lazy val ExtDependencyLibs = project.in(file("ExtDependencyLibs")) dependsOn(Metadata, KamanjaBase, MetadataBootstrap, MetadataAPI, Serialize, ZooKeeperListener, ZooKeeperLeaderLatch, Exceptions, KamanjaUtils, TransactionService, DataDelimiters, InputOutputAdapterBase)
+
+
 lazy val BaseTypes = project.in(file("BaseTypes")) dependsOn(Metadata, Exceptions)
 
 lazy val BaseFunctions = project.in(file("BaseFunctions")) dependsOn(Metadata, Exceptions)
@@ -58,8 +64,8 @@ lazy val Exceptions = project.in(file("Exceptions")) dependsOn(KamanjaVersion)
 lazy val KamanjaBase = project.in(file("KamanjaBase")) dependsOn(Metadata, Exceptions, KamanjaUtils, HeartBeat, KvBase, DataDelimiters)
 
 lazy val DataDelimiters = project.in(file("DataDelimiters"))
-
-lazy val KamanjaManager = project.in(file("KamanjaManager")) dependsOn(Metadata, KamanjaBase, MetadataBootstrap, MetadataAPI, Serialize, ZooKeeperListener, ZooKeeperLeaderLatch, Exceptions, KamanjaUtils, TransactionService, DataDelimiters, InputOutputAdapterBase)
+//change
+lazy val KamanjaManager = project.in(file("KamanjaManager")) dependsOn(KamanjaDependencyLibs, ExtDependencyLibs, KamanjaBase, MetadataBootstrap, Serialize, ZooKeeperListener, ZooKeeperLeaderLatch, Exceptions, KamanjaUtils, TransactionService, DataDelimiters, InputOutputAdapterBase)
 
 lazy val InputOutputAdapterBase = project.in(file("InputOutputAdapters/InputOutputAdapterBase")) dependsOn(Exceptions, DataDelimiters, HeartBeat)
 
