@@ -20,11 +20,7 @@ package org.kamanja.pmml.testtool;
 
 import java.io.Console;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import com.beust.jcommander.Parameter;
@@ -88,7 +84,7 @@ public class PmmlTestTool extends PmmlTestToolBase {
             names = {"--version"},
             description = "print version and exit"
     )
-    private Boolean _version = null;
+    private boolean _version = false;
 
 
     static
@@ -146,6 +142,17 @@ public class PmmlTestTool extends PmmlTestToolBase {
             }
         };
 
+        /** Remove the quote marks demarcating the column names so they will match up with what is in the model's schema dict */
+        List<String> colHeaders = inputTable.get(0);
+        ArrayList<String> colHeadersSansQuotes = new ArrayList<String>();
+        String colName = null;
+        for (String fld : colHeaders) {
+            colName = fld;
+            colName = parseFunction.apply(colName);
+            colHeadersSansQuotes.add(colName);
+        }
+        inputTable.set(0,colHeadersSansQuotes);
+
         List<? extends Map<FieldName, ?>> inputRecords = BatchUtil.parseRecords(inputTable, parseFunction);
 
         PMML pmml = readPMML(this._pmmlSrc);
@@ -163,10 +170,12 @@ public class PmmlTestTool extends PmmlTestToolBase {
         if (inputRecords.size() > 0) {
             Map<FieldName, ?> inputRecord = inputRecords.get(0);
 
-            Sets.SetView<FieldName> missingActiveFields = Sets.difference(new LinkedHashSet<>(activeFields), inputRecord.keySet());
-            Sets.SetView<FieldName> requiredFields = Sets.intersection(new LinkedHashSet<>(activeFields), inputRecord.keySet());
+            Set<FieldName> keyset = inputRecord.keySet();
+            Sets.SetView<FieldName> missingActiveFields = Sets.difference(new LinkedHashSet<>(activeFields), keyset);
+            Sets.SetView<FieldName> requiredFields = Sets.intersection(new LinkedHashSet<>(activeFields), keyset);
             boolean allFieldsAvailable = (requiredFields.size() == activeFields.size());
             if (! allFieldsAvailable) {
+
                 throw new IllegalArgumentException("One or more of the model's input fields is missing: " + activeFields.toString());
             }
             /*if (missingActiveFields.size() > 0) {   this is wrong... doesn't account for fields in input that are not used by the model

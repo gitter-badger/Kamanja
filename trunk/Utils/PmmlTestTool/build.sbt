@@ -4,7 +4,7 @@ import Keys._
 
 shellPrompt := { state =>  "sbt (%s)> ".format(Project.extract(state).currentProject.id) }
 
-
+mainClass in assembly := Some("org.kamanja.pmml.testtool.PmmlTestTool")
 
 assemblyOption in assembly ~= { _.copy(prependShellScript = Some(defaultShellScript)) }
 
