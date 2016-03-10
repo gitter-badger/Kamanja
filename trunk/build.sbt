@@ -109,6 +109,8 @@ lazy val SimpleKafkaProducer = project.in(file("Utils/SimpleKafkaProducer")) dep
 
 lazy val KVInit = project.in(file("Utils/KVInit")) dependsOn (Metadata, KamanjaBase, MetadataBootstrap, MetadataAPI, StorageManager, Exceptions, TransactionService)
 
+lazy val ContainersUtility = project.in(file("Utils/ContainersUtility")) dependsOn (Metadata, KamanjaBase, MetadataBootstrap, MetadataAPI, StorageManager, Exceptions, TransactionService)
+
 lazy val ZooKeeperLeaderLatch = project.in(file("Utils/ZooKeeper/CuratorLeaderLatch")) dependsOn(ZooKeeperClient, Exceptions)
 
 lazy val JsonDataGen = project.in(file("Utils/JsonDataGen")) dependsOn(Exceptions, KamanjaBase)
