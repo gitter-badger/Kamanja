@@ -345,4 +345,64 @@ class UtilityForContainers(val loadConfigs: Properties, val typename: String,val
   private def GetCurDtTmStr: String = {
     SimpDateFmtTimeFromMs(System.currentTimeMillis)
   }
+  // this method used to purge (truncate) container
+  private def TruncateContainer(typename: String, kvstore: DataStore): Unit ={
+    logger.info("Truncate %s container".format(typename))
+    kvstore.TruncateContainer(Array(typename))
+  }
+  // this method used to dalete data from container for a specific keys in a specific time ranges
+  private def DeleteFromContainer(typename: String, keyids: Array[Array[String]], timeranges: TimeRange, kvstore: DataStore): Unit ={
+    logger.info("delete data from %s container for %s keys and timerange: %d-%d".format(typename,keyids,timeranges.beginTime,timeranges.endTime))
+    kvstore.del(typename, timeranges, keyids)
+  }
+  // this method used to delete data from container for a specific keys
+  private def DeleteFromContainer(typename: String, keyids: Array[Key], kvstore: DataStore): Unit ={
+    logger.info("delete from %s container for %s keys".format(typename,keyids))
+    kvstore.del(typename, keyids)
+  }
+
+  private def DeleteFromContainer (typename: String, timeranges: TimeRange): Unit ={
+    logger.info("delete from %s container for timerange: %d-%d".format(typename, timeranges.beginTime,timeranges.endTime))
+    // delete by time range ==> we should add method to delete using time range in storage adapter
+  }
+  //this method used to get data from container for a specific key
+  private def GetFromContainer(typename:String, keyids: Array[Key], kvstore: DataStore): Unit ={
+    logger.info("select data from %s container for %s key".format(typename,keyids))
+   // should change from this line
+    val loadedKeys= java.util.TreeSet[LoadKeyWithBucketId]
+    val dataByBucketKeyPart= TreeMap[KeyWithBucketIdAndPrimaryKey, MessageContainerBaseWithModFlag]
+    val buildOne = (k: Key, v: Value) => {
+      collectKeyAndValues(k, v, dataByBucketKeyPart, loadedKeys)
+    }
+    // to this line
+    kvstore.get(typename, keyids, buildOne)
+  }
+  //this method used to get data from container for a specific key in a specific time ranges
+  private def GetFromContainer(typename: String, keyids: Array[Array[String]], timeranges: Array[TimeRange], kvstore: DataStore): Unit ={
+    // shuld change from this line
+    val loadedKeys= java.util.TreeSet[LoadKeyWithBucketId]
+    val dataByBucketKeyPart= TreeMap[KeyWithBucketIdAndPrimaryKey, MessageContainerBaseWithModFlag]
+    val buildOne = (k: Key, v: Value) => {
+      collectKeyAndValues(k, v, dataByBucketKeyPart, loadedKeys)
+    }
+    // to this line
+    for(timerange <- timeranges){
+      logger.info("select data from %s container for %s key and timerange: %d-%d".format(typename,timerange.beginTime,timerange.endTime))
+      kvstore.get(typename,timeranges,keyids,buildOne)
+    }
+  }
+
+  private def GetFromContainer(typename:String, timeranges: Array[TimeRange], kvstore: DataStore): Unit ={
+    val loadedKeys= java.util.TreeSet[LoadKeyWithBucketId]
+    val dataByBucketKeyPart= TreeMap[KeyWithBucketIdAndPrimaryKey, MessageContainerBaseWithModFlag]
+    val buildOne = (k: Key, v: Value) => {
+      collectKeyAndValues(k, v, dataByBucketKeyPart, loadedKeys)
+    }
+    // to this line
+    for(timerange <- timeranges) {
+      logger.info("select data from %s container for timerange: %d-%d".format((typename,timerange.beginTime,timerange.endTime)))
+      // shuld change from this line
+      kvstore.get(typename, timeranges, buildOne)
+    }
+  }
 }
