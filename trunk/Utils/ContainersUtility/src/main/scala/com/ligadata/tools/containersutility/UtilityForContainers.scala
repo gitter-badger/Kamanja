@@ -296,10 +296,8 @@ class UtilityForContainers(val loadConfigs: Properties, val typename: String) ex
       })
     else  if (timeranges.length == 0) {
       var keyList = scala.collection.immutable.List.empty[Key]
-      val keyArraybuf = scala.collection.mutable.ArrayBuffer.empty[Key]
       val deleteKey = (k: Key) => {
         keyList = keyList :+ k
-        //keyArraybuf.append(k)
       }
 
       kvstore.getKeys(typename, keyids, deleteKey)
@@ -322,8 +320,8 @@ class UtilityForContainers(val loadConfigs: Properties, val typename: String) ex
       val primarykey = value.PrimaryKeyData
       val key = KeyWithBucketIdAndPrimaryKey(KeyWithBucketIdAndPrimaryKeyCompHelper.BucketIdForBucketKey(k.bucketKey), k, primarykey != null && primarykey.size > 0, primarykey)
       val bucketId = KeyWithBucketIdAndPrimaryKeyCompHelper.BucketIdForBucketKey(k.bucketKey)
-      val keyValue = value.get(k.toString)
-      data = data + (bucketId.toString -> keyValue.toString) // this includes key and value
+     // val keyValue = value.get(k.toString)
+      data = data + (k.bucketKey.toString -> value.toString/*keyValue.toString*/) // this includes key and value
     }
       //logger.info("select data from %s container for %s key and timerange: %d-%d".format(typename,timerange.beginTime,timerange.endTime))
     if(keyArray.length == 0)

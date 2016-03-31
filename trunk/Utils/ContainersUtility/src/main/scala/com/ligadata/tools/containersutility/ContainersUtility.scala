@@ -5,6 +5,7 @@ package com.ligadata.tools.containersutility
   */
 
 import java.io.PrintWriter
+import java.util.{Date, Calendar}
 import com.ligadata.KvBase.TimeRange
 
 import scala.collection.mutable._
@@ -99,6 +100,8 @@ Sample uses:
     val parsedKey = parse(filterFile)
     var timeRangeList = scala.collection.immutable.List.empty[TimeRange] //create an arrayBuffer to append data into it
     var insideKeyList = scala.collection.immutable.List.empty[Array[String]] // create an ArrayBuffer to append data into it
+//    var  calBeginTime = Calendar.getInstance();
+//    var  calEndTime = Calendar.getInstance();
     if (parsedKey != null) {
       val values = parsedKey.values.asInstanceOf[Map[String, Any]]
       values.foreach(kv => {
@@ -113,7 +116,12 @@ Sample uses:
           val list = kv._2.asInstanceOf[List[Map[String, String]]]
           list.foreach(listItem => {
             if (!listItem("begintime").equalsIgnoreCase(null) && !listItem("endtime").equalsIgnoreCase(null)) {
+//              val beginTime:Date  = new Date(listItem("begintime"))
+//              val endTime:Date  = new Date(listItem("endtime"))
+//              calBeginTime.setTime(beginTime)
+//              calEndTime.setTime(endTime)
               var timeRangeObj = new TimeRange(listItem("begintime").toLong, listItem("endtime").toLong)
+              //var timeRangeObj = new TimeRange(calBeginTime.getTime().getTime(), calEndTime.getTime().getTime())
               timeRangeList :+ timeRangeObj
             }
           })
