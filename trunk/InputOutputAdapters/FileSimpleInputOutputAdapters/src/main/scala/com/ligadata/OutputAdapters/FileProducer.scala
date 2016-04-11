@@ -16,23 +16,23 @@
 
 package com.ligadata.OutputAdapters
 
+import com.ligadata.KamanjaBase.{ContainerInterface, TransactionContext, NodeContext}
 import org.apache.logging.log4j.{ Logger, LogManager }
 import java.io._
 import java.util.zip.{ZipException, GZIPOutputStream}
 import java.nio.file.{ Paths, Files }
-import com.ligadata.InputOutputAdapterInfo.{ AdapterConfiguration, OutputAdapter, OutputAdapterObj, CountersAdapter }
+import com.ligadata.InputOutputAdapterInfo._
 import com.ligadata.AdaptersConfiguration.FileAdapterConfiguration
 import com.ligadata.Exceptions.{FatalAdapterException}
 import com.ligadata.HeartBeat.{Monitorable, MonitorComponentInfo}
 import org.json4s.jackson.Serialization
 
-
-object FileProducer extends OutputAdapterObj {
+object FileProducer extends OutputAdapterFactory {
   val ADAPTER_DESCRIPTION = "File Producer"
-  def CreateOutputAdapter(inputConfig: AdapterConfiguration, cntrAdapter: CountersAdapter): OutputAdapter = new FileProducer(inputConfig, cntrAdapter)
+  def CreateOutputAdapter(inputConfig: AdapterConfiguration, nodeContext: NodeContext): OutputAdapter = new FileProducer(inputConfig, nodeContext)
 }
 
-class FileProducer(val inputConfig: AdapterConfiguration, cntrAdapter: CountersAdapter) extends OutputAdapter {
+class FileProducer(val inputConfig: AdapterConfiguration, val nodeContext: NodeContext) extends OutputAdapter {
   private[this] val _lock = new Object()
   private[this] val LOG = LogManager.getLogger(getClass);
 
@@ -92,17 +92,22 @@ class FileProducer(val inputConfig: AdapterConfiguration, cntrAdapter: CountersA
 
   // Locking before we write into file
   // To send an array of messages. messages.size should be same as partKeys.size
-  override def send(messages: Array[Array[Byte]], partKeys: Array[Array[Byte]]): Unit = _lock.synchronized {
-    if (messages.size != partKeys.size) {
-      LOG.error("File input adapter " + fc.Name + ": Message and Partition Keys hould has same number of elements. Message has %d and Partition Keys has %d".format(messages.size, partKeys.size))
+  override def send(tnxCtxt: TransactionContext, outputContainers: Array[ContainerInterface]): Unit = _lock.synchronized {
+    if (outputContainers.size == 0) return
+
+    val (outContainers, serializedContainerData, serializerNames) = serialize(tnxCtxt, outputContainers)
+
+    if (outputContainers.size != serializedContainerData.size || outputContainers.size != serializerNames.size) {
+      LOG.error("File input adapter " + fc.Name + ": Messages, messages serialized data & serializer names should has same number of elements. Messages:%d, Messages Serialized data:%d, serializerNames:%d".format(outputContainers.size, serializedContainerData.size, serializerNames.size))
       //TODO Need to record an error here... is this a job for the ERROR Q?
       return
     }
-    if (messages.size == 0) return
+
+    if (serializedContainerData.size == 0) return
 
     try {
       // Op is not atomic
-      messages.foreach(message => {
+      serializedContainerData.foreach(message => {
         var isSuccess = false
         numOfRetries = 0
         while (!isSuccess) {
@@ -132,8 +137,8 @@ class FileProducer(val inputConfig: AdapterConfiguration, cntrAdapter: CountersA
           }
         }
       })
-      val key = Category + "/" + fc.Name + "/evtCnt"
-      cntrAdapter.addCntr(key, messages.size) // for now adding rows
+      // val key = Category + "/" + fc.Name + "/evtCnt"
+      // cntrAdapter.addCntr(key, messages.size) // for now adding rows
     } catch {
       case e: Exception => {
         LOG.error("File input adapter " + fc.Name + ": Failed to send", e)

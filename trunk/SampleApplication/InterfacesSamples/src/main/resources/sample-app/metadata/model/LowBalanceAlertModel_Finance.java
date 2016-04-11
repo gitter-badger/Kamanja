@@ -57,7 +57,13 @@ public class LowBalanceAlertModel extends ModelInstance {
 
     	    long curTmInMs = curDtTmInMs.getDateTimeInMs();
     	    	    // create new alert history record and persist (if policy is to keep only one, this will replace existing one)
-    	    	    CustAlertHistory.build().withalertdttminms(curTmInMs).withalerttype("lowbalancealert").Save();
+	    //CustAlertHistory.build().withalertdttminms(curTmInMs).withalerttype("lowbalancealert").Save();
+	    CustAlertHistory ah = CustAlertHistory.build();
+	    ah.set("alertdttminms",curTmInMs);
+	    ah.set("alerttype","lowbalancealert");
+	    ah.save();
+
+
 
 
         Result[] actualResult = {new Result("Customer ID",rcntTxn.custid()),
@@ -85,7 +91,7 @@ public class LowBalanceAlertModel extends ModelInstance {
 		public LowBalanceAlertFactory(ModelDef modelDef, NodeContext nodeContext) {
 			super(modelDef, nodeContext);
 		}
-		public boolean isValidMessage(MessageContainerBase msg) {
+		public boolean isValidMessage(ContainerInterface msg) {
 			return (msg instanceof TransactionMsg);
 		}
 

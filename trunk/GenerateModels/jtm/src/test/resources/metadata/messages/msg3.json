@@ -3,7 +3,7 @@
     "NameSpace" : "com.ligadata.kamanja.test",
     "Name" : "msg3",
     "Version" : "00.01.00",
-    "Description" : "Test message com.ligadata.kamanja.test.msg2",
+    "Description" : "Test message com.ligadata.kamanja.test.msg3",
     "Fixed" : "true",
     "Elements" : [
       {

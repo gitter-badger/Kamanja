@@ -35,7 +35,7 @@ import com.ligadata.StorageBase._
 import com.ligadata.Serialize._
 import com.ligadata.Utils.Utils._
 import com.ligadata.Utils.{ KamanjaClassLoader, KamanjaLoaderInfo }
-import com.ligadata.StorageBase.StorageAdapterObj
+import com.ligadata.StorageBase.StorageAdapterFactory
 import com.ligadata.keyvaluestore.CassandraAdapter
 
 import com.ligadata.Exceptions._
@@ -196,7 +196,7 @@ class CassandraAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAft
 	var custNumber = "4256667777"
 	var obj = new Customer(custName,custAddress,custNumber)
 	var v = serializer.SerializeObjectToByteArray(obj)
-	var value = new Value("kryo",v)
+	var value = new Value(1,"kryo",v)
 	adapter.put("&&",key,value)
       }
       logger.info("", ex2)
@@ -215,7 +215,7 @@ class CassandraAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAft
 	var custNumber = "425666777" + i
 	var obj = new Customer(custName,custAddress,custNumber)
 	var v = serializer.SerializeObjectToByteArray(obj)
-	var value = new Value("kryo",v)
+	var value = new Value(1,"kryo",v)
 	noException should be thrownBy {
 	  adapter.put(containerName,key,value)
 	}
@@ -256,7 +256,7 @@ class CassandraAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAft
 	var custNumber = "425666777" + i
 	var obj = new Customer(custName,custAddress,custNumber)
 	var v = serializer.SerializeObjectToByteArray(obj)
-	var value = new Value("kryo",v)
+	var value = new Value(1,"kryo",v)
 	noException should be thrownBy {
 	  adapter.put(containerName,key,value)
 	}
@@ -295,7 +295,7 @@ class CassandraAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAft
 	var custNumber = "4256667777" + i
 	var obj = new Customer(custName,custAddress,custNumber)
 	var v = serializer.SerializeObjectToByteArray(obj)
-	var value = new Value("kryo",v)
+	var value = new Value(1,"kryo",v)
 	keyValueList = keyValueList :+ (key,value)
       }
       var dataList = new Array[(String, Array[(Key,Value)])](0)

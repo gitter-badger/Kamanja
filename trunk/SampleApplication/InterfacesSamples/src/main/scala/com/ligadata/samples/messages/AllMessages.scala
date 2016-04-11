@@ -20,16 +20,16 @@ import java.util.Date
 import org.json4s.jackson.JsonMethods._
 import com.ligadata.KamanjaBase.{ InputData, DelimitedData, JsonData, XmlData }
 import java.io.{ DataInputStream, DataOutputStream }
-import com.ligadata.KamanjaBase.{ BaseMsg, BaseMsgObj, TransformMessage, BaseContainer, BaseContainerObj, MdBaseResolveInfo, RDDObject, RDD, JavaRDDObject, MessageContainerBase }
+import com.ligadata.KamanjaBase.{ MessageInterface, MessageFactoryInterface, ContainerInterface, ContainerFactoryInterface, MdBaseResolveInfo, RDDObject, RDD, JavaRDDObject, ContainerInterface }
 
-object CustAlertHistory extends RDDObject[CustAlertHistory] with BaseContainerObj {
+object CustAlertHistory extends RDDObject[CustAlertHistory] with ContainerFactoryInterface {
   type T = CustAlertHistory
 
   override def FullName: String = "com.ligadata.samples.messages.CustAlertHistory"
   override def NameSpace: String = "com.ligadata.samples.messages"
   override def Name: String = "CustAlertHistory"
   override def Version: String = "000000.000001.000000"
-  override def CreateNewContainer: BaseContainer = new CustAlertHistory()
+  override def CreateNewContainer: ContainerInterface = new CustAlertHistory()
   override def IsFixed: Boolean = true;
   override def IsKv: Boolean = false;
   override def CanPersist: Boolean = true;
@@ -66,7 +66,7 @@ object CustAlertHistory extends RDDObject[CustAlertHistory] with BaseContainerOb
   override def toJavaRDDObject: JavaRDDObject[T] = JavaRDDObject.fromRDDObject[T](this)
 }
 
-class CustAlertHistory(var transactionId: Long, other: CustAlertHistory) extends BaseContainer {
+class CustAlertHistory(var transactionId: Long, other: CustAlertHistory) extends ContainerInterface {
   if (other != null && other != this) {
     // call copying fields from other to local variables
   }
@@ -97,7 +97,7 @@ class CustAlertHistory(var transactionId: Long, other: CustAlertHistory) extends
   var alertType: String = ""
   var numDaysWithLessBalance: Int = 0
 
-  def Clone(): MessageContainerBase = {
+  def Clone(): ContainerInterface = {
     CustAlertHistory.build(this)
   }
   
@@ -113,8 +113,8 @@ class CustAlertHistory(var transactionId: Long, other: CustAlertHistory) extends
   override def getOrElse(key: String, default: Any): Any = { throw new Exception("getOrElse function is not yet implemented") }
   private def getByName(key: String): Any = null
   private def getWithReflection(key: String): Any = null
-  override def AddMessage(childPath: Array[(String, String)], msg: BaseMsg): Unit = {}
-  override def GetMessage(childPath: Array[(String, String)], primaryKey: Array[String]): com.ligadata.KamanjaBase.BaseMsg = null
+  override def AddMessage(childPath: Array[(String, String)], msg: MessageInterface): Unit = {}
+  override def GetMessage(childPath: Array[(String, String)], primaryKey: Array[String]): com.ligadata.KamanjaBase.MessageInterface = null
   def populate(inputdata: InputData) = {}
   private def populateCSV(inputdata: DelimitedData): Unit = {}
   private def populateJson(json: JsonData): Unit = {}
@@ -139,14 +139,14 @@ class CustAlertHistory(var transactionId: Long, other: CustAlertHistory) extends
   }
 }
 
-object CustPreferences extends RDDObject[CustPreferences] with BaseContainerObj {
+object CustPreferences extends RDDObject[CustPreferences] with ContainerFactoryInterface {
   type T = CustPreferences
 
   override def FullName: String = "com.ligadata.samples.messages.CustPreferences"
   override def NameSpace: String = "com.ligadata.samples.messages"
   override def Name: String = "CustPreferences"
   override def Version: String = "000000.000001.000000"
-  override def CreateNewContainer: BaseContainer = new CustPreferences()
+  override def CreateNewContainer: ContainerInterface = new CustPreferences()
   override def IsFixed: Boolean = true;
   override def IsKv: Boolean = false;
   override def CanPersist: Boolean = true;
@@ -181,7 +181,7 @@ object CustPreferences extends RDDObject[CustPreferences] with BaseContainerObj 
   override def toJavaRDDObject: JavaRDDObject[T] = JavaRDDObject.fromRDDObject[T](this)
 }
 
-class CustPreferences(var transactionId: Long, other: CustPreferences) extends BaseContainer {
+class CustPreferences(var transactionId: Long, other: CustPreferences) extends ContainerInterface {
   if (other != null && other != this) {
     // call copying fields from other to local variables
   }
@@ -208,7 +208,7 @@ class CustPreferences(var transactionId: Long, other: CustPreferences) extends B
   def withOverdraftlimit(alertType: String): CustPreferences = { this }
   def withMultiDayMinBalanceAlertOptout(daysWithLessBalance: Int): CustPreferences = { this }
 
-  def Clone(): MessageContainerBase = {
+  def Clone(): ContainerInterface = {
     CustPreferences.build(this)
   }
   
@@ -227,8 +227,8 @@ class CustPreferences(var transactionId: Long, other: CustPreferences) extends B
   override def getOrElse(key: String, default: Any): Any = { throw new Exception("getOrElse function is not yet implemented") }
   private def getByName(key: String): Any = null
   private def getWithReflection(key: String): Any = null
-  override def AddMessage(childPath: Array[(String, String)], msg: BaseMsg): Unit = {}
-  override def GetMessage(childPath: Array[(String, String)], primaryKey: Array[String]): com.ligadata.KamanjaBase.BaseMsg = null
+  override def AddMessage(childPath: Array[(String, String)], msg: MessageInterface): Unit = {}
+  override def GetMessage(childPath: Array[(String, String)], primaryKey: Array[String]): com.ligadata.KamanjaBase.MessageInterface = null
   def populate(inputdata: InputData) = {}
   private def populateCSV(inputdata: DelimitedData): Unit = {}
   private def populateJson(json: JsonData): Unit = {}
@@ -255,16 +255,15 @@ class CustPreferences(var transactionId: Long, other: CustPreferences) extends B
 
 }
 
-object CustTransaction extends RDDObject[CustTransaction] with BaseMsgObj {
+object CustTransaction extends RDDObject[CustTransaction] with MessageFactoryInterface {
   type T = CustTransaction
 
-  override def TransformDataAttributes: TransformMessage = null
   override def NeedToTransformData: Boolean = false
   override def FullName: String = "com.ligadata.samples.messages.CustTransaction"
   override def NameSpace: String = "com.ligadata.samples.messages"
   override def Name: String = "CustTransaction"
   override def Version: String = "000000.000001.000000"
-  override def CreateNewMessage: BaseMsg = new CustTransaction()
+  override def CreateNewMessage: MessageInterface = new CustTransaction()
   override def IsFixed: Boolean = true;
   override def IsKv: Boolean = false;
   override def CanPersist: Boolean = true;
@@ -300,7 +299,7 @@ object CustTransaction extends RDDObject[CustTransaction] with BaseMsgObj {
   override def toJavaRDDObject: JavaRDDObject[T] = JavaRDDObject.fromRDDObject[T](this)
 }
 
-class CustTransaction(var transactionId: Long, other: CustTransaction) extends BaseMsg {
+class CustTransaction(var transactionId: Long, other: CustTransaction) extends MessageInterface {
   if (other != null && other != this) {
     // call copying fields from other to local variables
   }
@@ -323,7 +322,7 @@ class CustTransaction(var transactionId: Long, other: CustTransaction) extends B
   override def Name: String = CustTransaction.Name
   override def Version: String = CustTransaction.Version
   
-  def Clone(): MessageContainerBase = {
+  def Clone(): ContainerInterface = {
     CustTransaction.build(this)
   }
   
@@ -345,8 +344,8 @@ class CustTransaction(var transactionId: Long, other: CustTransaction) extends B
   override def getOrElse(key: String, default: Any): Any = { throw new Exception("getOrElse function is not yet implemented") }
   private def getByName(key: String): Any = null
   private def getWithReflection(key: String): Any = null
-  override def AddMessage(childPath: Array[(String, String)], msg: BaseMsg): Unit = {}
-  override def GetMessage(childPath: Array[(String, String)], primaryKey: Array[String]): com.ligadata.KamanjaBase.BaseMsg = null
+  override def AddMessage(childPath: Array[(String, String)], msg: MessageInterface): Unit = {}
+  override def GetMessage(childPath: Array[(String, String)], primaryKey: Array[String]): com.ligadata.KamanjaBase.MessageInterface = null
   def populate(inputdata: InputData) = {}
   private def populateCSV(inputdata: DelimitedData): Unit = {}
   private def populateJson(json: JsonData): Unit = {}
@@ -373,14 +372,14 @@ class CustTransaction(var transactionId: Long, other: CustTransaction) extends B
 
 }
 
-object GlobalPreferences extends RDDObject[GlobalPreferences] with BaseContainerObj {
+object GlobalPreferences extends RDDObject[GlobalPreferences] with ContainerFactoryInterface {
   type T = GlobalPreferences
 
   override def FullName: String = "com.ligadata.samples.messages.GlobalPreferences"
   override def NameSpace: String = "com.ligadata.samples.messages"
   override def Name: String = "GlobalPreferences"
   override def Version: String = "000000.000001.000000"
-  override def CreateNewContainer: BaseContainer = new GlobalPreferences()
+  override def CreateNewContainer: ContainerInterface = new GlobalPreferences()
   override def IsFixed: Boolean = true;
   override def IsKv: Boolean = false;
   override def CanPersist: Boolean = true;
@@ -416,7 +415,7 @@ object GlobalPreferences extends RDDObject[GlobalPreferences] with BaseContainer
   override def toJavaRDDObject: JavaRDDObject[T] = JavaRDDObject.fromRDDObject[T](this)
 }
 
-class GlobalPreferences(var transactionId: Long, other: GlobalPreferences) extends BaseContainer {
+class GlobalPreferences(var transactionId: Long, other: GlobalPreferences) extends ContainerInterface {
   if (other != null && other != this) {
     // call copying fields from other to local variables
   }
@@ -439,7 +438,7 @@ class GlobalPreferences(var transactionId: Long, other: GlobalPreferences) exten
   override def Name: String = GlobalPreferences.Name
   override def Version: String = GlobalPreferences.Version
  
-  def Clone(): MessageContainerBase = {
+  def Clone(): ContainerInterface = {
     GlobalPreferences.build(this)
   }
   
@@ -457,8 +456,8 @@ class GlobalPreferences(var transactionId: Long, other: GlobalPreferences) exten
   override def getOrElse(key: String, default: Any): Any = { throw new Exception("getOrElse function is not yet implemented") }
   private def getByName(key: String): Any = null
   private def getWithReflection(key: String): Any = null
-  override def AddMessage(childPath: Array[(String, String)], msg: BaseMsg): Unit = {}
-  override def GetMessage(childPath: Array[(String, String)], primaryKey: Array[String]): com.ligadata.KamanjaBase.BaseMsg = null
+  override def AddMessage(childPath: Array[(String, String)], msg: MessageInterface): Unit = {}
+  override def GetMessage(childPath: Array[(String, String)], primaryKey: Array[String]): com.ligadata.KamanjaBase.MessageInterface = null
   def populate(inputdata: InputData) = {}
   private def populateCSV(inputdata: DelimitedData): Unit = {}
   private def populateJson(json: JsonData): Unit = {}

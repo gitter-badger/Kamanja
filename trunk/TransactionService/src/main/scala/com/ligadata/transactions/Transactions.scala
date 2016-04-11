@@ -29,7 +29,7 @@ import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.framework.recipes.locks.InterProcessMutex
 import com.ligadata.StorageBase.{ DataStore, Transaction }
 import com.ligadata.keyvaluestore.KeyValueManager
-import com.ligadata.KvBase.{ Key, Value, TimeRange, KvBaseDefalts }
+import com.ligadata.KvBase.{ Key, TimeRange, KvBaseDefalts }
 
 object NodeLevelTransService {
   private[this] val LOG = LogManager.getLogger(getClass);
@@ -60,8 +60,8 @@ object NodeLevelTransService {
     }
   }
 
-  private def buildTxnStartOffset(k: Key, v: Value, objs: Array[Long]) {
-    val uniqVal = new String(v.serializedInfo).toLong
+  private def buildTxnStartOffset(k: Key, v: Any, objs: Array[Long]) {
+    val uniqVal = if (v != null && v.isInstanceOf[Array[Byte]]) new String(v.asInstanceOf[Array[Byte]]).toLong else 0
     objs(0) = uniqVal
   }
 
@@ -82,7 +82,7 @@ object NodeLevelTransService {
         throw new Exception("Not found Status DataStore to save Status.")
       }
 
-      val buildTxnOff = (k: Key, v: Value) => {
+      val buildTxnOff = (k: Key, v: Any, serType: String, t: String, ver: Int) => {
         buildTxnStartOffset(k, v, objs)
       }
 
@@ -104,10 +104,7 @@ object NodeLevelTransService {
       val nextTxnStart = endTxnIdx + 1
 
       val k = Key(KvBaseDefalts.defaultTime, bucket_key, 0L, 0)
-      val v = Value("", nextTxnStart.toString.getBytes())
-      val txn = txnsDataStore.beginTx()
-      txnsDataStore.put(containerName, k, v)
-      txnsDataStore.commitTx(txn)
+      txnsDataStore.put(null, containerName, k, "", nextTxnStart.toString.getBytes())
     } catch {
       case e: Exception => {
         LOG.debug(s"getNextTransactionRange() -- Unable to get Next Transaction Range", e)

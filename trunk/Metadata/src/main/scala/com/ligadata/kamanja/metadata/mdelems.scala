@@ -76,7 +76,7 @@ import ObjScalarType._
 
 object ObjType extends Enumeration {
   type Type = Value
-  val tNone, tAny, tInt, tLong, tFloat, tDouble, tString, tBoolean, tChar, tArray, tArrayBuf, tSet, tTreeSet, tSortedSet, tMap, tHashMap, tMsgMap, tList, tQueue, tStruct, tAttr = Value
+  val tNone, tAny, tInt, tLong, tFloat, tDouble, tString, tBoolean, tChar, tArray, tMap, tMsgMap, tStruct, tAttr = Value
 
   def asString(typ: Type): String = {
     val str = typ.toString match {
@@ -117,14 +117,8 @@ object ObjType extends Enumeration {
       case "boolean" => tBoolean
       case "char" => tChar
       case "array" => tArray
-      case "set" => tSet
-      case "sortedset" => tSortedSet
-      case "treeset" => tTreeSet
       case "map" => tMap
-      case "hashmap" => tHashMap
       case "msgmap" => tMap
-      case "list" => tList
-      case "queue" => tQueue
       case "struct" => tStruct
       case "attr" => tAttr
       case _ => tNone
@@ -158,7 +152,8 @@ object DefaultMdElemStructVer {
 
 // common fields for all metadata elements
 trait BaseElem {
-    def UniqID: Long
+    def UniqId: Long // UniqueId is unque for each element. If we have different versions of any element it will have different ids.
+    def MdElementId: Long // MdElementId is unque for each element with different versions
     def FullName: String // Logical Name
     def FullNameWithVer: String
     def CreationTime: Long // Time in milliseconds from 1970-01-01T00:00:00
@@ -185,10 +180,14 @@ trait BaseElem {
     def Active: Unit // Make the element as Active
     def Deactive: Unit // Make the element as de-active
     def Deleted: Unit // Mark the element as deleted
+    def OwnerId: String
+    def TenantId: String
+    def MdElementCategory: String
 }
 
 class BaseElemDef extends BaseElem {
-    override def UniqID: Long = uniqueId
+    override def UniqId: Long = uniqueId // UniqueId is unque for each element. If we have different versions of any element it will have different ids.
+    override def MdElementId: Long = mdElementId // MdElementId is unque for each element with different versions
     override def FullName: String = nameSpace + "." + name // Logical Name
     override def FullNameWithVer: String = nameSpace + "." + name + "." + Version
     override def CreationTime: Long = creationTime // Time in milliseconds from 1970-01-01T00:00:00
@@ -216,6 +215,9 @@ class BaseElemDef extends BaseElem {
     override def Active: Unit = active = true // Make the element as Active
     override def Deactive: Unit = active = false // Make the element as de-active
     override def Deleted: Unit = deleted = true // Mark the element as deleted
+    override def OwnerId: String = ownerId
+    override def TenantId: String = tenantId
+    override def MdElementCategory: String = ""
     def CheckAndGetDependencyJarNames: Array[String] = if (dependencyJarNames != null) dependencyJarNames else Array[String]()
 
     // Override in other places if required
@@ -226,7 +228,8 @@ class BaseElemDef extends BaseElem {
       }
     }
 
-    var uniqueId: Long = 0
+    var uniqueId: Long = 0 // uniqueId is unque for each element. If we have different versions of any element it will have different ids.
+    var mdElementId: Long = 0 // mdElementId is unque for each element with different versions
     var creationTime: Long = _ // Time in milliseconds from 1970-01-01T00:00:00 (Mostly it is Local time. May be we need to get GMT)
     var modTime: Long = _ // Time in milliseconds from 1970-01-01T00:00:00 (Mostly it is Local time. May be we need to get GMT)
 
@@ -245,6 +248,8 @@ class BaseElemDef extends BaseElem {
     var tranId: Long = 0
     var objectDefinition: String = _
     var objectFormat: ObjFormatType.FormatType = fJSON
+    var ownerId: String = _
+    var tenantId: String = _
 }
 
 // All these metadata elements should have specialized serialization and deserialization 
@@ -264,6 +269,7 @@ trait TypeImplementation[T] {
 }
 
 abstract class BaseTypeDef extends BaseElemDef with TypeDefInfo {
+  override def MdElementCategory: String = "Type"
   def typeString: String = PhysicalName // default PhysicalName
 
   def implementationName: String = implementationNm // Singleton object name/Static Class name of TypeImplementation
@@ -310,128 +316,127 @@ abstract class ContainerTypeDef extends BaseTypeDef {
   def ElementTypes: Array[BaseTypeDef] = Array[BaseTypeDef]()
 }
 
-class SetTypeDef extends ContainerTypeDef {
-  def tType : ObjType.Value = tSet
-  var keyDef: BaseTypeDef = _
-
-  override def IsFixed: Boolean = false
-  override def typeString: String = {
-    "scala.collection.mutable.Set[" + keyDef.typeString + "]"
-  }
-  override def ElementTypes: Array[BaseTypeDef] = {
-    Array(keyDef)
-  }
-}
-
-class ImmutableSetTypeDef extends ContainerTypeDef {
-  def tType : ObjType.Value = tSet
-  var keyDef: BaseTypeDef = _
-
-  override def IsFixed: Boolean = false
-  override def typeString: String = {
-    "scala.collection.immutable.Set[" + keyDef.typeString + "]"
-  }
-  override def ElementTypes: Array[BaseTypeDef] = {
-    Array(keyDef)
-  }
-}
-
-class TreeSetTypeDef extends ContainerTypeDef {
-  def tType : ObjType.Value = tTreeSet
-  var keyDef: BaseTypeDef = _
-
-  override def IsFixed: Boolean = false
-  override def typeString: String = {
-    "scala.collection.mutable.TreeSet[" + keyDef.typeString + "]"
-  }
-  override def ElementTypes: Array[BaseTypeDef] = {
-    Array(keyDef)
-  }
-}
-
-class SortedSetTypeDef extends ContainerTypeDef {
-  def tType : ObjType.Value = tSortedSet
-  var keyDef: BaseTypeDef = _
-
-  override def IsFixed: Boolean = false
-  override def typeString: String = {
-    "scala.collection.mutable.SortedSet[" + keyDef.typeString + "]"
-  }
-  override def ElementTypes: Array[BaseTypeDef] = {
-    Array(keyDef)
-  }
-}
+//class SetTypeDef extends ContainerTypeDef {
+//  def tType : ObjType.Value = tSet
+//  var keyDef: BaseTypeDef = _
+//
+//  override def IsFixed: Boolean = false
+//  override def typeString: String = {
+//    "scala.collection.mutable.Set[" + keyDef.typeString + "]"
+//  }
+//  override def ElementTypes: Array[BaseTypeDef] = {
+//    Array(keyDef)
+//  }
+//}
+//
+//class ImmutableSetTypeDef extends ContainerTypeDef {
+//  def tType : ObjType.Value = tSet
+//  var keyDef: BaseTypeDef = _
+//
+//  override def IsFixed: Boolean = false
+//  override def typeString: String = {
+//    "scala.collection.immutable.Set[" + keyDef.typeString + "]"
+//  }
+//  override def ElementTypes: Array[BaseTypeDef] = {
+//    Array(keyDef)
+//  }
+//}
+//
+//class TreeSetTypeDef extends ContainerTypeDef {
+//  def tType : ObjType.Value = tTreeSet
+//  var keyDef: BaseTypeDef = _
+//
+//  override def IsFixed: Boolean = false
+//  override def typeString: String = {
+//    "scala.collection.mutable.TreeSet[" + keyDef.typeString + "]"
+//  }
+//  override def ElementTypes: Array[BaseTypeDef] = {
+//    Array(keyDef)
+//  }
+//}
+//
+//class SortedSetTypeDef extends ContainerTypeDef {
+//  def tType : ObjType.Value = tSortedSet
+//  var keyDef: BaseTypeDef = _
+//
+//  override def IsFixed: Boolean = false
+//  override def typeString: String = {
+//    "scala.collection.mutable.SortedSet[" + keyDef.typeString + "]"
+//  }
+//  override def ElementTypes: Array[BaseTypeDef] = {
+//    Array(keyDef)
+//  }
+//}
 
 class MapTypeDef extends ContainerTypeDef {
   def tType : ObjType.Value = tMap
 
-  var keyDef: BaseTypeDef = _
   var valDef: BaseTypeDef = _
 
   override def IsFixed: Boolean = false
   override def typeString: String = {
-    "scala.collection.mutable.Map[" + keyDef.typeString + "," + valDef.typeString + "]"
-  }
-  override def ElementTypes: Array[BaseTypeDef] = {
-    Array(keyDef, valDef)
-  }
-}
-
-class ImmutableMapTypeDef extends ContainerTypeDef {
-  def tType : ObjType.Value = tMap
-
-  var keyDef: BaseTypeDef = _
-  var valDef: BaseTypeDef = _
-
-  override def IsFixed: Boolean = false
-  override def typeString: String = {
-    "scala.collection.immutable.Map[" + keyDef.typeString + "," + valDef.typeString + "]"
-  }
-  override def ElementTypes: Array[BaseTypeDef] = {
-    Array(keyDef, valDef)
-  }
-}
-
-class HashMapTypeDef extends ContainerTypeDef {
-  def tType : ObjType.Value = tHashMap
-
-  var keyDef: BaseTypeDef = _
-  var valDef: BaseTypeDef = _
-
-  override def IsFixed: Boolean = false
-  override def typeString: String = {
-    "scala.collection.mutable.HashMap[" + keyDef.typeString + "," + valDef.typeString + "]"
-  }
-  override def ElementTypes: Array[BaseTypeDef] = {
-    Array(keyDef, valDef)
-  }
-}
-
-class ListTypeDef extends ContainerTypeDef {
-  def tType : ObjType.Value = tList
-  var valDef: BaseTypeDef = _
-
-  override def IsFixed: Boolean = false
-  override def typeString: String = {
-    "scala.collection.immutable.List[" + valDef.typeString + "]"
+    "scala.collection.immutable.Map[String," + valDef.typeString + "]"
   }
   override def ElementTypes: Array[BaseTypeDef] = {
     Array(valDef)
   }
 }
-
-class QueueTypeDef extends ContainerTypeDef {
-  def tType : ObjType.Value = tQueue
-  var valDef: BaseTypeDef = _
-
-  override def IsFixed: Boolean = false
-  override def typeString: String = {
-    "scala.collection.mutable.Queue[" + valDef.typeString + "]"
-  }
-  override def ElementTypes: Array[BaseTypeDef] = {
-    Array(valDef)
-  }
-}
+//
+//class ImmutableMapTypeDef extends ContainerTypeDef {
+//  def tType : ObjType.Value = tMap
+//
+//  var keyDef: BaseTypeDef = _
+//  var valDef: BaseTypeDef = _
+//
+//  override def IsFixed: Boolean = false
+//  override def typeString: String = {
+//    "scala.collection.immutable.Map[" + keyDef.typeString + "," + valDef.typeString + "]"
+//  }
+//  override def ElementTypes: Array[BaseTypeDef] = {
+//    Array(keyDef, valDef)
+//  }
+//}
+//
+//class HashMapTypeDef extends ContainerTypeDef {
+//  def tType : ObjType.Value = tHashMap
+//
+//  var keyDef: BaseTypeDef = _
+//  var valDef: BaseTypeDef = _
+//
+//  override def IsFixed: Boolean = false
+//  override def typeString: String = {
+//    "scala.collection.mutable.HashMap[" + keyDef.typeString + "," + valDef.typeString + "]"
+//  }
+//  override def ElementTypes: Array[BaseTypeDef] = {
+//    Array(keyDef, valDef)
+//  }
+//}
+//
+//class ListTypeDef extends ContainerTypeDef {
+//  def tType : ObjType.Value = tList
+//  var valDef: BaseTypeDef = _
+//
+//  override def IsFixed: Boolean = false
+//  override def typeString: String = {
+//    "scala.collection.immutable.List[" + valDef.typeString + "]"
+//  }
+//  override def ElementTypes: Array[BaseTypeDef] = {
+//    Array(valDef)
+//  }
+//}
+//
+//class QueueTypeDef extends ContainerTypeDef {
+//  def tType : ObjType.Value = tQueue
+//  var valDef: BaseTypeDef = _
+//
+//  override def IsFixed: Boolean = false
+//  override def typeString: String = {
+//    "scala.collection.mutable.Queue[" + valDef.typeString + "]"
+//  }
+//  override def ElementTypes: Array[BaseTypeDef] = {
+//    Array(valDef)
+//  }
+//}
 
 class ArrayTypeDef extends ContainerTypeDef {
   def tType : ObjType.Value = tArray
@@ -447,37 +452,37 @@ class ArrayTypeDef extends ContainerTypeDef {
     Array(elemDef)
   }
 }
-
-class ArrayBufTypeDef extends ContainerTypeDef {
-  def tType : ObjType.Value = tArrayBuf
-
-  var arrayDims: Int = 0 // 0 is invalid; 1..N - dimensions - indicate array of that many dimensions
-  var elemDef: BaseTypeDef = _
-
-  override def IsFixed: Boolean = false
-  override def typeString: String = {
-    "scala.collection.mutable.ArrayBuffer[" + elemDef.typeString + "]"
-  }
-  override def ElementTypes: Array[BaseTypeDef] = {
-    Array(elemDef)
-  }
-}
-
-class TupleTypeDef extends ContainerTypeDef {
-  override def tTypeType = tTupleN
-  def tType : ObjType.Value = ObjType.tAny
-
-  var tupleDefs: Array[BaseTypeDef] = Array[BaseTypeDef]()
-
-  override def IsFixed: Boolean = false
-  override def typeString: String = {
-    val sz: Int = tupleDefs.size
-    s"scala.Tuple$sz[" + tupleDefs.map(tup => tup.typeString).mkString(",") + "]"
-  }
-  override def ElementTypes: Array[BaseTypeDef] = {
-    tupleDefs
-  }
-}
+//
+//class ArrayBufTypeDef extends ContainerTypeDef {
+//  def tType : ObjType.Value = tArrayBuf
+//
+//  var arrayDims: Int = 0 // 0 is invalid; 1..N - dimensions - indicate array of that many dimensions
+//  var elemDef: BaseTypeDef = _
+//
+//  override def IsFixed: Boolean = false
+//  override def typeString: String = {
+//    "scala.collection.mutable.ArrayBuffer[" + elemDef.typeString + "]"
+//  }
+//  override def ElementTypes: Array[BaseTypeDef] = {
+//    Array(elemDef)
+//  }
+//}
+//
+//class TupleTypeDef extends ContainerTypeDef {
+//  override def tTypeType = tTupleN
+//  def tType : ObjType.Value = ObjType.tAny
+//
+//  var tupleDefs: Array[BaseTypeDef] = Array[BaseTypeDef]()
+//
+//  override def IsFixed: Boolean = false
+//  override def typeString: String = {
+//    val sz: Int = tupleDefs.size
+//    s"scala.Tuple$sz[" + tupleDefs.map(tup => tup.typeString).mkString(",") + "]"
+//  }
+//  override def ElementTypes: Array[BaseTypeDef] = {
+//    tupleDefs
+//  }
+//}
 
 object RelationKeyType extends Enumeration {
   type RelationKeyType = Value
@@ -508,10 +513,14 @@ trait EntityType {
   var keys: Array[RelationKeyBase] = _ // Keys (primary & foreign keys) for this container. For now we are consider them for MAP based and STRUCT based containers.
   var partitionKey: Array[String] = _ // Partition Key (attribute names)
   var persist: Boolean = false
+  var schemaId:Int = 0
+  var avroSchema:String = ""
   def NumMems
   def Keys = keys
   def PartitionKey = partitionKey
   def Persist = persist
+  def SchemaId = schemaId
+  def AvroSchema = avroSchema
 }
 
 class MappedMsgTypeDef extends ContainerTypeDef with EntityType {
@@ -553,8 +562,10 @@ class StructTypeDef extends ContainerTypeDef with EntityType {
 
 // attribute/concept definition
 abstract class BaseAttributeDef extends BaseElemDef {
+  override def MdElementCategory: String = "Attribute"
   def parent: BaseAttributeDef
   def typeDef: BaseTypeDef //BaseElemDef
+  def CollectionType: ObjType.Type
 
   def typeString: String
 }
@@ -564,6 +575,7 @@ class AttributeDef extends BaseAttributeDef {
   def tTypeType = tContainer
   def parent = inherited
   override def typeDef: BaseTypeDef = aType
+  override def CollectionType: ObjType.Type = collectionType
 
   var aType: BaseTypeDef = _
   var inherited: AttributeDef = _ // attributes could be inherited from others - in that case aType would be same as parent one
@@ -576,8 +588,8 @@ class AttributeDef extends BaseAttributeDef {
     } else {
       if (collectionType == tArray) {
         "Array[" + baseTypStr + "]"
-      } else if (collectionType == tArrayBuf) {
-        "scala.collection.mutable.ArrayBuffer[" + baseTypStr + "]"
+      } else if (collectionType == tMap) {
+        "scala.collection.immutable.Map[String, " + baseTypStr + "]"
       } else {
         throw new Throwable(s"Not yet handled collection Type $collectionType")
       }
@@ -595,6 +607,7 @@ class DerivedAttributeDef extends AttributeDef {
 }
 
 class ContainerDef extends BaseElemDef {
+  override def MdElementCategory: String = "Container"
   def cType = containerType
 
   var containerType: EntityType = _ // container structure type -
@@ -603,6 +616,7 @@ class ContainerDef extends BaseElemDef {
 }
 
 class MessageDef extends ContainerDef {
+  override def MdElementCategory: String = "Message"
 }
 
 class ArgDef {
@@ -628,6 +642,7 @@ class FactoryOfModelInstanceFactoryDef(val modelRepSupported : ModelRepresentati
 }
 
 class FunctionDef extends BaseElemDef {
+  override def MdElementCategory: String = "Function"
   var retType: BaseTypeDef = _ // return type of this function - could be simple scalar or array or complex type such as map or set
   var args: Array[ArgDef] = _ // list of arguments definitions
   var className: String = _ // class name that has this function?
@@ -696,7 +711,7 @@ class MacroDef extends FunctionDef {
 
 object MiningModelType extends Enumeration {
   type MiningModelType = Value
-  val BASELINEMODEL,ASSOCIATIONMODEL,CLUSTERINGMODEL,GENERALREGRESSIONMODEL,MININGMODEL,NAIVEBAYESMODEL,NEARESTNEIGHBORMODEL,NEURALNETWORK,REGRESSIONMODEL,RULESETMODEL,SEQUENCEMODEL,SCORECARD,SUPPORTVECTORMACHINEMODEL,TEXTMODEL,TIMESERIESMODEL,TREEMODEL, SCALA, JAVA, BINARY, PYTHON, UNKNOWN = Value
+  val BASELINEMODEL,ASSOCIATIONMODEL,CLUSTERINGMODEL,GENERALREGRESSIONMODEL,MININGMODEL,NAIVEBAYESMODEL,NEARESTNEIGHBORMODEL,NEURALNETWORK,REGRESSIONMODEL,RULESETMODEL,SEQUENCEMODEL,SCORECARD,SUPPORTVECTORMACHINEMODEL,TEXTMODEL,TIMESERIESMODEL,TREEMODEL, SCALA, JAVA, BINARY, PYTHON, JTM, UNKNOWN = Value
 
   def modelType(mdlType : String) : MiningModelType = {
     val typ : MiningModelType.MiningModelType = mdlType.trim.toLowerCase match {
@@ -722,6 +737,7 @@ object MiningModelType extends Enumeration {
         case "java" => JAVA
         case "binary" => BINARY
         case "python" => PYTHON
+        case "jtm" => JTM
         case _ => UNKNOWN
     }
     typ
@@ -730,17 +746,26 @@ object MiningModelType extends Enumeration {
 
 object ModelRepresentation extends Enumeration {
     type ModelRepresentation = Value
-    val JAR, PMML, PYTHON, UNKNOWN = Value
+    val JAR, PMML, PYTHON, JTM, UNKNOWN = Value
 
   def modelRep(mdlRep: String): ModelRepresentation = {
       val rep: ModelRepresentation = mdlRep.toUpperCase match {
           case "JAR" => JAR
           case "PMML" => PMML
           case "PYTHON" => PYTHON
+          case "JTM" => JTM
           case _ => UNKNOWN
       }
       rep
   }
+}
+
+/**
+*/
+class MessageAndAttributes {
+  var origin: String = "" // This could be Model (Can we handle InputAdapter/StorageAdapter also or only InputAdapter)
+  var message: String = _ // Type of the message
+  var attributes: Array[String] = _ // Attributes are full qualified names with respect to message.
 }
 
 /**
@@ -751,11 +776,9 @@ object ModelRepresentation extends Enumeration {
  * Models, when marked with isReusable, can be cached (are considered idempotent)
  * @param modelRepresentation The form of model to be cataloged - JAR, PMML etc.
  * @param miningModelType a MininingModelType default = "Unknown"
- * @param inputVars an array of the input variables that are consumed by this model (used for dag construction)
- * @param outputVars an array of the output variables published by this model (also used for dag construction)
+ * @param inputMsgSets Sets of Messages it depends on (attributes referred in this model). Each set must met (all messages should available) to trigger this model
+ * @param outputMsgs All possible output messages produced by this model
  * @param isReusable Whether the model execution is referentially transparent
- * @param msgConsumed Namespace.name.ver of message consumed by this model...for now only one messages is consumed by
- *                    any given model
  * @param supportsInstanceSerialization when true, ModelDef instances are serialized and cached for retrieval by
  *                                      the engine and other consumers of ModelDefs.  This mechanism is useful
  *                                      for PMML and other models that are relatively expensive to initialize. The
@@ -764,22 +787,28 @@ object ModelRepresentation extends Enumeration {
  */
 class ModelDef( val modelRepresentation: ModelRepresentation = ModelRepresentation.JAR
                 , val miningModelType : MiningModelType = MiningModelType.UNKNOWN
-                , val inputVars : Array[BaseAttributeDef] = null
-                , val outputVars: Array[BaseAttributeDef] = null
-                , val isReusable: Boolean = false
-                , val msgConsumed: String = ""
-                , val supportsInstanceSerialization : Boolean = false) extends BaseElemDef {
-
+                , var inputMsgSets : Array[Array[MessageAndAttributes]] = Array[Array[MessageAndAttributes]]()
+                , var outputMsgs: Array[String] = Array[String]()
+                , var isReusable: Boolean = false
+                , var supportsInstanceSerialization: Boolean = false
+                , var modelConfig: String = "") extends BaseElemDef {
+    override def MdElementCategory: String = "Model"
     def typeString: String = PhysicalName
-    def jpmmlText : String = ObjectDefinition
     def SupportsInstanceSerialization : Boolean = supportsInstanceSerialization
 }
 
 class ConfigDef extends BaseElemDef {
+  override def MdElementCategory: String = "ModelConfig"
   var contents: String = _
 }
 
+class ClusterConfigDef extends BaseElemDef {
+  var clusterId: String = _
+  var elementType: String = _
+}
+
 class JarDef extends BaseElemDef {
+  override def MdElementCategory: String = "Jar"
   def typeString: String = PhysicalName
 }
 
@@ -815,6 +844,81 @@ class NodeInfo {
   def Roles: Array[String] = roles
   def Description: String = description
   def NodeAddr: String = nodeIpAddr + ":" + nodePort.toString
+
+  def equals(in: NodeInfo): Boolean = {
+
+    // Check nodeId
+    if ((nodeId != null && in.nodeId != null)) {
+      if(!nodeId.equals(in.nodeId)) return false
+    } else if(!(nodeId == null && in.nodeId == null)) {
+      return false
+    }
+
+    // Check nodePort
+//    if ((nodePort != null && in.nodePort != null)) {
+//      if(!nodePort.equals(in.nodePort)) return false
+//    } else if(!(nodePort == null && in.nodePort == null)) {
+//      return false
+//    }
+
+    // Check nodeIpAddr
+    if ((nodeIpAddr != null && in.nodeIpAddr != null)) {
+      if(!nodeIpAddr.equals(in.nodeIpAddr)) return false
+    } else if(!(nodeIpAddr == null && in.nodeIpAddr == null)) {
+      return false
+    }
+    // Check JarPaths
+    if ((jarPaths != null && in.jarPaths != null)) {
+      if((jarPaths.size !=  in.jarPaths.size) || (jarPaths.deep != in.jarPaths.deep)) return false
+    } else if(!(jarPaths == null && in.jarPaths == null)) {
+      return false
+    }
+    // Check description
+    if ((scala_home != null && in.scala_home != null)) {
+      if(!scala_home.equals(in.scala_home)) return false
+    } else if(!(scala_home == null && in.scala_home == null)) {
+      return false
+    }
+    // Check description
+    if ((java_home != null && in.java_home != null)) {
+      if(!java_home.equals(in.java_home)) return false
+    } else if(!(java_home == null && in.java_home == null)) {
+      return false
+    }
+    // Check description
+    if ((classpath != null && in.classpath != null)) {
+      if(!classpath.equals(in.classpath)) return false
+    } else if(!(classpath == null && in.classpath == null)) {
+      return false
+    }
+    // Check description
+    if ((clusterId != null && in.clusterId != null)) {
+      if(!clusterId.equals(in.clusterId)) return false
+    } else if(!(clusterId == null && in.clusterId == null)) {
+      return false
+    }
+
+    // Check description
+//    if ((power != null && in.power != null)) {
+//      if (power != in.power) return false
+//    } else if(!(power == null && in.power == null)) {
+//      return false
+//    }
+
+    // Check description
+    if ((roles != null && in.roles != null)) {
+      if((roles.size !=  in.roles.size) || (Roles.deep != in.Roles.deep)) return false
+    } else if(!(roles == null && in.roles == null)) {
+      return false
+    }
+    // Check description
+    if ((description != null && in.description != null)) {
+      if(!description.equals(in.description)) return false
+    } else if(!(description == null && in.description == null)) {
+      return false
+    }
+    true
+  }
 }
 
 class ClusterInfo {
@@ -828,6 +932,28 @@ class ClusterInfo {
   def ClusterId: String = clusterId
   def Description: String = description
   def Privileges: String = privileges
+
+  def equals(in: ClusterInfo): Boolean = {
+    // Check description
+    if ((clusterId != null && in.clusterId != null)) {
+      if(!clusterId.equals(in.clusterId)) return false
+    } else if(!(clusterId == null && in.clusterId == null)) {
+      return false
+    }
+    // Check description
+    if ((description != null && in.description != null)) {
+      if(!description.equals(in.description)) return false
+    } else if(!(description == null && in.description == null)) {
+      return false
+    }
+    // Check description
+    if ((privileges != null && in.privileges != null)) {
+      if(!privileges.equals(in.privileges)) return false
+    } else if(!(privileges == null && in.privileges == null)) {
+      return false
+    }
+    true
+  }
 }
 
 class ClusterCfgInfo {
@@ -845,6 +971,43 @@ class ClusterCfgInfo {
   def ModifiedTime: Date = modifiedTime
   def CreatedTime: Date = createdTime
   def getUsrConfigs: scala.collection.mutable.HashMap[String, String] = usrConfigs
+
+  def equals(in: ClusterCfgInfo): Boolean = {
+    // Check clusterId
+    if ((clusterId != null && in.clusterId != null)) {
+      if(!clusterId.equals(in.clusterId)) return false
+    } else if(!(clusterId == null && in.clusterId == null)) {
+      return false
+    }
+    // Check modifiedTime
+    if ((modifiedTime != null && in.modifiedTime != null)) {
+      if(!modifiedTime.equals(in.modifiedTime)) return false
+    } else if(!(modifiedTime == null && in.modifiedTime == null)) {
+      return false
+    }
+    // Check createdTime
+    if ((createdTime != null && in.createdTime != null)) {
+      if(!createdTime.equals(in.createdTime)) return false
+    } else if(!(createdTime == null && in.createdTime == null)) {
+      return false
+    }
+
+    // Check createdTime
+    if ((usrConfigs != null && in.usrConfigs != null)) {
+      if(!((usrConfigs.toSet diff in.usrConfigs.toSet).toMap.isEmpty)) return false
+    } else if(!(usrConfigs == null && in.usrConfigs == null)) {
+      return false
+    }
+    // Check createdTime
+    if ((cfgMap != null && in.cfgMap != null)) {
+      if(!((cfgMap.toSet diff in.cfgMap.toSet).toMap.isEmpty)) return false
+    } else if(!(cfgMap == null && in.cfgMap == null)) {
+      return false
+    }
+    //(m1.toSet diff m2.toSet).toMap
+
+    true
+  }
 }
 
 class AdapterInfo {
@@ -853,34 +1016,127 @@ class AdapterInfo {
    */
   var name: String = _
   var typeString: String = _
-  var dataFormat: String = _ // valid only for Input or Validate types. Output and Status does not have this
+//  var dataFormat: String = _ // valid only for Input or Validate types. Output and Status does not have this
   var className: String = _
-  var inputAdapterToValidate: String = _ // Valid only for Output Adapter.
-  var failedEventsAdapter: String = _ // Valid only for Input Adapter.
-  var delimiterString1: String = _ // Delimiter String for CSV
-  var associatedMsg: String = _ // Queue Associated Message
+//  var inputAdapterToValidate: String = _ // Valid only for Output Adapter.
+//  var failedEventsAdapter: String = _ // Valid only for Input Adapter.
+//  var delimiterString1: String = _ // Delimiter String for CSV
+//  var associatedMsg: String = _ // Queue Associated Message
   var jarName: String = _
   var dependencyJars: Array[String] = new Array[String](0)
   var adapterSpecificCfg: String = _
-  var keyAndValueDelimiter: String = _ // Delimiter String for keyAndValueDelimiter
-  var fieldDelimiter: String = _ // Delimiter String for fieldDelimiter
-  var valueDelimiter: String = _ // Delimiter String for valueDelimiter
+  var tenantId: String = _
+  var fullAdapterConfig: String = _
+//  var keyAndValueDelimiter: String = _ // Delimiter String for keyAndValueDelimiter
+//  var fieldDelimiter: String = _ // Delimiter String for fieldDelimiter
+//  var valueDelimiter: String = _ // Delimiter String for valueDelimiter
 
   def Name: String = name
   def TypeString: String = typeString
-  def DataFormat: String = dataFormat
   def ClassName: String = className
   def JarName: String = jarName
   def DependencyJars: Array[String] = dependencyJars
   def AdapterSpecificCfg: String = adapterSpecificCfg
-  def InputAdapterToValidate: String = inputAdapterToValidate
-  def FailedEventsAdapter: String = failedEventsAdapter
-  def DelimiterString1: String = if (fieldDelimiter != null) fieldDelimiter else delimiterString1
-  def AssociatedMessage: String = associatedMsg
-  def KeyAndValueDelimiter: String = keyAndValueDelimiter
-  def FieldDelimiter: String = if (fieldDelimiter != null) fieldDelimiter else delimiterString1
-  def ValueDelimiter: String = valueDelimiter
+  def TenantId: String = tenantId
+  def FullAdapterConfig: String = fullAdapterConfig
 
+ // def InputAdapterToValidate: String = inputAdapterToValidate
+ // def FailedEventsAdapter: String = failedEventsAdapter
+ // def DelimiterString1: String = if (fieldDelimiter != null) fieldDelimiter else delimiterString1
+ // def AssociatedMessage: String = associatedMsg
+//  def KeyAndValueDelimiter: String = keyAndValueDelimiter
+  //def FieldDelimiter: String = if (fieldDelimiter != null) fieldDelimiter else delimiterString1
+  //def ValueDelimiter: String = valueDelimiter
+
+  def equals(aInfo: AdapterInfo): Boolean = {
+
+    // Check name
+    if ((name != null && aInfo.name != null)) {
+      if(!name.equals(aInfo.name)) return false
+    } else if(!(name == null && aInfo.name == null)) {
+      return false
+    }
+    // Check dataFormat
+//    if ((dataFormat != null && aInfo.dataFormat != null)) {
+//      if(!dataFormat.equals(aInfo.dataFormat)) return false
+//    } else if(!(dataFormat == null && aInfo.dataFormat == null)) {
+//      return false
+//    }
+    // Check className
+    if ((className != null && aInfo.className != null)) {
+      if(!className.equals(aInfo.className)) return false
+    } else if(!(className == null && aInfo.className == null)) {
+      return false
+    }
+    // Check inputAdapterToValidate
+  //  if ((inputAdapterToValidate != null && aInfo.inputAdapterToValidate != null)) {
+ //     if(!inputAdapterToValidate.equals(aInfo.inputAdapterToValidate)) return false
+ //   } else if(!(inputAdapterToValidate == null && aInfo.inputAdapterToValidate == null)) {
+  //    return false
+  //  }
+    // Check failedEventsAdapter
+    /*if ((failedEventsAdapter != null && aInfo.failedEventsAdapter != null)) {
+      if(!failedEventsAdapter.equals(aInfo.failedEventsAdapter)) return false
+    } else if(!(failedEventsAdapter == null && aInfo.failedEventsAdapter == null)) {
+      return false
+    }
+    // Check delimiterString1
+    if ((delimiterString1 != null && aInfo.delimiterString1 != null)) {
+      if(!delimiterString1.equals(aInfo.delimiterString1)) return false
+    } else if(!(delimiterString1 == null && aInfo.delimiterString1 == null)) {
+      return false
+    }
+    // Check associatedMsg
+    if ((associatedMsg != null && aInfo.associatedMsg != null)) {
+      if(!associatedMsg.equals(aInfo.associatedMsg)) return false
+    } else if(!(associatedMsg == null && aInfo.associatedMsg == null)) {
+      return false
+    } */
+    // Check jarName
+    if ((jarName != null && aInfo.jarName != null)) {
+      if(!jarName.equals(aInfo.jarName)) return false
+    } else if(!(jarName == null && aInfo.jarName == null)) {
+      return false
+    }
+    // Check dependencyJars
+    if ((dependencyJars != null && aInfo.dependencyJars != null)) {
+      if((dependencyJars.size !=  aInfo.dependencyJars.size) || (dependencyJars.deep != aInfo.dependencyJars.deep)) return false
+    } else if(!(dependencyJars == null && aInfo.dependencyJars == null)) {
+      return false
+    }
+    // Check adapterSpecificCfg
+    if ((adapterSpecificCfg != null && aInfo.adapterSpecificCfg != null)) {
+      if(!adapterSpecificCfg.equals(aInfo.adapterSpecificCfg)) return false
+    } else if(!(adapterSpecificCfg == null && aInfo.adapterSpecificCfg == null)) {
+      return false
+    }
+    // Check keyAndValueDelimiter
+  /*   if ((keyAndValueDelimiter != null && aInfo.keyAndValueDelimiter != null)) {
+      if(!keyAndValueDelimiter.equals(aInfo.keyAndValueDelimiter)) return false
+    } else if(!(keyAndValueDelimiter == null && aInfo.keyAndValueDelimiter == null)) {
+      return false
+    }
+    // Check FieldDelimiter
+    if ((fieldDelimiter != null && aInfo.fieldDelimiter != null)) {
+      if(!fieldDelimiter.equals(aInfo.fieldDelimiter)) return false
+    } else if(!(fieldDelimiter == null && aInfo.fieldDelimiter == null)) {
+      return false
+    }
+    // Check valueDelimiter
+    if ((valueDelimiter != null && aInfo.valueDelimiter != null)) {
+      if(!valueDelimiter.equals(aInfo.valueDelimiter)) return false
+    } else if(!(valueDelimiter == null && aInfo.valueDelimiter == null)) {
+      return false
+    }*/
+
+    if ((tenantId != null && aInfo.tenantId != null)) {
+      if(!tenantId.equals(aInfo.tenantId)) return false
+    } else if(!(tenantId == null && aInfo.tenantId == null)) {
+      return false
+    }
+
+    true
+  }
 }
 
 class UserPropertiesInfo {
@@ -889,23 +1145,71 @@ class UserPropertiesInfo {
 
   def ClusterId: String = clusterId
   def Props: scala.collection.mutable.HashMap[String, String] = props
+
+  def equals(in: UserPropertiesInfo): Boolean = {
+    // Check createdTime
+    if ((props != null && in.props != null)) {
+      if(!((props.toSet diff in.props.toSet).toMap.isEmpty)) return false
+    } else if(!(props == null && in.props == null)) {
+      return false
+    }
+    // Check clusterId
+    if ((clusterId != null && in.clusterId != null)) {
+      if(!clusterId.equals(in.clusterId)) return false
+    } else if(!(clusterId == null && in.clusterId == null)) {
+      return false
+    }
+    true
+  }
 }
 
-class OutputMsgDef extends BaseElemDef {
-  var Queue: String = _
-  var ParitionKeys: Array[(String, Array[(String, String, String, String)], String, String)] = _ // Output Partition Key. Message/Model Full Qualified Name as first value in tuple, Rest of the field name as second value in tuple (filed name, field type, tType string, tTypeType string) and "Mdl" Or "Msg" String as the third value in tuple.
-  var DataDeclaration: Map[String, String] = _
-  var Defaults: Map[String, String] = _ // Local Variables. So, we are not expecting qualified names here.
-  var Fields: Map[(String, String), Set[(Array[(String, String, String, String)], String)]] = _ // Fields from Message/Model. Map Key is Message/Model Full Qualified Name as first value in key tuple(filed name, field type, tType string, tTypeType string) and "Mdl" Or "Msg" String as the second value in key tuple. Value is Set of fields & corresponding Default Value (if not present NULL)
-  var OutputFormat: String = _ // Format String
-  var FormatSplittedArray: Array[(String, String)] = _ // OutputFormat split to substitute like (constant & substitute variable) tuples 
+/**
+  * Current Serialization Types supported
+  * <ul>
+  *     <li>CSV - serialize to csv format</li>
+  *     <li>JSON - serialize to json string </li>
+  *     <li>KBinary - a binary format used internally in Kamanja</li>
+  *     <li>Custom - an unknown format </li>
+  * </ul>
+  */
+object SerializeDeserializeType extends Enumeration {
+    type SerDeserType = Value
+    val CSV, JSON, KBinary, Custom = Value
 }
+
+/**
+  * Elementary SerializeDeserializeConfig object that is supplied to SerializeDesrerialize implementations.
+  * If the implementation has configuration capabilities, an instance of the appropriate derived class should
+  * be supplied instead.
+  *
+  * @param serDeserType a SerializeDeserializeType...the sort of serializer it is
+  */
+class SerializeDeserializeConfig(val serDeserType : SerializeDeserializeType.SerDeserType) extends BaseElemDef {}
+
+/**
+  * An AdapterMessageBinding describes a triple: the adapter, a message it either consumes or produces, and a serializer
+  * that can interpret a stream represention of an instance of this message or produce a serialized representation of same.
+  * @param adapterName the name of the adapter (input/output/storage)
+  * @param messageName the namespace.name of the message that is consumed.
+  * @param serializer the SerializeDeserializeConfig namespace.name that can resurrect and serialize the associated message
+  * @param options (optional) serializer options that configure the serializer in some fashion
+  */
+class AdapterMessageBinding(  val adapterName : String
+                            , val messageName : String
+                            , val serializer : String
+                            , val options : scala.collection.immutable.Map[String,String]
+                                    = scala.collection.immutable.Map[String,String]())
+        extends BaseElemDef {}
+
+class TenantInfo(val tenantId: String, val description: String, val primaryDataStore: String, val cacheConfig: String) {}
 
 object ModelCompilationConstants {
   val DEPENDENCIES: String = "Dependencies"
   val TYPES_DEPENDENCIES: String = "MessageAndContainers"
   val SOURCECODE: String = "source"
   val PHYSICALNAME: String = "pName"
+  val INPUT_TYPES_SETS: String = "InputTypesSets"
+  val OUTPUT_TYPES_SETS: String = "OutputTypes"
 }
 
 // These case classes define the monitoring structures that will appear in the zookeepr.

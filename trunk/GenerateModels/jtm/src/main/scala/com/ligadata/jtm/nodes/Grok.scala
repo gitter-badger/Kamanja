@@ -41,5 +41,5 @@ class Grok {
   /** Inline specification for additional patterns
     *
     */
-  val patterns: Map[String, String] = Map.empty[String, String]
+  val patterns: scala.collection.Map[String, String] = Map.empty[String, String]
 }

@@ -1,0 +1,23 @@
+{
+  "Message" : {
+    "NameSpace" : "com.ligadata.kamanja.samples.messages",
+    "Name" : "outmsg1",
+    "Version" : "00.01.00",
+    "Description" : "Hello World Out Message",
+    "Fixed" : "true",
+    "Elements" : [
+      {
+        "Field" : {
+          "Name" : "Id",
+          "Type" : "System.Int"
+        }
+      },
+      {
+        "Field" : {
+          "Name" : "Name",
+          "Type" : "System.String"
+        }
+      }
+    ]
+  }
+}

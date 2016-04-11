@@ -1,0 +1,69 @@
+/*
+* Copyright 2016 ligaDATA
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+package com.ligadata.models.samples.finance
+import com.ligadata.KamanjaBase._
+import com.ligadata.KvBase.TimeRange
+import com.ligadata.kamanja.metadata.ModelDef
+import com.ligadata.runtime.Conversion
+class TransactionIngestFactory(modelDef: ModelDef, nodeContext: NodeContext) extends ModelInstanceFactory(modelDef, nodeContext) {
+  override def isValidMessage(msg: ContainerInterface): Boolean = {
+    msg.isInstanceOf[com.ligadata.kamanja.samples.messages.V1000000.TransactionMsgIn]
+  }
+  override def createModelInstance(): ModelInstance = return new TransactionIngest(this)
+  override def getModelName: String = "com.ligadata.models.samples.finance"
+  override def getVersion: String = "0.0.1"
+  override def createResultObject(): ModelResultBase = new MappedModelResults()
+}
+class TransactionIngest(factory: ModelInstanceFactory) extends ModelInstance(factory) {
+  val conversion = new com.ligadata.runtime.Conversion
+  override def execute(txnCtxt: TransactionContext, execMsgsSet: Array[ContainerOrConcept], triggerdSetIndex: Int, outputDefault: Boolean): Array[ContainerOrConcept] = {
+    val messagefactoryinterface = execMsgsSet(0).asInstanceOf[MessageFactoryInterface]
+    //
+    //
+    def exeGenerated_transactionmsg_1(msg1: com.ligadata.kamanja.samples.messages.V1000000.TransactionMsgIn): Array[MessageInterface] = {
+      // Split the incoming data
+      val mapData: System.MapOfString = KeyValueMap(msg1.data, "|", "=")
+      def process_o1(): Array[MessageInterface] = {
+        // extract the type
+        val typeName: String = mapData.typename
+        val result = new com.ligadata.kamanja.samples.messages.V1000000.TransactionMsg(messagefactoryinterface)
+        result.branchid = mapData.get("branchid")
+        result.custid = mapData.get("custid")
+        result.locationid = mapData.get("locationid")
+        result.balance = mapData.get("balance")
+        result.amount = mapData.get("amount")
+        result.transtype = mapData.get("transtype")
+        result.accno = mapData.get("accno")
+        result.date = mapData.get("date")
+        result.time = mapData.get("time")
+        Array(result)
+      }
+      process_o1()
+    }
+    // Evaluate messages
+    val msgs = execMsgsSet.map(m => m.getFullTypeName -> m).toMap
+    val msg1 = msgs.get("com.ligadata.kamanja.samples.messages.TransactionMsgIn").getOrElse(null).asInstanceOf[com.ligadata.kamanja.samples.messages.V1000000.TransactionMsgIn]
+    // Main dependency -> execution check
+    //
+    val results: Array[MessageInterface] =
+    if(msg1!=null) {
+      exeGenerated_transactionmsg_1(msg1)
+    } else {
+      Array.empty[MessageInterface]
+    }
+    results.asInstanceOf[Array[ContainerOrConcept]]
+  }
+}

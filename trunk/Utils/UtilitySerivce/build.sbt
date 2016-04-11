@@ -61,26 +61,31 @@ version := "1.0"
 
 scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 
-resolvers ++= Seq(
-  "spray repo" at "http://repo.spray.io/"
-)
+//resolvers ++= Seq(
+//  "spray repo" at "http://repo.spray.io/"
+//)
+//
+//libraryDependencies ++= {
+//  val sprayVersion = "1.3.3"
+//  val akkaVersion = "2.3.9"
+//  Seq(
+//  "io.spray" %% "spray-can" % sprayVersion,
+//  "io.spray" %% "spray-routing" % sprayVersion,
+//  "io.spray" %% "spray-testkit" % sprayVersion,
+//  "io.spray" %% "spray-client" % sprayVersion,
+//  "io.spray" %%  "spray-json" % "1.3.2",
+//  "org.apache.kafka" %% "kafka" % "0.8.2.2"
+//       exclude("javax.jms", "jms")
+//       exclude("com.sun.jdmk", "jmxtools")
+//       exclude("com.sun.jmx", "jmxri"),
+//  "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+////   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
+//  "ch.qos.logback" % "logback-classic" % "1.0.12",
+//  "org.apache.camel" % "camel-core" % "2.9.2"
+//  )
+//}
 
-libraryDependencies ++= {
-  val sprayVersion = "1.3.3"
-  val akkaVersion = "2.3.9"
-  Seq(
-  "io.spray" %% "spray-can" % sprayVersion,
-  "io.spray" %% "spray-routing" % sprayVersion,
-  "io.spray" %% "spray-testkit" % sprayVersion,
-  "io.spray" %% "spray-client" % sprayVersion,
-  "io.spray" %%  "spray-json" % "1.3.2",
-  "org.apache.kafka" %% "kafka" % "0.8.2.2"
-       exclude("javax.jms", "jms")
-       exclude("com.sun.jdmk", "jmxtools")
-       exclude("com.sun.jmx", "jmxri"),
-  "com.typesafe.akka" %% "akka-actor" % akkaVersion,
-//   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
-  "ch.qos.logback" % "logback-classic" % "1.0.12",
-  "org.apache.camel" % "camel-core" % "2.9.2"
-  )
-}
+coverageMinimum := 80
+
+coverageFailOnMinimum := false
+

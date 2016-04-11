@@ -193,7 +193,7 @@ NodeInfoExtract --MetadataAPIConfig  <MetadataAPI config file path>
    * These files will be distributed to the appropriate nodes during the installation.
    *
    *  @param workDir the directory where the config files and the nodeId.txt file will be written
-   *  @param idCfgFileName the name of the file that will track the nodeId/config file name line pairs
+   *  @param ipIdCfgTargPathQuartetFileName the name of the file that will track the nodeId/config file name line pairs
    *  @param extractor the NodeInfoExtract instance containing most of the config info.
    *  @param ipIdTargs the (ip,id, targetPath) triple values for the cluster being processed
    */

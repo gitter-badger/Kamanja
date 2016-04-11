@@ -1,0 +1,113 @@
+{
+  "Clusters": [
+    {
+      "ClusterId": "ligadata1",
+      "SystemCatalog": {
+        "StoreType": "hashmap",
+        "SchemaName": "testdata",
+        "Location": "{InstallDirectory}/storage/syscatelog"
+      },
+      "Tenants": [
+        {
+          "TenantId": "tenant1",
+          "Description": "tenant1",
+          "PrimaryDataStore": {
+            "StoreType": "hashmap",
+            "SchemaName": "testdata",
+            "Location": "{InstallDirectory}/storage/tenant1_default"
+          },
+          "CacheConfig": {
+            "MaxSize": "1GB"
+          }
+        }
+      ],
+      "ZooKeeperInfo": {
+        "ZooKeeperNodeBasePath": "/kamanja",
+        "ZooKeeperConnectString": "localhost:2181",
+        "ZooKeeperSessionTimeoutMs": "30000",
+        "ZooKeeperConnectionTimeoutMs": "30000"
+      },
+      "EnvironmentContext": {
+        "classname": "com.ligadata.SimpleEnvContextImpl.SimpleEnvContextImpl$",
+        "jarname": "KamanjaInternalDeps_2.11-1.4.0.jar",
+        "dependencyjars": [
+          "ExtDependencyLibs_2.11-1.4.0.jar",
+          "ExtDependencyLibs2_2.11-1.4.0.jar"
+        ]
+      },
+      "Nodes": [
+        {
+          "NodeId": "1",
+          "NodePort": 6541,
+          "NodeIpAddr": "localhost",
+          "JarPaths": [
+            "{InstallDirectory}/lib/system",
+            "{InstallDirectory}/lib/application"
+          ],
+          "Scala_home": "{ScalaInstallDirectory}",
+          "Java_home": "{JavaInstallDirectory}",
+          "Roles": [
+            "RestAPI",
+            "ProcessingEngine"
+          ],
+          "Classpath": ".:{InstallDirectory}/lib/system/ExtDependencyLibs_2.11-1.4.0.jar:{InstallDirectory}/lib/system/KamanjaInternalDeps_2.11-1.4.0.jar:{InstallDirectory}/lib/system/ExtDependencyLibs2_2.11-1.4.0.jar"
+        }
+      ],
+      "Adapters": [
+        {
+          "Name": "hBaseStore1",
+          "TypeString": "Storage",
+          "TenantId": "tenant1",
+          "StoreType": "hashmap",
+          "SchemaName": "testdata",
+          "Location": "{InstallDirectory}/storage/tenant1_storage_1"
+        },
+        {
+          "Name": "kafkaAdapterInput1",
+          "TypeString": "Input",
+          "TenantId": "tenant1",
+          "ClassName": "com.ligadata.InputAdapters.KafkaSimpleConsumer$",
+          "JarName": "KamanjaInternalDeps_2.11-1.4.0.jar",
+          "DependencyJars": [
+            "ExtDependencyLibs_2.11-1.4.0.jar",
+            "ExtDependencyLibs2_2.11-1.4.0.jar"
+          ],
+          "AdapterSpecificCfg": {
+            "HostList": "localhost:9092",
+            "TopicName": "testin_1"
+          }
+        },
+        {
+          "Name": "kafkaAdapterOutput2",
+          "TypeString": "Output",
+          "TenantId": "tenant1",
+          "ClassName": "com.ligadata.OutputAdapters.KafkaProducer$",
+          "JarName": "KamanjaInternalDeps_2.11-1.4.0.jar",
+          "DependencyJars": [
+            "ExtDependencyLibs_2.11-1.4.0.jar",
+            "ExtDependencyLibs2_2.11-1.4.0.jar"
+          ],
+          "AdapterSpecificCfg": {
+            "HostList": "localhost:9092",
+            "TopicName": "testout_1"
+          }
+        },
+        {
+          "Name": "TestStatus_1",
+          "TypeString": "Output",
+          "TenantId": "System",
+          "ClassName": "com.ligadata.OutputAdapters.KafkaProducer$",
+          "JarName": "KamanjaInternalDeps_2.11-1.4.0.jar",
+          "DependencyJars": [
+            "ExtDependencyLibs_2.11-1.4.0.jar",
+            "ExtDependencyLibs2_2.11-1.4.0.jar"
+          ],
+          "AdapterSpecificCfg": {
+            "HostList": "localhost:9092",
+            "TopicName": "teststatus_1"
+          }
+        }
+      ]
+    }
+  ]
+}

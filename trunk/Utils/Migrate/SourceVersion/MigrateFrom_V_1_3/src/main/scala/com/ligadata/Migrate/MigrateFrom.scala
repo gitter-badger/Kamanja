@@ -193,7 +193,9 @@ class MigrateFrom_V_1_3 extends MigratableFrom {
   }
 
   private def serializeObjectToJson(mdObj: BaseElem): (String, String) = {
+    logger.debug("mdObj.Version before conversion =>" + mdObj.Version)
     val ver = MdMgr.ConvertLongVersionToString(mdObj.Version)
+    logger.debug("mdObj.Version after conversion  =>" + ver)
     try {
       mdObj match {
         // Assuming that zookeeper transaction will be different based on type of object
@@ -205,7 +207,7 @@ class MigrateFrom_V_1_3 extends MigratableFrom {
             ("OrigDef" -> o.OrigDef) ~
             ("ObjectDefinition" -> o.ObjectDefinition) ~
             ("ObjectFormat" -> ObjFormatType.asString(o.ObjectFormat)) ~
-            ("ModelType" -> o.modelType) ~
+            ("ModelType" -> o.miningModelType.toString) ~
             ("NameSpace" -> o.nameSpace) ~
             ("Name" -> o.name) ~
             ("Version" -> ver) ~
@@ -472,22 +474,6 @@ class MigrateFrom_V_1_3 extends MigratableFrom {
             ("JarName" -> getEmptyIfNull(o.jarName)) ~
             ("DependantJars" -> o.CheckAndGetDependencyJarNames.toList))
           ("JarDef", compact(render(json)))
-        }
-        case o: OutputMsgDef => {
-          val json = (("ObjectType" -> "OutputMsgDef") ~
-            ("IsActive" -> o.IsActive.toString) ~
-            ("IsDeleted" -> o.IsDeleted.toString) ~
-            ("TransId" -> o.TranId.toString) ~
-            ("OrigDef" -> o.OrigDef) ~
-            ("ObjectDefinition" -> o.ObjectDefinition) ~
-            ("ObjectFormat" -> ObjFormatType.asString(o.ObjectFormat)) ~
-            ("NameSpace" -> o.nameSpace) ~
-            ("Name" -> o.name) ~
-            ("Version" -> ver) ~
-            ("PhysicalName" -> o.physicalName) ~
-            ("JarName" -> getEmptyIfNull(o.jarName)) ~
-            ("DependantJars" -> o.CheckAndGetDependencyJarNames.toList))
-          ("OutputMsgDef", compact(render(json)))
         }
         case _ => {
           throw new Exception("serializeObjectToJson doesn't support the objects of type objectType of " + mdObj.getClass().getName() + " yet.")

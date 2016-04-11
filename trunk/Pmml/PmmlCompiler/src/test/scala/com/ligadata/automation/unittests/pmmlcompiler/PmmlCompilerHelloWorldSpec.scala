@@ -33,7 +33,15 @@ class PmmlCompilerHelloWorldSpec extends FlatSpec with BeforeAndAfter {
       val argsList = List(("system", "id", "system", "int", false, null), ("system", "name", "system", "string", false, null), ("system", "score", "system", "int", false, null))
       val mdLoader = new MetadataLoad(MdMgr.mdMgr, "", "", "", "")
       mdLoader.initialize
-      MdMgr.GetMdMgr.AddFixedMsg("com.ligadata.kamanja.samples.messages", "msg1", "com.ligadata.kamanja.samples.messages.V1.msg1", argsList, 1)
+
+      val ownerId: String = "kamanja"
+      val uniqueId: Long = 1
+      val mdElementId: Long = 1
+      val schemaId: Int = 1
+      val avroSchema:String = "kamanja"
+      val version : Long = 1
+      val tenantId : String = "kamanja"
+      MdMgr.GetMdMgr.AddFixedMsg("com.ligadata.kamanja.samples.messages", "msg1", "com.ligadata.kamanja.samples.messages.V1.msg1", argsList, ownerId, tenantId, uniqueId, mdElementId, schemaId, avroSchema, version)
     }
     catch {
       case e: Exception => throw new Exception("Failed to add messagedef", e)

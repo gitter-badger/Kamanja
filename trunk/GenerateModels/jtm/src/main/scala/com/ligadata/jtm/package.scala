@@ -15,49 +15,62 @@
  */
 package com.ligadata
 
+import java.io.File
+
 import com.ligadata.jtm.eval.Types
 import com.ligadata.jtm.nodes.Root
-import com.ligadata.kamanja.metadata.{BaseAttributeDef, MiningModelType, ModelRepresentation, ModelDef}
+import com.ligadata.kamanja.metadata._
+import com.ligadata.kamanja.metadataload.MetadataLoad
+import com.ligadata.msgcompiler._
+import org.apache.commons.io.FileUtils
+import org.json4s.jackson.JsonMethods._
 
 /**
   *
   */
 package object jtm {
 
-  def MakeModelDef(inputFile: String ) : ModelDef = {
-
-    // Load Json
-    val root = Root.fromJson(inputFile)
-
-    val inputVars : Array[BaseAttributeDef] = null
-    val outputVars: Array[BaseAttributeDef] = null
-    val isReusable: Boolean = true
-
-    // Collect all messages consumed
-    //
-    val dependencyToTransformations = Types.ResolveDependencies(root)
-
-    // Return tru if we accept the message, flatten the messages into a list
-    //
-    val msgs = dependencyToTransformations.foldLeft(Set.empty[String]) ( (r, d) => {
-      d._1.foldLeft(r) ((r, n) => {
-        r ++ Set(n)
-      })
-    })
-
-    val msgConsumed: String = msgs.mkString(",")
-
-    val supportsInstanceSerialization : Boolean = false
-
-    /*
-    val modelRepresentation: ModelRepresentation = ModelRepresentation.JAR
-    val miningModelType : MiningModelType = MiningModelType.UNKNOWN
-    val inputVars : Array[BaseAttributeDef] = null
-    val outputVars: Array[BaseAttributeDef] = null
-    val isReusable: Boolean = false
-    val msgConsumed: String = ""
-    val supportsInstanceSerialization : Boolean = false
+  /** Creates a metadata instance with defaults and json objects located on the file system
+    *
+    * @return Metadata manager
     */
-    new ModelDef(ModelRepresentation.UNKNOWN, MiningModelType.UNKNOWN, inputVars, outputVars, isReusable, msgConsumed, supportsInstanceSerialization)
+  def loadMetadata(metadataLocation: String): MdMgr= {
+
+    val typesPath : String = ""
+    val fcnPath : String = ""
+    val attrPath : String = ""
+    val msgCtnPath : String = ""
+    val mgr : MdMgr = MdMgr.GetMdMgr
+
+    // If the compiler is called again this will throw
+    // To Do: move the metadata and improve handling
+    try {
+      val mdLoader = new MetadataLoad(mgr, typesPath, fcnPath, attrPath, msgCtnPath)
+      mdLoader.initialize
+
+      def getRecursiveListOfFiles(dir: File): Array[File] = {
+        val these = dir.listFiles.filter(_.isFile)
+        val those = dir.listFiles.filter(_.isDirectory)
+        these ++ those.flatMap(getRecursiveListOfFiles)
+      }
+
+      val files = getRecursiveListOfFiles(new File(metadataLocation))
+
+      // Load all json files for the metadata directory
+      files.map ( jsonFile => {
+        val json = FileUtils.readFileToString(jsonFile, null:String)
+        val map = parse(json).values.asInstanceOf[Map[String, Any]]
+        val msg = new MessageCompiler()
+        val ((classStrVer, classStrVerJava), msgDef, (classStrNoVer, classStrNoVerJava), rawMsgStr) = msg.processMsgDef(json, "JSON", mgr, 0, false)
+        val msg1 = msgDef.asInstanceOf[com.ligadata.kamanja.metadata.MessageDef]
+        mgr.AddMsg(msg1)
+      })
+    } catch {
+      case _ : Throwable => ;
+    }
+
+    mgr
   }
+
+
 }

@@ -200,7 +200,7 @@ class HBaseAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAfterAl
         var custNumber = "4256667777"
         var obj = new Customer(custName, custAddress, custNumber)
         var v = serializer.SerializeObjectToByteArray(obj)
-        var value = new Value("kryo", v)
+        var value = new Value(1,"kryo",v)
         adapter.put("&&", key, value)
       }
       logger.info("", ex2)
@@ -219,7 +219,7 @@ class HBaseAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAfterAl
         var custNumber = "425666777" + i
         var obj = new Customer(custName, custAddress, custNumber)
         var v = serializer.SerializeObjectToByteArray(obj)
-        var value = new Value("kryo", v)
+        var value = new Value(1,"kryo",v)
         noException should be thrownBy {
           adapter.put(containerName, key, value)
         }
@@ -263,7 +263,7 @@ class HBaseAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAfterAl
         var custNumber = "425666777" + i
         var obj = new Customer(custName, custAddress, custNumber)
         var v = serializer.SerializeObjectToByteArray(obj)
-        var value = new Value("kryo", v)
+        var value = new Value(1,"kryo",v)
         noException should be thrownBy {
           adapter.put(containerName, key, value)
         }
@@ -296,7 +296,7 @@ class HBaseAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAfterAl
         var custNumber = "425666777" + i
         var obj = new Customer(custName, custAddress, custNumber)
         var v = serializer.SerializeObjectToByteArray(obj)
-        var value = new Value("kryo", v)
+        var value = new Value(1,"kryo",v)
         noException should be thrownBy {
           adapter.put(containerName, key, value)
         }
@@ -335,11 +335,11 @@ class HBaseAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAfterAl
         var custNumber = "4256667777" + i
         var obj = new Customer(custName, custAddress, custNumber)
         var v = serializer.SerializeObjectToByteArray(obj)
-        var value = new Value("kryo", v)
+        var value = new Value(1,"kryo",v)
         keyValueList = keyValueList :+(key, value)
       }
       var dataList = new Array[(String, Array[(Key, Value)])](0)
-      dataList = dataList :+(containerName, keyValueList)
+      dataList = dataList :+ (containerName, keyValueList)
       noException should be thrownBy {
         adapter.put(dataList)
       }

@@ -17,7 +17,7 @@
 package com.ligadata.MigrateBase;
 
 public interface MigratableTo {
-    public abstract void init(String destInstallPath, String apiConfigFile, String clusterConfigFile, String sourceVersion, String unhandledMetadataDumpDir, String curMigrationSummaryFlPath,int parallelDegree, boolean mergeContainersAndMessages, String fromScalaVersion, String toScalaVersion ); // Source version is like 1.1 or 1.2, etc
+  public abstract void init(String destInstallPath, String apiConfigFile, String clusterConfigFile, String sourceVersion, String unhandledMetadataDumpDir, String curMigrationSummaryFlPath,int parallelDegree, boolean mergeContainersAndMessages, String fromScalaVersion, String toScalaVersion, String tenantId); // Source version is like 1.1 or 1.2, etc
   public abstract boolean isInitialized();
   public abstract String getMetadataStoreInfo();
   public abstract String getDataStoreInfo();

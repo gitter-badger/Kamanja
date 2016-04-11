@@ -22,7 +22,7 @@ import scala.actors.threadpool.{ Executors, ExecutorService }
 import java.util.Properties
 import scala.collection.mutable.ArrayBuffer
 import org.apache.logging.log4j.{ Logger, LogManager }
-import com.ligadata.InputOutputAdapterInfo.{ AdapterConfiguration, InputAdapter, InputAdapterObj, OutputAdapter, ExecContext, ExecContextObj, CountersAdapter, PartitionUniqueRecordKey, PartitionUniqueRecordValue, StartProcPartInfo, InputAdapterCallerContext }
+import com.ligadata.InputOutputAdapterInfo._
 import com.ligadata.AdaptersConfiguration.{ IbmMqAdapterConfiguration, IbmMqPartitionUniqueRecordKey, IbmMqPartitionUniqueRecordValue }
 import javax.jms.{ Connection, Destination, JMSException, Message, MessageConsumer, Session, TextMessage, BytesMessage }
 import scala.util.control.Breaks._
@@ -34,15 +34,15 @@ import com.ibm.msg.client.jms.JmsFactoryFactory
 import com.ibm.msg.client.wmq.WMQConstants
 import com.ibm.msg.client.wmq.common.CommonConstants
 import com.ibm.msg.client.jms.JmsConstants
-import com.ligadata.KamanjaBase.DataDelimiters
+import com.ligadata.KamanjaBase.{NodeContext, DataDelimiters}
 import com.ligadata.HeartBeat.{Monitorable, MonitorComponentInfo}
 
-object IbmMqConsumer extends InputAdapterObj {
+object IbmMqConsumer extends InputAdapterFactory {
   val ADAPTER_DESCRIPTION = "IBM MQ Consumer"
-  def CreateInputAdapter(inputConfig: AdapterConfiguration, callerCtxt: InputAdapterCallerContext, execCtxtObj: ExecContextObj, cntrAdapter: CountersAdapter): InputAdapter = new IbmMqConsumer(inputConfig, callerCtxt, execCtxtObj, cntrAdapter)
+  def CreateInputAdapter(inputConfig: AdapterConfiguration, execCtxtObj: ExecContextFactory, nodeContext: NodeContext): InputAdapter = new IbmMqConsumer(inputConfig, execCtxtObj, nodeContext)
 }
 
-class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: InputAdapterCallerContext, val execCtxtObj: ExecContextObj, cntrAdapter: CountersAdapter) extends InputAdapter {
+class IbmMqConsumer(val inputConfig: AdapterConfiguration, val execCtxtObj: ExecContextFactory, val nodeContext: NodeContext) extends InputAdapter {
 
   private var startTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
   private var lastSeen = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
@@ -239,7 +239,7 @@ class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: Input
 
                     if (checkForPartition) {
                       checkForPartition = false
-                      execThread = execCtxtObj.CreateExecContext(input, uniqueKey, callerCtxt)
+                      execThread = execCtxtObj.CreateExecContext(input, uniqueKey, nodeContext)
                     }
 
                     if (executeCurMsg) {
@@ -265,8 +265,8 @@ class IbmMqConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: Input
                           execThread.execute(msgData, qc.formatName, uniqueKey, uniqueVal, readTmNs, readTmMs, false, qc.associatedMsg, delimiters)
                           // consumerConnector.commitOffsets // BUGBUG:: Bad way of calling to save all offsets
                           cntr += 1
-                          val key = Category + "/" + qc.Name + "/evtCnt"
-                          cntrAdapter.addCntr(key, 1) // for now adding each row
+                          // val key = Category + "/" + qc.Name + "/evtCnt"
+                          // cntrAdapter.addCntr(key, 1) // for now adding each row
 
                         } else {
                           LOG.error("Found unhandled message :" + receivedMessage.getClass().getName())

@@ -1,0 +1,114 @@
+/*
+* Copyright 2016 ligaDATA
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+package com.ligadata.jtm.test.filter
+import com.ligadata.KamanjaBase._
+import com.ligadata.KvBase.TimeRange
+import com.ligadata.kamanja.metadata.ModelDef
+import com.ligadata.Utils._
+import com.ligadata.runtime.Conversion
+class ModelFactory(modelDef: ModelDef, nodeContext: NodeContext) extends ModelInstanceFactory(modelDef, nodeContext) {
+  override def isValidMessage(msg: ContainerInterface): Boolean = {
+    msg.isInstanceOf[com.ligadata.kamanja.test.V1000000.msg1]||msg.isInstanceOf[com.ligadata.kamanja.test.V1000000.msg3]||msg.isInstanceOf[com.ligadata.kamanja.test.V1000000.msg5]||msg.isInstanceOf[com.ligadata.kamanja.test.V1000000.msg6]
+  }
+  override def createModelInstance(): ModelInstance = return new Model(this)
+  override def getModelName: String = "com.ligadata.jtm.test.filter"
+  override def getVersion: String = "0.0.1"
+  override def createResultObject(): ModelResultBase = new MappedModelResults()
+}
+class Model(factory: ModelInstanceFactory) extends ModelInstance(factory) {
+  val conversion = new com.ligadata.runtime.Conversion
+  override def execute(txnCtxt: TransactionContext, execMsgsSet: Array[ContainerOrConcept], triggerdSetIndex: Int, outputDefault: Boolean): Array[ContainerOrConcept] = {
+    val messagefactoryinterface = execMsgsSet(0).asInstanceOf[MessageFactoryInterface]
+    //
+    //
+    // msg2 is part of com.ligadata.jtm.test.filter
+    def exeGenerated_test1_1(msg1: com.ligadata.kamanja.test.V1000000.msg1, msg2: com.ligadata.kamanja.test.V1000000.msg3, msg3: com.ligadata.kamanja.test.V1000000.msg5): Array[MessageInterface] = {
+      // in scala, type could be optional
+      val zipcode: Int = iplookup(msg2.in1).zipcode
+      val zipcode1: Int = iplookup(msg1.in1).zipcode
+      // type could be some class available from imports
+      val ipinfo: IpInfo = iplookup(msg2.in1)
+      def process_omsg2(): Array[MessageInterface] = {
+        if (!(msg2.in2 != -1 && msg2.in2 < 100)) return Array.empty[MessageInterface]
+        val tmp8: String = somefunc2(msg2.in3)
+        val result = new com.ligadata.kamanja.test.V1000000.msg2(messagefactoryinterface)
+        result.out4 = ipinfo.zipCode
+        result.out3 = somefunc(zipcode, zipcode1)
+        result.out2 = tmp8
+        result.out1 = msg2.in1
+        Array(result)
+      }
+      process_omsg2()
+    }
+    // msg2 is part of com.ligadata.jtm.test.filter
+    def exeGenerated_test1_2(msg2: com.ligadata.kamanja.test.V1000000.msg3, msg3: com.ligadata.kamanja.test.V1000000.msg5, msg4: com.ligadata.kamanja.test.V1000000.msg6): Array[MessageInterface] = {
+      // in scala, type could be optional
+      val zipcode: Int = iplookup(msg2.in1).zipcode
+      val zipcode1: Int = iplookup(msg2.in1.zipcode
+      // type could be some class available from imports
+      val ipinfo: IpInfo = iplookup(msg2.in1)
+      def process_omsg2(): Array[MessageInterface] = {
+        if (!(msg2.in2 != -1 && msg2.in2 < 100)) return Array.empty[MessageInterface]
+        val tmp8: String = somefunc2(msg2.in3)
+        val result = new com.ligadata.kamanja.test.V1000000.msg2(messagefactoryinterface)
+        result.out4 = ipinfo.zipCode
+        result.out3 = somefunc(zipcode, zipcode1)
+        result.out2 = tmp8
+        result.out1 = msg2.in1
+        Array(result)
+      }
+      process_omsg2()
+    }
+    def exeGenerated_test2_3(msg2: com.ligadata.kamanja.test.V1000000.msg3): Array[MessageInterface] = {
+      def process_omsg3(): Array[MessageInterface] = {
+        val result = new com.ligadata.kamanja.test.V1000000.msg4(messagefactoryinterface)
+        result.out4 = msg2.in1
+        result.out3 = msg2.in1
+        result.out2 = msg2.in1
+        result.out1 = msg2.in1
+        Array(result)
+      }
+      process_omsg3()
+    }
+    // Evaluate messages
+    val msgs = execMsgsSet.map(m => m.getFullTypeName -> m).toMap
+    val msg1 = msgs.get("com.ligadata.kamanja.test.msg1").getOrElse(null).asInstanceOf[com.ligadata.kamanja.test.V1000000.msg1]
+    val msg2 = msgs.get("com.ligadata.kamanja.test.msg3").getOrElse(null).asInstanceOf[com.ligadata.kamanja.test.V1000000.msg3]
+    val msg3 = msgs.get("com.ligadata.kamanja.test.msg5").getOrElse(null).asInstanceOf[com.ligadata.kamanja.test.V1000000.msg5]
+    val msg4 = msgs.get("com.ligadata.kamanja.test.msg6").getOrElse(null).asInstanceOf[com.ligadata.kamanja.test.V1000000.msg6]
+    // Main dependency -> execution check
+    //
+    val results: Array[MessageInterface] =
+    if(msg1!=null && msg2!=null && msg3!=null) {
+      exeGenerated_test1_1(msg1, msg2, msg3)
+    } else {
+      Array.empty[MessageInterface]
+    }
+    ++
+    if(msg2!=null && msg3!=null && msg4!=null) {
+      exeGenerated_test1_2(msg2, msg3, msg4)
+    } else {
+      Array.empty[MessageInterface]
+    }
+    ++
+    if(msg2!=null) {
+      exeGenerated_test2_3(msg2)
+    } else {
+      Array.empty[MessageInterface]
+    }
+    results.asInstanceOf[Array[ContainerOrConcept]]
+  }
+}

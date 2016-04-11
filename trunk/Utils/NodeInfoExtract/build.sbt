@@ -55,14 +55,28 @@ excludedJars in assembly <<= (fullClasspath in assembly) map { cp =>
 
 name := "NodeInfoExtract"
 
-version := "1.0"
+version := "1.4.0"
 
 scalacOptions += "-deprecation"
 
-libraryDependencies += "org.json4s" %% "json4s-native" % "3.2.9" 
+//libraryDependencies += "org.json4s" %% "json4s-native" % "3.2.9"
+//
+//libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.2.9"
+//
+//net.virtualvoid.sbt.graph.Plugin.graphSettings
+//
+//
+//// new add
+//libraryDependencies += "org.apache.logging.log4j" % "log4j-1.2-api" % "2.4.1"
+//libraryDependencies += "org.apache.logging.log4j" % "log4j-api" % "2.4.1"
+//libraryDependencies += "org.apache.logging.log4j" % "log4j-core" % "2.4.1"
+//libraryDependencies ++= Seq(
+//    "commons-logging" % "commons-logging" % "1.1.1",
+//    "org.apache.curator" % "curator-client" % "2.6.0",
+//    "org.apache.curator" % "curator-framework" % "2.6.0",
+//    "org.apache.curator" % "curator-recipes" % "2.6.0"
+//)
+coverageMinimum := 80
 
-libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.2.9" 
-
-net.virtualvoid.sbt.graph.Plugin.graphSettings
-
+coverageFailOnMinimum := false
 

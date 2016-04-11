@@ -28,10 +28,6 @@ class AdapterConfigurationTests extends FlatSpec with BeforeAndAfter {
     assert(adapterConfig.adapterSpecificCfg == null)
   }
 
-  it should "be instantiated with associated message set to null" in {
-    assert(adapterConfig.associatedMsg == null)
-  }
-
   it should "be instantiated with class name set to null" in {
     assert(adapterConfig.className == null)
   }
@@ -40,36 +36,12 @@ class AdapterConfigurationTests extends FlatSpec with BeforeAndAfter {
     assert(adapterConfig.dependencyJars == null)
   }
 
-  it should "be instantiated with failed events adapter name set to null" in {
-    assert(adapterConfig.failedEventsAdapterName == null)
-  }
-
-  it should "be instantiated with field delimiter set to null" in {
-    assert(adapterConfig.fieldDelimiter == null)
-  }
-
-  it should "be instantiated with format name set to null" in {
-    assert(adapterConfig.formatName == null)
-  }
-
   it should "be instantiated with jar name set to null" in {
     assert(adapterConfig.jarName == null)
   }
 
-  it should "be instantiated with key and value delimiter set to null" in {
-    assert(adapterConfig.keyAndValueDelimiter == null)
-  }
-
   it should "be instantiated with name set to null" in {
     assert(adapterConfig.Name == null)
-  }
-
-  it should "be instantiated with validate adapter name set to null" in {
-    assert(adapterConfig.validateAdapterName == null)
-  }
-
-  it should "be instantiated with value delimiter set to null" in {
-    assert(adapterConfig.valueDelimiter == null)
   }
 
   it should "have TYPE_INPUT set to Input_Adapter" in {

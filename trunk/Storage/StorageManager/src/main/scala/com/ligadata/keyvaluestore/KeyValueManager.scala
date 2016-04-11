@@ -25,7 +25,7 @@ import org.apache.logging.log4j._
 import com.ligadata.keyvaluestore._
 import com.ligadata.Utils.Utils._
 import com.ligadata.Utils.{ KamanjaClassLoader, KamanjaLoaderInfo }
-import com.ligadata.StorageBase.StorageAdapterObj
+import com.ligadata.StorageBase.StorageAdapterFactory
 
 object KeyValueManager {
   private val loggerName = this.getClass.getName
@@ -121,7 +121,7 @@ object KeyValueManager {
           var curClz = clz
 
           while (clz != null && isDs == false) {
-            isDs = isDerivedFrom(curClz, "com.ligadata.StorageBase.StorageAdapterObj")
+            isDs = isDerivedFrom(curClz, "com.ligadata.StorageBase.StorageAdapterFactory")
             if (isDs == false)
               curClz = curClz.getSuperclass()
           }
@@ -132,8 +132,8 @@ object KeyValueManager {
               val obj = kvManagerLoader.mirror.reflectModule(module)
 
               val objinst = obj.instance
-              if (objinst.isInstanceOf[StorageAdapterObj]) {
-                val storageAdapterObj = objinst.asInstanceOf[StorageAdapterObj]
+              if (objinst.isInstanceOf[StorageAdapterFactory]) {
+                val storageAdapterObj = objinst.asInstanceOf[StorageAdapterFactory]
                 return storageAdapterObj.CreateStorageAdapter(kvManagerLoader, datastoreConfig)
               } else {
                 logger.error("Failed to instantiate Storage Adapter with configuration:" + adapterConfig)

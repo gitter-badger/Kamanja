@@ -55,30 +55,24 @@ test in assembly := {}
 
 name := "GetComponent"
 
-version := "1.0"
+version := "1.4.0"
 
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
-
 libraryDependencies += "org.apache.hbase" % "hbase-client" % "1.0.2"
-
 libraryDependencies += "org.apache.hbase" % "hbase-common" % "1.0.2"
-
 libraryDependencies += "org.apache.hadoop" % "hadoop-common" % "2.7.1"
-
 libraryDependencies += "org.apache.zookeeper" % "zookeeper" % "3.4.6"
-
 libraryDependencies += "org.apache.kafka" %% "kafka" % "0.8.2.2"
-
 libraryDependencies += "com.googlecode.json-simple" % "json-simple" % "1.1"
-
 // libraryDependencies += "org.scala-lang" % "scala-library" % "2.11.7"
-
 libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.6.3"
-
 libraryDependencies += "log4j" % "log4j" % "1.2.17"
-
 //libraryDependencies += "org.eclipse.debug" % "ui" % "3.3.0-v20070607-1800"
 
 scalacOptions += "-deprecation"
 
+coverageMinimum := 80
 
+coverageFailOnMinimum := false
+
+coverageExcludedPackages := "com.ligadata.kamanja.CheckerComponent.*"

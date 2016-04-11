@@ -35,7 +35,7 @@ import com.ligadata.StorageBase._
 import com.ligadata.Serialize._
 import com.ligadata.Utils.Utils._
 import com.ligadata.Utils.{ KamanjaClassLoader, KamanjaLoaderInfo }
-import com.ligadata.StorageBase.StorageAdapterObj
+import com.ligadata.StorageBase.StorageAdapterFactory
 import com.ligadata.keyvaluestore.HashMapAdapter
 
 case class Customer(name:String, address: String, homePhone: String)
@@ -91,6 +91,7 @@ class HashMapAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAfter
     logger.info("bucketKey => " + key.bucketKey.mkString(","))
     logger.info("transactionId => " + key.transactionId)
     logger.info("rowId => " + key.rowId)
+    logger.info("schemaId => " + value.schemaId)
     logger.info("serializerType => " + value.serializerType)
     logger.info("serializedInfo length => " + value.serializedInfo.length)
     val cust = serializer.DeserializeObjectFromByteArray(value.serializedInfo).asInstanceOf[Customer]
@@ -152,7 +153,7 @@ class HashMapAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAfter
 	var custNumber = "425666777" + i
 	var obj = new Customer(custName,custAddress,custNumber)
 	var v = serializer.SerializeObjectToByteArray(obj)
-	var value = new Value("kryo",v)
+	var value = new Value(1,"kryo",v)
 	noException should be thrownBy {
 	  adapter.put(containerName,key,value)
 	}
@@ -193,7 +194,7 @@ class HashMapAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAfter
 	var custNumber = "425666777" + i
 	var obj = new Customer(custName,custAddress,custNumber)
 	var v = serializer.SerializeObjectToByteArray(obj)
-	var value = new Value("kryo",v)
+	var value = new Value(1,"kryo",v)
 	noException should be thrownBy {
 	  adapter.put(containerName,key,value)
 	}
@@ -232,7 +233,7 @@ class HashMapAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAfter
 	var custNumber = "4256667777" + i
 	var obj = new Customer(custName,custAddress,custNumber)
 	var v = serializer.SerializeObjectToByteArray(obj)
-	var value = new Value("kryo",v)
+	var value = new Value(1,"kryo",v)
 	keyValueList = keyValueList :+ (key,value)
       }
       var dataList = new Array[(String, Array[(Key,Value)])](0)

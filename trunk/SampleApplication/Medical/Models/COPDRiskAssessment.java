@@ -35,7 +35,7 @@ public class COPDRiskAssessment extends ModelInstance {
 			super(modelDef, nodeContext);
 		}
 
-        public boolean isValidMessage(MessageContainerBase msg) {
+        public boolean isValidMessage(ContainerInterface msg) {
             return (msg instanceof Beneficiary);
         }
 
@@ -95,11 +95,11 @@ public class COPDRiskAssessment extends ModelInstance {
     private void init(TransactionContext txnCtxt) {
         msg = (Beneficiary) txnCtxt.getMessage();
         System.out.println("Executing COPD Risk Assessment against Beneficiary message:");
-        System.out.println("\tMessage Name: " + msg.Name());
-        System.out.println("\tMessage Version: " + msg.Version());
+        System.out.println("\tMessage Name: " + msg.getTypeName());
+        System.out.println("\tMessage Version: " + msg.getTypeVersion());
         System.out.println("\tMessage Desynpuf ID: " + msg.desynpuf_id());
 
-        String[] partitionKeys = msg.PartitionKeyData();
+        String[] partitionKeys = msg.getPartitionKey();
 
         // Getting message RDD objects
         JavaRDD<InpatientClaim> inpatientClaimHistoryRDD = InpatientClaimFactory.rddObject.getRDD(partitionKeys).filter(new FilterClaims());

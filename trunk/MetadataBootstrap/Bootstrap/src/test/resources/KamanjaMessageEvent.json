@@ -1,0 +1,47 @@
+{
+  "Message": {
+    "NameSpace": "com.ligadata.KamanjaBase",
+    "Name": "KamanjaMessageEvent",
+    "Version": "1.05",
+    "Description": "Message Execution detail",
+    "Fixed": "true",
+    "Elements": [
+      {
+        "Field": {
+          "Name": "messageId",
+          "Type": "Long"
+        }
+      },
+      {
+        "Field": {
+          "Name": "ModelInfo",
+          "Type": "ArrayOfKamanjaModelEvent"
+        }
+      },
+      {
+        "Field": {
+          "Name": "ElapsedTimeInMs",
+          "Type": "Float"
+        }
+      },
+      {
+        "Field": {
+          "Name": "messageKey",
+          "Type": "String"
+        }
+      },
+      {
+        "Field": {
+          "Name": "messageValue",
+          "Type": "String"
+        }
+      },
+      {
+        "Field": {
+          "Name": "Error",
+          "Type": "String"
+        }
+      }
+    ]
+  }
+}

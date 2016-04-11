@@ -36,7 +36,7 @@ import java.sql.DriverManager
 import java.sql.{ Statement, PreparedStatement, CallableStatement, DatabaseMetaData, ResultSet }
 import java.sql.Connection
 import com.ligadata.KvBase.{ Key, Value, TimeRange }
-import com.ligadata.StorageBase.{ DataStore, Transaction, StorageAdapterObj }
+import com.ligadata.StorageBase.{ DataStore, Transaction, StorageAdapterFactory }
 import java.nio.ByteBuffer
 import org.apache.logging.log4j._
 import com.ligadata.Exceptions._
@@ -1185,6 +1185,6 @@ class MySqlAdapterTx(val parent: DataStore) extends Transaction {
 }
 
 // To create MySql Datastore instance
-object MySqlAdapter extends StorageAdapterObj {
+object MySqlAdapter extends StorageAdapterFactory {
   override def CreateStorageAdapter(kvManagerLoader: KamanjaLoaderInfo, datastoreConfig: String): DataStore = new MySqlAdapter(kvManagerLoader, datastoreConfig)
 }

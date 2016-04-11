@@ -18,3 +18,4 @@ libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 
 EclipseKeys.relativizeLibs := false
 
+coverageExcludedPackages := "com.ligadata.Migrate.MigrateFrom_V_1_3"

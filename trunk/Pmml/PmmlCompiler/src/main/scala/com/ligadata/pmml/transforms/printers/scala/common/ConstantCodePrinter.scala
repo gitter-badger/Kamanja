@@ -201,13 +201,6 @@ class ConstantCodePrinter(ctx : PmmlContext) extends CodePrinter with com.ligada
 	  		  val ts : String = if (typedef != null && (typestr.contains("scala.Array") || typestr.contains("scala.collection"))) {
 	  			  val typeStr : String = typedef match {
 	  			    case ar : ArrayTypeDef => typedef.asInstanceOf[ArrayTypeDef].elemDef.typeString
-	  			    case arb : ArrayBufTypeDef => typedef.asInstanceOf[ArrayTypeDef].elemDef.typeString
-	  			    case lst : ListTypeDef => typedef.asInstanceOf[ListTypeDef].valDef.typeString
-	  			    case qt : QueueTypeDef => typedef.asInstanceOf[QueueTypeDef].valDef.typeString
-	  			    case st : SortedSetTypeDef => typedef.asInstanceOf[SortedSetTypeDef].keyDef.typeString
-	  			    case tt : TreeSetTypeDef => typedef.asInstanceOf[TreeSetTypeDef].keyDef.typeString
-	  			    case it : ImmutableSetTypeDef => typedef.asInstanceOf[ImmutableSetTypeDef].keyDef.typeString
-	  			    case s  : SetTypeDef => typedef.asInstanceOf[SetTypeDef].keyDef.typeString
 	  			    case _ => "Any"
 	  			  }
 	  			  typeStr 

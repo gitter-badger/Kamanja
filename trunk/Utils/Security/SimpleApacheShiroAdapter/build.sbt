@@ -83,3 +83,7 @@ libraryDependencies ++= Seq(
 )
 
 scalacOptions += "-deprecation"
+
+coverageMinimum := 80
+
+coverageFailOnMinimum := false

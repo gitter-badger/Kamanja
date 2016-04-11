@@ -87,12 +87,14 @@ object Root {
     val mapToTransformation = new TypeToken[scala.collection.Map[String, Transformation]](){}.getType()
     val mapToOutput = new TypeToken[scala.collection.Map[String, Output]](){}.getType()
     val mapToCompute = new TypeToken[scala.collection.Map[String, Compute]](){}.getType()
+    val mapToGrok = new TypeToken[scala.collection.Map[String, Grok]](){}.getType()
 
     new GsonBuilder().
       registerTypeAdapter(mapToString, new MapToString).
       registerTypeAdapter(mapToTransformation, new MapToType[Transformation]).
       registerTypeAdapter(mapToOutput, new MapToType[Output]).
       registerTypeAdapter(mapToCompute, new MapToType[Compute]).
+      registerTypeAdapter(mapToGrok, new MapToType[Grok]).
       create()
   }
 
@@ -115,7 +117,7 @@ object Root {
     * @return root of the processing instructions
     */
   def fromJson(file : String) : Root = {
-    val config = FileUtils.readFileToString(new File(file), null)
+    val config = FileUtils.readFileToString(new File(file), null:String)
     fromJsonString(config)
   }
 

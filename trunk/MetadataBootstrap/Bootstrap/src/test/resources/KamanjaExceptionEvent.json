@@ -1,0 +1,39 @@
+{
+  "Message": {
+    "NameSpace": "com.ligadata.KamanjaBase",
+    "Name": "KamanjaExceptionEvent",
+    "Version": "1.02",
+    "Description": "Exception Event detail",
+    "Fixed": "true",
+    "Elements": [
+      {
+        "Field": {
+          "NameSpace": "com.ligadata.KamanjaBase",
+          "Name": "ComponentName",
+          "Type": "System.String"
+        }
+      },
+      {
+        "Field": {
+          "NameSpace": "com.ligadata.KamanjaBase",
+          "Name": "TimeOfErrorEpochMs",
+          "Type": "System.Long"
+        }
+      },
+      {
+        "Field": {
+          "NameSpace": "com.ligadata.KamanjaBase",
+          "Name": "ErrorType",
+          "Type": "System.String"
+        }
+      },
+      {
+        "Field" : {
+          "NameSpace": "com.ligadata.KamanjaBase",
+          "Name": "ErrorString",
+          "Type": "System.String"       
+        }
+     }
+    ]
+  }
+}

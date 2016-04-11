@@ -174,7 +174,13 @@ object ErrorCodeConstants {
    val Get_All_Nodes_Failed = "Failed to fetch all nodes";
    val Get_All_Nodes_Failed_Not_Available = "Failed to fetch all nodes. No node available.";
    val Get_Leader_Host_Failed_Not_Available = "Failed to fetch leader host. No node available.";
-   
+
+ // Tenant
+ val Add_Tenant_Failed = "Failed to add/update a tenant";
+ val Add_Tenant_Successful = "Tenant added/updated Successfully";
+ val Remove_Tenant_Successful = "Deleted tenant successfully";
+ val Remove_Tenant_Failed = "Failed to delete tenant";
+
    //Adapter
    val Add_Adapter_Failed = "Failed to Add/Update Adapter";
    val Add_Adapter_Successful = "Successfully added/updated Adapter";

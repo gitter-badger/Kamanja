@@ -1,0 +1,29 @@
+{
+  "Message" : {
+    "NameSpace" : "com.ligadata.kamanja.test",
+    "Name" : "msg6",
+    "Version" : "00.01.00",
+    "Description" : "Test message com.ligadata.kamanja.test.msg6",
+    "Fixed" : "true",
+    "Elements" : [
+      {
+        "Field" : {
+          "Name" : "in1",
+          "Type" : "System.String"
+        }
+      },
+      {
+        "Field" : {
+          "Name" : "in2",
+          "Type" : "System.String"
+        }
+      },
+      {
+        "Field" : {
+          "Name" : "in3",
+          "Type" : "System.Int"
+        }
+      }
+    ]
+  }
+}

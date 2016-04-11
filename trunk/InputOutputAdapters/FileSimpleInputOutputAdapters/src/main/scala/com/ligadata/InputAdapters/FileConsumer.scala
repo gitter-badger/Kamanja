@@ -23,18 +23,18 @@ import org.apache.logging.log4j.{ Logger, LogManager }
 import java.io.{ InputStream, FileInputStream }
 import java.util.zip.GZIPInputStream
 import java.nio.file.{ Paths, Files }
-import com.ligadata.InputOutputAdapterInfo.{ AdapterConfiguration, InputAdapter, InputAdapterObj, OutputAdapter, ExecContext, ExecContextObj, CountersAdapter, PartitionUniqueRecordKey, PartitionUniqueRecordValue, StartProcPartInfo, InputAdapterCallerContext }
+import com.ligadata.InputOutputAdapterInfo._
 import com.ligadata.AdaptersConfiguration.{ FileAdapterConfiguration, FilePartitionUniqueRecordKey, FilePartitionUniqueRecordValue }
 import scala.util.control.Breaks._
-import com.ligadata.KamanjaBase.DataDelimiters
+import com.ligadata.KamanjaBase.{NodeContext, DataDelimiters}
 import com.ligadata.HeartBeat.{Monitorable, MonitorComponentInfo}
 
-object FileConsumer extends InputAdapterObj {
+object FileConsumer extends InputAdapterFactory {
   val ADAPTER_DESCRIPTION = "File Consumer"
-  def CreateInputAdapter(inputConfig: AdapterConfiguration, callerCtxt: InputAdapterCallerContext, execCtxtObj: ExecContextObj, cntrAdapter: CountersAdapter): InputAdapter = new FileConsumer(inputConfig, callerCtxt, execCtxtObj, cntrAdapter)
+  def CreateInputAdapter(inputConfig: AdapterConfiguration, execCtxtObj: ExecContextFactory, nodeContext: NodeContext): InputAdapter = new FileConsumer(inputConfig, execCtxtObj, nodeContext)
 }
 
-class FileConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: InputAdapterCallerContext, val execCtxtObj: ExecContextObj, cntrAdapter: CountersAdapter) extends InputAdapter {
+class FileConsumer(val inputConfig: AdapterConfiguration, val execCtxtObj: ExecContextFactory, val nodeContext: NodeContext) extends InputAdapter {
   private[this] val LOG = LogManager.getLogger(getClass);
 
   private[this] val fc = FileAdapterConfiguration.GetAdapterConfig(inputConfig)
@@ -50,7 +50,7 @@ class FileConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: InputA
 
   val input = this
 
-  val execThread = execCtxtObj.CreateExecContext(input, uniqueKey, callerCtxt)
+  val execThread = execCtxtObj.CreateExecContext(input, uniqueKey, nodeContext)
 
   class Stats {
     var totalLines: Long = 0;
@@ -64,7 +64,7 @@ class FileConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: InputA
 
 
 
-  private def ProcessFile(sFileName: String, format: String, msg: String, st: Stats, ignorelines: Int, AddTS2MsgFlag: Boolean, isGz: Boolean): Unit = {
+  private def ProcessFile(sFileName: String, msg: String, st: Stats, ignorelines: Int, AddTS2MsgFlag: Boolean, isGz: Boolean): Unit = {
     var is: InputStream = null
 
     LOG.debug("FileConsumer Processing File:" + sFileName)
@@ -80,11 +80,6 @@ class FileConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: InputA
         throw e
         return
     }
-
-    val delimiters = new DataDelimiters()
-    delimiters.keyAndValueDelimiter = fc.keyAndValueDelimiter
-    delimiters.fieldDelimiter = fc.fieldDelimiter
-    delimiters.valueDelimiter = fc.valueDelimiter
 
     val uniqueVal = new FilePartitionUniqueRecordValue
     uniqueVal.FileFullPath = sFileName
@@ -115,7 +110,6 @@ class FileConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: InputA
                   ignoredlines += 1
                 } else {
                   if (strlen > 0) {
-                    var readTmNs = System.nanoTime
                     var readTmMs = System.currentTimeMillis
 
                     val ln = new String(buffer, startidx, idx - startidx)
@@ -124,7 +118,7 @@ class FileConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: InputA
                     try {
                       // Creating new string to convert from Byte Array to string
                       uniqueVal.Offset = 0 //BUGBUG:: yet to fill this information
-                      execThread.execute(sendmsg.getBytes, format, uniqueKey, uniqueVal, readTmNs, readTmMs, false, fc.associatedMsg, delimiters)
+                      execThread.execute(sendmsg.getBytes, uniqueKey, uniqueVal, readTmMs)
                     } catch {
                       case e: Exception => {
                         LOG.error("", e)
@@ -146,8 +140,8 @@ class FileConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: InputA
                 }
                 st.totalLines += 1;
 
-                val key = Category + "/" + fc.Name + "/evtCnt"
-                cntrAdapter.addCntr(key, 1)
+                // val key = Category + "/" + fc.Name + "/evtCnt"
+                // cntrAdapter.addCntr(key, 1)
 
                 val curTm = System.nanoTime
                 if ((curTm - tm) > 1000000000L) {
@@ -170,7 +164,6 @@ class FileConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: InputA
         } while (readlen > 0)
 
         if (len > 0 && ignoredlines >= ignorelines) {
-          var readTmNs = System.nanoTime
           var readTmMs = System.currentTimeMillis
 
           val ln = new String(buffer, 0, len)
@@ -179,7 +172,7 @@ class FileConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: InputA
           try {
             // Creating new string to convert from Byte Array to string
             uniqueVal.Offset = 0 //BUGBUG:: yet to fill this information
-            execThread.execute(sendmsg.getBytes, format, uniqueKey, uniqueVal, readTmNs, readTmMs, false, fc.associatedMsg, delimiters)
+            execThread.execute(sendmsg.getBytes, uniqueKey, uniqueVal, readTmMs)
           } catch {
             case e: Exception => {
               LOG.error("", e)
@@ -243,7 +236,7 @@ class FileConsumer(val inputConfig: AdapterConfiguration, val callerCtxt: InputA
         val isGz = (compString != null && compString.compareToIgnoreCase("gz") == 0)
         fc.Files.foreach(fl => {
           if (isTxt || isGz) {
-            tm = tm + elapsedTm(ProcessFile(fl, fc.formatName, fc.MessagePrefix, st, fc.IgnoreLines, fc.AddTS2MsgFlag, isGz))
+            tm = tm + elapsedTm(ProcessFile(fl, fc.MessagePrefix, st, fc.IgnoreLines, fc.AddTS2MsgFlag, isGz))
           } else {
             throw new Exception("Not yet handled other than text & GZ files")
           }

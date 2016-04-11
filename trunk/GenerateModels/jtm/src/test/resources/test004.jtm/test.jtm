@@ -28,7 +28,7 @@
       "dependsOn": [ ["m1", "m2", "c1"], ["m3", "m4", "c2"], ["m5", "c3", "c4"] ],
       "computes": {
         "zipcode":{ "type": "Int", "val": "iplookup($in1).zipcode", "comment": "in scala, type could be optional" },
-        "zipcode1":{ "type": "Int", "vals": ["iplookup($m1.in1).zipcode", "iplookup($m3.in9).zipcode"] },
+        "zipcode1":{ "type": "Int", "vals": ["iplookup(${m1.in1}).zipcode", "iplookup(${m3.in9}).zipcode"] },
         "ipinfo": { "type": "IpInfo", "val": "iplookup($in1)",  "comment": "type could be some class available from imports" }
       },
 

@@ -34,8 +34,8 @@ No schema setup
 
 package com.ligadata.keyvaluestore
 
-import com.ligadata.KvBase.{ Key, Value, TimeRange }
-import com.ligadata.StorageBase.{ DataStore, Transaction, StorageAdapterObj }
+import com.ligadata.KvBase.{ Key, TimeRange }
+import com.ligadata.StorageBase.{ DataStore, Transaction, StorageAdapterFactory, Value }
 
 import org.mapdb._
 import java.io._
@@ -205,6 +205,10 @@ class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
     })
   }
 
+  override def CreateMetadataContainer(containerNames: Array[String]): Unit = {
+    CreateContainer(containerNames)
+  }
+
   private def MakeCompositeKey(key: Key): Array[Byte] = {
     var compKey = key.timePartition.toString + "|" + key.bucketKey.mkString(".") +
       "|" + key.transactionId.toString + "|" + key.rowId.toString
@@ -214,6 +218,7 @@ class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
   private def ValueToByteArray(value: Value): Array[Byte] = {
     var byteOs = new ByteArrayOutputStream();
     var out = new DataOutputStream(byteOs);
+    out.writeInt(value.schemaId)
     out.writeInt(value.serializerType.length);
     out.write(value.serializerType.getBytes());
     out.writeInt(value.serializedInfo.length);
@@ -224,6 +229,8 @@ class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
   private def ByteArrayToValue(byteArray: Array[Byte]): Value = {
     var in = new DataInputStream(new ByteArrayInputStream(byteArray));
 
+    val schemaId = in.readInt();
+
     var serializerTypeLength = in.readInt();
     var serializerType = new Array[Byte](serializerTypeLength);
     in.read(serializerType, 0, serializerTypeLength);
@@ -232,7 +239,7 @@ class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
     var serializedInfo = new Array[Byte](serializedInfoLength);
     in.read(serializedInfo, 0, serializedInfoLength);
 
-    var v = new Value(new String(serializerType), serializedInfo)
+    var v = new Value(schemaId, new String(serializerType), serializedInfo)
     v
   }
 
@@ -805,7 +812,7 @@ class TreeMapAdapterTx(val parent: DataStore) extends Transaction {
   val logger = LogManager.getLogger(loggerName)
 
   override def put(containerName: String, key: Key, value: Value): Unit = {
-    parent.put(containerName, key, value)
+    parent.put(containerName,  key, value)
   }
 
   override def put(data_list: Array[(String, Array[(Key, Value)])]): Unit = {
@@ -908,6 +915,6 @@ class TreeMapAdapterTx(val parent: DataStore) extends Transaction {
 }
 
 // To create TreeMap Datastore instance
-object TreeMapAdapter extends StorageAdapterObj {
+object TreeMapAdapter extends StorageAdapterFactory {
   override def CreateStorageAdapter(kvManagerLoader: KamanjaLoaderInfo, datastoreConfig: String): DataStore = new TreeMapAdapter(kvManagerLoader, datastoreConfig)
 }

@@ -14,13 +14,13 @@
     ]
   },
   "migratingTo": {
-    "version": "1.3",
+    "version": "1.4",
     "scalaVersion": "{ScalaToVersion}",
     "versionInstallPath": "{NewPackageInstallPath}",
-    "implemtedClass": "com.ligadata.Migrate.MigrateTo_V_1_3",
+    "implemtedClass": "com.ligadata.Migrate.MigrateTo_V_1_4",
     "jars": [
       "{NewPackageInstallPath}/lib/system/migratebase-1.0.jar",
-      "{NewPackageInstallPath}/lib/system/migrateto_v_1_3_{ScalaToVersion}-1.0.jar",
+      "{NewPackageInstallPath}/lib/system/migrateto_v_1_4_{ScalaToVersion}-1.0.jar",
       "{NewPackageInstallPath}/bin/KamanjaManager-1.0"
     ]
   },

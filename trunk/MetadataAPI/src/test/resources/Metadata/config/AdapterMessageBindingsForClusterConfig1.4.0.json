@@ -1,0 +1,23 @@
+[
+	{
+	  "AdapterName": "kafkaAdapterInput1",
+	  "MessageNames": ["com.botanical.json.ordermsg", "com.botanical.json.shippingmsg"],
+	  "Serializer": "org.kamanja.serializer.json.JsonSerDeser"
+	},
+	{
+	  "AdapterName": "kafkaAdapterOutput2",
+	  "MessageNames": ["com.botanical.csv.emailmsg"],
+	  "Serializer": "org.kamanja.serializer.csv.CsvSerDeser",
+	  "Options": {
+		"lineDelimiter": "\r\n",
+		"fieldDelimiter": ",",
+		"produceHeader": "true",
+		"alwaysQuoteFields": "false"
+	  }
+	},
+	{
+	  "AdapterName": "hBaseStore1",
+	  "MessageNames": ["com.botanical.json.audit.ordermsg", "com.botanical.json.audit.shippingmsg"],
+	  "Serializer": "org.kamanja.serializer.json.JsonSerDeser"
+	}
+]

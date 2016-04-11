@@ -60,14 +60,14 @@ import com.ligadata.KamanjaBase._
 object Udfs extends LogTrait {
   
   /** 
-      Answer the version number of the supplied BaseMsg
-      @param msg : A BaseMsg known to the model.
+      Answer the version number of the supplied MessageInterface
+      @param msg : A MessageInterface known to the model.
       @return the version number, a string in the format "NNNNNN.NNNNNN.NNNNNN"
   */
 
-  def Version(msg : BaseMsg) : String = {
+  def Version(msg : MessageInterface) : String = {
       val ver : String = if (msg != null) {
-          msg.Version
+          msg.getTypeVersion
       } else {
           "000000.000000.000000"
       }
@@ -75,14 +75,14 @@ object Udfs extends LogTrait {
   }
 
   /** 
-      Answer the version number of the supplied BaseMsg
-      @param container : A BaseMsg known to the model.
+      Answer the version number of the supplied MessageInterface
+      @param container : A MessageInterface known to the model.
       @return the version number, a string in the format "NNNNNN.NNNNNN.NNNNNN"
   */
 
-  def Version(container : BaseContainer) : String = {
+  def Version(container : ContainerInterface) : String = {
       val ver : String = if (container != null) {
-          container.Version
+          container.getTypeVersion
       } else {
           "000000.000000.000000"
       }
@@ -474,46 +474,46 @@ object Udfs extends LogTrait {
   }
 
   /**
-	  @deprecated("Use Get(ctx: Context, containerId: String, partKey: List[String], primaryKey: List[String]): MessageContainerBase", "2015-Jun-08")      
-	  Get the MessageContainerBase associated with the supplied containerId and key from the EnvContext managed stores.
+	  @deprecated("Use Get(ctx: Context, containerId: String, partKey: List[String], primaryKey: List[String]): ContainerInterface", "2015-Jun-08")      
+	  Get the ContainerInterface associated with the supplied containerId and key from the EnvContext managed stores.
       @param xId : the transaction id that initialized the model instance that is calling
       @param gCtx : the EnvContext object that initialized the model instance that is calling
       @param containerName : The top level container name that purportedly contains the companion 'key'
       @param key : the identifying key sought in the 'containerName'
-      @return the MessageContainerBase associated with these keys.
+      @return the ContainerInterface associated with these keys.
    */
-  def Get(xId: Long, gCtx: EnvContext, containerId: String, partKey: List[String], primaryKey: List[String]): MessageContainerBase = {
+  def Get(xId: Long, gCtx: EnvContext, containerId: String, partKey: List[String], primaryKey: List[String]): ContainerInterface = {
     gCtx.getObject(xId, containerId, partKey, primaryKey)
   }
 
   /**
-      Get the MessageContainerBase associated with the supplied containerId and key from the EnvContext managed stores.
+      Get the ContainerInterface associated with the supplied containerId and key from the EnvContext managed stores.
    *  @param ctx : the Pmml Runtime Context instance for the calling model
       @param containerName : The top level container name that purportedly contains the companion 'key'
       @param key : the identifying key sought in the 'containerName'
-      @return the MessageContainerBase associated with these keys.
+      @return the ContainerInterface associated with these keys.
    */
-  def Get(ctx: Context, containerId: String, partKey: List[String], primaryKey: List[String]): MessageContainerBase = {
+  def Get(ctx: Context, containerId: String, partKey: List[String], primaryKey: List[String]): ContainerInterface = {
 	  if (ctx != null && ctx.gCtx != null) ctx.gCtx.getObject(ctx.xId, containerId, partKey, primaryKey) else null
   }
 
 
   /** 
-	  @deprecated("Use GetMsgContainerElseNew(ctx: Context, fqClassName : String, containerId: String, partKey: List[String], primaryKey: List[String]): MessageContainerBase", "2015-Jun-08")      
-	  Get the MessageContainerBase associated with the supplied containerId and key from the EnvContext managed stores.
+	  @deprecated("Use GetMsgContainerElseNew(ctx: Context, fqClassName : String, containerId: String, partKey: List[String], primaryKey: List[String]): ContainerInterface", "2015-Jun-08")      
+	  Get the ContainerInterface associated with the supplied containerId and key from the EnvContext managed stores.
    *  GetMsgContainerElseNew will attempt to retrieve the Message or Container from the container with supplied key.  Should it
    *  not be present in the kv store, a new and empty version of the fqClassName is instantiated and returned.
    *  
    *  @param xId : transaction id from Pmml Runtime Context
    *  @param gCtx : the engine's EnvContext object that possesses the kv stores.
-   *  @param fqClassName : the fully qualified class name of the MessageContainerBase subclass that will be created if the keys will not produce an instance
+   *  @param fqClassName : the fully qualified class name of the ContainerInterface subclass that will be created if the keys will not produce an instance
    *  @param containerId : the name of the kv container
    *  @param key : the key within the container being sought
-   *  @return either the MessageContainerBase subclass with the supplied key or a brand new instance of the fqClassName (NO FIELDS FILLED) 
+   *  @return either the ContainerInterface subclass with the supplied key or a brand new instance of the fqClassName (NO FIELDS FILLED) 
    */
   
-  def GetMsgContainerElseNew(xId: Long, gCtx: EnvContext, fqClassName : String, containerId: String, partKey: List[String], primaryKey: List[String]): MessageContainerBase = {
-    val mc : MessageContainerBase = gCtx.getObject(xId, containerId, partKey, primaryKey)
+  def GetMsgContainerElseNew(xId: Long, gCtx: EnvContext, fqClassName : String, containerId: String, partKey: List[String], primaryKey: List[String]): ContainerInterface = {
+    val mc : ContainerInterface = gCtx.getObject(xId, containerId, partKey, primaryKey)
     if (mc != null) {
     	mc
     } else {
@@ -526,14 +526,14 @@ object Udfs extends LogTrait {
    *  not be present in the kv store, a new and empty version of the fqClassName is instantiated and returned.
    *  
    *  @param ctx : the Pmml Runtime Context instance for the calling model
-   *  @param fqClassName : the fully qualified class name of the MessageContainerBase subclass that will be created if the keys will not produce an instance
+   *  @param fqClassName : the fully qualified class name of the ContainerInterface subclass that will be created if the keys will not produce an instance
    *  @param containerId : the name of the kv container
    *  @param key : the key within the container being sought
-   *  @return either the MessageContainerBase subclass with the supplied key or a brand new instance of the fqClassName (NO FIELDS FILLED) 
+   *  @return either the ContainerInterface subclass with the supplied key or a brand new instance of the fqClassName (NO FIELDS FILLED) 
    */
   
-  def GetMsgContainerElseNew(ctx: Context, fqClassName : String, containerId: String, partKey: List[String], primaryKey: List[String]): MessageContainerBase = {
-    val mc : MessageContainerBase = if (ctx != null && ctx.gCtx != null) ctx.gCtx.getObject(ctx.xId, containerId, partKey, primaryKey) else null
+  def GetMsgContainerElseNew(ctx: Context, fqClassName : String, containerId: String, partKey: List[String], primaryKey: List[String]): ContainerInterface = {
+    val mc : ContainerInterface = if (ctx != null && ctx.gCtx != null) ctx.gCtx.getObject(ctx.xId, containerId, partKey, primaryKey) else null
     if (mc != null) {
     	mc
     } else {
@@ -546,9 +546,9 @@ object Udfs extends LogTrait {
       @param msg : a Message or Container
       @return the partition key as a List[String]
    */
-  def GetPartitionKey(msg : BaseMsg) : scala.collection.immutable.List[String] = {
-      val partitionKey : List[String] = if (msg.PartitionKeyData != null) {
-          msg.PartitionKeyData.toList
+  def GetPartitionKey(msg : MessageInterface) : scala.collection.immutable.List[String] = {
+      val partitionKey : List[String] = if (msg.hasPartitionKey) {
+          msg.getPartitionKey.toList
       } else {
           scala.collection.immutable.List[String]()
       }
@@ -560,9 +560,9 @@ object Udfs extends LogTrait {
       @param msg : a Message or Container
       @return the partition key as a List[String]
    */
-  def GetPartitionKey(msg : BaseContainer) : scala.collection.immutable.List[String] = {
-      val partitionKey : List[String] = if (msg.PartitionKeyData != null) {
-          msg.PartitionKeyData.toList
+  def GetPartitionKey(msg : ContainerInterface) : scala.collection.immutable.List[String] = {
+      val partitionKey : List[String] = if (msg.hasPartitionKey) {
+          msg.getPartitionKey.toList
       } else {
           scala.collection.immutable.List[String]()
       }
@@ -574,9 +574,9 @@ object Udfs extends LogTrait {
       @param msg : a Message or Container
       @return the primary key as a List[String]
    */
-  def GetPrimaryKey(msg : BaseMsg) : scala.collection.immutable.List[String] = {
-      val primaryKey : List[String] = if (msg.PrimaryKeyData != null) {
-          msg.PrimaryKeyData.toList
+  def GetPrimaryKey(msg : MessageInterface) : scala.collection.immutable.List[String] = {
+      val primaryKey : List[String] = if (msg.hasPrimaryKey) {
+          msg.getPrimaryKey.toList
       } else {
           scala.collection.immutable.List[String]()
       }
@@ -588,9 +588,9 @@ object Udfs extends LogTrait {
       @param msg : a Message or Container
       @return the primary key as a List[String]
    */
-  def GetPrimaryKey(msg : BaseContainer) : scala.collection.immutable.List[String] = {
-      val primaryKey : List[String] = if (msg.PrimaryKeyData != null) {
-          msg.PrimaryKeyData.toList
+  def GetPrimaryKey(msg : ContainerInterface) : scala.collection.immutable.List[String] = {
+      val primaryKey : List[String] = if (msg.hasPrimaryKey) {
+          msg.getPrimaryKey.toList
       } else {
           scala.collection.immutable.List[String]()
       }
@@ -598,8 +598,8 @@ object Udfs extends LogTrait {
   }
 
   /**
-	  @deprecated("Use GetHistory(ctx: Context, containerId: String, partKey: List[String], appendCurrentChanges: Boolean): Array[MessageContainerBase] ", "2015-Jun-08")
-	  Get the MessageContainerBase associated with the supplied containerId and key from the EnvContext managed stores.
+	  @deprecated("Use GetHistory(ctx: Context, containerId: String, partKey: List[String], appendCurrentChanges: Boolean): Array[ContainerInterface] ", "2015-Jun-08")
+	  Get the ContainerInterface associated with the supplied containerId and key from the EnvContext managed stores.
    *  Answer the array of messages or container for the supplied partition key found in the specified container.  If append boolean is set,
    *  a message has been requested and the current message in the requesting model is appended to the history and returned.
    *  @param xId : the transaction id associated with this model instance
@@ -608,10 +608,10 @@ object Udfs extends LogTrait {
    *  @param partKey : the partition key that identifies which messages are to be retrieved.
    *  @param appendCurrentChanges : a boolean that is useful for messages only .  When true, it will append the incoming message that caused
    *    the calling model to execute to the returned history of messages
-   *  @return Array[MessageContainerBase] that will need to be downcast to their concrete type by the model before use.
+   *  @return Array[ContainerInterface] that will need to be downcast to their concrete type by the model before use.
    */
 
-  def GetHistory(xId: Long, gCtx: EnvContext, containerId: String, partKey: List[String], appendCurrentChanges: Boolean): Array[MessageContainerBase] = {
+  def GetHistory(xId: Long, gCtx: EnvContext, containerId: String, partKey: List[String], appendCurrentChanges: Boolean): Array[ContainerInterface] = {
     gCtx.getHistoryObjects(xId, containerId, partKey, appendCurrentChanges)
   }
 
@@ -623,55 +623,55 @@ object Udfs extends LogTrait {
    *  @param partKey : the partition key that identifies which messages are to be retrieved.
    *  @param appendCurrentChanges : a boolean that is useful for messages only .  When true, it will append the incoming message that caused
    *    the calling model to execute to the returned history of messages
-   *  @return Array[MessageContainerBase] that will need to be downcast to their concrete type by the model before use.
+   *  @return Array[ContainerInterface] that will need to be downcast to their concrete type by the model before use.
    */
 
-  def GetHistory(ctx: Context, containerId: String, partKey: List[String], appendCurrentChanges: Boolean): Array[MessageContainerBase] = {
-      if (ctx != null && ctx.gCtx != null) ctx.gCtx.getHistoryObjects(ctx.xId, containerId, partKey, appendCurrentChanges) else Array[MessageContainerBase]()
+  def GetHistory(ctx: Context, containerId: String, partKey: List[String], appendCurrentChanges: Boolean): Array[ContainerInterface] = {
+      if (ctx != null && ctx.gCtx != null) ctx.gCtx.getHistoryObjects(ctx.xId, containerId, partKey, appendCurrentChanges) else Array[ContainerInterface]()
   }
 
   /** 
-	  @deprecated("Use GetArray(ctx: Context, gCtx: EnvContext, containerId: String): Array[MessageContainerBase] ", "2015-Jun-08")
-   *  Get an array that contains all of the MessageContainerBase elements for the supplied 'containerId'
+	  @deprecated("Use GetArray(ctx: Context, gCtx: EnvContext, containerId: String): Array[ContainerInterface] ", "2015-Jun-08")
+   *  Get an array that contains all of the ContainerInterface elements for the supplied 'containerId'
    *  
    *  @param xId : transaction id from Pmml Runtime Context
    *  @param gCtx : the engine's EnvContext object that possesses the kv stores.
-   *  @param fqClassName : the fully qualified class name of the MessageContainerBase subclass that will be created if the keys will not produce an instance
+   *  @param fqClassName : the fully qualified class name of the ContainerInterface subclass that will be created if the keys will not produce an instance
    *  @param containerId : the name of the kv container
    *  @param key : the key within the container being sought
-   *  @return either the Array[MessageContainerBase] subclass with the supplied containerId or an empty array 
+   *  @return either the Array[ContainerInterface] subclass with the supplied containerId or an empty array 
    */
   
-  def GetArray(xId: Long, gCtx: EnvContext, containerId: String): Array[MessageContainerBase] = {
+  def GetArray(xId: Long, gCtx: EnvContext, containerId: String): Array[ContainerInterface] = {
     gCtx.getAllObjects(xId, containerId)
   }
 
   /** 
-   *  Get an array that contains all of the MessageContainerBase elements for the supplied 'containerId'
+   *  Get an array that contains all of the ContainerInterface elements for the supplied 'containerId'
    *  
    *  @param ctx : the model instance's context
-   *  @param fqClassName : the fully qualified class name of the MessageContainerBase subclass that will be created if the keys will not produce an instance
+   *  @param fqClassName : the fully qualified class name of the ContainerInterface subclass that will be created if the keys will not produce an instance
    *  @param containerId : the name of the kv container
    *  @param key : the key within the container being sought
-   *  @return either the Array[MessageContainerBase] subclass with the supplied containerId or an empty array 
+   *  @return either the Array[ContainerInterface] subclass with the supplied containerId or an empty array 
    */
   
-  def GetArray(ctx: Context, containerId: String): Array[MessageContainerBase] = {
-      if (ctx != null && ctx.gCtx != null) ctx.gCtx.getAllObjects(ctx.xId, containerId) else Array[MessageContainerBase]()
+  def GetArray(ctx: Context, containerId: String): Array[ContainerInterface] = {
+      if (ctx != null && ctx.gCtx != null) ctx.gCtx.getAllObjects(ctx.xId, containerId) else Array[ContainerInterface]()
   }
 
   /** 
-	  @deprecated("Use Put(ctx: Context, containerId: String, key: List[String], value: BaseMsg): Boolean ", "2015-Jun-08")
+	  @deprecated("Use Put(ctx: Context, containerId: String, key: List[String], value: MessageInterface): Boolean ", "2015-Jun-08")
    *  Add/update the object with the supplied 'containerId' and 'key' in the EnvContext managed storage with the supplied 'value'
    *  
    *  @param xId : transaction id from Pmml Runtime Context
    *  @param gCtx : the engine's EnvContext object that possesses the kv stores.
-   *  @param fqClassName : the fully qualified class name of the MessageContainerBase subclass that will be created if the keys will not produce an instance
+   *  @param fqClassName : the fully qualified class name of the ContainerInterface subclass that will be created if the keys will not produce an instance
    *  @param containerId : the name of the kv container
    *  @param key : the key within the container being sought
    *  @return true if it worked
    */
-  def Put(xId: Long, gCtx: EnvContext, containerId: String, key: List[String], value: BaseMsg): Boolean = {
+  def Put(xId: Long, gCtx: EnvContext, containerId: String, key: List[String], value: MessageInterface): Boolean = {
     gCtx.setObject(xId, containerId, key, value)
     true
   }
@@ -684,22 +684,22 @@ object Udfs extends LogTrait {
    *  @param key : the key within the container being sought
    *  @return true if it worked
    */
-  def Put(ctx: Context, containerId: String, key: List[String], value: BaseMsg): Boolean = {
+  def Put(ctx: Context, containerId: String, key: List[String], value: MessageInterface): Boolean = {
       if (ctx != null && ctx.gCtx != null) {ctx.gCtx.setObject(ctx.xId, containerId, key, value); true} else false
   }
 
   /** 
-	  @deprecated("Use Put(ctx: Context, containerId: String, key: List[String], value: BaseContainer): Boolean ", "2015-Jun-08")
+	  @deprecated("Use Put(ctx: Context, containerId: String, key: List[String], value: ContainerInterface): Boolean ", "2015-Jun-08")
    *  Add/update the object with the supplied 'containerId' and 'key' in the EnvContext managed storage with the supplied 'value'
    *  
    *  @param xId : transaction id from Pmml Runtime Context
    *  @param gCtx : the engine's EnvContext object that possesses the kv stores.
-   *  @param fqClassName : the fully qualified class name of the MessageContainerBase subclass that will be created if the keys will not produce an instance
+   *  @param fqClassName : the fully qualified class name of the ContainerInterface subclass that will be created if the keys will not produce an instance
    *  @param containerId : the name of the kv container
    *  @param key : the key within the container being sought
    *  @return true if it worked
    */
-  def Put(xId: Long, gCtx: EnvContext, containerId: String, key: List[String], value: BaseContainer): Boolean = {
+  def Put(xId: Long, gCtx: EnvContext, containerId: String, key: List[String], value: ContainerInterface): Boolean = {
     gCtx.setObject(xId, containerId, key, value)
     true
   }
@@ -708,12 +708,12 @@ object Udfs extends LogTrait {
    *  Add/update the object with the supplied 'containerId' and 'key' in the EnvContext managed storage with the supplied 'value'
    *  
    *  @param ctx : the model instance's context
-   *  @param fqClassName : the fully qualified class name of the MessageContainerBase subclass that will be created if the keys will not produce an instance
+   *  @param fqClassName : the fully qualified class name of the ContainerInterface subclass that will be created if the keys will not produce an instance
    *  @param containerId : the name of the kv container
    *  @param key : the key within the container being sought
    *  @return true if it worked
    */
-  def Put(ctx: Context, containerId: String, key: List[String], value: BaseContainer): Boolean = {
+  def Put(ctx: Context, containerId: String, key: List[String], value: ContainerInterface): Boolean = {
 	  if (ctx != null && ctx.gCtx != null) {ctx.gCtx.setObject(ctx.xId, containerId, key, value); true} else false
   }
 
@@ -5841,22 +5841,22 @@ object Udfs extends LogTrait {
 		  ctx.valueSetFor(fldName)
 	  } else {
 		  /** 
-		   *  Obtain the MessageContainerBase for the message or container ... for now just the first namePart
+		   *  Obtain the ContainerInterface for the message or container ... for now just the first namePart
 		   *  FIXME: This will change when derived concepts (ModelNamespace.ModelName.field) are introduced 
 		   */
 		  if (nameParts.size == 2) {
 			  val msgContainerName : String = nameParts(0)
 			  val fieldName : String = nameParts(1)
-			  val msgOrContainer : MessageContainerBase = if (ctx.isFieldInTransformationDict(msgContainerName)) {
+			  val msgOrContainer : ContainerInterface = if (ctx.isFieldInTransformationDict(msgContainerName)) {
 				  val derivedFld : DataValue = ctx.valueFor(msgContainerName)
 				  val anyValue : AnyDataValue = if (derivedFld.isInstanceOf[AnyDataValue]) derivedFld.asInstanceOf[AnyDataValue] else null
-				  val mOrC : MessageContainerBase = if (anyValue.Value.isInstanceOf[MessageContainerBase]) anyValue.Value.asInstanceOf[MessageContainerBase] else null
+				  val mOrC : ContainerInterface = if (anyValue.Value.isInstanceOf[ContainerInterface]) anyValue.Value.asInstanceOf[ContainerInterface] else null
 				  mOrC
 			  } else {
 				  if (ctx.isFieldInDataDict(msgContainerName)) {
 					  val dataFld : DataValue = ctx.valueFor(msgContainerName)
 					  val anyValue : AnyDataValue = if (dataFld.isInstanceOf[AnyDataValue]) dataFld.asInstanceOf[AnyDataValue] else null
-					  val mOrC : MessageContainerBase = if (anyValue.Value.isInstanceOf[MessageContainerBase]) anyValue.Value.asInstanceOf[MessageContainerBase] else null
+					  val mOrC : ContainerInterface = if (anyValue.Value.isInstanceOf[ContainerInterface]) anyValue.Value.asInstanceOf[ContainerInterface] else null
 					  mOrC
 				  } else {
 					  null
@@ -5864,7 +5864,7 @@ object Udfs extends LogTrait {
 			  }
 		
 			  val itsThere : Boolean = if (msgOrContainer != null) {
-				  (msgOrContainer.IsFixed || (msgOrContainer.IsKv && (msgOrContainer.getOrElse(fieldName,null) != null)))
+				  (msgOrContainer.isFixed || (msgOrContainer.getOrElse(fieldName,null) != null))
 			  } else {
 				  false
 			  }
@@ -9087,3 +9087,5 @@ object Udfs extends LogTrait {
     if (args != null) args.toList.last else ""
   }
 }
+
+// $COVERAGE-ON$

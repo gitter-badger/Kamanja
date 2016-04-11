@@ -1,0 +1,35 @@
+{
+  "Message": {
+    "NameSpace": "com.botanical.csv",
+    "Name": "emailmsg",
+    "Version": "1.00",
+    "Description": "email message",
+    "Fixed": "true",
+    "Elements": [
+      {
+        "Field": {
+          "Name": "From",
+          "Type": "System.String"
+        }
+      },
+      {
+        "Field": {
+          "Name": "To",
+          "Type": "System.String"
+        }
+      },
+      {
+        "Field": {
+          "Name": "Subject",
+          "Type": "System.String"
+        }
+      },
+      {
+        "Field": {
+           "Name": "Message",
+          "Type": "System.String"
+        }
+      }
+    ]
+  }
+}

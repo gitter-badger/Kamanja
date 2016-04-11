@@ -1,0 +1,29 @@
+{
+  "Message" : {
+    "NameSpace" : "System",
+    "Name" : "helloworld_msg_def_3",
+    "Version" : "00.01.00",
+    "Description" : "Hello World 3",
+    "Fixed" : "true",
+    "Elements" : [
+      {
+        "Field" : {
+          "Name" : "Id",
+          "Type" : "System.Int"
+        }
+      },
+      {
+        "Field" : {
+          "Name" : "Name",
+          "Type" : "System.String"
+        }
+      },
+      {
+        "Field" : {
+          "Name" : "Score",
+          "Type" : "System.Int"
+        }
+      }
+    ]
+  }
+}

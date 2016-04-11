@@ -34,7 +34,7 @@ object AddContainerService {
   case class Process(containerJson:String)
 }
 
-class AddContainerService(requestContext: RequestContext, userid:Option[String], password:Option[String], cert:Option[String]) extends Actor {
+class AddContainerService(requestContext: RequestContext, userid:Option[String], password:Option[String], cert:Option[String], tenantId: Option[String]) extends Actor {
 
   import AddContainerService._
   
@@ -58,7 +58,7 @@ class AddContainerService(requestContext: RequestContext, userid:Option[String],
       MetadataAPIImpl.logAuditRec(userid,Some(AuditConstants.WRITE),AuditConstants.INSERTOBJECT,containerJson,AuditConstants.FAIL,"",nameVal)
       requestContext.complete(new ApiResult(ErrorCodeConstants.Failure, APIName, null, "Error:UPDATE not allowed for this user").toString )
     } else { 
-      val apiResult = MetadataAPIImpl.AddContainer(containerJson,"JSON",userid)
+      val apiResult = MetadataAPIImpl.AddContainer(containerJson,"JSON",userid, tenantId)
       requestContext.complete(apiResult)    
     }   
   }

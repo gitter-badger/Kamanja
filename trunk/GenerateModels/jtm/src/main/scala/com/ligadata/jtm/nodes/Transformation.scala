@@ -15,6 +15,8 @@
  */
 package com.ligadata.jtm.nodes
 
+import com.google.gson.annotations.SerializedName
+
 /**
   *
   */
@@ -24,6 +26,12 @@ class Transformation {
     * If a list of dependency is statisfied processing will be comenced
     */
   val dependsOn: Array[Array[String]] = Array.empty[Array[String]]
+
+  /** List with grok matches
+    *
+    */
+  @SerializedName("grok match")
+  val grokMatch: scala.collection.Map[String, String] = scala.collection.Map.empty[String, String]
 
   /** Map with computes that apply to all outputs
     *

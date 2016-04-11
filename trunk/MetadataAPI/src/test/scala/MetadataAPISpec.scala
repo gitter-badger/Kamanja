@@ -40,6 +40,7 @@ import com.ligadata.Serialize._
 
 import com.ligadata.kamanja.metadataload.MetadataLoad
 
+@Ignore
 class MetadataAPISpec extends FunSpec with LocalTestFixtures with BeforeAndAfter with BeforeAndAfterAll with GivenWhenThen {
 	var res: String = null;
 	var statusCode: Int = -1;
@@ -53,6 +54,7 @@ class MetadataAPISpec extends FunSpec with LocalTestFixtures with BeforeAndAfter
 	var fileList: List[String] = null
 	var newVersion: String = null
 	val userid: Option[String] = Some("test")
+	val tenantId: Option[String] = Some("testTenantId")
 
 	private val loggerName = this.getClass.getName
 	private val logger = LogManager.getLogger(loggerName)
@@ -356,13 +358,13 @@ class MetadataAPISpec extends FunSpec with LocalTestFixtures with BeforeAndAfter
 				assert(o != None)
 
 				And("Update the container without changing version number, should fail ")
-				res = MetadataAPIImpl.UpdateContainer(contStr, None)
+				res = MetadataAPIImpl.UpdateContainer(contStr, "JSON")
 				res should include regex ("\"Status Code\" : -1")
 
 				And("Clone the input json and update the version number to simulate a container for an update operation")
 				contStr = contStr.replaceFirst("01.00", "01.01")
 				assert(contStr.indexOf("\"00.01.01\"") >= 0)
-				res = MetadataAPIImpl.UpdateContainer(contStr, None)
+				res = MetadataAPIImpl.UpdateContainer(contStr, "JSON")
 				res should include regex ("\"Status Code\" : 0")
 
 				And("GetContainerDef API to fetch the container that was just updated")
@@ -465,7 +467,7 @@ class MetadataAPISpec extends FunSpec with LocalTestFixtures with BeforeAndAfter
 				And("Clone the input json and update the version number to simulate a message for an update operation")
 				msgStr = msgStr.replaceFirst("01.00", "01.01")
 				assert(msgStr.indexOf("\"00.01.01\"") >= 0)
-				res = MetadataAPIImpl.UpdateMessage(msgStr, None)
+				res = MetadataAPIImpl.UpdateMessage(msgStr, "JSON")
 				res should include regex ("\"Status Code\" : 0")
 
 				And("GetMessageDef API to fetch the message that was just updated")
@@ -521,7 +523,7 @@ class MetadataAPISpec extends FunSpec with LocalTestFixtures with BeforeAndAfter
 
 				And("Call AddModel MetadataAPI Function to add Model from " + file.getPath)
 				var modStr = Source.fromFile(file).mkString
-				res = MetadataAPIImpl.AddModel(ModelType.KPMML, modStr, None, None)
+				res = MetadataAPIImpl.AddModel(ModelType.KPMML, modStr, None, tenantId, None)
 				res should include regex ("\"Status Code\" : 0")
 
 				And("GetModelDef API to fetch the model that was just added")
@@ -542,7 +544,7 @@ class MetadataAPISpec extends FunSpec with LocalTestFixtures with BeforeAndAfter
 
 				And("AddModel again to add Model from " + file.getPath)
 				//modStr = Source.fromFile(file).mkString
-				res = MetadataAPIImpl.AddModel(ModelType.KPMML, modStr, None, None)
+				res = MetadataAPIImpl.AddModel(ModelType.KPMML, modStr, None, tenantId, None)
 				res should include regex ("\"Status Code\" : 0")
 
 				And("GetModelDef API to fetch  the model that was just added")
@@ -575,7 +577,7 @@ class MetadataAPISpec extends FunSpec with LocalTestFixtures with BeforeAndAfter
 				And("Clone the input json and update the version number to simulate a model for an update operation")
 				modStr = modStr.replaceFirst("01.00", "01.01")
 				assert(modStr.indexOf("\"00.01.01\"") >= 0)
-				res = MetadataAPIImpl.UpdateModel(ModelType.KPMML, modStr, None)
+				res = MetadataAPIImpl.UpdateModel(ModelType.KPMML, modStr, None,tenantId)
 				res should include regex ("\"Status Code\" : 0")
 
 				And("GetModelDef API to fetch the model that was just updated")
@@ -1058,10 +1060,10 @@ class MetadataAPISpec extends FunSpec with LocalTestFixtures with BeforeAndAfter
 			TestUtils.deleteFile(file)
 		}
 
-    file = new java.io.File("lib_managed")
-    if(file.exists()){
-      TestUtils.deleteFile(file)
-    }
+	  //file = new java.io.File("lib_managed")
+	  //if(file.exists()){
+	  //TestUtils.deleteFile(file)
+	  //}
 
 		val db = MetadataAPIImpl.GetMetadataAPIConfig.getProperty("DATABASE")
 		assert(null != db)

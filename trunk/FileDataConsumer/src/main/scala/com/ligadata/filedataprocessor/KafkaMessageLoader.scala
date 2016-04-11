@@ -144,7 +144,8 @@ class KafkaMessageLoader(partIdx: Int, inConfiguration: scala.collection.mutable
           inputData = CreateKafkaInput(msgStr, SmartFileAdapterConstants.MESSAGE_NAME, delimiters)
           currentOffset += 1
 
-          val partitionKey = objInst.asInstanceOf[MessageContainerObjBase].PartitionKeyData(inputData).mkString(",")
+          // FIXME:- FIX THIS
+          val partitionKey: String = "" // objInst.asInstanceOf[ContainerFactoryInterface].PartitionKeyData(inputData).mkString(",") // BUGBUG:- FIX THIS
 
           // By far the most common path..  just add the message
           if (msg.offsetInFile == FileProcessor.NOT_RECOVERY_SITUATION) {
@@ -488,7 +489,7 @@ class KafkaMessageLoader(partIdx: Int, inConfiguration: scala.collection.mutable
    *
    * @return
    */
-  private def configureMessageDef(): com.ligadata.KamanjaBase.BaseMsgObj = {
+  private def configureMessageDef(): com.ligadata.KamanjaBase.MessageFactoryInterface = {
     val loaderInfo = new KamanjaLoaderInfo()
     var msgDef: MessageDef = null
     try {
@@ -536,7 +537,7 @@ class KafkaMessageLoader(partIdx: Int, inConfiguration: scala.collection.mutable
 
       var isMsg = false
       while (curClz != null && isMsg == false) {
-        isMsg = Utils.isDerivedFrom(curClz, "com.ligadata.KamanjaBase.BaseMsgObj")
+        isMsg = Utils.isDerivedFrom(curClz, "com.ligadata.KamanjaBase.MessageFactoryInterface")
         if (isMsg == false)
           curClz = curClz.getSuperclass()
       }
@@ -547,7 +548,7 @@ class KafkaMessageLoader(partIdx: Int, inConfiguration: scala.collection.mutable
           val module = loaderInfo.mirror.staticModule(clsName)
           val obj = loaderInfo.mirror.reflectModule(module)
           objInst = obj.instance
-          return objInst.asInstanceOf[com.ligadata.KamanjaBase.BaseMsgObj]
+          return objInst.asInstanceOf[com.ligadata.KamanjaBase.MessageFactoryInterface]
         } catch {
           case e: java.lang.NoClassDefFoundError => {
             logger.error("Class not found", e)
@@ -556,7 +557,7 @@ class KafkaMessageLoader(partIdx: Int, inConfiguration: scala.collection.mutable
           case e: Exception => {
             logger.info("", e)
             objInst = tempCurClass.newInstance
-            return objInst.asInstanceOf[com.ligadata.KamanjaBase.BaseMsgObj]
+            return objInst.asInstanceOf[com.ligadata.KamanjaBase.MessageFactoryInterface]
           }
         }
       }

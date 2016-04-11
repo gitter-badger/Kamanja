@@ -29,7 +29,7 @@ import scala.util.{ Success, Failure }
 import com.ligadata.MetadataAPI._
 
 object GetHeartbeatService {
-  case class Process(nodeIds:String)
+  case class Process(nodeIds:String, detailsLevel : DetailsLevel.DetailsLevel)
 }
 
 /**
@@ -44,22 +44,62 @@ class GetHeartbeatService(requestContext: RequestContext, userid:Option[String],
   val APIName = "GetHeartbeatService"
   
   def receive = {
-    case Process(nodeId) =>
-      process(nodeId)
+    case Process(ids, detailsLevel) =>
+      process(ids, detailsLevel)
       context.stop(self)
   }
   
-  def process(nodeIds:String): Unit = {
+  def process(ids:String, detailsLevel : DetailsLevel.DetailsLevel): Unit = {
+    var apiResult : String = ""
+
     // NodeIds is a JSON array of nodeIds.
-    if (nodeIds == null || (nodeIds != null && nodeIds.length == 0))
+    if (ids == null || (ids != null && ids.length == 0))
       requestContext.complete(new ApiResult(ErrorCodeConstants.Failure, APIName, null, "Invalid BODY in a POST request.  Expecting either an array of nodeIds or an empty array for all").toString)  
   
     if (!MetadataAPIImpl.checkAuth(userid,password,cert, MetadataAPIImpl.getPrivilegeName("get","heartbeat"))) {
       requestContext.complete(new ApiResult(ErrorCodeConstants.Failure, APIName, null, "Error:Checking Heartbeat is not allowed for this user").toString )
     } else {
-      val apiResult = MetadataAPIImpl.getHealthCheck(nodeIds)  
-      requestContext.complete(apiResult)      
+
+      detailsLevel match {
+        case DetailsLevel.ALL => {
+          apiResult = MetadataAPIImpl.getHealthCheck(ids, userid)
+        }
+        case DetailsLevel.NODESONLY => {
+          apiResult = MetadataAPIImpl.getHealthCheckNodesOnly(ids, userid)
+        }
+        case DetailsLevel.COMPONENTSNAMES => {
+          apiResult = MetadataAPIImpl.getHealthCheckComponentNames(ids, userid)
+        }
+        case DetailsLevel.SPECIFICCOMPONENTS => {
+          apiResult = MetadataAPIImpl.getHealthCheckComponentDetailsByNames(ids, userid)
+        }
+        case _ => {
+          apiResult = ("Value (" + detailsLevel + ") is not supported ")
+          apiResult = new ApiResult(ErrorCodeConstants.Failure, APIName, null,  "Invalid URL:" + apiResult).toString
+        }
+      }
+      requestContext.complete(apiResult)
     }
   }  
   
+}
+
+object DetailsLevel extends Enumeration {
+  type DetailsLevel = Value
+  val ALL = Value("all")
+  val NODESONLY = Value("nodesonly")
+  val COMPONENTSNAMES = Value("componentnames")
+  val SPECIFICCOMPONENTS = Value("specificcomponents")
+  val UNKNOWN = Value("unknown")
+
+  def fromString(typstr : String) : DetailsLevel = {
+    val typ : DetailsLevel.Value = typstr.toLowerCase match {
+      case "all" => ALL
+      case "nodesonly" => NODESONLY
+      case "componentnames" => COMPONENTSNAMES
+      case "specificcomponents" => SPECIFICCOMPONENTS
+      case _ => UNKNOWN
+    }
+    typ
+  }
 }

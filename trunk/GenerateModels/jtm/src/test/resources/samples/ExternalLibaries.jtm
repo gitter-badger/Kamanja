@@ -1,0 +1,42 @@
+{
+  "header": {
+    "namespace": "com.ligadata.jtm.test.filter",
+    "version": "0.0.1",
+    "language" : "scala",
+    "minVersion" : "2.11"
+  },
+
+  "imports": {
+    "packages": [ "com.maxmind.geoip2.Location", "com.maxmind.geoip2.DatabaseReader", "com.maxmind.geoip2.DatabaseReader.Builder" ]
+  },
+
+  "aliases": {
+    "messages": {
+      "m1": "com.ligadata.kamanja.test.msg1",
+      "o1": "com.ligadata.kamanja.test.msg2"
+    }
+  },
+
+  "transformations": {
+    "test1": {
+      "dependsOn": [ ["m1"] ],
+      "computes": {
+        "lookup": { "type": "DatabaseReader", "val": "new DatabaseReader.Builder(new File(\"/srv/location/GeoLiteCity.dat\").build()", "comment": "Create lookup object" },
+        "locationServices": { "type": "Location", "val": "$lookup.getLocation(Util.intToInet($in))", "comment": "Lookup IP" }
+      },
+
+      "outputs": {
+        "o1": {
+          "mapping": {
+            "out1": "in1",
+            "out2": "locationServices.city",
+            "out3": "locationServices.countryCode",
+            "out4": "locationServices.postalCode"
+          },
+
+          "where": "locationServices.postalCode!=null"
+        }
+      }
+    }
+  }
+}

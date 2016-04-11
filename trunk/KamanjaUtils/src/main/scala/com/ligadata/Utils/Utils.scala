@@ -30,6 +30,8 @@ import scala.collection.mutable.TreeSet
 import org.apache.logging.log4j.{ Logger, LogManager }
 import scala.collection.mutable.ArrayBuffer
 
+case class ClusterStatus(nodeId: String, isLeader: Boolean, leaderNodeId: String, participantsNodeIds: Iterable[String])
+
 object Utils {
   private val logger = LogManager.getLogger(getClass)
 

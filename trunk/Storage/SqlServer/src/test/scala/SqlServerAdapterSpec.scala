@@ -35,14 +35,13 @@ import com.ligadata.StorageBase._
 import com.ligadata.Serialize._
 import com.ligadata.Utils.Utils._
 import com.ligadata.Utils.{ KamanjaClassLoader, KamanjaLoaderInfo }
-import com.ligadata.StorageBase.StorageAdapterObj
+import com.ligadata.StorageBase.StorageAdapterFactory
 import com.ligadata.keyvaluestore.SqlServerAdapter
 
 import com.ligadata.Exceptions._
 
 case class Customer(name:String, address: String, homePhone: String)
 
-@Ignore
 class SqlServerAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAfterAll with GivenWhenThen {
   var res : String = null;
   var statusCode: Int = -1;
@@ -178,7 +177,7 @@ class SqlServerAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAft
 	var custNumber = "4256667777"
 	var obj = new Customer(custName,custAddress,custNumber)
 	var v = serializer.SerializeObjectToByteArray(obj)
-	var value = new Value("kryo",v)
+	var value = new Value(1,"kryo",v)
 	adapter.put(containerName,key,value)
       }
       logger.info("", ex1)
@@ -202,7 +201,7 @@ class SqlServerAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAft
 	var custNumber = "4256667777"
 	var obj = new Customer(custName,custAddress,custNumber)
 	var v = serializer.SerializeObjectToByteArray(obj)
-	var value = new Value("kryo",v)
+	var value = new Value(1,"kryo",v)
 	adapter.put("&&",key,value)
       }
       logger.info("", ex2)
@@ -220,7 +219,7 @@ class SqlServerAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAft
 	var custNumber = "4256667777" + i
 	var obj = new Customer(custName,custAddress,custNumber)
 	var v = serializer.SerializeObjectToByteArray(obj)
-	var value = new Value("kryo",v)
+	var value = new Value(1,"kryo",v)
 	noException should be thrownBy {
 	  adapter.put(containerName,key,value)
 	}
@@ -260,7 +259,7 @@ class SqlServerAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAft
 	var custNumber = "4256667777" + i
 	var obj = new Customer(custName,custAddress,custNumber)
 	var v = serializer.SerializeObjectToByteArray(obj)
-	var value = new Value("kryo",v)
+	var value = new Value(1,"kryo",v)
 	noException should be thrownBy {
 	  adapter.put(containerName,key,value)
 	}
@@ -299,7 +298,7 @@ class SqlServerAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAft
 	var custNumber = "4256667777" + i
 	var obj = new Customer(custName,custAddress,custNumber)
 	var v = serializer.SerializeObjectToByteArray(obj)
-	var value = new Value("kryo",v)
+	var value = new Value(1,"kryo",v)
 	keyValueList = keyValueList :+ (key,value)
       }
       var dataList = new Array[(String, Array[(Key,Value)])](0)

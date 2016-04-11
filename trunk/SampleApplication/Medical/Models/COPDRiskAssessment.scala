@@ -29,7 +29,7 @@ import org.joda.time._
 import com.ligadata.kamanja.metadata.ModelDef;
 
 class COPDRiskAssessmentFactory(modelDef: ModelDef, nodeContext: NodeContext) extends ModelInstanceFactory(modelDef, nodeContext) {
-  override def isValidMessage(msg: MessageContainerBase): Boolean = return msg.isInstanceOf[Beneficiary]
+  override def isValidMessage(msg: ContainerInterface): Boolean = return msg.isInstanceOf[Beneficiary]
   override def createModelInstance(): ModelInstance = return new COPDRiskAssessment(this)
   override def getModelName: String = "COPDRisk"
   override def getVersion: String = "0.0.1"
@@ -50,11 +50,11 @@ class COPDRiskAssessment(factory: ModelInstanceFactory) extends ModelInstance(fa
     var today: Date = Calendar.getInstance.getTime
     var threeYearsBeforeDate = cal.getTime
     var originalFormat: SimpleDateFormat = new SimpleDateFormat("yyyyMMdd")
-    val inPatientInfoThisLastyear: RDD[InpatientClaim] = InpatientClaim.getRDD(msgBeneficiary.PartitionKeyData).filter { x =>
+    val inPatientInfoThisLastyear: RDD[InpatientClaim] = InpatientClaim.getRDD(msgBeneficiary.getPartitionKey()).filter { x =>
       originalFormat.parse(x.clm_thru_dt.toString()).before(today) && originalFormat.parse(x.clm_thru_dt.toString()).after(threeYearsBeforeDate)
     }
 
-    val outPatientInfoThisLastYear: RDD[OutpatientClaim] = OutpatientClaim.getRDD(msgBeneficiary.PartitionKeyData).filter { x =>
+    val outPatientInfoThisLastYear: RDD[OutpatientClaim] = OutpatientClaim.getRDD(msgBeneficiary.getPartitionKey()).filter { x =>
       originalFormat.parse(x.clm_thru_dt.toString()).before(today) && originalFormat.parse(x.clm_thru_dt.toString()).after(threeYearsBeforeDate)
     }
 
@@ -202,7 +202,7 @@ class COPDRiskAssessment(factory: ModelInstanceFactory) extends ModelInstance(fa
 
     def getHL7InfoThisLastYear(): Boolean = {
 
-      val hl7info = HL7.getRDD(msgBeneficiary.PartitionKeyData).filter { x =>
+      val hl7info = HL7.getRDD(msgBeneficiary.getPartitionKey()).filter { x =>
         originalFormat.parse(x.clm_thru_dt.toString()).before(today) && originalFormat.parse(x.clm_thru_dt.toString()).after(threeYearsBeforeDate)
       }
       for (x <- hl7info) {
@@ -216,7 +216,7 @@ class COPDRiskAssessment(factory: ModelInstanceFactory) extends ModelInstance(fa
     }
 
     def getAATDeficiencyInLastYear(): Boolean = {
-      val hl7info = HL7.getRDD(msgBeneficiary.PartitionKeyData).filter { x =>
+      val hl7info = HL7.getRDD(msgBeneficiary.getPartitionKey()).filter { x =>
         originalFormat.parse(x.clm_thru_dt.toString()).before(today) && originalFormat.parse(x.clm_thru_dt.toString()).after(threeYearsBeforeDate)
       }
       for (x <- hl7info) {
@@ -299,8 +299,8 @@ class COPDRiskAssessment(factory: ModelInstanceFactory) extends ModelInstance(fa
     }
 
     println("Executing COPD Risk Assessment against message:");
-    println("Message Type: " + msgBeneficiary.FullName)
-    println("Message Name: " + msgBeneficiary.Name);
+    println("Message Type: " + msgBeneficiary.getFullTypeName())
+    println("Message Name: " + msgBeneficiary.getTypeName());
     println("Message Desynpuf ID: " + msgBeneficiary.desynpuf_id);
 
     if (getCATI_Rule1b) {

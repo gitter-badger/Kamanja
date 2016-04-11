@@ -34,6 +34,7 @@ Kamanja is licensed under the Apache License, Version 2.0.  However, Kamanja use
 <li>Metrics Core Library</li>
 <li>scoobi</li>
 <li>zkclient</li>
+<li>Commons-Math3</li>
 </ul>
 
 
@@ -71,8 +72,10 @@ THE SOFTWARE.
 3 The following components are licensed under the BSD 3-clause "New" or "Revised" License:
 
 <ul>
-<liPostgreSQL JDBC Driver</li>
+<li>PostgreSQL JDBC Driver</li>
 <li>scala-actors</li>
+<li>JPMML-Evaluator</li>
+<li>JPMML-Model</li>
 </ul>
 
 Copyright (c) <YEAR>, <OWNER>

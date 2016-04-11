@@ -28,7 +28,7 @@ import com.ligadata.jtm.eval.Types
 class TypesTest extends FunSuite with BeforeAndAfter {
 
   test("test01") {
-    val fileInput = getClass.getResource("/test003.jtm/test.jtm").getPath
+    val fileInput = getClass.getResource("/test003.jtm/test1.jtm").getPath
     val t = Root.fromJson(fileInput)
 
     val actual = Types.CollectTypes(t)
@@ -41,7 +41,7 @@ class TypesTest extends FunSuite with BeforeAndAfter {
   }
 
   test("test02") {
-    val fileInput = getClass.getResource("/test003.jtm/test.jtm").getPath
+    val fileInput = getClass.getResource("/test003.jtm/test1.jtm").getPath
     val t = Root.fromJson(fileInput)
 
     val actual = Types.CollectMessages(t)

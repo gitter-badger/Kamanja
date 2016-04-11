@@ -17,6 +17,7 @@
 package com.ligadata.InputOutputAdapterInfo
 
 import com.ligadata.HeartBeat.MonitorComponentInfo
+import com.ligadata.KamanjaBase.NodeContext
 import org.scalatest._
 /**
   * Created by will on 2/9/16.
@@ -26,34 +27,31 @@ private class MockInputAdapter extends InputAdapter {
   override val inputConfig: AdapterConfiguration = new AdapterConfiguration
   inputConfig.Name = "MockInputAdapter"
 
-  override def DeserializeKey(k: String): PartitionUniqueRecordKey = ???
+  override def DeserializeKey(k: String): PartitionUniqueRecordKey = null
 
-  override def DeserializeValue(v: String): PartitionUniqueRecordValue = ???
+  override def DeserializeValue(v: String): PartitionUniqueRecordValue = null
 
-  override def getAllPartitionBeginValues: Array[(PartitionUniqueRecordKey, PartitionUniqueRecordValue)] = ???
+  override def getAllPartitionBeginValues: Array[(PartitionUniqueRecordKey, PartitionUniqueRecordValue)] = null
 
   override def Shutdown: Unit = ???
 
   // each value in partitionInfo is (PartitionUniqueRecordKey, PartitionUniqueRecordValue, Long, PartitionUniqueRecordValue). // key, processed value, Start transactionid, Ignore Output Till given Value (Which is written into Output Adapter) & processing Transformed messages (processing & total)
-  override def GetAllPartitionUniqueRecordKey: Array[PartitionUniqueRecordKey] = ???
+  override def GetAllPartitionUniqueRecordKey: Array[PartitionUniqueRecordKey] = null
 
-  override def getAllPartitionEndValues: Array[(PartitionUniqueRecordKey, PartitionUniqueRecordValue)] = ???
+  override def getAllPartitionEndValues: Array[(PartitionUniqueRecordKey, PartitionUniqueRecordValue)] = null
 
   override def StartProcessing(partitionInfo: Array[StartProcPartInfo], ignoreFirstMsg: Boolean): Unit = ???
 
   override def StopProcessing: Unit = ???
 
-  override val callerCtxt: InputAdapterCallerContext = null
+  override def getComponentStatusAndMetrics: MonitorComponentInfo = null
 
-  override def getComponentStatusAndMetrics: MonitorComponentInfo = ???
+  override val nodeContext: NodeContext = null
 }
 
 class InputAdapterTests extends FlatSpec with BeforeAndAfter with Matchers {
 
-  private var inputAdapter: InputAdapter = null
-  before {
-    inputAdapter = new MockInputAdapter
-  }
+  private def inputAdapter: InputAdapter = new MockInputAdapter
 
   "InputAdapter" should "be instantiated with UniqueName set to Name: {adapter config name}" in {
     assert(inputAdapter.UniqueName == "{\"Name\" : \"MockInputAdapter\"}")

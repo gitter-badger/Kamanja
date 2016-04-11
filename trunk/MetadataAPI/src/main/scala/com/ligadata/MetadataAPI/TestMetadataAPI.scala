@@ -22,7 +22,7 @@ import com.esotericsoftware.kryo.io.{ Input, Output }
 import com.ligadata.MetadataAPI.MetadataAPI.ModelType
 import com.ligadata.Serialize._
 import com.ligadata.ZooKeeper._
-import com.ligadata.KvBase.{ Key, Value, TimeRange }
+import com.ligadata.KvBase.{ Key, TimeRange }
 import com.ligadata.StorageBase.{ DataStore, Transaction }
 import com.ligadata.kamanja.metadata._
 import com.ligadata.kamanja.metadataload.MetadataLoad
@@ -43,6 +43,7 @@ object TestMetadataAPI {
 
   private type OptionMap = Map[Symbol, Any]
   private val userid: Option[String] = Some("someUser")
+  val tenantId: Option[String] = Some("someTenant")
 
   val loggerName = this.getClass.getName
   lazy val logger = LogManager.getLogger(loggerName)
@@ -1302,7 +1303,7 @@ println("Getting Messages")
       println(pmmlStr)
       // Save the model
       //    MetadataAPIImpl.SetLoggerLevel(Level.TRACE)
-      println("Results as json string => \n" + MetadataAPIImpl.UpdateModel(ModelType.KPMML, pmmlStr, userid))
+      println("Results as json string => \n" + MetadataAPIImpl.UpdateModel(ModelType.KPMML, pmmlStr, userid, Some("tenantid")))
     } catch {
       case e: Exception => {
         
@@ -1422,12 +1423,10 @@ println("Getting Messages")
       println("CHOSE " + (choice2-1) + "  "+modelConfigName)
       
       if( op.equalsIgnoreCase("add") ){
-            println("Results as json string => \n" +
-                MetadataAPIImpl.AddModel(ModelType.JAVA, sourceStr, userid, Some(modelConfigName)))
+        println("Results as json string => \n" + MetadataAPIImpl.AddModel(ModelType.JAVA, sourceStr, userid, Some("tenantid"), Some(modelConfigName)))
       }
       else{
-	println("Results as json string => \n" + 
-		MetadataAPIImpl.UpdateModel(ModelType.JAVA, sourceStr, userid, Some(modelConfigName)))
+	      println("Results as json string => \n" + MetadataAPIImpl.UpdateModel(ModelType.JAVA, sourceStr, userid, Some("tenantid"), Some(modelConfigName)))
       }
     } catch {
       case e: AlreadyExistsException => {
@@ -1512,11 +1511,10 @@ println("Getting Messages")
      
       if( op.equalsIgnoreCase("add") ){
 	       println("Results as json string => \n" +
-	         MetadataAPIImpl.AddModel(ModelType.SCALA, sourceStr, userid, Some(modelConfigName)))
+	         MetadataAPIImpl.AddModel(ModelType.SCALA, sourceStr, userid, Some("tenantid"),Some(modelConfigName)))
       }
       else {
-	       println("Results as json string => \n" +
-	         MetadataAPIImpl.UpdateModel( ModelType.SCALA, sourceStr, userid, Some(modelConfigName)))
+	       println("Results as json string => \n" + MetadataAPIImpl.UpdateModel( ModelType.SCALA, sourceStr, userid, Some("tenantid"), Some(modelConfigName)))
       }
 	
     } catch {
@@ -1569,8 +1567,7 @@ println("Getting Messages")
       val pmmlStr = Source.fromFile(pmmlFilePath).mkString
       // Save the model
       // MetadataAPIImpl.SetLoggerLevel(Level.TRACE)
-
-      println("Results as json string => \n" + MetadataAPIImpl.AddModel(ModelType.KPMML, pmmlStr, userid, None))
+      println("Results as json string => \n" + MetadataAPIImpl.AddModel(ModelType.KPMML, pmmlStr, userid, Some("tenantid")))
     } catch {
       case e: AlreadyExistsException => {
         logger.error("Model Already in the metadata....", e)
@@ -2170,7 +2167,7 @@ println("Getting Messages")
   def TestGenericProtobufSerializer = {
     val serializer = new ProtoBufSerializer
     // serializer.SetLoggerLevel(Level.TRACE)
-    val a = MdMgr.GetMdMgr.MakeConcept("System", "concept1", "System", "Int", 1, false)
+    //val a = MdMgr.GetMdMgr.MakeConcept("System", "concept1", "System", "Int", "kamanja", tenantId, MetadataAPIImpl.GetUniqueId, 0L /* FIXME:- Not yet handled this */, 1, false)
     //val ba = serializer.SerializeObjectToByteArray1(a)
     //val o = serializer.DeserializeObjectFromByteArray1(ba)
     //assert(JsonSerializer.SerializeObjectToJson(a) == JsonSerializer.SerializeObjectToJson(o.asInstanceOf[AttributeDef]))
@@ -2246,15 +2243,15 @@ println("Getting Messages")
       val serializer = SerializerManager.GetSerializer("kryo")
       testSaveObject("key1", "value1", "other")
       var obj = MetadataAPIImpl.GetObject("key1", "other")
-      var v = serializer.DeserializeObjectFromByteArray(obj.serializedInfo).asInstanceOf[String]
+      var v = serializer.DeserializeObjectFromByteArray(obj._2.asInstanceOf[Array[Byte]]).asInstanceOf[String]
       assert(v == "value1")
       testSaveObject("key1", "value2", "other")
       obj = MetadataAPIImpl.GetObject("key1", "other")
-      v = serializer.DeserializeObjectFromByteArray(obj.serializedInfo).asInstanceOf[String]
+      v = serializer.DeserializeObjectFromByteArray(obj._2.asInstanceOf[Array[Byte]]).asInstanceOf[String]
       assert(v == "value2")
       testSaveObject("key1", "value3", "other")
       obj = MetadataAPIImpl.GetObject("key1", "other")
-      v = serializer.DeserializeObjectFromByteArray(obj.serializedInfo).asInstanceOf[String]
+      v = serializer.DeserializeObjectFromByteArray(obj._2.asInstanceOf[Array[Byte]]).asInstanceOf[String]
       assert(v == "value3")
     } catch {
       case e: Exception => {
@@ -2264,190 +2261,6 @@ println("Getting Messages")
     }
   }
   
-  def AddOutputMessage {
-	    try {
-	      var dirName = MetadataAPIImpl.GetMetadataAPIConfig.getProperty("OUTPUTMESSAGE_FILES_DIR")
-	      if (dirName == null) {
-	        dirName = MetadataAPIImpl.GetMetadataAPIConfig.getProperty("GIT_ROOT") + "/kamanja/trunk/MetadataAPI/src/test/SampleTestFiles/OutputMessages"
-	        logger.info("The environment variable OUTPUTMESSAGE_FILES_DIR is undefined, The directory defaults to " + dirName)
-	      }
-
-	      if (!IsValidDir(dirName))
-	        return
-
-	      val cfgFiles = new java.io.File(dirName).listFiles.filter(_.getName.endsWith(".json"))
-	      if (cfgFiles.length == 0) {
-	        logger.fatal("No config files in the directory " + dirName)
-	        return
-	      }
-
-	      val outputmsgFiles = new java.io.File(dirName).listFiles.filter(_.getName.endsWith(".json"))
-	      if (outputmsgFiles.length == 0) {
-	        logger.fatal("No json message files in the directory " + dirName)
-	        return
-	      }
-	      println("\nPick a Message Definition file(s) from below choices\n")
-
-	      var seq = 0
-	      outputmsgFiles.foreach(key => { seq += 1; println("[" + seq + "] " + key) })
-	      seq += 1
-	      println("[" + seq + "] Main Menu")
-
-	      print("\nEnter your choices (separate with commas if more than 1 choice given): ")
-	      //val choice:Int = readInt()
-	      val choicesStr: String = readLine()
-
-	      var valid: Boolean = true
-	      var choices: List[Int] = List[Int]()
-	      var results: ArrayBuffer[(String, String, String)] = ArrayBuffer[(String, String, String)]()
-	      try {
-	        choices = choicesStr.filter(_ != '\n').split(',').filter(ch => (ch != null && ch != "")).map(_.trim.toInt).toList
-	      } catch {
-	        case _: Throwable => valid = false
-	      }
-
-	      if (valid) {
-
-	        choices.foreach(choice => {
-	          if (choice == outputmsgFiles.length + 1) {
-	            return
-	          }
-	          if (choice < 1 || choice > outputmsgFiles.length + 1) {
-	            logger.fatal("Invalid Choice : " + choice)
-	            return
-	          }
-
-	          val outputmsgDefFile = outputmsgFiles(choice - 1).toString
-	          //logger.setLevel(Level.TRACE);
-	          val outputmsgStr = Source.fromFile(outputmsgDefFile).mkString
-	          //MetadataAPIImpl.SetLoggerLevel(Level.TRACE)
-	          val res: String = MetadataAPIOutputMsg.AddOutputMessage(outputmsgStr, "JSON", userid)
-	          results += Tuple3(choice.toString, outputmsgDefFile, res)
-	        })
-	      } else {
-	        logger.fatal("Invalid Choices... choose 1 or more integers from list separating multiple entries with a comma")
-	        return
-	      }
-
-	      results.foreach(triple => {
-	        val (choice, filePath, result): (String, String, String) = triple
-	        println(s"Results for output message [$choice] $filePath => \n$result")
-	      })
-
-	    } catch {
-	      case e: AlreadyExistsException => {
-          logger.error("Object Already in the metadata....", e)
-	      }
-	      case e: Exception => {
-        logger.debug("", e)
-	      }
-	    }
-	  }
-
-	  def UpdateOutputMsg: Unit = {
-	    try {
-	      var dirName = MetadataAPIImpl.GetMetadataAPIConfig.getProperty("OUTPUTMESSAGE_FILES_DIR")
-	      if (dirName == null) {
-	        dirName = MetadataAPIImpl.GetMetadataAPIConfig.getProperty("GIT_ROOT") + "/kamanja/trunk/MetadataAPI/src/test/SampleTestFiles/OutputMessages"
-	        logger.debug("The environment variable OUTPUTMESSAGE_FILES_DIR is undefined, the directory defaults to " + dirName)
-	      }
-
-	      if (!IsValidDir(dirName))
-	        return
-
-	      val outputmsgFiles = new java.io.File(dirName).listFiles.filter(_.getName.endsWith(".json"))
-	      if (outputmsgFiles.length == 0) {
-	        logger.error("No output message files in the directory " + dirName)
-	        return
-	      }
-
-	      var outputmsgFilePath = ""
-	      println("Pick a Output Message Definition file from the below choice")
-
-	      var seq = 0
-	      outputmsgFiles.foreach(key => { seq += 1; println("[" + seq + "] " + key) })
-	      seq += 1
-	      println("[" + seq + "] Main Menu")
-
-	      print("\nEnter your choice: ")
-	      val choice: Int = readInt()
-
-	      if (choice == outputmsgFiles.length + 1)
-	        return
-
-	      if (choice < 1 || choice > outputmsgFiles.length + 1) {
-	        logger.error("Invalid Choice: " + choice)
-	        return
-	      }
-
-	      outputmsgFilePath = outputmsgFiles(choice - 1).toString
-	      val outputmsgStr = Source.fromFile(outputmsgFilePath).mkString
-	      println(outputmsgStr)
-	      println("Results as json string => \n" + MetadataAPIOutputMsg.UpdateOutputMsg(outputmsgStr, userid))
-	    } catch {
-	      case e: Exception => {
-	        
-        logger.debug("", e)
-	      }
-	    }
-	  }
-
-	  def RemoveOutputMsg {
-	    try {
-	      //logger.setLevel(Level.TRACE);  //check again
-
-	      val outputMsgKeys = MetadataAPIOutputMsg.GetAllOutputMsgsFromCache(true, userid)
-
-	      if (outputMsgKeys.length == 0) {
-	        println("Sorry, No output messages available in the Metadata")
-	        return
-	      }
-        
-	      println("\nPick the output message to be deleted from the following list: ")
-	      var seq = 0
-	      outputMsgKeys.foreach(key => { seq += 1; println("[" + seq + "] " + key) })
-
-	      print("\nEnter your choice: ")
-	      val choice: Int = readInt()
-
-	      if (choice < 1 || choice > outputMsgKeys.length) {
-	        println("Invalid choice " + choice + ",start with main menu...")
-	        return
-	      }
-
-	      val outputMsgKey = outputMsgKeys(choice - 1)
-        val(outputNameSpace, outputName, outputVersion) = com.ligadata.kamanja.metadata.Utils.parseNameToken(outputMsgKey)
-	      val apiResult = MetadataAPIOutputMsg.RemoveOutputMsg(outputNameSpace, outputName, outputVersion.toLong, userid)
-
-	      //   val apiResultStr = MetadataAPIImpl.getApiResult(apiResult)
-	      println("Result as Json String => \n" + apiResult)
-
-	    } catch {
-	      case e: Exception => {
-	        
-        logger.debug("", e)
-	      }
-	    }
-	  }
-
-	  def GetAllOutputMsgsFromCache {
-	    try {
-	      //logger.setLevel(Level.TRACE);  //check again
-	      val outputMsgsKeys = MetadataAPIOutputMsg.GetAllOutputMsgsFromCache(true, userid)
-	      if (outputMsgsKeys.length == 0) {
-	        println("Sorry, No Output Msgs available in the Metadata")
-	        return
-	      }
-
-	      var seq = 0
-	      outputMsgsKeys.foreach(key => { seq += 1; println("[" + seq + "] " + key) })
-	    } catch {
-	      case e: Exception => {
-	        
-        logger.debug("", e)
-	      }
-	    }
-	  }
 
   def StartTest{
     try{
@@ -2495,10 +2308,6 @@ println("Getting Messages")
       val dumpAllAdapters = ()            => { DumpAllAdaptersAsJson }
       val dumpAllCfgObjects = ()          => { DumpAllCfgObjectsAsJson }
       val removeEngineConfig = ()         => { RemoveEngineConfig }
-      val addOutputMessage = () 		  => { AddOutputMessage }
-      val getAllOutputMsgs = () 		  => { GetAllOutputMsgsFromCache }
-      val removeOutputMsg = () 			  => { RemoveOutputMsg }
-      val updateOutputMsg = () 			  => { UpdateOutputMsg }
       val addModelSourceJava = ()         => { AddModelSourceJava("add") }
       val addModelSourceScala = ()        => { AddModelSourceScala("add") }
       val updateModelSourceJava = ()         => { AddModelSourceJava("update") }
@@ -2551,11 +2360,7 @@ println("Getting Messages")
 			      ("Dump ClusterCfg Node Objects",dumpAllClusterCfgs),
 			      ("Dump Adapter Node Objects",dumpAllAdapters),
 			      ("Dump All Config Objects",dumpAllCfgObjects),
-			      ("Remove Engine Config",removeEngineConfig),
-			      ("Add Output Message", addOutputMessage),
-			      ("Get All Output Messages", getAllOutputMsgs),
-			      ("Remove Output Message", removeOutputMsg),
-			      ("Update Output Message", updateOutputMsg))
+			      ("Remove Engine Config",removeEngineConfig))
 
       var done = false
       while (done == false) {

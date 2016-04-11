@@ -21,7 +21,7 @@ import scala.collection.mutable.{Map => MutableMap}
 
 import com.ligadata.kamanja.metadata.{MdMgr, ModelDef, BaseElem}
 import com.ligadata.KamanjaBase.{ FactoryOfModelInstanceFactory, ModelInstanceFactory, EnvContext, NodeContext }
-import com.ligadata.KamanjaBase.{ MappedModelResults, MessageContainerBase, ModelInstance, ModelResultBase, TransactionContext }
+import com.ligadata.KamanjaBase.{ MappedModelResults, ContainerInterface, ModelInstance, ModelResultBase, TransactionContext }
 import com.ligadata.Utils.{ Utils, KamanjaClassLoader, KamanjaLoaderInfo }
 
 import org.apache.logging.log4j.LogManager
@@ -193,7 +193,7 @@ class JpmmlAdapter(factory : ModelInstanceFactory, modelEvaluator: ModelEvaluato
       *            model's data dictionary.
       * @return
       */
-    private def evaluateModel(msg : MessageContainerBase): ModelResultBase = {
+    private def evaluateModel(msg : ContainerInterface): ModelResultBase = {
         val activeFields = modelEvaluator.getActiveFields
         val preparedFields = prepareFields(activeFields, msg, modelEvaluator)
         val evalResultRaw : MutableMap[FieldName, _] = modelEvaluator.evaluate(preparedFields.asJava).asScala
@@ -239,7 +239,7 @@ class JpmmlAdapter(factory : ModelInstanceFactory, modelEvaluator: ModelEvaluato
       * @return
       */
     private def prepareFields(activeFields: JList[FieldName]
-                              , msg: MessageContainerBase
+                              , msg: ContainerInterface
                               , evaluator: ModelEvaluator[_]) : Map[FieldName, FieldValue] = {
         activeFields.asScala.foldLeft(Map.empty[FieldName, FieldValue])((map, activeField) => {
             val key = activeField.getValue.toLowerCase
@@ -312,13 +312,14 @@ class JpmmlAdapterFactory(modelDef: ModelDef, nodeContext: NodeContext) extends 
       * @param msg  - the message instance that is currently being processed
       * @return true if this model can process the message.
       */
-    override def isValidMessage(msg: MessageContainerBase): Boolean = {
-        val msgFullName : String = msg.FullName
-        val msgVersionDots : String = msg.Version
+    override def isValidMessage(msg: ContainerInterface): Boolean = {
+        val msgFullName : String = msg.getFullTypeName
+        val msgVersionDots : String = msg.getTypeVersion
         val msgVersion : String = msgVersionDots.filter(_ != '.').toString
-        val msgNameKey : String = s"$msgFullName.$msgVersion"
-        val yum : Boolean = if (modelDef != null) {
-            (msgNameKey.toLowerCase == modelDef.msgConsumed.toLowerCase)
+        val msgNameKey : String = s"$msgFullName.$msgVersion".toLowerCase()
+        val yum : Boolean = if (modelDef != null && modelDef.inputMsgSets != null) {
+            val filter = modelDef.inputMsgSets.filter(s => (s.size == 1 && s(0).message.toLowerCase == msgNameKey))
+            return filter.size > 0
         } else {
             false
         }
@@ -333,7 +334,7 @@ class JpmmlAdapterFactory(modelDef: ModelDef, nodeContext: NodeContext) extends 
 
         val useThisModel : ModelInstance = if (modelDef != null) {
             /** Ingest the pmml here and build an evaluator */
-            val modelEvaluator: ModelEvaluator[_] = createEvaluator(modelDef.jpmmlText)
+            val modelEvaluator: ModelEvaluator[_] = createEvaluator(modelDef.objectDefinition)
             val isInstanceReusable : Boolean = true
             val builtModel : ModelInstance = new JpmmlAdapter( this, modelEvaluator)
             builtModel

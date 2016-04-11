@@ -32,7 +32,7 @@ import java.util.{ Comparator, List => JList, Iterator => JIterator }
 import java.lang.{ Iterable => JIterable, Long => JLong }
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConversions._
-import com.ligadata.KvBase.{ Key, Value, TimeRange }
+import com.ligadata.KvBase.{ Key, TimeRange }
 
 object ThreadLocalStorage {
   final val txnContextInfo = new ThreadLocal[TransactionContext]();
@@ -705,7 +705,7 @@ abstract class RDDObject[T: ClassTag] {
   final def getRecent: Option[T] = {
     val txnContext = getCurrentTransactionContext
     if (txnContext != null) {
-      val fndVal = txnContext.getNodeCtxt.getEnvCtxt.getRecent(txnContext.transId, getFullName, txnContext.getMessage.PartitionKeyData.toList, null, null)
+      val fndVal = txnContext.getRecent(getFullName, txnContext.getMessage.getPartitionKey.toList, null, null)
       if (fndVal != None)
         return Some(fndVal.get.asInstanceOf[T])
     }
@@ -734,7 +734,7 @@ abstract class RDDObject[T: ClassTag] {
   final def getRecent(key: Array[String]): Option[T] = {
     val txnContext = getCurrentTransactionContext
     if (txnContext != null) {
-      val fndVal = txnContext.getNodeCtxt.getEnvCtxt.getRecent(txnContext.transId, getFullName, key.toList, null, null)
+      val fndVal = txnContext.getRecent(getFullName, key.toList, null, null)
       if (fndVal != None)
         return Some(fndVal.get.asInstanceOf[T])
     }
@@ -757,13 +757,13 @@ abstract class RDDObject[T: ClassTag] {
    * Find an entry for the given key.
    *
    * @param tmRange TimeRange
-   * @param f MessageContainerBase => Boolean
+   * @param f ContainerInterface => Boolean
    * @return Option[T]
    */
-  final def getOne(tmRange: TimeRange, f: MessageContainerBase => Boolean): Option[T] = {
+  final def getOne(tmRange: TimeRange, f: ContainerInterface => Boolean): Option[T] = {
     val txnContext = getCurrentTransactionContext
     if (txnContext != null) {
-      val fndVal = txnContext.getNodeCtxt.getEnvCtxt.getRecent(txnContext.transId, getFullName, txnContext.getMessage.PartitionKeyData.toList, tmRange, f)
+      val fndVal = txnContext.getRecent(getFullName, txnContext.getMessage.getPartitionKey.toList, tmRange, f)
       if (fndVal != None)
         return Some(fndVal.get.asInstanceOf[T])
     }
@@ -774,10 +774,10 @@ abstract class RDDObject[T: ClassTag] {
    * Find an entry for the given key or return a new one.
    *
    * @param tmRange TimeRange
-   * @param f MessageContainerBase => Boolean
+   * @param f ContainerInterface => Boolean
    * @return T
    */
-  final def getOneOrNew(tmRange: TimeRange, f: MessageContainerBase => Boolean): T = {
+  final def getOneOrNew(tmRange: TimeRange, f: ContainerInterface => Boolean): T = {
     val one = getOne(tmRange, f)
     if (one.isEmpty) return build
     one.get
@@ -788,13 +788,13 @@ abstract class RDDObject[T: ClassTag] {
    *
    * @param key Array[String]
    * @param tmRange: TimeRange
-   * @param f MessageContainerBase => Boolean
+   * @param f ContainerInterface => Boolean
    * @return Option[T]
    */
-  final def getOne(key: Array[String], tmRange: TimeRange, f: MessageContainerBase => Boolean): Option[T] = {
+  final def getOne(key: Array[String], tmRange: TimeRange, f: ContainerInterface => Boolean): Option[T] = {
     val txnContext = getCurrentTransactionContext
     if (txnContext != null) {
-      val fndVal = txnContext.getNodeCtxt.getEnvCtxt.getRecent(txnContext.transId, getFullName, key.toList, tmRange, f)
+      val fndVal = txnContext.getRecent(getFullName, key.toList, tmRange, f)
       if (fndVal != None)
         return Some(fndVal.get.asInstanceOf[T])
     }
@@ -806,10 +806,10 @@ abstract class RDDObject[T: ClassTag] {
    *
    * @param key Array[String]
    * @param tmRange TimeRange
-   * @param f MessageContainerBase => Boolean
+   * @param f ContainerInterface => Boolean
    * @return T
    */
-  final def getOneOrNew(key: Array[String], tmRange: TimeRange, f: MessageContainerBase => Boolean): T = {
+  final def getOneOrNew(key: Array[String], tmRange: TimeRange, f: ContainerInterface => Boolean): T = {
     val one = getOne(key, tmRange, f)
     if (one.isEmpty) return build
     one.get
@@ -818,14 +818,14 @@ abstract class RDDObject[T: ClassTag] {
   /**
    * This group of functions retrieve collection of objects for a give key.  Key will be pulled from a model Context
    *
-   * @param f MessageContainerBase => Boolean
+   * @param f ContainerInterface => Boolean
    * @return RDD[T]
    */
-  final def getRDDForCurrKey(f: MessageContainerBase => Boolean): RDD[T] = {
+  final def getRDDForCurrKey(f: ContainerInterface => Boolean): RDD[T] = {
     val txnContext = getCurrentTransactionContext
     var values: Array[T] = Array[T]()
     if (txnContext != null) {
-      val fndVal = txnContext.getNodeCtxt.getEnvCtxt.getRDD(txnContext.transId, getFullName, txnContext.getMessage.PartitionKeyData.toList, null, f)
+      val fndVal = txnContext.getRDD(getFullName, txnContext.getMessage.getPartitionKey.toList, null, f)
       if (fndVal != null)
         values = fndVal.map(v => v.asInstanceOf[T])
     }
@@ -842,7 +842,7 @@ abstract class RDDObject[T: ClassTag] {
     val txnContext = getCurrentTransactionContext
     var values: Array[T] = Array[T]()
     if (txnContext != null) {
-      val fndVal = txnContext.getNodeCtxt.getEnvCtxt.getRDD(txnContext.transId, getFullName, txnContext.getMessage.PartitionKeyData.toList, tmRange, null)
+      val fndVal = txnContext.getRDD(getFullName, txnContext.getMessage.getPartitionKey.toList, tmRange, null)
       if (fndVal != null)
         values = fndVal.map(v => v.asInstanceOf[T])
     }
@@ -853,14 +853,14 @@ abstract class RDDObject[T: ClassTag] {
    * Return a RDD for the current key. Key will be pulled from a model Context
    *
    * @param tmRange TimeRange
-   * @param f MessageContainerBase => Boolean
+   * @param f ContainerInterface => Boolean
    * @return RDD[T]
    */
-  final def getRDDForCurrKey(tmRange: TimeRange, f: MessageContainerBase => Boolean): RDD[T] = {
+  final def getRDDForCurrKey(tmRange: TimeRange, f: ContainerInterface => Boolean): RDD[T] = {
     val txnContext = getCurrentTransactionContext
     var values: Array[T] = Array[T]()
     if (txnContext != null) {
-      val fndVal = txnContext.getNodeCtxt.getEnvCtxt.getRDD(txnContext.transId, getFullName, txnContext.getMessage.PartitionKeyData.toList, tmRange, f)
+      val fndVal = txnContext.getRDD(getFullName, txnContext.getMessage.getPartitionKey.toList, tmRange, f)
       if (fndVal != null)
         values = fndVal.map(v => v.asInstanceOf[T])
     }
@@ -878,7 +878,7 @@ abstract class RDDObject[T: ClassTag] {
     val txnContext = getCurrentTransactionContext
     var values: Array[T] = Array[T]()
     if (txnContext != null) {
-      val fndVal = txnContext.getNodeCtxt.getEnvCtxt.getRDD(txnContext.transId, getFullName, null, null, null)
+      val fndVal = txnContext.getRDD(getFullName, null, null, null)
       if (fndVal != null)
         values = fndVal.map(v => v.asInstanceOf[T])
     }
@@ -889,15 +889,15 @@ abstract class RDDObject[T: ClassTag] {
    * Return a RDD- If the filtering parameters are not sufficiently strict, this method can return a very large amout of
    * RDDObjects, causing memory issues.
    *
-   * @param tmRangeTimeRange
-   * @param f MessageContainerBase => Boolean
+   * @param tmRange
+   * @param f ContainerInterface => Boolean
    * @return RDD[T]
    */
-  final def getRDD(tmRange: TimeRange, f: MessageContainerBase => Boolean): RDD[T] = {
+  final def getRDD(tmRange: TimeRange, f: ContainerInterface => Boolean): RDD[T] = {
     val txnContext = getCurrentTransactionContext
     var values: Array[T] = Array[T]()
     if (txnContext != null) {
-      val fndVal = txnContext.getNodeCtxt.getEnvCtxt.getRDD(txnContext.transId, getFullName, null, tmRange, f)
+      val fndVal = txnContext.getRDD(getFullName, null, tmRange, f)
       if (fndVal != null)
         values = fndVal.map(v => v.asInstanceOf[T])
     }
@@ -908,14 +908,14 @@ abstract class RDDObject[T: ClassTag] {
    * Return a RDD - If the filtering parameters are not sufficiently strict, this method can return a very large amout of
    * RDDObjects, causing memory issues.
    *
-   * @param tmRangeTimeRange
+   * @param tmRange
    * @return RDD[T]
    */
   final def getRDD(tmRange: TimeRange): RDD[T] = {
     val txnContext = getCurrentTransactionContext
     var values: Array[T] = Array[T]()
     if (txnContext != null) {
-      val fndVal = txnContext.getNodeCtxt.getEnvCtxt.getRDD(txnContext.transId, getFullName, null, tmRange, null)
+      val fndVal = txnContext.getRDD(getFullName, null, tmRange, null)
       if (fndVal != null)
         values = fndVal.map(v => v.asInstanceOf[T])
     }
@@ -926,14 +926,14 @@ abstract class RDDObject[T: ClassTag] {
    * Return a RDD - If the filtering parameters are not sufficiently strict, this method can return a very large amout of
    * RDDObjects, causing memory issues.
    *
-   * @param f MessageContainerBase => Boolean
+   * @param f ContainerInterface => Boolean
    * @return RDD[T]
    */
-  final def getRDD(f: MessageContainerBase => Boolean): RDD[T] = {
+  final def getRDD(f: ContainerInterface => Boolean): RDD[T] = {
     val txnContext = getCurrentTransactionContext
     var values: Array[T] = Array[T]()
     if (txnContext != null) {
-      val fndVal = txnContext.getNodeCtxt.getEnvCtxt.getRDD(txnContext.transId, getFullName, null, null, f)
+      val fndVal = txnContext.getRDD(getFullName, null, null, f)
       if (fndVal != null)
         values = fndVal.map(v => v.asInstanceOf[T])
     }
@@ -945,14 +945,14 @@ abstract class RDDObject[T: ClassTag] {
    *
    * @param key Array[String]
    * @param tmRange TimeRange
-   * @param f MessageContainerBase => Boolean
+   * @param f ContainerInterface => Boolean
    * @return RDD[T]
    */
-  final def getRDD(key: Array[String], tmRange: TimeRange, f: MessageContainerBase => Boolean): RDD[T] = {
+  final def getRDD(key: Array[String], tmRange: TimeRange, f: ContainerInterface => Boolean): RDD[T] = {
     val txnContext = getCurrentTransactionContext
     var values: Array[T] = Array[T]()
     if (txnContext != null) {
-      val fndVal = txnContext.getNodeCtxt.getEnvCtxt.getRDD(txnContext.transId, getFullName, key.toList, tmRange, f)
+      val fndVal = txnContext.getRDD(getFullName, key.toList, tmRange, f)
       if (fndVal != null)
         values = fndVal.map(v => v.asInstanceOf[T])
     }
@@ -963,14 +963,14 @@ abstract class RDDObject[T: ClassTag] {
    * Return a RDD
    *
    * @param key Array[String]
-   * @param f MessageContainerBase => Boolean
+   * @param f ContainerInterface => Boolean
    * @return RDD[T]
    */
-  final def getRDD(key: Array[String], f: MessageContainerBase => Boolean): RDD[T] = {
+  final def getRDD(key: Array[String], f: ContainerInterface => Boolean): RDD[T] = {
     val txnContext = getCurrentTransactionContext
     var values: Array[T] = Array[T]()
     if (txnContext != null) {
-      val fndVal = txnContext.getNodeCtxt.getEnvCtxt.getRDD(txnContext.transId, getFullName, key.toList, null, f)
+      val fndVal = txnContext.getRDD(getFullName, key.toList, null, f)
       if (fndVal != null)
         values = fndVal.map(v => v.asInstanceOf[T])
     }
@@ -982,14 +982,13 @@ abstract class RDDObject[T: ClassTag] {
    *
    * @param key Array[String]
    * @param tmRange TimeRange
-   * @param f MessageContainerBase => Boolean
    * @return RDD[T]
    */
   final def getRDD(key: Array[String], tmRange: TimeRange): RDD[T] = {
     val txnContext = getCurrentTransactionContext
     var values: Array[T] = Array[T]()
     if (txnContext != null) {
-      val fndVal = txnContext.getNodeCtxt.getEnvCtxt.getRDD(txnContext.transId, getFullName, key.toList, tmRange, null)
+      val fndVal = txnContext.getRDD(getFullName, key.toList, tmRange, null)
       if (fndVal != null)
         values = fndVal.map(v => v.asInstanceOf[T])
     }
@@ -1006,7 +1005,7 @@ abstract class RDDObject[T: ClassTag] {
     val txnContext = getCurrentTransactionContext
     var values: Array[T] = Array[T]()
     if (txnContext != null) {
-      val fndVal = txnContext.getNodeCtxt.getEnvCtxt.getRDD(txnContext.transId, getFullName, key.toList, null, null)
+      val fndVal = txnContext.getRDD(getFullName, key.toList, null, null)
       if (fndVal != null)
         values = fndVal.map(v => v.asInstanceOf[T])
     }
@@ -1021,8 +1020,8 @@ abstract class RDDObject[T: ClassTag] {
   final def saveOne(inst: T): Unit = {
     val txnContext = getCurrentTransactionContext
     if (txnContext != null) {
-      val obj = inst.asInstanceOf[MessageContainerBase]
-      txnContext.getNodeCtxt.getEnvCtxt.saveOne(txnContext.transId, getFullName, obj.PartitionKeyData.toList, obj)
+      val obj = inst.asInstanceOf[ContainerInterface]
+      txnContext.saveOne(obj)
     }
   }
 
@@ -1035,7 +1034,7 @@ abstract class RDDObject[T: ClassTag] {
   final def saveOne(key: Array[String], inst: T): Unit = {
     val txnContext = getCurrentTransactionContext
     if (txnContext != null) {
-      txnContext.getNodeCtxt.getEnvCtxt.saveOne(txnContext.transId, getFullName, key.toList, inst.asInstanceOf[MessageContainerBase])
+      txnContext.saveOne(key.toList, inst.asInstanceOf[ContainerInterface])
     }
   }
 
@@ -1047,7 +1046,7 @@ abstract class RDDObject[T: ClassTag] {
   final def saveRDD(data: RDD[T]): Unit = {
     val txnContext = getCurrentTransactionContext
     if (txnContext != null) {
-      txnContext.getNodeCtxt.getEnvCtxt.saveRDD(txnContext.transId, getFullName, data.Collection.map(v => v.asInstanceOf[MessageContainerBase]).toArray)
+      txnContext.saveRDD(data.Collection.map(v => v.asInstanceOf[ContainerInterface]).toArray)
     }
   }
 }
@@ -1125,28 +1124,28 @@ trait JavaRDDObjectLike[T, This <: JavaRDDObjectLike[T, This]] {
   /**
    * @see RDDObject but returns a java Optional[T] instead of a scala Option[T]
    */
-  def getOne(tmRange: TimeRange, f: JFunction1[MessageContainerBase, java.lang.Boolean]): Optional[T] = Utils.optionToOptional(rddObj.getOne(tmRange, (x => f.call(x).booleanValue())))
+  def getOne(tmRange: TimeRange, f: JFunction1[ContainerInterface, java.lang.Boolean]): Optional[T] = Utils.optionToOptional(rddObj.getOne(tmRange, (x => f.call(x).booleanValue())))
 
   /**
    * @see RDDObject
    */
-  def getOneOrNew(tmRange: TimeRange, f: JFunction1[MessageContainerBase, java.lang.Boolean]): T = rddObj.getOneOrNew(tmRange, (x => f.call(x).booleanValue()))
+  def getOneOrNew(tmRange: TimeRange, f: JFunction1[ContainerInterface, java.lang.Boolean]): T = rddObj.getOneOrNew(tmRange, (x => f.call(x).booleanValue()))
 
   /**
    * @see RDDObject but returns a java Optional[T] instead of a scala Option[T]
    */
-  def getOne(key: Array[String], tmRange: TimeRange, f: JFunction1[MessageContainerBase, java.lang.Boolean]): Optional[T] = Utils.optionToOptional(rddObj.getOne(key, tmRange, (x => f.call(x).booleanValue())))
+  def getOne(key: Array[String], tmRange: TimeRange, f: JFunction1[ContainerInterface, java.lang.Boolean]): Optional[T] = Utils.optionToOptional(rddObj.getOne(key, tmRange, (x => f.call(x).booleanValue())))
 
   /**
    * @see RDDObject
    */
-  def getOneOrNew(key: Array[String], tmRange: TimeRange, f: JFunction1[MessageContainerBase, java.lang.Boolean]): T = rddObj.getOneOrNew(key, tmRange, (x => f.call(x).booleanValue()))
+  def getOneOrNew(key: Array[String], tmRange: TimeRange, f: JFunction1[ContainerInterface, java.lang.Boolean]): T = rddObj.getOneOrNew(key, tmRange, (x => f.call(x).booleanValue()))
 
   // This group of functions retrieve collection of objects 
   /**
    * @see RDDObject
    */
-  def getRDDForCurrKey(f: JFunction1[MessageContainerBase, java.lang.Boolean]): JavaRDD[T] = rddObj.getRDDForCurrKey((x => f.call(x).booleanValue()))
+  def getRDDForCurrKey(f: JFunction1[ContainerInterface, java.lang.Boolean]): JavaRDD[T] = rddObj.getRDDForCurrKey((x => f.call(x).booleanValue()))
 
   /**
    * @see RDDObject
@@ -1156,7 +1155,7 @@ trait JavaRDDObjectLike[T, This <: JavaRDDObjectLike[T, This]] {
   /**
    * @see RDDObject
    */
-  def getRDDForCurrKey(tmRange: TimeRange, f: JFunction1[MessageContainerBase, java.lang.Boolean]): JavaRDD[T] = rddObj.getRDDForCurrKey(tmRange, (x => f.call(x).booleanValue()))
+  def getRDDForCurrKey(tmRange: TimeRange, f: JFunction1[ContainerInterface, java.lang.Boolean]): JavaRDD[T] = rddObj.getRDDForCurrKey(tmRange, (x => f.call(x).booleanValue()))
 
   // With too many messages, these may fail - mostly useful for message types where number of messages are relatively small 
   /**
@@ -1167,7 +1166,7 @@ trait JavaRDDObjectLike[T, This <: JavaRDDObjectLike[T, This]] {
   /**
    * @see RDDObject
    */
-  def getRDD(tmRange: TimeRange, f: JFunction1[MessageContainerBase, java.lang.Boolean]): JavaRDD[T] = wrapRDD(rddObj.getRDD(tmRange, { x: MessageContainerBase => f.call(x).booleanValue() }))
+  def getRDD(tmRange: TimeRange, f: JFunction1[ContainerInterface, java.lang.Boolean]): JavaRDD[T] = wrapRDD(rddObj.getRDD(tmRange, { x: ContainerInterface => f.call(x).booleanValue() }))
   /**
    * @see RDDObject
    */
@@ -1176,17 +1175,17 @@ trait JavaRDDObjectLike[T, This <: JavaRDDObjectLike[T, This]] {
   /**
    * @see RDDObject
    */
-  def getRDD(f: JFunction1[MessageContainerBase, java.lang.Boolean]): JavaRDD[T] = wrapRDD(rddObj.getRDD((x => f.call(x).booleanValue())))
+  def getRDD(f: JFunction1[ContainerInterface, java.lang.Boolean]): JavaRDD[T] = wrapRDD(rddObj.getRDD((x => f.call(x).booleanValue())))
 
   /**
    * @see RDDObject
    */
-  def getRDD(key: Array[String], tmRange: TimeRange, f: JFunction1[MessageContainerBase, java.lang.Boolean]): JavaRDD[T] = wrapRDD(rddObj.getRDD(key, tmRange, (x => f.call(x).booleanValue())))
+  def getRDD(key: Array[String], tmRange: TimeRange, f: JFunction1[ContainerInterface, java.lang.Boolean]): JavaRDD[T] = wrapRDD(rddObj.getRDD(key, tmRange, (x => f.call(x).booleanValue())))
 
   /**
    * @see RDDObject
    */
-  def getRDD(key: Array[String], f: JFunction1[MessageContainerBase, java.lang.Boolean]): JavaRDD[T] = wrapRDD(rddObj.getRDD(key, { x: MessageContainerBase => f.call(x).booleanValue() }))
+  def getRDD(key: Array[String], f: JFunction1[ContainerInterface, java.lang.Boolean]): JavaRDD[T] = wrapRDD(rddObj.getRDD(key, { x: ContainerInterface => f.call(x).booleanValue() }))
 
   /**
    * @see RDDObject

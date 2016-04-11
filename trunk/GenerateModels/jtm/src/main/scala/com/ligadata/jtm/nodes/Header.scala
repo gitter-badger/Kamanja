@@ -25,6 +25,11 @@ class Header {
     */
   val namespace: String = ""
 
+  /** Class name
+    *
+    */
+  val name: String = ""
+
   /** Version of the json level
     *
     */
@@ -39,4 +44,9 @@ class Header {
     *
     */
   val minVersion: String = ""
+
+  /** Add description here
+    *
+    */
+  val description: String = ""
 }

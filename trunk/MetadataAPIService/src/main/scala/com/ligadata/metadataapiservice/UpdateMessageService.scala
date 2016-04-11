@@ -33,7 +33,7 @@ object UpdateMessageService {
   case class Process(messageJson:String, formatType:String)
 }
 
-class UpdateMessageService(requestContext: RequestContext, userid:Option[String], password:Option[String], cert:Option[String]) extends Actor {
+class UpdateMessageService(requestContext: RequestContext, userid:Option[String], password:Option[String], cert:Option[String],  tenantId: Option[String]) extends Actor {
 
   import UpdateMessageService._
   

@@ -23,6 +23,7 @@ import org.json4s.jackson.JsonMethods._
 import org.apache.logging.log4j._
 import org.json4s.jackson.Serialization
 import scala.actors.threadpool.{ Executors, ExecutorService }
+import scala.collection.mutable.ArrayBuffer
 
 
 /**
@@ -114,6 +115,119 @@ object MonitorAPIImpl {
      }
     return resultJson + "]"
    }
+
+  /**
+    * gets only info of the nodes
+    * @param ids
+    * @return
+    */
+  def getHBNodesOnly(ids: List[String]) : String = {
+    val getAllNodes = ids.length == 0
+    val excludedInfo = Set("components")
+    var resultJson = "["
+    var isFirst = true
+    healthInfo.filter(kv => getAllNodes || ids.contains(kv._1)).foreach(kv => {
+      val currentNodeId = kv._1
+      val currentNodeAllInfo = kv._2.asInstanceOf[Map[String,Any]]
+      val currentNodeOnlyInfo = scala.collection.mutable.Map[String,Any]()
+      //exclude info that we don't need: components here
+      currentNodeAllInfo.foreach(nodeInfoKv => {
+        if(!excludedInfo.contains(nodeInfoKv._1.toLowerCase))
+          currentNodeOnlyInfo.put(nodeInfoKv._1,nodeInfoKv._2)
+      })
+
+      if (!isFirst) resultJson += ","
+      isFirst = false
+      resultJson += JsonSerializer.SerializeMapToJsonString(currentNodeOnlyInfo.toMap)
+    })
+
+    resultJson += "]"
+    resultJson
+  }
+
+
+  /**
+    * get info for nodes, regarding components, get type and name only
+    * @param ids
+    * @return
+    */
+  def getHBComponentNames(ids: List[String]) : String = {
+    val getAllNodes = ids.length == 0
+    val componentsKey = "Components"
+    val neededComponentKeyset = Set("type", "name")
+    var isFirst = true
+    var resultJson = "["
+    healthInfo.filter(kv => getAllNodes || ids.contains(kv._1)).foreach(kv => {
+      val currentNodeId = kv._1
+      val currentNodeAllInfo = kv._2.asInstanceOf[Map[String,Any]]
+      val currentNodeNeededInfo = scala.collection.mutable.Map[String,Any]()
+
+      val currentNodeComponentsBuffer = ArrayBuffer[scala.collection.mutable.Map[String,Any]]()
+      currentNodeAllInfo.foreach(nodeInfoKv => {
+
+        if(componentsKey == nodeInfoKv._1){//this is Components
+          val componentsAll = nodeInfoKv._2.asInstanceOf[List[Map[String, Any]]]
+
+          componentsAll.foreach(componentInfo => {
+            val componentsNeededInfo = scala.collection.mutable.Map[String,Any]()
+            componentInfo.foreach(componentKv => {
+              if(neededComponentKeyset.contains(componentKv._1.toLowerCase))
+                componentsNeededInfo.put(componentKv._1, componentKv._2)
+            })
+            currentNodeComponentsBuffer += componentsNeededInfo
+          })
+        }
+        else
+          currentNodeNeededInfo.put(nodeInfoKv._1,nodeInfoKv._2)
+
+      })
+
+      currentNodeNeededInfo.put(componentsKey, currentNodeComponentsBuffer)
+
+      if (!isFirst) resultJson += ","
+      isFirst = false
+      resultJson += JsonSerializer.SerializeMapToJsonString(currentNodeNeededInfo.toMap)
+    })
+
+    resultJson += "]"
+    resultJson
+  }
+
+  def getHBComponentDetailsByNames(componentNames: List[String]) : String = {
+    val componentsKey = "Components"
+    val componentNameKey = "Name"
+    var isFirst = true
+    var resultJson = "["
+    healthInfo.foreach(kv => {
+      val currentNodeId = kv._1
+      val currentNodeAllInfo = kv._2.asInstanceOf[Map[String,Any]]
+      val currentNodeNeededInfo = scala.collection.mutable.Map[String,Any]()
+      val currentNodeComponentsBuffer = ArrayBuffer[scala.collection.immutable.Map[String,Any]]()
+      currentNodeAllInfo.foreach(nodeInfoKv => {
+
+        if(componentsKey == nodeInfoKv._1){//this is Components
+        val componentsAll = nodeInfoKv._2.asInstanceOf[List[Map[String, Any]]]
+          val componentsNeededInfo = scala.collection.mutable.Map[String,Any]()
+          componentsAll.foreach(componentInfo => {
+            if(componentNames.contains(componentInfo(componentNameKey).toString)){
+              currentNodeComponentsBuffer += componentInfo
+            }
+          })
+        }
+        else
+          currentNodeNeededInfo.put(nodeInfoKv._1,nodeInfoKv._2)
+
+      })
+      currentNodeNeededInfo.put(componentsKey, currentNodeComponentsBuffer)
+
+      if (!isFirst) resultJson += ","
+      isFirst = false
+      resultJson += JsonSerializer.SerializeMapToJsonString(currentNodeNeededInfo.toMap)
+    })
+
+    resultJson += "]"
+    resultJson
+  }
 
   /**
    * clockNewActivity - update Metadata health info, showing its still alive.

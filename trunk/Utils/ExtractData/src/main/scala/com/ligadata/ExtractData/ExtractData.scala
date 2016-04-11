@@ -36,7 +36,7 @@ import com.ligadata.KamanjaBase._
 import com.ligadata.kamanja.metadataload.MetadataLoad
 import com.ligadata.Utils.{ Utils, KamanjaClassLoader, KamanjaLoaderInfo }
 import com.ligadata.Serialize.{ JDataStore }
-import com.ligadata.KvBase.{ Key, Value, TimeRange }
+import com.ligadata.KvBase.{ Key, TimeRange }
 import com.ligadata.StorageBase.{ DataStore, Transaction }
 import java.util.Date
 import java.text.SimpleDateFormat
@@ -45,8 +45,8 @@ import com.ligadata.KamanjaVersion.KamanjaVersion
 object ExtractData extends MdBaseResolveInfo {
   private val LOG = LogManager.getLogger(getClass);
   private val clsLoaderInfo = new KamanjaLoaderInfo
-  private var _currentMessageObj: BaseMsgObj = null
-  private var _currentContainerObj: BaseContainerObj = null
+  private var _currentMessageObj: MessageFactoryInterface = null
+  private var _currentContainerObj: ContainerFactoryInterface = null
   private var _currentTypName: String = ""
   private var jarPaths: Set[String] = null
   private var _dataStore: DataStore = null
@@ -59,12 +59,12 @@ object ExtractData extends MdBaseResolveInfo {
     LOG.warn("    --version")
   }
 
-  override def getMessgeOrContainerInstance(MsgContainerType: String): MessageContainerBase = {
+  override def getMessgeOrContainerInstance(MsgContainerType: String): ContainerInterface = {
     if (MsgContainerType.compareToIgnoreCase(_currentTypName) == 0) {
       if (_currentMessageObj != null)
-        return _currentMessageObj.CreateNewMessage
+        return _currentMessageObj.createInstance.asInstanceOf[ContainerInterface]
       if (_currentContainerObj != null)
-        return _currentContainerObj.CreateNewContainer
+        return _currentContainerObj.createInstance.asInstanceOf[ContainerInterface]
     }
     return null
   }
@@ -181,7 +181,7 @@ object ExtractData extends MdBaseResolveInfo {
         var curClz = Class.forName(clsName, true, clsLoaderInfo.loader)
 
         while (curClz != null && isContainer == false) {
-          isContainer = Utils.isDerivedFrom(curClz, "com.ligadata.KamanjaBase.BaseContainerObj")
+          isContainer = Utils.isDerivedFrom(curClz, "com.ligadata.KamanjaBase.ContainerFactoryInterface")
           if (isContainer == false)
             curClz = curClz.getSuperclass()
         }
@@ -209,7 +209,7 @@ object ExtractData extends MdBaseResolveInfo {
         var curClz = Class.forName(clsName, true, clsLoaderInfo.loader)
 
         while (curClz != null && isMsg == false) {
-          isMsg = Utils.isDerivedFrom(curClz, "com.ligadata.KamanjaBase.BaseMsgObj")
+          isMsg = Utils.isDerivedFrom(curClz, "com.ligadata.KamanjaBase.MessageFactoryInterface")
           if (isMsg == false)
             curClz = curClz.getSuperclass()
         }
@@ -227,12 +227,12 @@ object ExtractData extends MdBaseResolveInfo {
         val module = mirror.staticModule(clsName)
         val obj = mirror.reflectModule(module)
         val objinst = obj.instance
-        if (objinst.isInstanceOf[BaseMsgObj]) {
-          _currentMessageObj = objinst.asInstanceOf[BaseMsgObj]
+        if (objinst.isInstanceOf[MessageFactoryInterface]) {
+          _currentMessageObj = objinst.asInstanceOf[MessageFactoryInterface]
           _currentTypName = typName
           LOG.debug("Created Message Object")
-        } else if (objinst.isInstanceOf[BaseContainerObj]) {
-          _currentContainerObj = objinst.asInstanceOf[BaseContainerObj]
+        } else if (objinst.isInstanceOf[ContainerFactoryInterface]) {
+          _currentContainerObj = objinst.asInstanceOf[ContainerFactoryInterface]
           _currentTypName = typName
           LOG.debug("Created Container Object")
         } else {
@@ -263,17 +263,6 @@ object ExtractData extends MdBaseResolveInfo {
     }
   }
 
-  private def deSerializeData(v: Value): MessageContainerBase = {
-    v.serializerType.toLowerCase match {
-      case "manual" => {
-        return SerializeDeserialize.Deserialize(v.serializedInfo, this, clsLoaderInfo.loader, true, "")
-      }
-      case _ => {
-        throw new Exception("Found un-handled Serializer Info: " + v.serializerType)
-      }
-    }
-  }
-
   private def extractData(startTm: Date, endTm: Date, compressionString: String, sFileName: String, partKey: List[String], primaryKey: List[String]): Unit = {
     val hasValidPrimaryKey = (partKey != null && primaryKey != null && partKey.size > 0 && primaryKey.size > 0)
 
@@ -293,12 +282,12 @@ object ExtractData extends MdBaseResolveInfo {
 
       val ln = "\n".getBytes("UTF8")
 
-      val getObjFn = (k: Key, v: Value) => {
-        val dta = deSerializeData(v)
+      val getObjFn = (k: Key, v: Any, serType: String, typ: String, ver:Int) => {
+        val dta = v.asInstanceOf[ContainerInterface]
         if (dta != null) {
           if (hasValidPrimaryKey) {
             // Search for primary key match
-            if (primaryKey.sameElements(dta.PrimaryKeyData)) {
+            if (primaryKey.sameElements(dta.getPrimaryKey)) {
               LOG.debug("Primarykey found")
               os.write(gson.toJson(dta).getBytes("UTF8"));
               os.write(ln);
@@ -401,7 +390,7 @@ object ExtractData extends MdBaseResolveInfo {
         sys.exit(1)
       }
 
-      val dataStore = cluster.cfgMap.getOrElse("DataStore", null)
+      val dataStore = cluster.cfgMap.getOrElse("SystemCatalog", null)
       if (dataStore == null) {
         LOG.error("DataStore not found for Node %d  & ClusterId : %s".format(nodeId, nodeInfo.ClusterId))
         sys.exit(1)

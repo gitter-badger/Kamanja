@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.text.ParseException
+import com.ligadata.KamanjaVersion.KamanjaVersion
 import com.ligadata.MetadataAPI.MetadataAPI.ModelType
 import com.ligadata.MetadataAPI.MetadataAPI.ModelType.ModelType
 
@@ -30,7 +31,7 @@ import scala.io._
 import scala.collection.mutable.ArrayBuffer
 
 import scala.collection.mutable._
-import scala.reflect.runtime.{ universe => ru }
+import scala.reflect.runtime.{universe => ru}
 
 import com.ligadata.kamanja.metadata.ObjType._
 import com.ligadata.kamanja.metadata._
@@ -40,18 +41,18 @@ import com.ligadata.kamanja.metadataload.MetadataLoad
 
 // import com.ligadata.keyvaluestore._
 import com.ligadata.HeartBeat.{MonitoringContext, HeartBeatUtil}
-import com.ligadata.StorageBase.{ DataStore, Transaction }
-import com.ligadata.KvBase.{ Key, Value, TimeRange }
+import com.ligadata.StorageBase.{DataStore, Transaction}
+import com.ligadata.KvBase.{Key, TimeRange}
 
 import scala.util.parsing.json.JSON
-import scala.util.parsing.json.{ JSONObject, JSONArray }
+import scala.util.parsing.json.{JSONObject, JSONArray}
 import scala.collection.immutable.Map
 import scala.collection.immutable.HashMap
 import scala.collection.mutable.HashMap
 
 import com.google.common.base.Throwables
 
-import com.ligadata.messagedef._
+import com.ligadata.msgcompiler._
 import com.ligadata.Exceptions._
 
 import scala.xml.XML
@@ -80,7 +81,8 @@ import java.util.Date
 // The implementation class
 object PersistenceUtils {
 
-  lazy val sysNS = "System" // system name space
+  // system name space
+  lazy val sysNS = "System"
   lazy val loggerName = this.getClass.getName
   lazy val logger = LogManager.getLogger(loggerName)
   private[this] val lock = new Object
@@ -88,17 +90,28 @@ object PersistenceUtils {
   private var tableStoreMap: Map[String, (String, DataStore)] = Map()
   private val storageDefaultTime = 0L
   private val storageDefaultTxnId = 0L
-  lazy val serializerType = "kryo"
-  lazy val serializer = SerializerManager.GetSerializer(serializerType)
+  lazy val serializerType = "json4s"//"kryo"
+  //lazy val serializer = SerializerManager.GetSerializer(serializerType)
+
+  lazy val versionStr = s"${KamanjaVersion.getMajorVersion}.${KamanjaVersion.getMinorVersion}.${KamanjaVersion.getMicroVersion}"
+  lazy val excludeSystemJars = Set(s"ExtDependencyLibs_2.11-${versionStr}.jar", s"ExtDependencyLibs2_2.11-${versionStr}.jar", s"KamanjaInternalDeps_2.11-${versionStr}.jar",
+                                      s"ExtDependencyLibs_2.10-${versionStr}.jar", s"ExtDependencyLibs2_2.10-${versionStr}.jar", s"KamanjaInternalDeps_2.10-${versionStr}.jar")
 
   def GetMainDS: DataStore = mainDS
-  def GetTableStoreMap: Map[String, (String, DataStore)] = tableStoreMap
 
-  def GetObject(bucketKeyStr: String, typeName: String): Value = {
-    val (containerName, store) = tableStoreMap(typeName)
-    var objs = new Array[Value](1)
-    val getObjFn = (k: Key, v: Value) => {
-      objs(0) = v
+  def GetContainerNameAndDataStore(typeName: String): (String, DataStore) = {
+    val info = tableStoreMap.getOrElse(typeName, null)
+    if (info != null)
+      info
+    else
+      (typeName.toLowerCase(), mainDS)
+  }
+
+  def GetObject(bucketKeyStr: String, typeName: String): (String, Any) = {
+    val (containerName, store) = GetContainerNameAndDataStore(typeName)
+    var objs = new Array[(String, Any)](1)
+    val getObjFn = (k: Key, v: Any, serType: String, typ: String, ver: Int) => {
+      objs(0) = (serType, v)
     }
 
     try {
@@ -120,14 +133,11 @@ object PersistenceUtils {
   }
 
   def SaveObject(bucketKeyStr: String, value: Array[Byte], typeName: String, serializerTyp: String) {
-
-
-    val (containerName, store) = tableStoreMap(typeName)
+    val (containerName, store) = GetContainerNameAndDataStore(typeName)
     val k = Key(storageDefaultTime, Array(bucketKeyStr), storageDefaultTxnId, 0)
-    val v = Value(serializerTyp, value)
 
     try {
-      store.put(containerName, k, v)
+      store.put(null, containerName, k, serializerTyp, value)
     } catch {
       case e: Exception => {
         logger.error("Failed to insert/update object for : " + bucketKeyStr, e)
@@ -136,28 +146,28 @@ object PersistenceUtils {
     }
   }
 
-    /**
-     * SaveObjectList
-     * @param keyList
-     * @param valueList
-     * @param typeName
-     * @param serializerTyp
-     */
+  /**
+    * SaveObjectList
+    *
+    * @param keyList
+    * @param valueList
+    * @param typeName
+    * @param serializerTyp
+    */
   def SaveObjectList(keyList: Array[String], valueList: Array[Array[Byte]], typeName: String, serializerTyp: String) {
-    val (containerName, store) = tableStoreMap(typeName)
+    val (containerName, store) = GetContainerNameAndDataStore(typeName)
     var i = 0
-    var storeObjects = new Array[(Key, Value)](keyList.length)
+    var storeObjects = new Array[(Key, String, Any)](keyList.length)
     i = 0
     keyList.foreach(bucketKeyStr => {
       var value = valueList(i)
       val k = Key(storageDefaultTime, Array(bucketKeyStr), storageDefaultTxnId, 0)
-      val v = Value(serializerTyp, value)
-      storeObjects(i) = (k, v)
+      storeObjects(i) = (k, serializerTyp, value)
       i = i + 1
     })
 
     try {
-      store.put(Array((containerName, storeObjects)))
+      store.put(null, Array((containerName, storeObjects)))
     } catch {
       case e: Exception => {
         logger.error("Failed to insert/update objects for : " + keyList.mkString(","), e)
@@ -166,13 +176,11 @@ object PersistenceUtils {
     }
   }
 
-    /**
-     * Remove all of the elements with the supplied keys in the list from the supplied DataStore
-     * @param keyList
-     * @param store
-     */
+  /**
+    * Remove all of the elements with the supplied keys in the list from the supplied DataStore
+    */
   def RemoveObjectList(keyList: Array[String], typeName: String) {
-    val (containerName, store) = tableStoreMap(typeName)
+    val (containerName, store) = GetContainerNameAndDataStore(typeName)
     var i = 0
     var delKeys = new Array[(Key)](keyList.length)
     i = 0
@@ -192,11 +200,12 @@ object PersistenceUtils {
     }
   }
 
-    /**
-     * Answer which table the supplied BaseElemeDef is stored
-     * @param obj
-     * @return
-     */
+  /**
+    * Answer which table the supplied BaseElemeDef is stored
+    *
+    * @param obj
+    * @return
+    */
   def getMdElemTypeName(obj: BaseElemDef): String = {
     obj match {
       case o: ModelDef => {
@@ -214,9 +223,6 @@ object PersistenceUtils {
       case o: AttributeDef => {
         "concepts"
       }
-      case o: OutputMsgDef => {
-        "outputmsgs"
-      }
       case o: BaseTypeDef => {
         "types"
       }
@@ -227,27 +233,28 @@ object PersistenceUtils {
     }
   }
 
-    /**
-     * getObjectType
-     * @param obj <description please>
-     * @return <description please>
-     */
+  /**
+    * getObjectType
+    *
+    * @param obj <description please>
+    * @return <description please>
+    */
   def getObjectType(obj: BaseElemDef): String = {
     val className = obj.getClass().getName();
     className.split("\\.").last
   }
 
-    /**
-     * SaveObjectList
-     *
-     * The following batch function is useful when we store data in single table
-     * If we use Storage component library, note that table itself is associated with a single
-     * database connection( which itself can be mean different things depending on the type
-     * of datastore, such as cassandra, hbase, etc..)
-     *
-     * @param objList
-     * @param typeName
-     */
+  /**
+    * SaveObjectList
+    *
+    * The following batch function is useful when we store data in single table
+    * If we use Storage component library, note that table itself is associated with a single
+    * database connection( which itself can be mean different things depending on the type
+    * of datastore, such as cassandra, hbase, etc..)
+    *
+    * @param objList
+    * @param typeName
+    */
   def SaveObjectList(objList: Array[BaseElemDef], typeName: String) {
 
     logger.debug("Save " + objList.length + " objects in a single transaction ")
@@ -259,7 +266,7 @@ object PersistenceUtils {
       objList.foreach(obj => {
         obj.tranId = tranId
         val key = (getObjectType(obj) + "." + obj.FullNameWithVer).toLowerCase
-        var value = serializer.SerializeObjectToByteArray(obj)
+        var value = MetadataAPISerialization.serializeObjectToJson(obj).getBytes //serializer.SerializeObjectToByteArray(obj)
         keyList(i) = key
         valueList(i) = value
         i = i + 1
@@ -273,53 +280,52 @@ object PersistenceUtils {
     }
   }
 
-    /**
-     * SaveObjectList
-     * The following batch function is useful when we store data in multiple tables
-     * If we use Storage component library, note that each table is associated with a different
-     * database connection( which itself can be mean different things depending on the type
-     * of datastore, such as cassandra, hbase, etc..)
-     *
-     * @param objList
-     */
+  /**
+    * SaveObjectList
+    * The following batch function is useful when we store data in multiple tables
+    * If we use Storage component library, note that each table is associated with a different
+    * database connection( which itself can be mean different things depending on the type
+    * of datastore, such as cassandra, hbase, etc..)
+    *
+    * @param objList
+    */
   def SaveObjectList(objList: Array[BaseElemDef]) {
     logger.debug("Save " + objList.length + " objects in a single transaction ")
     val tranId = GetNewTranId
-    var saveDataMap = scala.collection.mutable.Map[String, ArrayBuffer[(Key, Value)]]()
+    var saveDataMap = scala.collection.mutable.Map[String, ArrayBuffer[(Key, String, Any)]]()
 
     try {
       var i = 0;
       objList.foreach(obj => {
         obj.tranId = tranId
         val key = (getObjectType(obj) + "." + obj.FullNameWithVer).toLowerCase
-        var value = serializer.SerializeObjectToByteArray(obj)
+        var value = MetadataAPISerialization.serializeObjectToJson(obj).getBytes//serializer.SerializeObjectToByteArray(obj)
         val elemTyp = getMdElemTypeName(obj)
 
         val k = Key(storageDefaultTime, Array(key), storageDefaultTxnId, 0)
-        val v = Value(serializerType, value)
 
         val ab = saveDataMap.getOrElse(elemTyp, null)
         if (ab != null) {
-          ab += ((k, v))
+          ab += ((k, serializerType, value))
           saveDataMap(elemTyp) = ab
         } else {
-          val newab = ArrayBuffer[(Key, Value)]()
-          newab += ((k, v))
+          val newab = ArrayBuffer[(Key, String, Any)]()
+          newab += ((k, serializerType, value))
           saveDataMap(elemTyp) = newab
         }
         i = i + 1
       })
 
-      var storeData = scala.collection.mutable.Map[String, (DataStore, ArrayBuffer[(String, Array[(Key, Value)])])]()
+      var storeData = scala.collection.mutable.Map[String, (DataStore, ArrayBuffer[(String, Array[(Key, String, Any)])])]()
 
       saveDataMap.foreach(elemTypData => {
-        val storeInfo = tableStoreMap(elemTypData._1)
+        val storeInfo = GetContainerNameAndDataStore(elemTypData._1)
         val oneStoreData = storeData.getOrElse(storeInfo._1, null)
         if (oneStoreData != null) {
           oneStoreData._2 += ((elemTypData._1, elemTypData._2.toArray))
           storeData(storeInfo._1) = ((oneStoreData._1, oneStoreData._2))
         } else {
-          val ab = ArrayBuffer[(String, Array[(Key, Value)])]()
+          val ab = ArrayBuffer[(String, Array[(Key, String, Any)])]()
           ab += ((elemTypData._1, elemTypData._2.toArray))
           storeData(storeInfo._1) = ((storeInfo._2, ab))
         }
@@ -327,7 +333,7 @@ object PersistenceUtils {
 
       storeData.foreach(oneStoreData => {
         try {
-          oneStoreData._2._1.put(oneStoreData._2._2.toArray)
+          oneStoreData._2._1.put(null, oneStoreData._2._2.toArray)
         } catch {
           case e: Exception => {
             logger.error("Failed to insert/update objects in : " + oneStoreData._1, e)
@@ -343,55 +349,101 @@ object PersistenceUtils {
     }
   }
 
-    /**
-     * SaveOutputMsObjectList
-     * @param objList <description please>
-     */
-  def SaveOutputMsObjectList(objList: Array[BaseElemDef]) {
-    SaveObjectList(objList, "outputmsgs")
+  def SaveSchemaInformation(schemaId: Int, nameSpace: String, name: String, version: Long, physicalName: String, avroSchema: String, containerType: String): Unit = {
+    val (containerName, store) = GetContainerNameAndDataStore("AvroSchemaInfo")
+
+    val json = "AvroSchemaInfo" ->
+      ("SchemaId" -> schemaId) ~
+        ("NameSpace" -> nameSpace) ~
+        ("Name" -> name) ~
+        ("Version" -> version) ~
+        ("PhysicalName" -> physicalName) ~
+        ("AvroSchema" -> avroSchema) ~
+        ("ContainerType" -> containerType)
+
+    val outputJson = compact(render(json))
+
+    var storeObjects = new Array[(Key, String, Any)](1)
+    val k = Key(storageDefaultTime, Array(schemaId.toString), storageDefaultTxnId, 0)
+    storeObjects(0) = (k, "JSON", outputJson.getBytes())
+
+    try {
+      store.put(null, Array((containerName, storeObjects)))
+    } catch {
+      case e: Exception => {
+        logger.error("Failed to insert/update object for schemaid: " + schemaId, e)
+        throw UpdateStoreFailedException("Failed to insert/update object for schemaid: " + schemaId, e)
+      }
+    }
   }
 
-    /**
-     * SaveObject (use default serializerType (i.e., currently kryo)).
-     * @param key
-     * @param value
-     * @param typeName
-     def SaveObject(key: String, value: String, typeName: String) {
-       val ba = serializer.SerializeObjectToByteArray(value)
-       SaveObject(key, ba, store, containerName, serializerType)
-     }
-     */
-
-    /**
-     * UpdateObject
-     * @param key
-     * @param value
-     * @param typeName
-     * @param serializerTyp
-     */
+  /**
+    * UpdateObject
+    *
+    * @param key
+    * @param value
+    * @param typeName
+    * @param serializerTyp
+    */
   def UpdateObject(key: String, value: Array[Byte], typeName: String, serializerTyp: String) {
-     SaveObject(key, value, typeName, serializerTyp)
+    SaveObject(key, value, typeName, serializerTyp)
   }
 
-   def UpdateTranId (objList:Array[BaseElemDef] ): Unit ={
+  def UpdateTranId(objList: Array[BaseElemDef]): Unit = {
     var max: Long = 0
-     objList.foreach(obj =>{
-       max = scala.math.max(max, obj.TranId)
-     })
-    if (MetadataAPIImpl.getCurrentTranLevel < max) 
+    objList.foreach(obj => {
+      max = scala.math.max(max, obj.TranId)
+    })
+    if (MetadataAPIImpl.getCurrentTranLevel < max)
       MetadataAPIImpl.setCurrentTranLevel(max)
     PutTranId(max)
   }
 
+  def GetMetadataId(key: String, incrementInDb: Boolean, defaultId: Long = 1): Long = {
+    var id: Long = defaultId
+    try {
+      val (serTyp, obj) = GetObject(key.toLowerCase(), "metadatacounters")
+      val idStr = new String(obj.asInstanceOf[Array[Byte]])
+      id = idStr.toLong
+    } catch {
+      case e: ObjectNotFoundException => {
+        // first time
+        id = defaultId
+      }
+      case e: Exception => {
+        throw KeyNotFoundException("Unable to retrieve Metadata Id for Key:" + key, e)
+      }
+    }
 
-    /**
-     * GetNewTranId
-     * @return <description please>
-     */
+    if (incrementInDb) {
+      // Put it back after increment
+      PutMetadataId(key, id + 1)
+    }
+
+    id
+  }
+
+  def PutMetadataId(key: String, id: Long) = {
+    try {
+      SaveObject(key.toLowerCase(), id.toString.getBytes, "metadatacounters", "")
+    } catch {
+      case e: Exception => {
+        logger.error("", e)
+        throw UpdateStoreFailedException("Unable to Save the Metadata Id:%d for Key:%s".format(id, key), e)
+      }
+    }
+  }
+
+
+  /**
+    * GetNewTranId
+    *
+    * @return <description please>
+    */
   def GetNewTranId: Long = {
     try {
-      val obj = GetObject("transaction_id", "transaction_id")
-      val idStr = new String(obj.serializedInfo)
+      val (serTyp, obj) = GetObject("transaction_id", "transaction_id")
+      val idStr = new String(obj.asInstanceOf[Array[Byte]])
       idStr.toLong + 1
     } catch {
       case e: ObjectNotFoundException => {
@@ -404,14 +456,15 @@ object PersistenceUtils {
     }
   }
 
-    /**
-     * GetTranId
-     * @return <description please>
-     */
+  /**
+    * GetTranId
+    *
+    * @return <description please>
+    */
   def GetTranId: Long = {
     try {
-      val obj = GetObject("transaction_id", "transaction_id")
-      val idStr = new String(obj.serializedInfo)
+      val (serTyp, obj) = GetObject("transaction_id", "transaction_id")
+      val idStr = new String(obj.asInstanceOf[Array[Byte]])
       idStr.toLong
     } catch {
       case e: ObjectNotFoundException => {
@@ -424,10 +477,11 @@ object PersistenceUtils {
     }
   }
 
-    /**
-     * PutTranId
-     * @param tId <description please>
-     */
+  /**
+    * PutTranId
+    *
+    * @param tId <description please>
+    */
   def PutTranId(tId: Long) = {
     try {
       SaveObject("transaction_id", tId.toString.getBytes, "transaction_id", "")
@@ -440,11 +494,12 @@ object PersistenceUtils {
   }
 
 
-    /**
-     * UploadJarsToDB
-     * @param obj <description please>
-     * @param forceUploadMainJar <description please>
-     * @param alreadyCheckedJars <description please>
+  /**
+    * UploadJarsToDB
+    *
+    * @param obj                <description please>
+    * @param forceUploadMainJar <description please>
+    * @param alreadyCheckedJars <description please>
     */
   def UploadJarsToDB(obj: BaseElemDef, forceUploadMainJar: Boolean = true, alreadyCheckedJars: scala.collection.mutable.Set[String] = null): Unit = {
     val checkedJars: scala.collection.mutable.Set[String] = if (alreadyCheckedJars == null) scala.collection.mutable.Set[String]() else alreadyCheckedJars
@@ -466,7 +521,7 @@ object PersistenceUtils {
         if (forceUploadMainJar) {
           loadObject = true
         } else {
-          var mObj: Value = null
+          var mObj: (String, Any) = null
           try {
             mObj = GetObject(obj.jarName, "jar_store")
           } catch {
@@ -481,7 +536,7 @@ object PersistenceUtils {
           }
 
           if (loadObject == false) {
-            val ba = mObj.serializedInfo
+            val ba = mObj._2.asInstanceOf[Array[Byte]]
             val fs = ba.length
             if (fs != value.length) {
               logger.debug("A jar file already exists, but it's size (" + fs + ") doesn't match with the size of the Jar (" +
@@ -503,11 +558,11 @@ object PersistenceUtils {
       if (obj.DependencyJarNames != null) {
         obj.DependencyJarNames.foreach(j => {
           // do not upload if it already exist & just uploaded/checked in db, minor optimization
-          if (j.endsWith(".jar") && checkedJars.contains(j) == false) {
+          if (j.endsWith(".jar") && checkedJars.contains(j) == false && excludeSystemJars.contains(j) == false) {
             var loadObject = false
             val jarName = com.ligadata.Utils.Utils.GetValidJarFile(jarPaths, j)
             val value = MetadataAPIImpl.GetJarAsArrayOfBytes(jarName)
-            var mObj: Value = null
+            var mObj: (String, Any) = null
             try {
               mObj = GetObject(j, "jar_store")
             } catch {
@@ -518,7 +573,7 @@ object PersistenceUtils {
             }
 
             if (loadObject == false) {
-              val ba = mObj.serializedInfo
+              val ba = mObj._2.asInstanceOf[Array[Byte]]
               val fs = ba.length
               if (fs != value.length) {
                 logger.debug("A jar file already exists, but it's size (" + fs + ") doesn't match with the size of the Jar (" +
@@ -549,10 +604,11 @@ object PersistenceUtils {
     }
   }
 
-    /**
-     * UploadJarToDB
-     * @param jarName <description please>
-     */
+  /**
+    * UploadJarToDB
+    *
+    * @param jarName <description please>
+    */
   def UploadJarToDB(jarName: String) {
     try {
       val f = new File(jarName)
@@ -575,14 +631,15 @@ object PersistenceUtils {
     }
   }
 
-    /**
-     * UploadJarToDB
-     * @param jarName <description please>
-     * @param byteArray <description please>
-     * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
-     *               method. If Security and/or Audit are configured, this value must be a value other than None.
-     * @return <description please>
-     */
+  /**
+    * UploadJarToDB
+    *
+    * @param jarName   <description please>
+    * @param byteArray <description please>
+    * @param userid    the identity to be used by the security adapter to ascertain if this user has access permissions for this
+    *                  method. If Security and/or Audit are configured, this value must be a value other than None.
+    * @return <description please>
+    */
   def UploadJarToDB(jarName: String, byteArray: Array[Byte], userid: Option[String] = None): String = {
     try {
       var key = jarName
@@ -601,10 +658,11 @@ object PersistenceUtils {
     }
   }
 
-    /**
-     * DownloadJarFromDB
-     * @param obj <description please>
-     */
+  /**
+    * DownloadJarFromDB
+    *
+    * @param obj <description please>
+    */
   def DownloadJarFromDB(obj: BaseElemDef) {
     var curJar: String = ""
     try {
@@ -642,7 +700,7 @@ object PersistenceUtils {
             if (b == true) {
               val key = jar
               val mObj = GetObject(key, "jar_store")
-              val ba = mObj.serializedInfo
+              val ba = mObj._2.asInstanceOf[Array[Byte]]
               val jarName = dirPath + "/" + jar
               MetadataAPIImpl.PutArrayOfBytesToJar(ba, jarName)
             } else {
@@ -665,23 +723,22 @@ object PersistenceUtils {
   }
 
 
-    /**
-     * DeleteObject
-     * @param key
-     * @param typeName
-     */
+  /**
+    * DeleteObject
+    */
   def DeleteObject(bucketKeyStr: String, typeName: String) {
-    val (containerName, store) = tableStoreMap(typeName)
+    val (containerName, store) = GetContainerNameAndDataStore(typeName)
     store.del(containerName, Array(Key(storageDefaultTime, Array(bucketKeyStr), storageDefaultTxnId, 0)))
   }
 
 
-    /**
-     * GetDataStoreHandle
-     * @param jarPaths Set of paths where jars are located Set of paths where jars are located
-     * @param dataStoreInfo information needed to access the data store (kv store dependent)
-     * @return
-     */
+  /**
+    * GetDataStoreHandle
+    *
+    * @param jarPaths      Set of paths where jars are located Set of paths where jars are located
+    * @param dataStoreInfo information needed to access the data store (kv store dependent)
+    * @return
+    */
   private def GetDataStoreHandle(jarPaths: collection.immutable.Set[String], dataStoreInfo: String): DataStore = {
     try {
       logger.debug("Getting DB Connection for dataStoreInfo:%s".format(dataStoreInfo))
@@ -694,29 +751,30 @@ object PersistenceUtils {
     }
   }
 
-    /**
-     * OpenDbStore
-     * @param jarPaths Set of paths where jars are located
-     * @param dataStoreInfo information needed to access the data store (kv store dependent)
-     */
+  /**
+    * OpenDbStore
+    *
+    * @param jarPaths      Set of paths where jars are located
+    * @param dataStoreInfo information needed to access the data store (kv store dependent)
+    */
   def OpenDbStore(jarPaths: collection.immutable.Set[String], dataStoreInfo: String) {
     try {
       logger.debug("Opening datastore")
       mainDS = GetDataStoreHandle(jarPaths, dataStoreInfo)
 
-      tableStoreMap = Map("metadata_objects" -> ("metadata_objects", mainDS),
-        "models" -> ("metadata_objects", mainDS),
-        "messages" -> ("metadata_objects", mainDS),
-        "containers" -> ("metadata_objects", mainDS),
-        "functions" -> ("metadata_objects", mainDS),
-        "concepts" -> ("metadata_objects", mainDS),
-        "types" -> ("metadata_objects", mainDS),
-        "others" -> ("metadata_objects", mainDS),
-        "outputmsgs" -> ("metadata_objects", mainDS),
-        "jar_store" -> ("jar_store", mainDS),
-        "config_objects" -> ("config_objects", mainDS),
-        "model_config_objects" -> ("model_config_objects", mainDS),
-        "transaction_id" -> ("transaction_id", mainDS))
+      tableStoreMap = Map("metadata_objects" ->("metadata_objects", mainDS),
+        "models" ->("metadata_objects", mainDS),
+        "messages" ->("metadata_objects", mainDS),
+        "containers" ->("metadata_objects", mainDS),
+        "functions" ->("metadata_objects", mainDS),
+        "concepts" ->("metadata_objects", mainDS),
+        "types" ->("metadata_objects", mainDS),
+        "others" ->("metadata_objects", mainDS),
+        "outputmsgs" ->("metadata_objects", mainDS),
+        "jar_store" ->("jar_store", mainDS),
+        "config_objects" ->("config_objects", mainDS),
+        "model_config_objects" ->("model_config_objects", mainDS),
+        "transaction_id" ->("transaction_id", mainDS))
     } catch {
       case e: FatalAdapterException => {
         logger.error("Failed to connect to Datastore", e)
@@ -749,9 +807,28 @@ object PersistenceUtils {
     }
   }
 
-    /**
-     * CloseDbStore
-     */
+  /**
+    * CreateMetadataTables
+    */
+  def CreateMetadataTables: Unit = lock.synchronized {
+    try {
+      logger.debug("Creating MetadataTables")
+      if (mainDS != null) {
+	val metadataTables = Array("metadata_objects","jar_store","config_objects","model_config_objects","transaction_id","metadata_counters")
+        mainDS.CreateMetadataContainer(metadataTables)
+        logger.debug("Created Metadata Tables")
+      }
+    } catch {
+      case e: Exception => {
+        logger.error("", e)
+        throw e;
+      }
+    }
+  }
+
+  /**
+    * CloseDbStore
+    */
   def CloseDbStore: Unit = lock.synchronized {
     try {
       logger.debug("Closing datastore")
@@ -768,9 +845,9 @@ object PersistenceUtils {
     }
   }
 
-    /**
-     * TruncateDbStore
-     */
+  /**
+    * TruncateDbStore
+    */
   def TruncateDbStore: Unit = lock.synchronized {
     try {
       logger.debug("Not allowing to truncate the whole datastore")
@@ -782,9 +859,10 @@ object PersistenceUtils {
       }
     }
   }
-    /**
-     * TruncateAuditStore
-     */
+
+  /**
+    * TruncateAuditStore
+    */
   def TruncateAuditStore: Unit = lock.synchronized {
     try {
       logger.debug("Truncating Audit datastore")

@@ -106,6 +106,10 @@ object MethodExtract extends App with LogTrait {
           nextOption(map ++ Map('typeDefsPath -> value), tail)
         case "--fcnDefsPath" :: value :: tail =>
           nextOption(map ++ Map('fcnDefsPath -> value), tail)
+        case "--ownerId" :: value :: tail =>
+          nextOption(map ++ Map('ownerId -> value), tail)
+        case "--tenantId" :: value :: tail =>
+          nextOption(map ++ Map('tenantId -> value), tail)
         case "--version" :: tail =>
           nextOption(map ++ Map('version -> "true"), tail)
         case option :: tail => {
@@ -136,6 +140,8 @@ object MethodExtract extends App with LogTrait {
       null
     }
     val excludeListStr = if (options.contains('excludeList)) options.apply('excludeList) else null
+    val ownerId = (if (options.contains('ownerId)) options.apply('ownerId) else "kamanja").trim
+    val tenantId = (if (options.contains('tenantId)) options.apply('tenantId) else "").trim
     var excludeList: Array[String] = null
     val versionNumberStr = if (options.contains('versionNumber)) options.apply('versionNumber) else null
     var versionNumber: Long = 1000000
@@ -239,7 +245,7 @@ object MethodExtract extends App with LogTrait {
         val notExcluded: Boolean = (excludeList.filter(exclnm => nm.contains(exclnm) || rt.contains(exclnm)).length == 0)
         if (notExcluded && !nm.contains("$")) {
 
-          val cmd: MethodCmd = new MethodCmd(mgr, versionNumber, namespace, typeMap, typeArray, nm, fnm, rt, ts)
+          val cmd: MethodCmd = new MethodCmd(mgr, versionNumber, namespace, typeMap, typeArray, nm, fnm, rt, ts, ownerId, tenantId)
           if (cmd != null) {
             val (funcInfo, cmdStr): (FuncDefArgs, String) = cmd.makeFuncDef
             if (funcInfo != null) {
@@ -291,7 +297,7 @@ object MethodExtract extends App with LogTrait {
       if (fArgs.hasIndefiniteArity) {
         features += FcnMacroAttr.HAS_INDEFINITE_ARITY
       }
-      mgr.MakeFunc(fArgs.namespace, fArgs.fcnName, fArgs.physicalName, (fArgs.returnNmSpc, fArgs.returnTypeName), fArgs.argTriples.toList, features, fArgs.versionNo, jarName, deps)
+      mgr.MakeFunc(fArgs.namespace, fArgs.fcnName, fArgs.physicalName, (fArgs.returnNmSpc, fArgs.returnTypeName), fArgs.argTriples.toList, features, ownerId, tenantId, 0, 0, fArgs.versionNo, jarName, deps)
     })
 
     /** Serialize and write json function definitions to file */
@@ -304,19 +310,19 @@ object MethodExtract extends App with LogTrait {
   def usage: String = {
     """
 Collect the function definitions from the supplied object that is found in the supplied class path.  The classpath contains
-the object and any supporting libraries it might require.  The supplied version number will be used for the  
+the object and any supporting libraries it might require.  The supplied version number will be used for the
 version value for all function definitions produced.  The deps string contains the same jars as the classpath argument
 but without paths.  These are used to create the deps values for the function definitions.  The results for the types and function
 definitions are written to the supplied typeDefsPath and fcnDefsPath respectively.
-	  
-Usage: scala com.ligadata.udf.extract.MethodExtract --object <fully qualifed scala object name> 
+
+Usage: scala com.ligadata.udf.extract.MethodExtract --object <fully qualifed scala object name>
 													--cp <classpath>
                                                     --exclude <a list of functions to ignore>
                                                     --versionNumber <N>
                                                     --deps <jar dependencies comma delimited list>
 													--typeDefsPath <types file path>
 													--fcnDefsPath <function definition file path>
-         where 	<fully qualifed scala object name> (required) is the scala object name that contains the 
+         where 	<fully qualifed scala object name> (required) is the scala object name that contains the
 					functions to be cataloged
 				<the kamanja namespace> in which these UDFs should be cataloged
 				<a list of functions to ignore> is a comma delimited list of functions to ignore (OPTIONAL)
@@ -327,10 +333,10 @@ Usage: scala com.ligadata.udf.extract.MethodExtract --object <fully qualifed sca
 				<types file path> the file path that will receive any type definitions that may be needed to catalog the functions
 					being collected
 				<function definition file path> the file path that will receive the function definitions
-				
-	  
+
+
        NOTE: The jar containing this scala object and jars upon which it depends should be on the class path.  Except for
-	   the exclusion list, all arguments are mandatory.  
+	   the exclusion list, all arguments are mandatory.
 	   NOTE: The full package name of the object containing the udfs will become the namespace for the udfs to be cataloged.
 
 """
@@ -344,29 +350,29 @@ Usage: scala com.ligadata.udf.extract.MethodExtract --object <fully qualifed sca
    */
   def InitializeMdMgr: MdMgr = {
     val versionNumber: Long = 1
+    val ownerId: String = "kamanja"
+    val tenantId: String = ""
     val mgr: MdMgr = MdMgr.GetMdMgr
 
     /** seed essential types */
-    mgr.AddScalar(MdMgr.sysNS, "Any", ObjType.tAny, "Any", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.AnyImpl")
-    mgr.AddScalar(MdMgr.sysNS, "String", ObjType.tString, "String", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.StringImpl")
-    mgr.AddScalar(MdMgr.sysNS, "Int", ObjType.tInt, "Int", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.IntImpl")
-    mgr.AddScalar(MdMgr.sysNS, "Integer", ObjType.tInt, "Int", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.IntImpl")
-    mgr.AddScalar(MdMgr.sysNS, "Long", ObjType.tLong, "Long", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.LongImpl")
-    mgr.AddScalar(MdMgr.sysNS, "Boolean", ObjType.tBoolean, "Boolean", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.BoolImpl")
-    mgr.AddScalar(MdMgr.sysNS, "Bool", ObjType.tBoolean, "Boolean", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.BoolImpl")
-    mgr.AddScalar(MdMgr.sysNS, "Double", ObjType.tDouble, "Double", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.DoubleImpl")
-    mgr.AddScalar(MdMgr.sysNS, "Float", ObjType.tFloat, "Float", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.FloatImpl")
-    mgr.AddScalar(MdMgr.sysNS, "Char", ObjType.tChar, "Char", versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.CharImpl")
+    mgr.AddScalar(MdMgr.sysNS, "Any", ObjType.tAny, "Any", ownerId, tenantId, 0, 0, versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.AnyImpl")
+    mgr.AddScalar(MdMgr.sysNS, "String", ObjType.tString, "String", ownerId, tenantId, 0, 0, versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.StringImpl")
+    mgr.AddScalar(MdMgr.sysNS, "Int", ObjType.tInt, "Int", ownerId, tenantId, 0, 0, versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.IntImpl")
+    mgr.AddScalar(MdMgr.sysNS, "Integer", ObjType.tInt, "Int", ownerId, tenantId, 0, 0, versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.IntImpl")
+    mgr.AddScalar(MdMgr.sysNS, "Long", ObjType.tLong, "Long", ownerId, tenantId, 0, 0, versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.LongImpl")
+    mgr.AddScalar(MdMgr.sysNS, "Boolean", ObjType.tBoolean, "Boolean", ownerId, tenantId, 0, 0, versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.BoolImpl")
+    mgr.AddScalar(MdMgr.sysNS, "Bool", ObjType.tBoolean, "Boolean", ownerId, tenantId, 0, 0, versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.BoolImpl")
+    mgr.AddScalar(MdMgr.sysNS, "Double", ObjType.tDouble, "Double", ownerId, tenantId, 0, 0, versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.DoubleImpl")
+    mgr.AddScalar(MdMgr.sysNS, "Float", ObjType.tFloat, "Float", ownerId, tenantId, 0, 0, versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.FloatImpl")
+    mgr.AddScalar(MdMgr.sysNS, "Char", ObjType.tChar, "Char", ownerId, tenantId, 0, 0, versionNumber, "basetypes_2.11-0.1.0.jar", Array("metadata_2.11-1.0.jar"), "com.ligadata.BaseTypes.CharImpl")
 
-    mgr.AddFixedContainer(MdMgr.sysNS, "Context", "com.ligadata.pmml.runtime.Context", List())
+    mgr.AddFixedContainer(MdMgr.sysNS, "Context", "com.ligadata.pmml.runtime.Context", List(), ownerId, tenantId, 0, 0, 1, "")
 
-    mgr.AddFixedContainer(MdMgr.sysNS, "EnvContext", "com.ligadata.KamanjaBase.EnvContext", List())
+    mgr.AddFixedContainer(MdMgr.sysNS, "EnvContext", "com.ligadata.KamanjaBase.EnvContext", List(), ownerId, tenantId, 0, 0, 2, "")
 
-    mgr.AddFixedContainer(MdMgr.sysNS, "BaseMsg", "com.ligadata.KamanjaBase.BaseMsg", List())
+    mgr.AddFixedContainer(MdMgr.sysNS, "MessageInterface", "com.ligadata.KamanjaBase.MessageInterface", List(), ownerId, tenantId, 0, 0, 3, "")
 
-    mgr.AddFixedContainer(MdMgr.sysNS, "BaseContainer", "com.ligadata.KamanjaBase.BaseContainer", List())
-
-    mgr.AddFixedContainer(MdMgr.sysNS, "MessageContainerBase", "com.ligadata.KamanjaBase.MessageContainerBase", List())
+    mgr.AddFixedContainer(MdMgr.sysNS, "ContainerInterface", "com.ligadata.KamanjaBase.ContainerInterface", List(), ownerId, tenantId, 0, 0, 4, "")
 
     mgr
   }

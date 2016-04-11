@@ -72,13 +72,14 @@ public class SubscriberUsageAlert extends ModelInstance {
 
 	  //aggregate account uasage
 	  long actMonthlyUsage = actAggrUsage.thismonthusage() + rcntTxn.usage();
-	  actAggrUsage.withthismonthusage(actMonthlyUsage).Save();
+	  actAggrUsage.set("thismonthusage",actMonthlyUsage);
+	  actAggrUsage.save();
 
 	   // aggregate the usage
 	   // aggregate individual subscriber usage
 	  long subMonthlyUsage = subAggrUsage.thismonthusage() + rcntTxn.usage();
-	  subAggrUsage.withthismonthusage(subMonthlyUsage).Save();
-
+	  subAggrUsage.set("thismonthusage",subMonthlyUsage);
+	  subAggrUsage.save();
 
 	  long curTmInMs = curDtTmInMs.getDateTimeInMs();
 
@@ -152,7 +153,7 @@ public class SubscriberUsageAlert extends ModelInstance {
 			public SubscriberUsageAlertFactory(ModelDef modelDef, NodeContext nodeContext) {
 				super(modelDef, nodeContext);
 			}
-			public boolean isValidMessage(MessageContainerBase msg) {
+			public boolean isValidMessage(ContainerInterface msg) {
 				return (msg instanceof SubscriberUsage);
 			}
 

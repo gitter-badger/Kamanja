@@ -54,7 +54,7 @@ unmanagedJars in Compile <<= baseDirectory map { base => (base ** "*.jar").class
 
 name := "ClusterInstallerDriver"
 
-version := "1.0"
+version := "1.4.0"
 
 // Enables publishing to maven repo
 // publishMavenStyle := true
@@ -75,4 +75,8 @@ libraryDependencies += "org.apache.logging.log4j" % "log4j-core" % "2.4.1"
 
 // EclipseKeys.projectFlavor := EclipseProjectFlavor.Java
 
+coverageMinimum := 80
 
+coverageFailOnMinimum := false
+
+coverageExcludedPackages := "com.ligadata.ClusterInstallerDriver.*"

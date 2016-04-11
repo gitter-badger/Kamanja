@@ -18,7 +18,7 @@ package com.ligadata.keyvaluestore
 
 // This libraries need to come first or import won't find them
 //
-import com.ligadata.StorageBase.{ Key, Value, IStorage, DataStoreOperations, DataStore, Transaction, StorageAdapterObj }
+import com.ligadata.StorageBase.{ Key, Value, IStorage, DataStoreOperations, DataStore, Transaction, StorageAdapterFactory }
 import voldemort.client._
 import voldemort.client.ClientConfig
 import voldemort.client.SocketStoreClientFactory
@@ -213,7 +213,7 @@ class KeyValueVoldemort(val kvManagerLoader: KamanjaLoaderInfo, val datastoreCon
 }
 
 // To create Voldemort Datastore instance
-object KeyValueVoldemort extends StorageAdapterObj {
+object KeyValueVoldemort extends StorageAdapterFactory {
   override def CreateStorageAdapter(kvManagerLoader: KamanjaLoaderInfo, datastoreConfig: String, tableName: String): DataStore = new KeyValueVoldemort(kvManagerLoader, datastoreConfig, tableName)
 }
 

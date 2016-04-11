@@ -1,0 +1,19 @@
+{
+  "Message" : {
+    "NameSpace" : "com.ligadata.kamanja.test",
+    "Name" : "arrout1",
+    "Version" : "00.01.00",
+    "Description" : "Test message com.ligadata.kamanja.test.arrout1",
+    "Fixed" : "true",
+    "Fields": [
+      {
+        "Name": "out_ext_type_id",
+        "Type": "System.String"
+      },
+      {
+        "Name": "mydata",
+        "Type": "System.ArrayOfString"
+      }
+    ]
+  }
+}

@@ -32,7 +32,7 @@ import scala.io._
  * Created by dhaval on 8/12/15.
  */
 object TypeService {
-  private val userid: Option[String] = Some("metadataapi")
+  private val userid: Option[String] = Some("kamanja")
   val loggerName = this.getClass.getName
   lazy val logger = LogManager.getLogger(loggerName)
 

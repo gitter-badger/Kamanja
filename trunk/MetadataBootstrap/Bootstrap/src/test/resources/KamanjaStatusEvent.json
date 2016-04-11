@@ -1,0 +1,32 @@
+{
+  "Message": {
+    "NameSpace": "com.ligadata.KamanjaBase",
+    "Name": "KamanjaStatusEvent",
+    "Version": "1.02",
+    "Description": "Status Event Message",
+    "Fixed": "true",
+      "Elements": [
+        {
+          "Field": {
+             "NameSpace": "com.ligadata.KamanjaBase",
+             "Name": "NodeId",
+             "Type": "System.String"
+          }
+        },
+        {
+          "Field": {
+             "NameSpace": "com.ligadata.KamanjaBase",
+             "Name": "eventTime",
+             "Type": "System.Long"
+          }
+        },
+        {
+          "Field": {
+             "NameSpace": "com.ligadata.KamanjaBase",
+             "Name": "StatusString",
+             "Type": "System.String"
+          }
+        }
+      ]
+  }
+}

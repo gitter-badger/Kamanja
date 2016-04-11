@@ -27,7 +27,7 @@ import org.apache.logging.log4j.{ Logger, LogManager }
 import com.ligadata.kamanja.metadata.ModelDef;
 
 class LowBalanceAlertFactory(modelDef: ModelDef, nodeContext: NodeContext) extends ModelInstanceFactory(modelDef, nodeContext) {
-  override def isValidMessage(msg: MessageContainerBase): Boolean = return msg.isInstanceOf[TransactionMsg]
+  override def isValidMessage(msg: ContainerInterface): Boolean = return msg.isInstanceOf[TransactionMsg]
   override def createModelInstance(): ModelInstance = return new LowBalanceAlert(this)
   override def getModelName(): String = "LowBalanceAlert" // Model Name
   override def getVersion(): String = "0.0.1" // Model Version
@@ -146,7 +146,12 @@ class LowBalanceAlert(factory: ModelInstanceFactory) extends ModelInstance(facto
 
     val curTmInMs = curDtTmInMs.getDateTimeInMs
     // create new alert history record and persist (if policy is to keep only one, this will replace existing one)
-    CustAlertHistory.build.withalertdttminms(curTmInMs).withalerttype("lowbalancealert").Save
+    val ah = CustAlertHistory.build;
+    ah.set("alertdttminms",curTmInMs);
+    ah.set("alerttype","lowbalancealert");
+    ah.save;
+
+    //CustAlertHistory.build.withalertdttminms(curTmInMs).withalerttype("lowbalancealert").Save
     // results
     new LowBalanceAlertResult().withCustId(rcntTxn.get.custid).withBranchId(rcntTxn.get.branchid).withAccNo(rcntTxn.get.accno).withCurBalance(rcntTxn.get.balance).withAlertType("lowBalanceAlert").withTriggerTime(curTmInMs)
   }

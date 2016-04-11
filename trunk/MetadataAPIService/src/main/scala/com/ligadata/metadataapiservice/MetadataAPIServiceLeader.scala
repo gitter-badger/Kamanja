@@ -16,6 +16,7 @@
 
 package com.ligadata.metadataapiservice
 
+import com.ligadata.Utils.ClusterStatus
 import com.ligadata.kamanja.metadata.ObjType._
 import com.ligadata.kamanja.metadata._
 import com.ligadata.kamanja.metadataload.MetadataLoad
@@ -51,9 +52,9 @@ object MetadataAPIServiceLeader {
     try{
       clusterStatus = cs
       isLeader = cs.isLeader
-      leaderNode = cs.leader
+      leaderNode = cs.leaderNodeId
       val isLeaderStr = if (cs.isLeader) "true" else "false"
-      LOG.debug("NodeId:%s, IsLeader:%s, Leader:%s, AllParticipents:{%s}".format(cs.nodeId, isLeaderStr, cs.leader, cs.participants.mkString(",")))
+      LOG.debug("NodeId:%s, IsLeader:%s, Leader:%s, AllParticipents:{%s}".format(cs.nodeId, isLeaderStr, cs.leaderNodeId, cs.participantsNodeIds.mkString(",")))
     } catch {
       case e: Exception => {
         LOG.debug("EventChangeCallback => Found exception.", e)

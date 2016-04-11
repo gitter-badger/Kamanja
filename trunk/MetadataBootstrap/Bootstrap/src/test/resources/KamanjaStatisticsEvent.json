@@ -1,0 +1,17 @@
+{
+  "Message": {
+    "NameSpace": "com.ligadata.KamanjaBase",
+    "Name": "KamanjaStatisticsEvent",
+    "Version": "1.02",
+    "Description": "Generic statistics. ",
+    "Fixed": "true",
+    "Elements": [
+      {
+        "Field": {
+          "Name": "statistics",
+          "Type": "String"
+        }
+      }
+    ]
+  }
+}

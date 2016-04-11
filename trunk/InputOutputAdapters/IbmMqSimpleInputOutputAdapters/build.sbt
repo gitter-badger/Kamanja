@@ -23,3 +23,7 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.0" % "test"
 libraryDependencies += "org.scalamock" %% "scalamock-scalatest-support" % "3.2" % "test"
 
 EclipseKeys.relativizeLibs := false
+
+coverageMinimum := 80
+
+coverageFailOnMinimum := false

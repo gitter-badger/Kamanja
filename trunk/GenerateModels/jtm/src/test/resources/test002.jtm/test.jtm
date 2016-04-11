@@ -27,26 +27,28 @@
           "mapping": {
             "out1": "in1",
             "out2": "t1",
+            "out3": "in3",
             "out4": "in3"
           },
 
           "where": "!($in2 != -1 && $in2 < 100)",
 
           "computes": {
-            "t1": { "type": "String", "val": "\"s:\" + ($in2).toString()" }
+            "t1": { "type": "String", "val": "\"s:\" + $in2.toString()" }
           }
         },
         "o2": {
           "mapping": {
             "out1": "in1",
             "out2": "t1",
+            "out3": "in3",
             "out4": "in3"
           },
 
           "where": "!($in2 != -1 && $in2 < 100)",
 
           "computes": {
-            "t1": { "type": "String", "val": "\"s:\" + ($in2).toString()" }
+            "t1": { "type": "String", "val": "\"s:\" + $in2.toString()" }
           }
         }
       }
@@ -62,26 +64,28 @@
           "mapping": {
             "out1": "in1",
             "out2": "t1",
+            "out3": "in2",
             "out4": "in3"
           },
 
           "where": "!($in2 != -1 && $in2 < 100)",
 
           "computes": {
-            "t1": { "type": "String", "val": "\"s:\" + ($in2).toString()" }
+            "t1": { "type": "String", "val": "\"s:\" + $in2.toString()" }
           }
         },
         "o2": {
           "mapping": {
             "out1": "in1",
             "out2": "t1",
+            "out3": "in2",
             "out4": "in3"
           },
 
           "where": "!($in2 != -1 && $in2 < 100)",
 
           "computes": {
-            "t1": { "type": "String", "val": "\"s:\" + ($in2).toString()" }
+            "t1": { "type": "String", "val": "\"s:\" + $in2.toString()" }
           }
         }
       }

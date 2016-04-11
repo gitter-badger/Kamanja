@@ -34,7 +34,7 @@ public class test0001 extends ModelInstance {
             super(modelDef, nodeContext);
         }
 
-        public boolean isValidMessage(MessageContainerBase msg) {
+        public boolean isValidMessage(ContainerInterface msg) {
             return (msg instanceof com.ligadata.kamanja.test001.v1000000.msg1);
         }
 

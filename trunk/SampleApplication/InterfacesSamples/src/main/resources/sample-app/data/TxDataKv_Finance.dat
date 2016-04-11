@@ -1,0 +1,1 @@
+type=com.ligadata.kamanja.samples.messages.TransactionMsg|custid=1|branchid=1|accno=1|amount=10000|balance=10000|date=20150101|time=100100000|locationid=1,transtypee=C

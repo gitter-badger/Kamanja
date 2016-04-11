@@ -1,6 +1,6 @@
 <PMML version="4.1" xmlns="http://www.dmg.org/PMML-4_1">
     <Header copyright="LigaDATA. Copyright 2014" description="Hello World">
-        <Application name="HelloWord" version="00.01.00"/>
+        <Application name="HelloWorld" version="00.01.00"/>
     </Header>
     <DataDictionary numberOfFields="3">
         <DataField dataType="helloworld_msg_def" displayName="msg" name="msg" optype="categorical"/>

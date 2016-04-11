@@ -6,3 +6,4 @@ addSbtPlugin("com.orrsella" % "sbt-sublime" % "1.0.9")
 
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.1")
 
+

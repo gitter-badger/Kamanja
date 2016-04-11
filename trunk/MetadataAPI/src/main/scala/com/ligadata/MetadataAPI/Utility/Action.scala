@@ -25,19 +25,19 @@ import com.ligadata.MetadataAPI.Utility.Action.Value
  */
 object Action extends Enumeration {
   type Action = Value
+  // adapter message binding
+  val ADDADAPTERMESSAGEBINDING=Value("addadaptermessagebinding")
+  val UPDATEADAPTERMESSAGEBINDING=Value("updateadaptermessagebinding")
+  val REMOVEADAPTERMESSAGEBINDING=Value("removeadaptermessagebinding")
   //message manangemen
   val ADDMESSAGE=Value("addmessage")
   val UPDATEMESSAGE=Value("updatemessage")
   val GETALLMESSAGES=Value("getallmessages")
   val REMOVEMESSAGE=Value("removemessage")
   val GETMESSAGE=Value("getmessage")
-  //output message management
-  val ADDOUTPUTMESSAGE=Value("addoutputmessage")
-  val UPDATEOUTPUTMESSAGE=Value("updateoutputmessage")
-  val REMOVEOUTPUTMESSAGE=Value("removeoutputmessage")
-  val GETALLOUTPUTMESSAGES=Value("getalloutputmessages")
   //model management
   val ADDMODELKPMML=Value("addmodelkpmml")
+  val ADDMODELJTM=Value("addmodeljtm")
   val ADDMODELPMML=Value("addmodelpmml")
   val ADDMODELSCALA=Value("addmodelscala")
   val ADDMODELJAVA=Value("addmodeljava")
@@ -45,6 +45,7 @@ object Action extends Enumeration {
   val ACTIVATEMODEL=Value("activatemodel")
   val DEACTIVATEMODEL=Value("deactivatemodel")
   val UPDATEMODELKPMML=Value("updatemodelkpmml")
+  val UPDATEMODELJTM=Value("updatemodeljtm")
   val UPDATEMODELPMML=Value("updatemodelpmml")
   val UPDATEMODELSCALA=Value("updatemodelscala")
   val UPDATEMODELJAVA=Value("updatemodeljava")
@@ -88,5 +89,4 @@ object Action extends Enumeration {
   val DUMPALLCLUSTERS=Value("dumpallclusters")
   val DUMPALLCLUSTERCFGS=Value("dumpallclustercfgs")
   val DUMPALLADAPTERS=Value("dumpalladapters")
-  val GETOUTPUTMESSAGE=Value("getoutputmessage")
 }

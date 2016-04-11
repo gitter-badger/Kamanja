@@ -1420,7 +1420,7 @@ class FunctionSelect(val ctx : PmmlContext, val mgr : MdMgr, val node : xApply) 
 	 */
 	def collectContainerSuperClasses(argTypes : Array[(String,Boolean,BaseTypeDef)]) : Map[String, Array[(String, ClassSymbol, Type)]] = {
 
-	  	val containerNamefullPkgNamesAndElem : Array[(String,String,BaseTypeDef)] = argTypes.filter(arg => arg._3.isInstanceOf[ContainerTypeDef] && ! arg._3.isInstanceOf[TupleTypeDef]).map( argInfo => {
+	  	val containerNamefullPkgNamesAndElem : Array[(String,String,BaseTypeDef)] = argTypes.filter(arg => arg._3.isInstanceOf[ContainerTypeDef]).map( argInfo => {
 	  		val (arg, isContainer, elem) : (String, Boolean, BaseTypeDef) = argInfo
 	  		(arg, elem.typeString, elem)
 	  	})
@@ -1659,7 +1659,7 @@ class FunctionSelect(val ctx : PmmlContext, val mgr : MdMgr, val node : xApply) 
 	 *  scala> val composite = Array[Array[Int]](a,b,c)
 	 *  composite: Array[Array[Int]] = Array(Array(1, 2, 3, 4, 5), Array(2, 4, 6, 8, 10), Array(4, 6, 8, 10, 12))
 	 *  
-	 *  scala> composite.map(arr => arr.sum)  ` this kind of thing is common for aggregation
+	 *  scala> composite.map(arr => arr.sum)  // this kind of thing is common for aggregation
 	 *  res0: Array[Int] = Array(15, 30, 40)
 	 *  
 	 *  scala> composite.map(arr => arr(0) + arr(2))  <<< this kind of thing is common for aggregation

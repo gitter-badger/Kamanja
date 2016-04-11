@@ -88,7 +88,7 @@ class CleanerConfiguration(metadataConfigFile: String) {
       val zkJson = parse(clusterCfg.CfgMap("ZooKeeperInfo"))
       val nodeBasePath = (zkJson \ "ZooKeeperNodeBasePath").values.toString
       val connStr: String = (zkJson \ "ZooKeeperConnectString").values.toString
-      if (zkJson == "None" || nodeBasePath == "None" || connStr == "None")
+      if (zkJson == null || nodeBasePath == null || connStr == null)
         throw CleanUtilException("CLEAN-UTIL: Failed to retrieve zookeeper configuration. Please ensure you've uploaded cluster configuration to metadata.", null)
       zookeeperInfo = new ZooKeeperInfo(nodeBasePath, connStr)
       // End Zookeeper configuration
@@ -98,7 +98,7 @@ class CleanerConfiguration(metadataConfigFile: String) {
       val jarPaths: Set[String] = if (tmpJarPaths != null) tmpJarPaths.split(",").toSet else scala.collection.immutable.Set[String]()
 
       // Get DataStore storage adapter
-      dataStore = KeyValueManager.Get(jarPaths, clusterCfg.cfgMap("DataStore"))
+      dataStore = KeyValueManager.Get(jarPaths, clusterCfg.cfgMap("SystemCatalog"))
 
       // Get MetadataStore storage adapter
       metadataStore = MetadataAPIImpl.GetMainDS

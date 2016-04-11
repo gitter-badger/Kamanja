@@ -18,6 +18,10 @@ package com.ligadata.jtm
 /**
   * Created by joerg on 1/20/16.
   */
+
+import javax.annotation.RegEx
+
+import org.scalatest.matchers.Matcher
 import scala.collection.mutable.Map
 
 // Note this can create an endless recursion Run( "{Hello}" with "Hello"-> "{World}", World->"{Hello}"
@@ -39,8 +43,8 @@ class Substitution {
   def Replace(value: String): String = {
     val r = subts.foldLeft(value)((s: String, x:(String,String)) => ({
       val regextmp = "\\{" + x._1 + "\\}"
-      val regex = (regextmp).r
-      regex.replaceAllIn( s, x._2)
+      val regex = regextmp.r
+      regex.replaceAllIn( s,  java.util.regex.Matcher.quoteReplacement (x._2))
     }))
     r
   }

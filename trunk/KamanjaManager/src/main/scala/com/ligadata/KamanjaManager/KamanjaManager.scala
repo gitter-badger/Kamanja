@@ -3,7 +3,7 @@ package com.ligadata.KamanjaManager
 
 import com.ligadata.HeartBeat.MonitoringContext
 import com.ligadata.KamanjaBase._
-import com.ligadata.InputOutputAdapterInfo.{ ExecContext, InputAdapter, OutputAdapter, ExecContextObj, PartitionUniqueRecordKey, PartitionUniqueRecordValue }
+import com.ligadata.InputOutputAdapterInfo.{ ExecContext, InputAdapter, OutputAdapter, ExecContextFactory, PartitionUniqueRecordKey, PartitionUniqueRecordValue }
 import com.ligadata.ZooKeeper.CreateClient
 import org.json4s.jackson.JsonMethods._
 
@@ -82,22 +82,25 @@ object KamanjaManangerMonitorContext {
   val monitorCount = new java.util.concurrent.atomic.AtomicLong()
 }
 
+case class InitConfigs(val dataDataStoreInfo: String, val jarPaths: collection.immutable.Set[String], val zkConnectString: String,
+                      val zkNodeBasePath: String, val zkSessionTimeoutMs: Int, val zkConnectionTimeoutMs: Int)
+
 object KamanjaConfiguration {
   var configFile: String = _
   var allConfigs: Properties = _
   //  var metadataDataStoreInfo: String = _
-  var dataDataStoreInfo: String = _
-  var jarPaths: collection.immutable.Set[String] = _
+//  var dataDataStoreInfo: String = _
+//  var jarPaths: collection.immutable.Set[String] = _
   var nodeId: Int = _
   var clusterId: String = _
   var nodePort: Int = _
-  var zkConnectString: String = _
-  var zkNodeBasePath: String = _
-  var zkSessionTimeoutMs: Int = _
-  var zkConnectionTimeoutMs: Int = _
+//  var zkConnectString: String = _
+//  var zkNodeBasePath: String = _
+//  var zkSessionTimeoutMs: Int = _
+//  var zkConnectionTimeoutMs: Int = _
 
-  var txnIdsRangeForNode: Int = 100000 // Each time get txnIdsRange of transaction ids for each Node
-  var txnIdsRangeForPartition: Int = 10000 // Each time get txnIdsRange of transaction ids for each partition
+//  var txnIdsRangeForNode: Int = 100000 // Each time get txnIdsRange of transaction ids for each Node
+//  var txnIdsRangeForPartition: Int = 10000 // Each time get txnIdsRange of transaction ids for each partition
 
   // Debugging info configs -- Begin
   var waitProcessingSteps = collection.immutable.Set[Int]()
@@ -107,24 +110,24 @@ object KamanjaConfiguration {
   var shutdown = false
   var participentsChangedCntr: Long = 0
   var baseLoader = new KamanjaLoaderInfo
-  var adaptersAndEnvCtxtLoader = new KamanjaLoaderInfo(baseLoader, true, true)
-  var metadataLoader = new KamanjaLoaderInfo(baseLoader, true, true)
+//  var adaptersAndEnvCtxtLoader = new KamanjaLoaderInfo(baseLoader, true, true)
+//  var metadataLoader = new KamanjaLoaderInfo(baseLoader, true, true)
 
-  var adapterInfoCommitTime = 5000 // Default 5 secs
+//  var adapterInfoCommitTime = 5000 // Default 5 secs
 
   def Reset: Unit = {
     configFile = null
     allConfigs = null
     //    metadataDataStoreInfo = null
-    dataDataStoreInfo = null
-    jarPaths = null
+//    dataDataStoreInfo = null
+//    jarPaths = null
     nodeId = 0
     clusterId = null
     nodePort = 0
-    zkConnectString = null
-    zkNodeBasePath = null
-    zkSessionTimeoutMs = 0
-    zkConnectionTimeoutMs = 0
+//    zkConnectString = null
+//    zkNodeBasePath = null
+//    zkSessionTimeoutMs = 0
+//    zkConnectionTimeoutMs = 0
 
     // Debugging info configs -- Begin
     waitProcessingSteps = collection.immutable.Set[Int]()
@@ -175,43 +178,43 @@ object ProcessedAdaptersInfo {
     }
   }
 
-  def CommitAdapterValues: Boolean = {
-    LOG.debug("CommitAdapterValues. AdapterCommitTime: " + KamanjaConfiguration.adapterInfoCommitTime)
-    var committed = false
-    if (KamanjaMetadata.envCtxt != null) {
-      // Try to commit now
-      var changedValues: List[(String, String)] = null
-      val newValues = getAllValues
-      if (prevAdapterCommittedValues.size == 0) {
-        changedValues = newValues.toList
-      } else {
-        var changedArr = ArrayBuffer[(String, String)]()
-        newValues.foreach(v1 => {
-          val oldVal = prevAdapterCommittedValues.getOrElse(v1._1, null)
-          if (oldVal == null || v1._2.equals(oldVal) == false) { // It is not found or changed, simple take it
-            changedArr += v1
-          }
-        })
-        changedValues = changedArr.toList
-      }
-      // Commit here
-      try {
-        if (changedValues.size > 0)
-          KamanjaMetadata.envCtxt.setAdapterUniqKeyAndValues(changedValues)
-        prevAdapterCommittedValues = newValues
-        committed = true
-      } catch {
-        case e: Exception => {
-          LOG.error("Failed to commit adapter changes. if we can not save this we will reprocess the information when service restarts.", e)
-        }
-        case e: Throwable => {
-          LOG.error("Failed to commit adapter changes. if we can not save this we will reprocess the information when service restarts.", e)
-        }
-      }
-
-    }
-    committed
-  }
+//  def CommitAdapterValues: Boolean = {
+//    LOG.debug("CommitAdapterValues. AdapterCommitTime: " + KamanjaConfiguration.adapterInfoCommitTime)
+//    var committed = false
+//    if (KamanjaMetadata.envCtxt != null) {
+//      // Try to commit now
+//      var changedValues: List[(String, String)] = null
+//      val newValues = getAllValues
+//      if (prevAdapterCommittedValues.size == 0) {
+//        changedValues = newValues.toList
+//      } else {
+//        var changedArr = ArrayBuffer[(String, String)]()
+//        newValues.foreach(v1 => {
+//          val oldVal = prevAdapterCommittedValues.getOrElse(v1._1, null)
+//          if (oldVal == null || v1._2.equals(oldVal) == false) { // It is not found or changed, simple take it
+//            changedArr += v1
+//          }
+//        })
+//        changedValues = changedArr.toList
+//      }
+//      // Commit here
+//      try {
+//        if (changedValues.size > 0)
+//          KamanjaMetadata.envCtxt.setAdapterUniqKeyAndValues(changedValues)
+//        prevAdapterCommittedValues = newValues
+//        committed = true
+//      } catch {
+//        case e: Exception => {
+//          LOG.error("Failed to commit adapter changes. if we can not save this we will reprocess the information when service restarts.", e)
+//        }
+//        case e: Throwable => {
+//          LOG.error("Failed to commit adapter changes. if we can not save this we will reprocess the information when service restarts.", e)
+//        }
+//      }
+//
+//    }
+//    committed
+//  }
 }
 
 class KamanjaManager extends Observer {
@@ -222,12 +225,12 @@ class KamanjaManager extends Observer {
 
   private val inputAdapters = new ArrayBuffer[InputAdapter]
   private val outputAdapters = new ArrayBuffer[OutputAdapter]
-  private val statusAdapters = new ArrayBuffer[OutputAdapter]
-  private val validateInputAdapters = new ArrayBuffer[InputAdapter]
+//  private val statusAdapters = new ArrayBuffer[OutputAdapter]
+//  private val validateInputAdapters = new ArrayBuffer[InputAdapter]
 
   private var thisEngineInfo: MainInfo = null
   private var adapterMetricInfo: scala.collection.mutable.MutableList[com.ligadata.HeartBeat.MonitorComponentInfo] = null
-  private val failedEventsAdapters = new ArrayBuffer[OutputAdapter]
+//  private val failedEventsAdapters = new ArrayBuffer[OutputAdapter]
 
   private var metricsService: ExecutorService = scala.actors.threadpool.Executors.newFixedThreadPool(1)
   private var isTimerRunning = false
@@ -250,6 +253,7 @@ class KamanjaManager extends Observer {
     KamanjaLeader.Shutdown
     KamanjaMetadata.Shutdown
     ShutdownAdapters
+    PostMessageExecutionQueue.shutdown
     if (KamanjaMetadata.envCtxt != null)
       KamanjaMetadata.envCtxt.Shutdown
     if (serviceObj != null)
@@ -279,7 +283,7 @@ class KamanjaManager extends Observer {
     if (dynamicjars != null && dynamicjars.length() > 0) {
       val jars = dynamicjars.split(",").map(_.trim).filter(_.length() > 0)
       if (jars.length > 0) {
-        val qualJars = jars.map(j => Utils.GetValidJarFile(KamanjaConfiguration.jarPaths, j))
+        val qualJars = jars.map(j => Utils.GetValidJarFile(KamanjaMetadata.envCtxt.getJarPaths(), j))
         val nonExistsJars = Utils.CheckForNonExistanceJars(qualJars.toSet)
         if (nonExistsJars.size > 0) {
           LOG.error("Not found jars in given Dynamic Jars List : {" + nonExistsJars.mkString(", ") + "}")
@@ -295,24 +299,24 @@ class KamanjaManager extends Observer {
   private def ShutdownAdapters: Boolean = {
     LOG.debug("Shutdown Adapters started @ " + Utils.GetCurDtTmStr)
     val s0 = System.nanoTime
-
-    validateInputAdapters.foreach(ia => {
-      try {
-        ia.Shutdown
-      } catch {
-        case fae: FatalAdapterException => {
-          LOG.error("Validate adapter " + ia.UniqueName + "failed to shutdown", fae)
-        }
-        case e: Exception => {
-          LOG.error("Validate adapter " + ia.UniqueName + "failed to shutdown", e)
-        }
-        case e: Throwable => {
-          LOG.error("Validate adapter " + ia.UniqueName + "failed to shutdown", e)
-        }
-      }
-    })
-
-    validateInputAdapters.clear
+//
+//    validateInputAdapters.foreach(ia => {
+//      try {
+//        ia.Shutdown
+//      } catch {
+//        case fae: FatalAdapterException => {
+//          LOG.error("Validate adapter " + ia.UniqueName + "failed to shutdown", fae)
+//        }
+//        case e: Exception => {
+//          LOG.error("Validate adapter " + ia.UniqueName + "failed to shutdown", e)
+//        }
+//        case e: Throwable => {
+//          LOG.error("Validate adapter " + ia.UniqueName + "failed to shutdown", e)
+//        }
+//      }
+//    })
+//
+//    validateInputAdapters.clear
 
     inputAdapters.foreach(ia => {
       try {
@@ -349,42 +353,42 @@ class KamanjaManager extends Observer {
     })
 
     outputAdapters.clear
-
-    statusAdapters.foreach(oa => {
-      try {
-        oa.Shutdown
-      } catch {
-        case fae: FatalAdapterException => {
-          LOG.error("Status adapter failed to shutdown", fae)
-        }
-        case e: Exception => {
-          LOG.error("Status adapter failed to shutdown", e)
-        }
-        case e: Throwable => {
-          LOG.error("Status adapter failed to shutdown", e)
-        }
-      }
-    })
-
-    statusAdapters.clear
-
-    failedEventsAdapters.foreach(oa => {
-      try {
-        oa.Shutdown
-      } catch {
-        case fae: FatalAdapterException => {
-          LOG.error("FailedEvents adapter failed to shutdown, cause", fae)
-        }
-        case e: Exception => {
-          LOG.error("FailedEvents adapter failed to shutdown, cause", e)
-        }
-        case e: Throwable => {
-          LOG.error("FailedEvents adapter failed to shutdown", e)
-        }
-      }
-    })
-
-    failedEventsAdapters.clear
+//
+//    statusAdapters.foreach(oa => {
+//      try {
+//        oa.Shutdown
+//      } catch {
+//        case fae: FatalAdapterException => {
+//          LOG.error("Status adapter failed to shutdown", fae)
+//        }
+//        case e: Exception => {
+//          LOG.error("Status adapter failed to shutdown", e)
+//        }
+//        case e: Throwable => {
+//          LOG.error("Status adapter failed to shutdown", e)
+//        }
+//      }
+//    })
+//
+//    statusAdapters.clear
+//
+//    failedEventsAdapters.foreach(oa => {
+//      try {
+//        oa.Shutdown
+//      } catch {
+//        case fae: FatalAdapterException => {
+//          LOG.error("FailedEvents adapter failed to shutdown, cause", fae)
+//        }
+//        case e: Exception => {
+//          LOG.error("FailedEvents adapter failed to shutdown, cause", e)
+//        }
+//        case e: Throwable => {
+//          LOG.error("FailedEvents adapter failed to shutdown", e)
+//        }
+//      }
+//    })
+//
+//    failedEventsAdapters.clear
 
     val totaltm = "TimeConsumed:%.02fms".format((System.nanoTime - s0) / 1000000.0);
     LOG.debug("Shutdown Adapters done @ " + Utils.GetCurDtTmStr + ". " + totaltm)
@@ -404,14 +408,14 @@ class KamanjaManager extends Observer {
         return false
       }
 
-      try {
-        val adapterCommitTime = loadConfigs.getProperty("AdapterCommitTime".toLowerCase, "0").replace("\"", "").trim.toInt
-        if (adapterCommitTime > 0) {
-          KamanjaConfiguration.adapterInfoCommitTime = adapterCommitTime
-        }
-      } catch {
-        case e: Exception => { LOG.warn("", e) }
-      }
+//      try {
+//        val adapterCommitTime = loadConfigs.getProperty("AdapterCommitTime".toLowerCase, "0").replace("\"", "").trim.toInt
+//        if (adapterCommitTime > 0) {
+//          KamanjaConfiguration.adapterInfoCommitTime = adapterCommitTime
+//        }
+//      } catch {
+//        case e: Exception => { LOG.warn("", e) }
+//      }
 
       try {
         KamanjaConfiguration.waitProcessingTime = loadConfigs.getProperty("waitProcessingTime".toLowerCase, "0").replace("\"", "").trim.toInt
@@ -426,9 +430,25 @@ class KamanjaManager extends Observer {
 
       LOG.debug("Initializing metadata bootstrap")
       KamanjaMetadata.InitBootstrap
+      var intiConfigs: InitConfigs = null
 
-      if (KamanjaMdCfg.InitConfigInfo == false)
+      try{
+        intiConfigs = KamanjaMdCfg.InitConfigInfo
+      } catch {
+        case e: Exception => {
+          return false
+        }
+      }
+
+      LOG.debug("Validating required jars")
+      KamanjaMdCfg.ValidateAllRequiredJars(intiConfigs.jarPaths)
+      LOG.debug("Load Environment Context")
+
+      KamanjaMetadata.envCtxt = KamanjaMdCfg.LoadEnvCtxt(intiConfigs)
+      if (KamanjaMetadata.envCtxt == null)
         return false
+
+      val (zkConnectString, zkNodeBasePath, zkSessionTimeoutMs, zkConnectionTimeoutMs)  = KamanjaMetadata.envCtxt.getZookeeperInfo
 
       var engineLeaderZkNodePath = ""
       var engineDistributionZkNodePath = ""
@@ -437,9 +457,7 @@ class KamanjaManager extends Observer {
       var dataChangeZkNodePath = ""
       var zkHeartBeatNodePath = ""
 
-      if (KamanjaConfiguration.zkNodeBasePath.size > 0) {
-        val zkNodeBasePath = KamanjaConfiguration.zkNodeBasePath.stripSuffix("/").trim
-        KamanjaConfiguration.zkNodeBasePath = zkNodeBasePath
+      if (zkNodeBasePath.size > 0) {
         engineLeaderZkNodePath = zkNodeBasePath + "/engineleader"
         engineDistributionZkNodePath = zkNodeBasePath + "/enginedistribution"
         metadataUpdatesZkNodePath = zkNodeBasePath + "/metadataupdate"
@@ -448,26 +466,22 @@ class KamanjaManager extends Observer {
         zkHeartBeatNodePath = zkNodeBasePath + "/monitor/engine/" + KamanjaConfiguration.nodeId.toString
       }
 
-      LOG.debug("Validating required jars")
-      KamanjaMdCfg.ValidateAllRequiredJars
-      LOG.debug("Load Environment Context")
-
-      KamanjaMetadata.envCtxt = KamanjaMdCfg.LoadEnvCtxt()
-      if (KamanjaMetadata.envCtxt == null)
-        return false
+      KamanjaMetadata.envCtxt.setNodeInfo(KamanjaConfiguration.nodeId.toString, KamanjaConfiguration.clusterId)
 
 
       KamanjaMetadata.gNodeContext = new NodeContext(KamanjaMetadata.envCtxt)
 
+      PostMessageExecutionQueue.init(KamanjaMetadata.gNodeContext)
+
       LOG.debug("Loading Adapters")
       // Loading Adapters (Do this after loading metadata manager & models & Dimensions (if we are loading them into memory))
 
-      retval = KamanjaMdCfg.LoadAdapters(inputAdapters, outputAdapters, statusAdapters, validateInputAdapters, failedEventsAdapters)
+      retval = KamanjaMdCfg.LoadAdapters(inputAdapters, outputAdapters)
 
       if (retval) {
         LOG.debug("Initialize Metadata Manager")
-        KamanjaMetadata.InitMdMgr(KamanjaConfiguration.zkConnectString, metadataUpdatesZkNodePath, KamanjaConfiguration.zkSessionTimeoutMs, KamanjaConfiguration.zkConnectionTimeoutMs)
-        KamanjaMetadata.envCtxt.CacheContainers(KamanjaConfiguration.clusterId) // Load data for Caching
+        KamanjaMetadata.InitMdMgr(zkConnectString, metadataUpdatesZkNodePath, zkSessionTimeoutMs, zkConnectionTimeoutMs)
+//        KamanjaMetadata.envCtxt.CacheContainers(KamanjaConfiguration.clusterId) // Load data for Caching
         LOG.debug("Initializing Leader")
 
         var txnCtxt: TransactionContext = null
@@ -476,7 +490,7 @@ class KamanjaManager extends Observer {
           txnId = -1 * txnId
         // Finally we are taking -ve txnid for this
         try {
-          txnCtxt = new TransactionContext(txnId, KamanjaMetadata.gNodeContext, Array[Byte](), "")
+          txnCtxt = new TransactionContext(txnId, KamanjaMetadata.gNodeContext, Array[Byte](), EventOriginInfo("", ""), 0, null)
           ThreadLocalStorage.txnContextInfo.set(txnCtxt)
 
           val (tmpMdls, tMdlsChangedCntr) = KamanjaMetadata.getAllModels
@@ -491,11 +505,11 @@ class KamanjaManager extends Observer {
         } finally {
           ThreadLocalStorage.txnContextInfo.remove
           if (txnCtxt != null) {
-            KamanjaMetadata.gNodeContext.getEnvCtxt.rollbackData(txnId)
+            KamanjaMetadata.gNodeContext.getEnvCtxt.rollbackData()
           }
         }
 
-        KamanjaLeader.Init(KamanjaConfiguration.nodeId.toString, KamanjaConfiguration.zkConnectString, engineLeaderZkNodePath, engineDistributionZkNodePath, adaptersStatusPath, inputAdapters, outputAdapters, statusAdapters, validateInputAdapters, failedEventsAdapters, KamanjaMetadata.envCtxt, KamanjaConfiguration.zkSessionTimeoutMs, KamanjaConfiguration.zkConnectionTimeoutMs, dataChangeZkNodePath)
+        KamanjaLeader.Init(KamanjaConfiguration.nodeId.toString, zkConnectString, engineLeaderZkNodePath, engineDistributionZkNodePath, adaptersStatusPath, inputAdapters, outputAdapters, KamanjaMetadata.envCtxt, zkSessionTimeoutMs, zkConnectionTimeoutMs, dataChangeZkNodePath)
       }
 
       /*
@@ -593,15 +607,33 @@ class KamanjaManager extends Observer {
     if (initialize == false) {
       return Shutdown(1)
     }
+
+    // Jars loaded, create the status factory
+    //val statusEventFactory =  KamanjaMetadata.envCtxt.getContainerInstance("system.KamanjaStatusEvent") //KamanjaMetadata.getMessgeInfo("system.KamanjaStatusEvent").contmsgobj.asInstanceOf[MessageFactoryInterface]
+
     val exceptionStatusAdaps = scala.collection.mutable.Set[String]()
     var curCntr = 0
     val maxFailureCnt = 30
 
     val statusPrint_PD = new Runnable {
-      def run() {
-        val stats: scala.collection.immutable.Map[String, Long] = SimpleStats.copyMap
+      def run(): Unit = {
+        val stats: scala.collection.immutable.Map[String, Long] = Map[String,Long]() // SimpleStats.copyMap
         val statsStr = stats.mkString("~")
         val dispStr = "PD,%d,%s,%s".format(KamanjaConfiguration.nodeId, Utils.GetCurDtTmStr, statsStr)
+        val statusMsg: com.ligadata.KamanjaBase.KamanjaStatusEvent = KamanjaMetadata.envCtxt.getContainerInstance("system.KamanjaStatusEvent").asInstanceOf[KamanjaStatusEvent]
+        statusMsg.nodeid = KamanjaConfiguration.nodeId.toString
+        statusMsg.statusstring = statsStr
+        statusMsg.eventtime = Utils.GetCurDtTmStr
+        KamanjaMetadata.envCtxt.postMessages(Array[ContainerInterface](statusMsg))
+      }
+    }
+  /*      val stats: scala.collection.immutable.Map[String, Long] = SimpleStats.copyMap
+        val statsStr = stats.mkString("~")
+        val dispStr = "PD,%d,%s,%s".format(KamanjaConfiguration.nodeId, Utils.GetCurDtTmStr, statsStr)
+        var statusMsg = KamanjaMetadata.envCtxt.getContainerInstance("system.KamanjaStatusEvent")
+        statusMsg.nodeid = KamanjaConfiguration.nodeId.toString
+        statusMsg.statusstring = statsStr
+        //statusMsg.eventtime = Utils.GetCurDtTmStr
 
         if (statusAdapters != null) {
           curCntr += 1
@@ -636,14 +668,13 @@ class KamanjaManager extends Observer {
             curCntr = 0
         } else {
           LOG.info(dispStr)
-        }
-      }
-    }
+        } */
+
 
     val metricsCollector = new Runnable {
       def run(): Unit = {
         try {
-          externalizeMetrics
+          validateAndExternalizeMetrics
         } catch {
           case e: Throwable => {
             LOG.warn("KamanjaManager " + KamanjaConfiguration.nodeId.toString + " unable to externalize statistics due to internal error. Check ZK connection", e)
@@ -654,7 +685,7 @@ class KamanjaManager extends Observer {
 
     val scheduledThreadPool = Executors.newScheduledThreadPool(3);
 
-    scheduledThreadPool.scheduleWithFixedDelay(statusPrint_PD, 0, 1000, TimeUnit.MILLISECONDS);
+    // scheduledThreadPool.scheduleWithFixedDelay(statusPrint_PD, 0, 1000, TimeUnit.MILLISECONDS);
 
     /**
      * print("=> ")
@@ -689,14 +720,14 @@ class KamanjaManager extends Observer {
       }
     }
 
-    var nextAdapterValuesCommit = System.currentTimeMillis + KamanjaConfiguration.adapterInfoCommitTime
+//    var nextAdapterValuesCommit = System.currentTimeMillis + KamanjaConfiguration.adapterInfoCommitTime
 
     LOG.warn("KamanjaManager is running now. Waiting for user to terminate with SIGTERM, SIGINT or SIGABRT signals")
     while (KamanjaConfiguration.shutdown == false) { // Infinite wait for now
-      if (KamanjaMetadata.envCtxt != null && nextAdapterValuesCommit < System.currentTimeMillis) {
-        if (ProcessedAdaptersInfo.CommitAdapterValues)
-          nextAdapterValuesCommit = System.currentTimeMillis + KamanjaConfiguration.adapterInfoCommitTime
-      }
+//      if (KamanjaMetadata.envCtxt != null && nextAdapterValuesCommit < System.currentTimeMillis) {
+//        if (ProcessedAdaptersInfo.CommitAdapterValues)
+//          nextAdapterValuesCommit = System.currentTimeMillis + KamanjaConfiguration.adapterInfoCommitTime
+//      }
       cntr = cntr + 1
       if (participentsChangedCntr != KamanjaConfiguration.participentsChangedCntr) {
         val dispWarn = (lookingForDups && timeOutEndTime > 0)
@@ -704,22 +735,23 @@ class KamanjaManager extends Observer {
         timeOutEndTime = 0
         participentsChangedCntr = KamanjaConfiguration.participentsChangedCntr
         val cs = KamanjaLeader.GetClusterStatus
-        if (cs.leader != null && cs.participants != null && cs.participants.size > 0) {
+        if (cs.leaderNodeId != null && cs.participantsNodeIds != null && cs.participantsNodeIds.size > 0) {
           if (dispWarn) {
-            LOG.warn("Got new participents. Trying to see whether the node still has duplicates participents. Previous Participents:{%s} Current Participents:{%s}".format(prevParticipents, cs.participants.mkString(",")))
+            LOG.warn("Got new participents. Trying to see whether the node still has duplicates participents. Previous Participents:{%s} Current Participents:{%s}".format(prevParticipents, cs.participantsNodeIds.mkString(",")))
           }
           prevParticipents = ""
-          val isNotLeader = (cs.isLeader == false || cs.leader != cs.nodeId)
+          val isNotLeader = (cs.isLeader == false || cs.leaderNodeId != cs.nodeId)
           if (isNotLeader) {
-            val sameNodeIds = cs.participants.filter(p => p == cs.nodeId)
+            val sameNodeIds = cs.participantsNodeIds.filter(p => p == cs.nodeId)
             if (sameNodeIds.size > 1) {
               lookingForDups = true
-              var mxTm = if (KamanjaConfiguration.zkSessionTimeoutMs > KamanjaConfiguration.zkConnectionTimeoutMs) KamanjaConfiguration.zkSessionTimeoutMs else KamanjaConfiguration.zkConnectionTimeoutMs
+              val (zkConnectString, zkNodeBasePath, zkSessionTimeoutMs, zkConnectionTimeoutMs)  = KamanjaMetadata.envCtxt.getZookeeperInfo
+              var mxTm = if (zkSessionTimeoutMs > zkConnectionTimeoutMs) zkSessionTimeoutMs else zkConnectionTimeoutMs
               if (mxTm < 5000) // if the value is < 5secs, we are taking 5 secs
                 mxTm = 5000
               timeOutEndTime = System.currentTimeMillis + mxTm + 2000 // waiting another 2secs
-              LOG.error("Found more than one of NodeId:%s in Participents:{%s}. Waiting for %d milli seconds to check whether it is real duplicate or not.".format(cs.nodeId, cs.participants.mkString(","), mxTm))
-              prevParticipents = cs.participants.mkString(",")
+              LOG.error("Found more than one of NodeId:%s in Participents:{%s}. Waiting for %d milli seconds to check whether it is real duplicate or not.".format(cs.nodeId, cs.participantsNodeIds.mkString(","), mxTm))
+              prevParticipents = cs.participantsNodeIds.mkString(",")
             }
           }
         }
@@ -730,12 +762,12 @@ class KamanjaManager extends Observer {
           lookingForDups = false
           timeOutEndTime = 0
           val cs = KamanjaLeader.GetClusterStatus
-          if (cs.leader != null && cs.participants != null && cs.participants.size > 0) {
-            val isNotLeader = (cs.isLeader == false || cs.leader != cs.nodeId)
+          if (cs.leaderNodeId != null && cs.participantsNodeIds != null && cs.participantsNodeIds.size > 0) {
+            val isNotLeader = (cs.isLeader == false || cs.leaderNodeId != cs.nodeId)
             if (isNotLeader) {
-              val sameNodeIds = cs.participants.filter(p => p == cs.nodeId)
+              val sameNodeIds = cs.participantsNodeIds.filter(p => p == cs.nodeId)
               if (sameNodeIds.size > 1) {
-                LOG.error("Found more than one of NodeId:%s in Participents:{%s} for ever. Shutting down this node.".format(cs.nodeId, cs.participants.mkString(",")))
+                LOG.error("Found more than one of NodeId:%s in Participents:{%s} for ever. Shutting down this node.".format(cs.nodeId, cs.participantsNodeIds.mkString(",")))
                 KamanjaConfiguration.shutdown = true
               }
             }
@@ -770,20 +802,27 @@ class KamanjaManager extends Observer {
   /**
    *
    */
-  private def externalizeMetrics: Unit = {
-    val zkNodeBasePath = KamanjaConfiguration.zkNodeBasePath.stripSuffix("/").trim
+  private def validateAndExternalizeMetrics: Unit = {
+    val (zkConnectString, zkNodeBasePath, zkSessionTimeoutMs, zkConnectionTimeoutMs)  = KamanjaMetadata.envCtxt.getZookeeperInfo
     val zkHeartBeatNodePath = zkNodeBasePath + "/monitor/engine/" + KamanjaConfiguration.nodeId.toString
     val isLogDebugEnabled = LOG.isDebugEnabled
 
     if (isLogDebugEnabled)
       LOG.debug("KamanjaManager " + KamanjaConfiguration.nodeId.toString + " is externalizing metrics to " + zkNodeBasePath)
 
+    // As part of the metrics externaization, look for changes to the configuration that can be affected
+    // while the manager is running
+    var changes = KamanjaMetadata.getConfigChanges
+    if (!changes.isEmpty) {
+      changes.foreach(x=>{ LOG.debug("KamanjaManger config update: " + x)})
+    }
+
     if (thisEngineInfo == null) {
       thisEngineInfo = new MainInfo
       thisEngineInfo.startTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
       thisEngineInfo.name = KamanjaConfiguration.nodeId.toString
       thisEngineInfo.uniqueId = MonitoringContext.monitorCount.incrementAndGet
-      CreateClient.CreateNodeIfNotExists(KamanjaConfiguration.zkConnectString, zkHeartBeatNodePath) // Creating the path if missing
+      CreateClient.CreateNodeIfNotExists(zkConnectString, zkHeartBeatNodePath) // Creating the path if missing
     }
     thisEngineInfo.lastSeen = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
     thisEngineInfo.uniqueId = MonitoringContext.monitorCount.incrementAndGet
@@ -796,10 +835,10 @@ class KamanjaManager extends Observer {
 
     inputAdapters.foreach(ad => { adapterMetricInfo += ad.getComponentStatusAndMetrics })
     outputAdapters.foreach(ad => { adapterMetricInfo += ad.getComponentStatusAndMetrics })
-    statusAdapters.foreach(ad => { adapterMetricInfo += ad.getComponentStatusAndMetrics })
-    failedEventsAdapters.foreach(ad => { adapterMetricInfo += ad.getComponentStatusAndMetrics })
-    validateInputAdapters.foreach(ad => { adapterMetricInfo += ad.getComponentStatusAndMetrics })
-    adapterMetricInfo += KamanjaMetadata.envCtxt.getComponentStatusAndMetrics
+//    statusAdapters.foreach(ad => { adapterMetricInfo += ad.getComponentStatusAndMetrics })
+//    failedEventsAdapters.foreach(ad => { adapterMetricInfo += ad.getComponentStatusAndMetrics })
+//    validateInputAdapters.foreach(ad => { adapterMetricInfo += ad.getComponentStatusAndMetrics })
+//    adapterMetricInfo += KamanjaMetadata.envCtxt.getComponentStatusAndMetrics
 
     // Combine all the junk into a single JSON String
     import org.json4s.JsonDSL._
@@ -817,6 +856,8 @@ class KamanjaManager extends Observer {
             ("StartTime" -> mci.startTime) ~
             ("Metrics" -> mci.metricsJsonString)))
 
+    val statEvent: com.ligadata.KamanjaBase.KamanjaStatisticsEvent = KamanjaMetadata.envCtxt.getContainerInstance("system.KamanjaStatisticsEvent").asInstanceOf[KamanjaStatisticsEvent]
+    statEvent.statistics = compact(render(allMetrics))
     // get the envContext.
     KamanjaLeader.SetNewDataToZkc(zkHeartBeatNodePath, compact(render(allMetrics)).getBytes)
     if (isLogDebugEnabled)
@@ -851,7 +892,7 @@ class ComponentInfo {
   var metrics: collection.mutable.Map[String, Any] = null
 }
 
-object OleService {
+object KamanjaManager {
   private val LOG = LogManager.getLogger(getClass);
   def main(args: Array[String]): Unit = {
     val mgr = new KamanjaManager

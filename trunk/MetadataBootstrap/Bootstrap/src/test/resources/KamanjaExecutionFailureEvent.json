@@ -1,0 +1,35 @@
+{
+  "Message": {
+    "NameSpace": "com.ligadata.KamanjaBase",
+    "Name": "KamanjaExecutionFailureEvent",
+    "Version": "1.02",
+    "Description": "Generic failure in kamanja execution event detail",
+    "Fixed": "true",
+    "Elements": [
+      {
+        "Field": {
+          "Name": "msgId",
+          "Type": "Long"
+        }
+      },
+      {
+        "Field": {
+          "Name": "TimeOfErrorEpochMs",
+          "Type": "Long"
+        }
+      },
+      {
+        "Field": {
+          "Name": "msgContent",
+          "Type": "String"
+        }
+      },
+      {
+        "Field" : {
+          "Name": "ErrorDetail",
+          "Type": "String"       
+        }
+     }
+    ]
+  }
+}

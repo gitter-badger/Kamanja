@@ -19,6 +19,7 @@ package com.ligadata.Exceptions
 class KamanjaException(msg: String, cause: Throwable) extends Exception(msg, cause)
 
 case class UnsupportedObjectException(msg: String, cause: Throwable) extends KamanjaException(msg, cause)
+case class UnsupportedOperationException(msg: String, cause: Throwable) extends KamanjaException(msg, cause)
 case class Json4sParsingException(msg: String, cause: Throwable) extends KamanjaException(msg, cause)
 case class FunctionListParsingException(msg: String, cause: Throwable) extends KamanjaException(msg, cause)
 case class FunctionParsingException(msg: String, cause: Throwable) extends KamanjaException(msg, cause)
@@ -30,6 +31,8 @@ case class ConceptParsingException(msg: String, cause: Throwable) extends Kamanj
 case class MessageDefParsingException(msg: String, cause: Throwable) extends KamanjaException(msg, cause)
 case class ContainerDefParsingException(msg: String, cause: Throwable) extends KamanjaException(msg, cause)
 case class ModelDefParsingException(msg: String, cause: Throwable) extends KamanjaException(msg, cause)
+case class JarDefParsingException(msg: String, cause: Throwable) extends KamanjaException(msg, cause)
+
 case class ApiResultParsingException(msg: String, cause: Throwable) extends KamanjaException(msg, cause)
 case class UnexpectedMetadataAPIException(msg: String, cause: Throwable) extends KamanjaException(msg, cause)
 case class ObjectNotFoundException(msg: String, cause: Throwable) extends KamanjaException(msg, cause)
@@ -78,3 +81,6 @@ case class StorageDDLException(msg: String, cause: Throwable) extends KamanjaExc
 
 case class MessagePopulationException(msg: String, cause: Throwable) extends KamanjaException(msg, cause)
 
+case class NotImplementedFunctionException(msg: String, cause: Throwable) extends KamanjaException(msg, cause)
+
+case class DeprecatedException(msg: String, cause: Throwable) extends KamanjaException(msg, cause)

@@ -50,7 +50,7 @@ public class JavaTestMdl extends ModelInstance {
 			super(mdlDef, nodeContext);
 		}
 
-		public boolean isValidMessage(MessageContainerBase msg) {
+		public boolean isValidMessage(ContainerInterface msg) {
 			return (msg instanceof CustAlertHistory);
 		}
 

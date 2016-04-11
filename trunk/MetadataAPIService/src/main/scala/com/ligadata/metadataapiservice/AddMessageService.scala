@@ -34,7 +34,7 @@ object AddMessageService {
   case class Process(messageJson:String)
 }
 
-class AddMessageService(requestContext: RequestContext, userid:Option[String], password:Option[String], cert:Option[String]) extends Actor {
+class AddMessageService(requestContext: RequestContext, userid:Option[String], password:Option[String], cert:Option[String], tenantId: Option[String]) extends Actor {
 
   import AddMessageService._
   
@@ -59,7 +59,7 @@ class AddMessageService(requestContext: RequestContext, userid:Option[String], p
       MetadataAPIImpl.logAuditRec(userid,Some(AuditConstants.WRITE),AuditConstants.INSERTOBJECT,messageJson,AuditConstants.FAIL,"",nameVal)   
       requestContext.complete(new ApiResult(ErrorCodeConstants.Failure, APIName, null,  "Error:UPDATE not allowed for this user").toString )      
     } else {
-      val apiResult = MetadataAPIImpl.AddMessage(messageJson,"JSON", userid)
+      val apiResult = MetadataAPIImpl.AddMessage(messageJson,"JSON", userid, tenantId)
       requestContext.complete(apiResult)
     }
   }

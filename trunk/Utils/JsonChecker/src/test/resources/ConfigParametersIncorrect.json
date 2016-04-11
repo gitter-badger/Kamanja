@@ -1,0 +1,22 @@
+{
+  "URL_length_weight_12_to_25_wgt": "0.05",
+  "URL_length_weight_12_to_25_wgt_contrib_limit": "-0.6",
+  "URL_length_weight_12_to_25_length_condition_threshold": "12",
+  "URL_length_weight_26p_wgt": "0.01",
+  "URL_length_weight_26p_wgt_contrib_limit": "0.4",
+  "URL_length_weight_26p_length_condition_threshold": "26",
+  "unreslved_cnt_same_person_weight": "0.30",
+  "unreslved_cnt_diff_person_weight": "0.20",
+  "url_length_weight_12_to_25": "0.05",
+  "url_length_weight_short": "-0.60",
+  "url_length_min": "12",
+  "url_length_weight_midp": "0.10",
+  "url_length_weight_midp_contrib_limit": "0.40",
+  "url_length_middle": "26",
+  "unresolved_alert_threshold": "0.80"
+  "unreslved_reason_threshold": "0.20",
+  "min_common_ngrams_found": "0.25",
+  "save_top_Xperc_of_cum_Ngrams": "0.75",
+  "OutputFileSplitPer": "10m",
+  "InputFileSplitPer": " "
+}

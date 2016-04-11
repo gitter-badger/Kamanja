@@ -17,62 +17,59 @@
 package com.ligadata.InputOutputAdapterInfo
 
 import com.ligadata.HeartBeat.MonitorComponentInfo
+import com.ligadata.KamanjaBase.{ContainerInterface, EnvContext, NodeContext, TransactionContext}
 import org.scalatest._
+import org.scalamock._
+import org.scalamock.scalatest.MockFactory
 
 /**
   * Created by will on 2/9/16.
   */
 
+private class MockOutputAdapterFactory extends OutputAdapterFactory {
+  override def CreateOutputAdapter(inputConfig: AdapterConfiguration, nodeContext: NodeContext): MockOutputAdapter = new MockOutputAdapter
+}
+
 private class MockOutputAdapter extends OutputAdapter {
   var testMessages: Seq[String] = Seq()
-  var testPartKeys: Seq[String] = Seq()
 
   override val inputConfig: AdapterConfiguration = null
 
   override def Shutdown: Unit = ???
 
   // To send an array of messages. messages.size should be same as partKeys.size
-  override def send(messages: Array[Array[Byte]], partKeys: Array[Array[Byte]]): Unit = {
+  def send(messages: Array[Array[Byte]]): Unit = {
     messages.foreach(msg => {
       testMessages = testMessages :+ new String(msg)
     })
-
-    partKeys.foreach(key => {
-      testPartKeys = testPartKeys :+ new String(key)
-    })
   }
 
-  override def getComponentStatusAndMetrics: MonitorComponentInfo = ???
+  override def getComponentStatusAndMetrics: MonitorComponentInfo = null
+
+  override val nodeContext: NodeContext = null
+
+  // This is protected override method. After applying serialization, pass original messages, Serialized data & Serializer names
+  override def send(tnxCtxt: TransactionContext, outputContainers: Array[ContainerInterface], serializedContainerData: Array[Array[Byte]], serializerNames: Array[String]): Unit = {
+    this.send(serializedContainerData)
+  }
+
+  override def send(tnxCtxt: TransactionContext, outputContainers: Array[ContainerInterface]): Unit = super.send(tnxCtxt, outputContainers)
 }
 
-class OutputAdapterTests extends FlatSpec with BeforeAndAfter with Matchers {
+class OutputAdapterTests extends FlatSpec with BeforeAndAfter with Matchers with MockFactory {
   private var outputAdapter: MockOutputAdapter = null
 
   before {
-    outputAdapter = new MockOutputAdapter
+    outputAdapter = new MockOutputAdapterFactory().CreateOutputAdapter(null, null)
   }
+
+  // TODO: Need to find a way to use Container Interface more intelligently for these tests. May be better used in an actual output adapter integration test.
 
   "OutputAdapter" should "send a single message and a single partition key" in {
-    outputAdapter.send("This is a message", "This is a partition key")
-    outputAdapter.testMessages should contain("This is a message")
-    outputAdapter.testPartKeys should contain("This is a partition key")
-  }
-
-  it should "send a String Array of messages and partition keys" in {
-    val msgArr: Array[String] = Array("Message 1", "Message 2", "Message 3")
-    val partKeyArr: Array[String] = Array("Partition Key 1", "Partition Key 2")
-    outputAdapter.send(msgArr, partKeyArr)
-    outputAdapter.testMessages should contain("Message 1")
-    outputAdapter.testMessages should contain("Message 2")
-    outputAdapter.testMessages should contain("Message 3")
-    outputAdapter.testPartKeys should contain("Partition Key 1")
-    outputAdapter.testPartKeys should contain("Partition Key 2")
-  }
-
-  it should "send a Byte Array of a single message and partition key" in {
-    outputAdapter.send("This is a message".getBytes("UTF8"), "This is a partition key".getBytes("UTF8"))
-    outputAdapter.testMessages should contain("This is a message")
-    outputAdapter.testPartKeys should contain("This is a partition key")
+    val messages = Array("This is a message".getBytes, "This is another message".getBytes)
+    outputAdapter.send(null, null, messages, null)
+    assert(new String(outputAdapter.testMessages(0)) == "This is a message")
+    assert(new String(outputAdapter.testMessages(1)) == "This is another message")
   }
 
   it should "be instantiated with Category set at Output" in {

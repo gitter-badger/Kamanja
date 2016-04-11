@@ -102,10 +102,6 @@ class GetObjectsService(requestContext: RequestContext, userid:Option[String], p
       case "type" => {
 	      apiResult = MetadataAPIImpl.GetTypeDef(nameSpace,arg.Name,formatType,version,userid)
       }
-      case "outputmsg" => {
-        
-	      apiResult = MetadataAPIOutputMsg.GetOutputMessageDef(nameSpace,arg.Name,formatType,version, userid)
-      }
     }
     apiResult
   }

@@ -1,0 +1,47 @@
+{
+  "Message": {
+    "NameSpace": "com.botanical.json.audit",
+    "Name": "ordermsg",
+    "Version": "1.00",
+    "Description": "purchase order message",
+    "Fixed": "true",
+    "Elements": [
+      {
+        "Field": {
+           "Name": "Customer",
+          "Type": "System.String"
+        }
+      },
+      {
+        "Field": {
+          "Name": "CustomerAddress",
+          "Type": "System.String"
+        }
+      },
+      {
+        "Field": {
+          "Name": "TrackingId",
+          "Type": "System.Int"
+        }
+      },
+      {
+        "Field": {
+          "Name": "PackageList",
+          "Type": "System.ArrayOfString"
+        }
+      },
+      {
+        "Field": {
+          "Name": "PackageWeight",
+          "Type": "System.String"
+        }
+      },
+      {
+        "Field": {
+          "Name": "ShippingCost",
+          "Type": "System.Double"
+        }
+      }
+    ]
+  }
+}

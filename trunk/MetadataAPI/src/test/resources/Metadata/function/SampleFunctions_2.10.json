@@ -21,7 +21,9 @@
   "Version" : 100,
   "JarName" : "pmmludfs_2.10-1.0.jar",
   "DependantJars" : [ "json4s-native_2.10-3.2.9.jar", "pmmlruntime_2.10-1.0.jar", "scala-compiler-2.10.4.jar", "basetypes_2.10-0.1.0.jar", "json4s-core_2.10-3.2.9.jar", "kamanjabase_2.10-1.0.jar", "json4s-jackson_2.10-3.2.9.jar", "jackson-annotations-2.3.0.jar", "scala-library-2.10.4.jar", "paranamer-2.6.jar", "jackson-databind-2.3.1.jar", "joda-time-2.9.1.jar", "joda-convert-1.6.jar", "jackson-core-2.3.1.jar", "metadata_2.10-1.0.jar", "json4s-ast_2.10-3.2.9.jar", "log4j-1.2.17.jar" ],
-  "TransactionId" : 0
+  "OwnerId" : "test_spec",
+  "UniqueId" : 1,
+  "MdElementId" : 1
 },
 {
   "NameSpace" : "pmml_test",
@@ -42,6 +44,8 @@
   "Version" : 100,
   "JarName" : "pmmludfs_2.10-1.0.jar",
   "DependantJars" : [ "json4s-native_2.10-3.2.9.jar", "pmmlruntime_2.10-1.0.jar", "scala-compiler-2.10.4.jar", "basetypes_2.10-0.1.0.jar", "json4s-core_2.10-3.2.9.jar", "kamanjabase_2.10-1.0.jar", "json4s-jackson_2.10-3.2.9.jar", "jackson-annotations-2.3.0.jar", "scala-library-2.10.4.jar", "paranamer-2.6.jar", "jackson-databind-2.3.1.jar", "joda-time-2.9.1.jar", "joda-convert-1.6.jar", "jackson-core-2.3.1.jar",  "metadata_2.10-1.0.jar", "json4s-ast_2.10-3.2.9.jar", "log4j-1.2.17.jar" ],
-  "TransactionId" : 0
+  "OwnerId" : "test_spec",
+  "UniqueId" : 2,
+  "MdElementId" : 2
 }]
 }

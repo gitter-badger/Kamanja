@@ -2,16 +2,22 @@ name := "KamanjaBase"
 
 version := "1.0"
 
-libraryDependencies += "org.apache.logging.log4j" % "log4j-1.2-api" % "2.4.1"
+//
+//libraryDependencies += "org.apache.logging.log4j" % "log4j-1.2-api" % "2.4.1"
+//
+//libraryDependencies += "org.apache.logging.log4j" % "log4j-api" % "2.4.1"
+//
+//libraryDependencies += "org.apache.logging.log4j" % "log4j-core" % "2.4.1"
+//
+//libraryDependencies += "org.json4s" %% "json4s-native" % "3.2.9"
+//
+//libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.2.9"
+//
+//libraryDependencies += "com.google.guava" % "guava" % "14.0.1"
+//
+//libraryDependencies += "com.google.code.findbugs" % "jsr305" % "1.3.9"
 
-libraryDependencies += "org.apache.logging.log4j" % "log4j-api" % "2.4.1"
+coverageMinimum := 80
 
-libraryDependencies += "org.apache.logging.log4j" % "log4j-core" % "2.4.1"
+coverageFailOnMinimum := false
 
-libraryDependencies += "org.json4s" %% "json4s-native" % "3.2.9" 
-
-libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.2.9" 
-
-libraryDependencies += "com.google.guava" % "guava" % "14.0.1" 
-
-libraryDependencies += "com.google.code.findbugs" % "jsr305" % "1.3.9"

@@ -18,8 +18,8 @@ package com.ligadata.keyvaluestore
 import java.sql.DriverManager
 import java.sql.{ Statement, PreparedStatement, CallableStatement, DatabaseMetaData, ResultSet }
 import java.sql.Connection
-import com.ligadata.KvBase.{ Key, Value, TimeRange }
-import com.ligadata.StorageBase.{ DataStore, Transaction, StorageAdapterObj }
+import com.ligadata.KvBase.{ Key, TimeRange }
+import com.ligadata.StorageBase.{ DataStore, Transaction, StorageAdapterFactory, Value }
 import java.nio.ByteBuffer
 import org.apache.logging.log4j._
 import com.ligadata.Exceptions._
@@ -471,12 +471,12 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
       sql = "if ( not exists(select 1 from " + tableName +
         " where timePartition = ? and bucketKey = ?  and transactionId = ?  and rowId = ? ) ) " +
         " begin " +
-        " insert into " + tableName + "(timePartition,bucketKey,transactionId,rowId,serializerType,serializedInfo)" +
-        " values(?,?,?,?,?,?)" +
+        " insert into " + tableName + "(timePartition,bucketKey,transactionId,rowId,schemaId,serializerType,serializedInfo)" +
+        " values(?,?,?,?,?,?,?)" +
         " end " +
         " else " +
         " begin " +
-        " update " + tableName + " set serializerType = ?, serializedInfo = ? where timePartition = ? and bucketKey = ?  and transactionId = ?  and rowId = ?  " +
+        " update " + tableName + " set schemaId = ?,serializerType = ?, serializedInfo = ? where timePartition = ? and bucketKey = ?  and transactionId = ?  and rowId = ?  " +
         " end ";
       logger.debug("sql => " + sql)
       pstmt = con.prepareStatement(sql)
@@ -488,14 +488,16 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
       pstmt.setString(6, key.bucketKey.mkString(","))
       pstmt.setLong(7, key.transactionId)
       pstmt.setInt(8, key.rowId)
-      pstmt.setString(9, value.serializerType)
-      pstmt.setBinaryStream(10, new java.io.ByteArrayInputStream(value.serializedInfo), value.serializedInfo.length)
-      pstmt.setString(11, value.serializerType)
-      pstmt.setBinaryStream(12, new java.io.ByteArrayInputStream(value.serializedInfo), value.serializedInfo.length)
-      pstmt.setLong(13, key.timePartition)
-      pstmt.setString(14, key.bucketKey.mkString(","))
-      pstmt.setLong(15, key.transactionId)
-      pstmt.setInt(16, key.rowId)
+      pstmt.setInt(9, value.schemaId)
+      pstmt.setString(10, value.serializerType)
+      pstmt.setBinaryStream(11, new java.io.ByteArrayInputStream(value.serializedInfo), value.serializedInfo.length)
+      pstmt.setInt(12, value.schemaId)
+      pstmt.setString(13, value.serializerType)
+      pstmt.setBinaryStream(14, new java.io.ByteArrayInputStream(value.serializedInfo), value.serializedInfo.length)
+      pstmt.setLong(15, key.timePartition)
+      pstmt.setString(16, key.bucketKey.mkString(","))
+      pstmt.setLong(17, key.transactionId)
+      pstmt.setInt(18, key.rowId)
       pstmt.executeUpdate();
     } catch {
       case e: Exception => {
@@ -538,10 +540,11 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
     try {
       if (IsSingleRowPut(data_list)) {
         var containerName = data_list(0)._1
+        var isMetadataContainer = data_list(0)._2
         var keyValuePairs = data_list(0)._2
         var key = keyValuePairs(0)._1
         var value = keyValuePairs(0)._2
-        put(containerName, key, value)
+        put(containerName,  key, value)
       } else {
         logger.debug("Get a new connection...")
         con = getConnection
@@ -556,12 +559,12 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
           sql = "if ( not exists(select 1 from " + tableName +
             " where timePartition = ? and bucketKey = ?  and transactionId = ?  and rowId = ? ) ) " +
             " begin " +
-            " insert into " + tableName + "(timePartition,bucketKey,transactionId,rowId,serializerType,serializedInfo)" +
-            " values(?,?,?,?,?,?)" +
+            " insert into " + tableName + "(timePartition,bucketKey,transactionId,rowId,schemaId,serializerType,serializedInfo)" +
+            " values(?,?,?,?,?,?,?)" +
             " end " +
             " else " +
             " begin " +
-            " update " + tableName + " set serializerType = ?, serializedInfo = ? where timePartition = ? and bucketKey = ?  and transactionId = ?  and rowId = ?  " +
+            " update " + tableName + " set schemaId = ?,serializerType = ?, serializedInfo = ? where timePartition = ? and bucketKey = ?  and transactionId = ?  and rowId = ?  " +
             " end ";
           logger.debug("sql => " + sql)
           pstmt = con.prepareStatement(sql)
@@ -576,14 +579,16 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
             pstmt.setString(6, key.bucketKey.mkString(","))
             pstmt.setLong(7, key.transactionId)
             pstmt.setInt(8, key.rowId)
-            pstmt.setString(9, value.serializerType)
-            pstmt.setBinaryStream(10, new java.io.ByteArrayInputStream(value.serializedInfo), value.serializedInfo.length)
-            pstmt.setString(11, value.serializerType)
-            pstmt.setBinaryStream(12, new java.io.ByteArrayInputStream(value.serializedInfo), value.serializedInfo.length)
-            pstmt.setLong(13, key.timePartition)
-            pstmt.setString(14, key.bucketKey.mkString(","))
-            pstmt.setLong(15, key.transactionId)
-            pstmt.setInt(16, key.rowId)
+            pstmt.setInt(9, value.schemaId)
+            pstmt.setString(10, value.serializerType)
+            pstmt.setBinaryStream(11, new java.io.ByteArrayInputStream(value.serializedInfo), value.serializedInfo.length)
+            pstmt.setInt(12, value.schemaId)
+            pstmt.setString(13, value.serializerType)
+            pstmt.setBinaryStream(14, new java.io.ByteArrayInputStream(value.serializedInfo), value.serializedInfo.length)
+            pstmt.setLong(15, key.timePartition)
+            pstmt.setString(16, key.bucketKey.mkString(","))
+            pstmt.setLong(17, key.transactionId)
+            pstmt.setInt(18, key.rowId)
             pstmt.addBatch()
           })
           logger.debug("Executing bulk upsert...")
@@ -858,13 +863,14 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
         var keyStr = rs.getString(2)
         var tId = rs.getLong(3)
         var rId = rs.getInt(4)
-        var st = rs.getString(5)
-        var ba = rs.getBytes(6)
+        var schemaId = rs.getInt(5)
+        var st = rs.getString(6)
+        var ba = rs.getBytes(7)
         val bucketKey = if (keyStr != null) keyStr.split(",").toArray else new Array[String](0)
         var key = new Key(timePartition, bucketKey, tId, rId)
         // yet to understand how split serializerType and serializedInfo from ba
         // so hard coding serializerType to "kryo" for now
-        var value = new Value(st, ba)
+        var value = new Value(schemaId, st, ba)
         if (callbackFunction != null)
           (callbackFunction)(key, value)
       }
@@ -888,7 +894,7 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
   override def get(containerName: String, callbackFunction: (Key, Value) => Unit): Unit = {
     CheckTableExists(containerName)
     var tableName = toFullTableName(containerName)
-    var query = "select * from " + tableName
+    var query = "select timePartition,bucketKey,transactionId,rowId,schemaId,serializerType,serializedInfo from " + tableName
     getData(tableName, query, callbackFunction)
   }
 
@@ -986,7 +992,7 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
       CheckTableExists(containerName)
       con = getConnection
 
-      query = "select serializerType,serializedInfo from " + tableName + " where timePartition = ? and bucketKey = ? and transactionid = ? and rowId = ?"
+      query = "select schemaId,serializerType,serializedInfo from " + tableName + " where timePartition = ? and bucketKey = ? and transactionid = ? and rowId = ?"
       pstmt = con.prepareStatement(query)
       keys.foreach(key => {
         pstmt.setLong(1, key.timePartition)
@@ -995,9 +1001,10 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
         pstmt.setInt(4, key.rowId)
         var rs = pstmt.executeQuery();
         while (rs.next()) {
-          var st = rs.getString(1)
-          var ba = rs.getBytes(2)
-          var value = new Value(st, ba)
+          val schemaId = rs.getInt(1)
+          val st = rs.getString(2)
+          val ba = rs.getBytes(3)
+          val value = new Value(schemaId, st, ba)
           if (callbackFunction != null)
             (callbackFunction)(key, value)
         }
@@ -1020,7 +1027,7 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
     CheckTableExists(containerName)
     var tableName = toFullTableName(containerName)
     time_ranges.foreach(time_range => {
-      var query = "select timePartition,bucketKey,transactionId,rowId,serializerType,serializedInfo from " + tableName + " where timePartition >= " + time_range.beginTime + " and timePartition <= " + time_range.endTime
+      var query = "select timePartition,bucketKey,transactionId,rowId,schemaId,serializerType,serializedInfo from " + tableName + " where timePartition >= " + time_range.beginTime + " and timePartition <= " + time_range.endTime
       logger.debug("query => " + query)
       getData(tableName, query, callbackFunction)
     })
@@ -1047,7 +1054,7 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
       con = getConnection
 
       time_ranges.foreach(time_range => {
-        query = "select timePartition,bucketKey,transactionId,rowId,serializerType,serializedInfo from " + tableName + " where timePartition >= " + time_range.beginTime + " and timePartition <= " + time_range.endTime + " and bucketKey = ? "
+        query = "select timePartition,bucketKey,transactionId,rowId,schemaId,serializerType,serializedInfo from " + tableName + " where timePartition >= " + time_range.beginTime + " and timePartition <= " + time_range.endTime + " and bucketKey = ? "
         pstmt = con.prepareStatement(query)
         bucketKeys.foreach(bucketKey => {
           pstmt.setString(1, bucketKey.mkString(","))
@@ -1057,11 +1064,12 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
             var keyStr = rs.getString(2)
             var tId = rs.getLong(3)
             var rId = rs.getInt(4)
-            var st = rs.getString(5)
-            var ba = rs.getBytes(6)
+            val schemaId = rs.getInt(5)
+            var st = rs.getString(6)
+            var ba = rs.getBytes(7)
             val bucketKey = if (keyStr != null) keyStr.split(",").toArray else new Array[String](0)
             var key = new Key(timePartition, bucketKey, tId, rId)
-            var value = new Value(st, ba)
+            var value = new Value(schemaId, st, ba)
             if (callbackFunction != null)
               (callbackFunction)(key, value)
           }
@@ -1140,7 +1148,7 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
       CheckTableExists(containerName)
       con = getConnection
 
-      query = "select timePartition,bucketKey,transactionId,rowId,serializerType,serializedInfo from " + tableName + " where  bucketKey = ? "
+      query = "select timePartition,bucketKey,transactionId,rowId,schemaId,serializerType,serializedInfo from " + tableName + " where  bucketKey = ? "
       pstmt = con.prepareStatement(query)
       bucketKeys.foreach(bucketKey => {
         pstmt.setString(1, bucketKey.mkString(","))
@@ -1150,11 +1158,12 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
           var keyStr = rs.getString(2)
           var tId = rs.getLong(3)
           var rId = rs.getInt(4)
-          var st = rs.getString(5)
-          var ba = rs.getBytes(6)
+          val schemaId = rs.getInt(5)
+          var st = rs.getString(6)
+          var ba = rs.getBytes(7)
           val bucketKey = if (keyStr != null) keyStr.split(",").toArray else new Array[String](0)
           var key = new Key(timePartition, bucketKey, tId, rId)
-          var value = new Value(st, ba)
+          var value = new Value(schemaId, st, ba)
           if (callbackFunction != null)
             (callbackFunction)(key, value)
         }
@@ -1333,7 +1342,7 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
             }
           }
         }
-        query = "create table " + fullTableName + "(timePartition bigint,bucketKey varchar(1024), transactionId bigint, rowId Int, serializerType varchar(128), serializedInfo varbinary(max))"
+        query = "create table " + fullTableName + "(timePartition bigint,bucketKey varchar(1024), transactionId bigint, rowId Int, schemaId Int, serializerType varchar(128), serializedInfo varbinary(max))"
         stmt = con.createStatement()
         stmt.executeUpdate(query);
         stmt.close
@@ -1381,6 +1390,10 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
       logger.info("create the container " + cont)
       CreateContainer(cont, "ddl")
     })
+  }
+
+  override def CreateMetadataContainer(containerNames: Array[String]): Unit = {
+    CreateContainer(containerNames)
   }
 
   override def isTableExists(tableName: String): Boolean = {
@@ -1552,7 +1565,7 @@ class SqlServerAdapterTx(val parent: DataStore) extends Transaction {
   val logger = LogManager.getLogger(loggerName)
 
   override def put(containerName: String, key: Key, value: Value): Unit = {
-    parent.put(containerName, key, value)
+    parent.put(containerName,  key, value)
   }
 
   override def put(data_list: Array[(String, Array[(Key, Value)])]): Unit = {
@@ -1657,6 +1670,6 @@ class SqlServerAdapterTx(val parent: DataStore) extends Transaction {
 }
 
 // To create SqlServer Datastore instance
-object SqlServerAdapter extends StorageAdapterObj {
+object SqlServerAdapter extends StorageAdapterFactory {
   override def CreateStorageAdapter(kvManagerLoader: KamanjaLoaderInfo, datastoreConfig: String): DataStore = new SqlServerAdapter(kvManagerLoader, datastoreConfig)
 }

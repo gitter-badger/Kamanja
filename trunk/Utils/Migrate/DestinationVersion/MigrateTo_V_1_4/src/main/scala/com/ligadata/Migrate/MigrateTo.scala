@@ -31,7 +31,7 @@ import org.json4s.jackson.JsonMethods._
 import org.json4s.jackson.Serialization
 import scala.io.Source
 
-import com.ligadata.KvBase.{KvBaseDefalts, TimeRange, Key, Value}
+import com.ligadata.KvBase.{KvBaseDefalts, TimeRange, Key}
 
 import com.ligadata.StorageBase.{DataStore, DataStoreOperations}
 import com.ligadata.keyvaluestore.KeyValueManager
@@ -62,9 +62,10 @@ class MigrateTo_V_1_4 extends MigratableTo {
   private var _jarPaths: collection.immutable.Set[String] = collection.immutable.Set[String]()
   private var _bInit = false
   private var _flCurMigrationSummary: PrintWriter = _
-  private val defaultUserId: Option[String] = Some("metadataapi")
+  private val defaultUserId: Option[String] = Some("kamanja")
   private var _parallelDegree = 0
   private var _mergeContainerAndMessages = true
+  private var _tenantId: Option[String] = None
 
   private val globalExceptions = ArrayBuffer[(String, Throwable)]()
 
@@ -144,8 +145,8 @@ class MigrateTo_V_1_4 extends MigratableTo {
             val cluster = clustny.asInstanceOf[Map[String, Any]]
             val ClusterId = cluster.getOrElse("ClusterId", "").toString.trim.toLowerCase
             logger.debug("Processing the cluster => " + ClusterId)
-            if (ClusterId.size > 0 && cluster.contains("DataStore"))
-              dsStr = getStringFromJsonNode(cluster.getOrElse("DataStore", null))
+            if (ClusterId.size > 0 && cluster.contains("SystemCatalog"))
+              dsStr = getStringFromJsonNode(cluster.getOrElse("SystemCatalog", null))
           }
           if (ssStr == null || ssStr.size == 0) {
             val cluster = clustny.asInstanceOf[Map[String, Any]]
@@ -178,7 +179,7 @@ class MigrateTo_V_1_4 extends MigratableTo {
     }
   }
 
-  override def init(destInstallPath: String, apiConfigFile: String, clusterConfigFile: String, sourceVersion: String, unhandledMetadataDumpDir: String, curMigrationSummaryFlPath: String, parallelDegree: Int, mergeContainerAndMessages: Boolean, fromScalaVersion: String, toScalaVersion: String): Unit = {
+  override def init(destInstallPath: String, apiConfigFile: String, clusterConfigFile: String, sourceVersion: String, unhandledMetadataDumpDir: String, curMigrationSummaryFlPath: String, parallelDegree: Int, mergeContainerAndMessages: Boolean, fromScalaVersion: String, toScalaVersion: String, tenantId: String): Unit = {
     isValidPath(apiConfigFile, false, true, "apiConfigFile")
     isValidPath(clusterConfigFile, false, true, "clusterConfigFile")
 
@@ -240,6 +241,9 @@ class MigrateTo_V_1_4 extends MigratableTo {
 
     _parallelDegree = if (parallelDegree <= 1) 1 else parallelDegree
     _mergeContainerAndMessages = mergeContainerAndMessages
+
+    if (tenantId != null && tenantId.size > 0)
+      _tenantId = Some(tenantId)
 
     _bInit = true
   }
@@ -568,15 +572,18 @@ class MigrateTo_V_1_4 extends MigratableTo {
 
               logger.info("Adding model:" + dispkey + ", ModelType:" + mdlType + ", ObjectFormat:" + objFormat)
 
-              if (_sourceVersion.equalsIgnoreCase("1.1") || _sourceVersion.equalsIgnoreCase("1.2")) {
+              if (_sourceVersion.equalsIgnoreCase("1.1") || 
+		  _sourceVersion.equalsIgnoreCase("1.2") || 
+		  _sourceVersion.equalsIgnoreCase("1.3")) {
                 if ((objFormat.equalsIgnoreCase("JAVA")) || (objFormat.equalsIgnoreCase("scala"))) {
                   val mdlInfo = parse(mdlDefStr).values.asInstanceOf[Map[String, Any]]
                   val defStr = mdlInfo.getOrElse(ModelCompilationConstants.SOURCECODE, "").asInstanceOf[String]
                   // val phyName = mdlInfo.getOrElse(ModelCompilationConstants.PHYSICALNAME, "").asInstanceOf[String]
                   val deps = DepJars(mdlInfo.getOrElse(ModelCompilationConstants.DEPENDENCIES, List[String]()).asInstanceOf[List[String]])
                   val typs = mdlInfo.getOrElse(ModelCompilationConstants.TYPES_DEPENDENCIES, List[String]()).asInstanceOf[List[String]]
-
-                  val cfgnm = "migrationmodelconfig_from_" + _sourceVersion.replace('.', '_') + "_to_1_3";
+		  //returns current time as a unique number
+                  val uniqueId = System.currentTimeMillis();
+                  val cfgnm = "migrationmodelconfig_from_" + _sourceVersion.replace('.', '_') + "_to_1_4_" + uniqueId.toString;
 
                   val mdlConfig = (cfgnm ->
                     ("Dependencies" -> deps) ~
@@ -591,7 +598,7 @@ class MigrateTo_V_1_4 extends MigratableTo {
                     failed = isFailedStatus(retRes)
 
                     if (failed == false) {
-                      val retRes1 = MetadataAPIImpl.AddModel(MetadataAPI.ModelType.fromString(objFormat), defStr, defaultUserId, Some((defaultUserId.get + "." + cfgnm).toLowerCase), Some(ver))
+                      val retRes1 = MetadataAPIImpl.AddModel(MetadataAPI.ModelType.fromString(objFormat), defStr, defaultUserId, _tenantId, Some((defaultUserId.get + "." + cfgnm).toLowerCase), Some(ver))
                       failed = isFailedStatus(retRes1)
                     }
                   } catch {
@@ -629,7 +636,7 @@ class MigrateTo_V_1_4 extends MigratableTo {
                   var failed = false
 
                   try {
-                    val retRes = MetadataAPIImpl.AddModel(MetadataAPI.ModelType.fromString("kpmml"), mdlDefStr, defaultUserId, Some(dispkey), Some(ver))
+                    val retRes = MetadataAPIImpl.AddModel(MetadataAPI.ModelType.fromString("kpmml"), mdlDefStr, defaultUserId, _tenantId, Some(dispkey), Some(ver))
                     failed = isFailedStatus(retRes)
                   } catch {
                     case e: Exception => {
@@ -658,7 +665,7 @@ class MigrateTo_V_1_4 extends MigratableTo {
                 var failed = false
 
                 try {
-                  val retRes = MetadataAPIImpl.AddMessage(msgDefStr, "JSON", defaultUserId)
+                  val retRes = MetadataAPIImpl.AddMessage(msgDefStr, "JSON", defaultUserId, _tenantId)
                   failed = isFailedStatus(retRes)
                 } catch {
                   case e: Exception => {
@@ -688,7 +695,7 @@ class MigrateTo_V_1_4 extends MigratableTo {
                 var failed = false
 
                 try {
-                  val retRes = MetadataAPIImpl.AddContainer(contDefStr, "JSON", defaultUserId)
+                  val retRes = MetadataAPIImpl.AddContainer(contDefStr, "JSON", defaultUserId, _tenantId)
                   failed = isFailedStatus(retRes)
                 } catch {
                   case e: Exception => {
@@ -784,13 +791,6 @@ class MigrateTo_V_1_4 extends MigratableTo {
               logger.debug("Adding Jar:" + dispkey)
               //FIXME:: Yet to handle
               logger.error("Not yet handled migrating JarDef " + objType)
-            }
-            */
-            /*
-            case "OutputMsgDef" => {
-              logger.debug("Adding the Output Msg: name of the object =>  " + dispkey)
-              //FIXME:: Yet to handle
-              logger.error("Not yet handled migrating OutputMsgDef " + objType)
             }
             */
             /*
@@ -941,7 +941,6 @@ class MigrateTo_V_1_4 extends MigratableTo {
     val mdlConfig = ArrayBuffer[(String, Map[String, Any])]()
     val models = ArrayBuffer[(String, Map[String, Any])]()
     val jarDef = ArrayBuffer[(String, Map[String, Any])]()
-    val outputMsgDef = ArrayBuffer[(String, Map[String, Any])]()
     val configDef = ArrayBuffer[(String, Map[String, Any])]()
     val typesToIgnore = scala.collection.mutable.Set[String]()
 
@@ -1027,8 +1026,6 @@ class MigrateTo_V_1_4 extends MigratableTo {
         functions += jsonObjMap
       } else if (objType == "JarDef") {
         jarDef += jsonObjMap
-      } else if (objType == "OutputMsgDef") {
-        outputMsgDef += jsonObjMap
       } else if (objType == "ConfigDef") {
         configDef += jsonObjMap
       } else {
@@ -1082,20 +1079,18 @@ class MigrateTo_V_1_4 extends MigratableTo {
     ProcessObject(configDef)
     //ProcessObject(models)
     ProcessMdObjectsParallel(models, "Failed to add model")
-    ProcessObject(outputMsgDef)
-
 
     return addedMessagesContainers
   }
 
-  private def callSaveData(dataStore: DataStoreOperations, data_list: Array[(String, Array[(Key, Value)])]): Unit = {
+  private def callSaveData(dataStore: DataStoreOperations, data_list: Array[(String, Array[(Key, String, Any)])]): Unit = {
     var failedWaitTime = 15000 // Wait time starts at 15 secs
     val maxFailedWaitTime = 60000 // Max Wait time 60 secs
     var doneSave = false
 
     while (!doneSave) {
       try {
-        dataStore.put(data_list)
+        dataStore.put(null, data_list)
         doneSave = true
       } catch {
         case e: FatalAdapterException => {
@@ -1134,7 +1129,7 @@ class MigrateTo_V_1_4 extends MigratableTo {
     }
   }
 
-  private def callGetData(dataStore: DataStoreOperations, containerName: String, keys: Array[Key], callbackFunction: (Key, Value) => Unit): Unit = {
+  private def callGetData(dataStore: DataStoreOperations, containerName: String, keys: Array[Key], callbackFunction: (Key, Any, String, String, Int) => Unit): Unit = {
     var failedWaitTime = 15000 // Wait time starts at 15 secs
     val maxFailedWaitTime = 60000 // Max Wait time 60 secs
     var doneGet = false
@@ -1192,7 +1187,7 @@ class MigrateTo_V_1_4 extends MigratableTo {
     if (_bInit == false)
       throw new Exception("Not yet Initialized")
     val containersData = data.groupBy(_.containerName.toLowerCase)
-    val data_list = containersData.map(kv => (kv._1, kv._2.map(d => (Key(d.timePartition, d.bucketKey, d.transactionid, d.rowid), Value(d.serializername, d.data))).toArray)).toArray
+    val data_list = containersData.map(kv => (kv._1, kv._2.map(d => (Key(d.timePartition, d.bucketKey, d.transactionid, d.rowid), d.serializername, d.data.asInstanceOf[Any])).toArray)).toArray
 
     callSaveData(_dataStoreDb, data_list);
   }
@@ -1220,8 +1215,8 @@ class MigrateTo_V_1_4 extends MigratableTo {
       throw new Exception("Not found valid Datastore DB connection")
 
     var ret = ""
-    val buildAdapOne = (k: Key, v: Value) => {
-      ret = new String(v.serializedInfo)
+    val buildAdapOne = (k: Key, v: Any, serType: String, typ: String, ver:Int) => {
+      ret = new String(v.asInstanceOf[Array[Byte]])
     }
 
     callGetData(_dataStoreDb, "MigrateStatusInformation", Array(Key(KvBaseDefalts.defaultTime, Array(key.toLowerCase), 0, 0)), buildAdapOne)
@@ -1235,7 +1230,7 @@ class MigrateTo_V_1_4 extends MigratableTo {
     if (_dataStoreDb == null)
       throw new Exception("Not found valid Datastore DB connection")
 
-    callSaveData(_dataStoreDb, Array(("MigrateStatusInformation", Array((Key(KvBaseDefalts.defaultTime, Array(key.toLowerCase), 0, 0), Value("txt", value.getBytes()))))))
+    callSaveData(_dataStoreDb, Array(("MigrateStatusInformation", Array((Key(KvBaseDefalts.defaultTime, Array(key.toLowerCase), 0, 0), "txt", value.getBytes().asInstanceOf[Any])))))
   }
 }
 

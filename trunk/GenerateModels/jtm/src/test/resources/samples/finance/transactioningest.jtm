@@ -1,0 +1,46 @@
+{
+  "header": {
+    "namespace": "com.ligadata.models.samples.finance",
+    "version": "0.0.1",
+    "language" : "scala",
+    "minVersion" : "2.11",
+    "description": "Finance load transaction message",
+    "name": "TransactionIngest"
+  },
+  "imports": {
+    "packages": [ "com.ligadata.runtime.Conversion"]
+  },
+  "aliases": {
+    "messages": {
+      "m1": "com.ligadata.kamanja.samples.messages.TransactionMsgIn",
+      "o1": "com.ligadata.kamanja.samples.messages.TransactionMsg"
+    }
+  },
+  "transformations": {
+    "transactionmsg": {
+      "dependsOn": [ ["m1"] ],
+      "computes": {
+        "arrayData":{ "type": "Array[String]", "val": "$data.split(\",\")", "comment": "Split the incoming data" }
+      },
+      "outputs": {
+        "o1": {
+          "computes": {
+            "typeName": { "type": "String", "val": "arrayData(0)", "comment": "extract the type" }
+          },
+          "where": "\"com.ligadata.kamanja.samples.messages.TransactionMsg\" == $typeName",
+          "mapping": {
+            "custid": "conversion.ToLong($arrayData(1))",
+            "branchid": "conversion.ToInteger($arrayData(2))",
+            "accno": "conversion.ToLong($arrayData(3))",
+            "amount": "conversion.ToDouble($arrayData(4))",
+            "balance": "conversion.ToDouble($arrayData(5))",
+            "date": "conversion.ToInteger($arrayData(6))",
+            "time": "conversion.ToInteger($arrayData(7))",
+            "locationid": "conversion.ToInteger($arrayData(8))",
+            "transtype": "$arrayData(9)"
+          }
+        }
+      }
+    }
+  }
+}

@@ -90,8 +90,8 @@ class ProtoBufSerializer extends Serializer{
 
         m.setPbe(buildProtoBaseElem(o))
         m.setModelType("RuleSet")
-        o.inputVars.toList.map(obj => {m.addInputVars(buildAttribute(obj.asInstanceOf[AttributeDef]))})
-        o.outputVars.toList.map(obj => {m.addOutputVars(buildAttribute(obj.asInstanceOf[AttributeDef]))})
+        // o.inputVars.toList.map(obj => {m.addInputVars(buildAttribute(obj.asInstanceOf[AttributeDef]))})
+        // o.outputVars.toList.map(obj => {m.addOutputVars(buildAttribute(obj.asInstanceOf[AttributeDef]))})
         m.build
     }
 
@@ -142,7 +142,9 @@ class ProtoBufSerializer extends Serializer{
             //depJars1.foreach(s => { logger.debug(s) })
 
             logger.debug("Create the ModelDef object...")
-            val m = MdMgr.GetMdMgr.MakeModelDef(o.getPbe.getNameSpace
+            val m: ModelDef = null
+/*
+            MdMgr.GetMdMgr.MakeModelDef(o.getPbe.getNameSpace
                 ,o.getPbe.getName
                 ,o.getPbe.getPhysicalName
                 ,ModelRepresentation.modelRep(o.getModelType)
@@ -158,6 +160,7 @@ class ProtoBufSerializer extends Serializer{
                 ,o.getRecompile
                 ,o.getSupportsInstanceSerialization
             )
+*/
 
             m
         }catch{

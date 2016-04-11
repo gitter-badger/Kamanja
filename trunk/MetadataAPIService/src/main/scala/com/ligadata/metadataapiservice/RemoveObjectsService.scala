@@ -101,9 +101,6 @@ class RemoveObjectsService(requestContext: RequestContext, userid: Option[String
       case "type" => {
 	      return MetadataAPIImpl.RemoveType(nameSpace,arg.Name,version.toLong, userid)
       }
-      case "outputmsg" => {
-        return MetadataAPIOutputMsg.RemoveOutputMsg(nameSpace, arg.Name, version.toLong, userid)
-      }
     }
     apiResult
   }

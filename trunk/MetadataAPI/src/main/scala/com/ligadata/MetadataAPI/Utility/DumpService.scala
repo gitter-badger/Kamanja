@@ -23,7 +23,7 @@ import com.ligadata.kamanja.metadata.MdMgr
  * Created by dhaval on 8/13/15.
  */
 object DumpService {
-  private val userid: Option[String] = Some("metadataapi")
+  private val userid: Option[String] = Some("kamanja")
   val loggerName = this.getClass.getName
   lazy val logger = LogManager.getLogger(loggerName)
 

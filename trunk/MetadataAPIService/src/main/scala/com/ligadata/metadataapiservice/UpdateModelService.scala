@@ -34,7 +34,7 @@ object UpdateModelService {
   case class Process(pmmlStr:String)
 }
 
-class UpdateModelService(requestContext: RequestContext, userid:Option[String], password:Option[String], cert:Option[String], modelCompileInfo: Option[String]) extends Actor {
+class UpdateModelService(requestContext: RequestContext, userid:Option[String], password:Option[String], cert:Option[String], modelCompileInfo: Option[String], tenantId: Option[String]) extends Actor {
 
   import UpdateModelService._
   
@@ -83,10 +83,10 @@ class UpdateModelService(requestContext: RequestContext, userid:Option[String], 
 
         // if an optional parm is passed, pass it, else only pass in 2 parms
         if (compileConfigTokens.size == 2) {
-          val apiResult = MetadataAPIImpl.UpdateModel(ModelType.PMML, pmmlStr, userid, Some(compileConfigTokens(0)), Some(compileConfigTokens(1)))
+          val apiResult = MetadataAPIImpl.UpdateModel(ModelType.PMML, pmmlStr, userid, tenantId, Some(compileConfigTokens(0)), Some(compileConfigTokens(1)))
           requestContext.complete(apiResult)
         } else {
-          val apiResult = MetadataAPIImpl.UpdateModel(ModelType.PMML, pmmlStr, userid, Some(compileConfigTokens(0)), Some(compileConfigTokens(1)), Some(compileConfigTokens(2)) )
+          val apiResult = MetadataAPIImpl.UpdateModel(ModelType.PMML, pmmlStr, userid, tenantId, Some(compileConfigTokens(0)), Some(compileConfigTokens(1)), Some(compileConfigTokens(2)) )
           requestContext.complete(apiResult)
         }
       }

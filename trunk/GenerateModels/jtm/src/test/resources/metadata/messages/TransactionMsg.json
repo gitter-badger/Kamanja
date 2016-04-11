@@ -1,0 +1,51 @@
+{
+  "Message": {
+	"NameSpace": "com.ligadata.kamanja.samples.messages",
+	"Name": "TransactionMsg",
+	"Version": "00.01.00",
+	"Description": "Transaction Message",
+	"Fixed": "true",
+	"Persist": "true",
+	"Fields": [
+	  {
+		"Name": "custId",
+		"Type": "System.Long"
+	  },
+	  {
+		"Name": "branchId",
+		"Type": "System.Int"
+	  },
+	  {
+		"Name": "accNo",
+		"Type": "System.Long"
+	  },
+	  {
+		"Name": "amount",
+		"Type": "System.Double"
+	  },
+	  {
+		"Name": "balance",
+		"Type": "System.Double"
+	  },
+	  {
+		"Name": "date",
+		"Type": "System.Int"
+	  },
+	  {
+		"Name": "time",
+		"Type": "System.Int"
+	  },
+	  {
+		"Name": "locationId",
+		"Type": "System.Int"
+	  },
+	  {
+		"Name": "transType",
+		"Type": "System.String"
+	  }
+	],
+	"PartitionKey": [
+	  "custId"
+	]
+  }
+}

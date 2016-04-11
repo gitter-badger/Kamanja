@@ -12,7 +12,9 @@
   "JarName" : "basetypes_2.11-0.1.0.jar",
   "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.BoolImpl",
-  "TransactionId" : 0
+  "OwnerId" : "test_spec",
+  "UniqueId" : 1,
+  "MdElementId" : 1
 },
 {
   "MetadataType" : "ScalarTypeDef",
@@ -26,7 +28,9 @@
   "JarName" : "basetypes_2.11-0.1.0.jar",
   "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.StringImpl",
-  "TransactionId" : 0
+  "OwnerId" : "test_spec",
+  "UniqueId" : 2,
+  "MdElementId" : 2
 },
 {
   "MetadataType" : "ScalarTypeDef",
@@ -40,7 +44,9 @@
   "JarName" : "basetypes_2.11-0.1.0.jar",
   "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.AnyImpl",
-  "TransactionId" : 0
+  "OwnerId" : "test_spec",
+  "UniqueId" : 3,
+  "MdElementId" : 3
 },
 {
   "MetadataType" : "ScalarTypeDef",
@@ -54,7 +60,9 @@
   "JarName" : "basetypes_2.11-0.1.0.jar",
   "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.IntImpl",
-  "TransactionId" : 0
+  "OwnerId" : "test_spec",
+  "UniqueId" : 4,
+  "MdElementId" : 4
 },
 {
   "MetadataType" : "ScalarTypeDef",
@@ -68,7 +76,9 @@
   "JarName" : "basetypes_2.11-0.1.0.jar",
   "DependencyJars" : [ "metadata_2.11-1.0.jar" ],
   "Implementation" : "com.ligadata.BaseTypes.LongImpl",
-  "TransactionId" : 0
+  "OwnerId" : "test_spec",
+  "UniqueId" : 5,
+  "MdElementId" : 5
 } ]
 
 }

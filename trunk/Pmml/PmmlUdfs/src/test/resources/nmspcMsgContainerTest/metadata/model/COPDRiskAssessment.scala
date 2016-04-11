@@ -20,7 +20,7 @@ import com.ligadata.KamanjaBase._
 import RddUtils._
 import RddDate._
 import com.ligadata.KamanjaBase.{ TimeRange, ModelInstanceFactory, ModelInstance, ModelResultBase, TransactionContext }
-import com.ligadata.KamanjaBase.{ BaseMsg, BaseContainer, RddUtils, RddDate, BaseContainerObj, MessageContainerBase, RDDObject, RDD }
+import com.ligadata.KamanjaBase.{ MessageInterface, ContainerInterface, RddUtils, RddDate, ContainerFactoryInterface, ContainerInterface, RDDObject, RDD }
 import com.ligadata.messagescontainers._
 import com.ligadata.messagescontainers.System._
 import com.ligadata.KamanjaBase.MinVarType._
@@ -33,7 +33,7 @@ import org.joda.time._
 import com.ligadata.kamanja.metadata.ModelDef;
 
 class COPDRiskAssessmentFactory(modelDef: ModelDef, nodeContext: NodeContext) extends ModelInstanceFactory(modelDef, nodeContext) {
-  override def isValidMessage(msg: MessageContainerBase): Boolean = return msg.isInstanceOf[Beneficiary]
+  override def isValidMessage(msg: ContainerInterface): Boolean = return msg.isInstanceOf[Beneficiary]
   override def createModelInstance(): ModelInstance = return new COPDRiskAssessment(this)
   override def getModelName: String = "COPDRisk" 
   override def getVersion: String = "0.0.1"

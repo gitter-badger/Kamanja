@@ -4,8 +4,6 @@ import Keys._
 
 shellPrompt := { state =>  "sbt (%s)> ".format(Project.extract(state).currentProject.id) }
 
-
-
 assemblyOption in assembly ~= { _.copy(prependShellScript = Some(defaultShellScript)) }
 
 assemblyJarName in assembly := { s"${name.value}-${version.value}" }
@@ -78,3 +76,9 @@ libraryDependencies += "org.apache.logging.log4j" % "log4j-core" % "2.4.1"
 libraryDependencies += "com.google.code.gson" % "gson" % "2.3.1"
 
 // EclipseKeys.projectFlavor := EclipseProjectFlavor.Java
+
+coverageMinimum := 80
+
+coverageFailOnMinimum := false
+
+coverageExcludedPackages := "com.ligadata.Migrate.*"

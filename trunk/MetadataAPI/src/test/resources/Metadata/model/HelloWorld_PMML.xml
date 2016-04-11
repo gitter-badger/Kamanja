@@ -1,7 +1,7 @@
 <PMML xmlns="http://www.dmg.org/PMML-4_1" version="4.1">
 
         <Header copyright="LigaDATA. Copyright 2014" description="Hello World">
-                <Application name="HelloWord" version="00.01.00"/>
+                <Application name="HelloWorld" version="00.01.00"/>
         </Header>
 
         <DataDictionary numberOfFields="3">

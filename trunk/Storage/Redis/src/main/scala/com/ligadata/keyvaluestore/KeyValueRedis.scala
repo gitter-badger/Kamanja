@@ -16,7 +16,7 @@
 
 package com.ligadata.keyvaluestore
 
-import com.ligadata.StorageBase.{ Key, Value, IStorage, DataStoreOperations, DataStore, Transaction, StorageAdapterObj }
+import com.ligadata.StorageBase.{ Key, Value, IStorage, DataStoreOperations, DataStore, Transaction, StorageAdapterFactory }
 import java.io.File
 import java.nio.ByteBuffer
 import com.redis.cluster._
@@ -190,7 +190,7 @@ class KeyValueRedis(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig:
 }
 
 // To create Redis Datastore instance
-object KeyValueRedis extends StorageAdapterObj {
+object KeyValueRedis extends StorageAdapterFactory {
   override def CreateStorageAdapter(kvManagerLoader: KamanjaLoaderInfo, datastoreConfig: String, tableName: String): DataStore = new KeyValueRedis(kvManagerLoader, datastoreConfig, tableName)
 }
 

@@ -45,16 +45,16 @@ object KafkaQueueAdapterConfiguration {
 
     val qc = new KafkaQueueAdapterConfiguration
     qc.Name = inputConfig.Name
-    qc.formatName = inputConfig.formatName
-    qc.validateAdapterName = inputConfig.validateAdapterName
-    qc.failedEventsAdapterName = inputConfig.failedEventsAdapterName
+//    qc.formatName = inputConfig.formatName
+//    qc.validateAdapterName = inputConfig.validateAdapterName
+//    qc.failedEventsAdapterName = inputConfig.failedEventsAdapterName
     qc.className = inputConfig.className
     qc.jarName = inputConfig.jarName
     qc.dependencyJars = inputConfig.dependencyJars
-    qc.associatedMsg = if (inputConfig.associatedMsg == null) null else inputConfig.associatedMsg.trim
-    qc.keyAndValueDelimiter = if (inputConfig.keyAndValueDelimiter == null) null else inputConfig.keyAndValueDelimiter.trim
-    qc.fieldDelimiter = if (inputConfig.fieldDelimiter == null) null else inputConfig.fieldDelimiter.trim
-    qc.valueDelimiter = if (inputConfig.valueDelimiter == null) null else inputConfig.valueDelimiter.trim
+//    qc.associatedMsg = if (inputConfig.associatedMsg == null) null else inputConfig.associatedMsg.trim
+//    qc.keyAndValueDelimiter = if (inputConfig.keyAndValueDelimiter == null) null else inputConfig.keyAndValueDelimiter.trim
+//    qc.fieldDelimiter = if (inputConfig.fieldDelimiter == null) null else inputConfig.fieldDelimiter.trim
+//    qc.valueDelimiter = if (inputConfig.valueDelimiter == null) null else inputConfig.valueDelimiter.trim
 
     val adapCfg = parse(inputConfig.adapterSpecificCfg)
     if (adapCfg == null || adapCfg.values == null) {

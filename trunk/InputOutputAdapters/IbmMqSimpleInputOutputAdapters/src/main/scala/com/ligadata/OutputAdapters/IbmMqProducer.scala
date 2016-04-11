@@ -18,7 +18,7 @@ package com.ligadata.OutputAdapters
 
 import java.util.Properties
 import org.apache.logging.log4j.{ Logger, LogManager }
-import com.ligadata.InputOutputAdapterInfo.{ AdapterConfiguration, OutputAdapter, OutputAdapterObj, CountersAdapter }
+import com.ligadata.InputOutputAdapterInfo._
 import com.ligadata.AdaptersConfiguration.IbmMqAdapterConfiguration
 import javax.jms.{ Connection, Destination, JMSException, Message, MessageProducer, Session, TextMessage, BytesMessage }
 import com.ibm.msg.client.jms.JmsConnectionFactory
@@ -29,12 +29,12 @@ import com.ibm.msg.client.jms.JmsConstants
 import com.ligadata.HeartBeat.{Monitorable, MonitorComponentInfo}
 import org.json4s.jackson.Serialization
 
-object IbmMqProducer extends OutputAdapterObj {
+object IbmMqProducer extends OutputAdapterFactory {
   val ADAPTER_DESCRIPTION = "IBM MQ Producer"
-  def CreateOutputAdapter(inputConfig: AdapterConfiguration, cntrAdapter: CountersAdapter): OutputAdapter = new IbmMqProducer(inputConfig, cntrAdapter)
+  def CreateOutputAdapter(inputConfig: AdapterConfiguration, nodeContext: NodeContext): OutputAdapter = new IbmMqProducer(inputConfig, nodeContext)
 }
 
-class IbmMqProducer(val inputConfig: AdapterConfiguration, cntrAdapter: CountersAdapter) extends OutputAdapter {
+class IbmMqProducer(val inputConfig: AdapterConfiguration, val nodeContext: NodeContext) extends OutputAdapter {
   private[this] val LOG = LogManager.getLogger(getClass)
   private var startTime = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
   private var lastSeen = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
@@ -129,8 +129,8 @@ class IbmMqProducer(val inputConfig: AdapterConfiguration, cntrAdapter: Counters
           outmessage.setStringProperty("ContentType", qc.content_type)
           producer.send(outmessage)
         }
-        val key = Category + "/" + qc.Name + "/evtCnt"
-        cntrAdapter.addCntr(key, 1) // for now adding each row
+        // val key = Category + "/" + qc.Name + "/evtCnt"
+        // cntrAdapter.addCntr(key, 1) // for now adding each row
       })
     } catch {
       case jmsex: Exception => {

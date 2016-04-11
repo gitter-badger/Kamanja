@@ -30,8 +30,7 @@ import scala.collection.JavaConverters._
 import org.apache.curator.framework.api.CuratorEventType._;
 import org.apache.logging.log4j._
 import com.ligadata.KamanjaVersion.KamanjaVersion
-
-case class ClusterStatus(nodeId: String, isLeader: Boolean, leader: String, participants: Iterable[String])
+import com.ligadata.Utils.ClusterStatus
 
 class ZkLeaderLatch(val zkcConnectString: String, val leaderPath: String, val nodeId: String, val EventChangeCallback: (ClusterStatus) => Unit, sessionTimeoutMs: Int = 1000, connectionTimeoutMs: Int = 30000) {
   private var curatorFramework: CuratorFramework = null
@@ -103,7 +102,7 @@ class ZkLeaderLatch(val zkcConnectString: String, val leaderPath: String, val no
       val isLeader = if (clstStatus.isLeader) "true" else "false"
 
       // Do something with cluster status (log leadership change, etc)
-      LOG.info("NodeId:%s, IsLeader:%s, Leader:%s, AllParticipents:{%s}".format(clstStatus.nodeId, isLeader, clstStatus.leader, clstStatus.participants.mkString(",")))
+      LOG.info("NodeId:%s, IsLeader:%s, Leader:%s, AllParticipents:{%s}".format(clstStatus.nodeId, isLeader, clstStatus.leaderNodeId, clstStatus.participantsNodeIds.mkString(",")))
       if (EventChangeCallback != null)
         EventChangeCallback(clstStatus)
     } catch {

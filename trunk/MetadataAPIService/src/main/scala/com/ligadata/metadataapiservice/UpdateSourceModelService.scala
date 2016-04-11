@@ -36,7 +36,7 @@ object UpdateSourceModelService {
 }
 
 
-class UpdateSourceModelService(requestContext: RequestContext, userid:Option[String], password:Option[String], cert:Option[String], modelname: Option[String]) extends Actor {
+class UpdateSourceModelService(requestContext: RequestContext, userid:Option[String], password:Option[String], cert:Option[String], modelname: Option[String], tid: Option[String]) extends Actor {
 
   import UpdateSourceModelService._
 
@@ -74,7 +74,7 @@ class UpdateSourceModelService(requestContext: RequestContext, userid:Option[Str
     }
     else {
 
-      val apiResult = MetadataAPIImpl.UpdateModel(ModelType.SCALA, pmmlStr, userid, Some(usersModelName))
+      val apiResult = MetadataAPIImpl.UpdateModel(ModelType.SCALA, pmmlStr, userid, tid, Some(usersModelName))
       requestContext.complete(apiResult)
     }
   }
@@ -92,7 +92,7 @@ class UpdateSourceModelService(requestContext: RequestContext, userid:Option[Str
       requestContext.complete(new ApiResult(ErrorCodeConstants.Failure, APIName, null,  "Failed to add model. No model configuration name supplied. Please specify in the header the model configuration name where the key is 'modelname' and the value is the name of the configuration.").toString )
     }
     else {
-      val apiResult = MetadataAPIImpl.UpdateModel(ModelType.JAVA, pmmlStr,userid, Some(usersModelName))
+      val apiResult = MetadataAPIImpl.UpdateModel(ModelType.JAVA, pmmlStr,userid, tid, Some(usersModelName))
       requestContext.complete(apiResult)
     }
   }

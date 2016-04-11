@@ -30,11 +30,11 @@ import scala.io._
  * Created by dhaval on 8/7/15.
  */
 object ContainerService {
-  private val userid: Option[String] = Some("metadataapi")
+  private val userid: Option[String] = Some("kamanja")
   val loggerName = this.getClass.getName
   lazy val logger = LogManager.getLogger(loggerName)
 
-  def addContainer(input: String): String ={
+  def addContainer(input: String, tid: Option[String] = None): String ={
     var response = ""
     var containerFileDir: String = ""
     //val gitMsgFile = "https://raw.githubusercontent.com/ligadata-dhaval/Kamanja/master/HelloWorld_Msg_Def.json"
@@ -55,7 +55,7 @@ object ContainerService {
               case option => {
                 val containerDefs = getUserInputFromMainMenu(containers)
                 for (containerDef <- containerDefs) {
-                  response += MetadataAPIImpl.AddContainer(containerDef.toString, "JSON", userid)
+                  response += MetadataAPIImpl.AddContainer(containerDef.toString, "JSON", userid, tid)
                 }
               }
             }
@@ -71,7 +71,7 @@ object ContainerService {
       var container = new File(input.toString)
       if( container.exists()){
         val containerDef = Source.fromFile(container).mkString
-        response = MetadataAPIImpl.AddContainer(containerDef, "JSON", userid)
+        response = MetadataAPIImpl.AddContainer(containerDef, "JSON", userid, tid)
       }else{
         response = "Input container file does not exist"
       }
@@ -80,7 +80,7 @@ object ContainerService {
     response
   }
 
-  def updateContainer(input: String): String ={
+  def updateContainer(input: String, tid: Option[String] = None): String ={
     var response = ""
     var containerFileDir: String = ""
     //val gitMsgFile = "https://raw.githubusercontent.com/ligadata-dhaval/Kamanja/master/HelloWorld_Msg_Def.json"

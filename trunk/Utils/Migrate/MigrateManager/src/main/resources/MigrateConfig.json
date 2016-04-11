@@ -28,8 +28,7 @@
     ]
   },
   "excludeMetadata": [
-    "JarDef",
-    "OutputMsgDef"
+    "JarDef"
   ],
   "excludeData": false
 }

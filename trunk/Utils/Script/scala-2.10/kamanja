@@ -1,0 +1,148 @@
+#!/usr/bin/env bash
+###################################################################
+#
+#  Copyright 2015 ligaDATA
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+###################################################################
+
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
+KAMANJA_HOME="$(dirname "$SCRIPT_DIR")"
+export KAMANJA_HOME=$KAMANJA_HOME
+INPUT=$@
+
+if [ "$1" == "debug" ]; then
+    attachDebugger="true"
+    shift
+fi
+
+jar_full_path=$(which jar)
+if [ "$?" != "0" ]; then
+  echo "Not found java home directory."
+  exit 1
+fi
+
+scala_full_path=$(which scala)
+if [ "$?" != "0" ]; then
+  echo "Not found scala home directory."
+  exit 1
+fi
+
+pwdnm=$(pwd -P)
+
+JAVA_HOME=$(dirname $(dirname $jar_full_path))
+SCALA_HOME=$(dirname $(dirname $scala_full_path))
+
+IFS=' ' read -a array <<< $@
+if [ "$#" -eq 0  ]; then
+    cat $KAMANJA_HOME/input/HelpMenu.txt
+    echo ""
+    exit 0
+fi
+#if config provided, update or add to the config file
+if [ "${array[0] }" = "edit" ]; then
+  #check if key present in file. If not add to the file. Else update it.
+  while read line
+  do
+  echo $line | grep ${array[2]} >> /dev/null
+  if [ $? = 0 ]; then
+#do nothing
+  echo ""
+  else
+    #add other lines
+    echo $line >> ~/MetadataAPIConfig.temp
+  fi
+  done < ~/MetadataAPIConfig.properties
+  echo "${array[2]}=${array[3]}" >> ~/MetadataAPIConfig.temp
+  mv ~/MetadataAPIConfig.temp ~/MetadataAPIConfig.properties
+  echo "MetadataAPIConfig.properties update complete!"
+  exit 0
+fi
+
+if [ "$INPUT" = "start webservice" ]; then
+echo "Starting web service . . . ."
+
+#java -jar $KAMANJA_HOME/bin/MetadataAPIService-1.0
+java -cp $KAMANJA_HOME/lib/system/jarfactoryofmodelinstancefactory_2.10-1.0.jar:$KAMANJA_HOME/lib/system/ExtDependencyLibs2_2.10-1.4.0.jar:$KAMANJA_HOME/lib/system/ExtDependencyLibs_2.10-1.0.jar:$KAMANJA_HOME/lib/system/KamanjaInternalDeps_2.10-1.4.0.jar:$KAMANJA_HOME/bin/MetadataAPIService_2.10-1.4.0.jar com.ligadata.metadataapiservice.APIService
+elif [ "$INPUT" = "start -v" ]; then
+   $KAMANJA_HOME/bin/StartEngine.sh
+
+elif [ "$INPUT" = "start" ]; then
+  if [ -f /tmp/kamanjastart.log ]; then
+    rm /tmp/kamanjastart.log
+    touch /tmp/kamanjastart.log
+  fi
+
+ nohup $KAMANJA_HOME/bin/StartEngine.sh >> $HOME/kamanjastart.log &
+ echo "Kamanja engine started in background. Please check the engine log at /tmp/kamanjastart.log"
+elif [ "$INPUT" = "stop" ]; then
+    ID=`ps -ef | grep -i java | grep -i KamanjaManager-1.0 | tr -s " " | cut -d" " -f2`
+    echo "Stopping Kamanja with process id: $ID"
+    kill $ID
+    sleep 2
+    ID=`ps -ef | grep -i java | grep -i KamanjaManager-1.0 | tr -s " " | cut -d" " -f2`
+    if [ "$ID" != "" ]; then
+        echo "Failed to stop Kamanja. Found process $ID"
+    else
+        echo "Kamanja successfully stopped"
+    fi
+elif [ "$INPUT" = "create queues" ]; then
+  $KAMANJA_HOME/bin/CreateQueues.sh
+elif [ "$INPUT" = "watch status queue" ]; then
+  $KAMANJA_HOME/bin/WatchStatusQueue.sh
+elif [ "$INPUT" = "watch input queue" ]; then
+  $KAMANJA_HOME/bin/WatchInputQueue.sh
+elif [ "$INPUT" = "watch output queue" ]; then
+  $KAMANJA_HOME/bin/WatchOutputQueue.sh
+elif [ "$INPUT" = "watch failed events queue" ]; then
+  $KAMANJA_HOME/bin/WatchFailedEventQueue.sh
+elif [ "$INPUT" = "--version" ]; then
+#  $KAMANJA_HOME/bin/MetadataAPI-1.0 --version
+  java -cp $KAMANJA_HOME/lib/system/jarfactoryofmodelinstancefactory_2.10-1.0.jar:$KAMANJA_HOME/lib/system/ExtDependencyLibs2_2.10-1.4.0.jar:$KAMANJA_HOME/lib/system/ExtDependencyLibs_2.10-1.4.0.jar:$KAMANJA_HOME/lib/system/KamanjaInternalDeps_2.10-1.4.0.jar:$KAMANJA_HOME/lib/system/MetadataAPI_2.10-1.4.0.jar com.ligadata.MetadataAPI.StartMetadataAPI --version
+elif [ "$INPUT" = "help" ]; then
+cat $KAMANJA_HOME/input/HelpMenu.txt
+    echo ""
+elif [ "$INPUT" = "push data" ]; then
+    $KAMANJA_HOME/bin/PushSampleDataToKafka.sh $INPUT
+  #elif [ "$INPUT" = "kvinit" ]; then
+  #count=0
+  #FILEDIR=$KAMANJA_HOME/input/SampleApplications/bin
+  #for entry in "$FILEDIR"/*
+  #do
+  #echo $entry | grep -i InitKvStores >> /dev/null
+  #if [ $? = 0 ]; then
+  #count=$((count+1))
+  #  echo "$count: $entry"
+  #  LISTOFFILES[count-1]=$entry
+  #fi
+  #done
+  #read -p "Please select from the above options: " useroption
+  #OPTION=useroption-1
+  #INPUTFILE=${LISTOFFILES[OPTION]}
+  #echo "User selected: $INPUTFILE"
+  #$INPUTFILE
+else
+    if [ -n "$attachDebugger" ]; then
+        ipport="8998"
+        java -Xdebug -Xrunjdwp:transport=dt_socket,address="$ipport",server=y -Dlog4j.configurationFile=file:$KAMANJA_HOME/config/log4j2.xml -cp $KAMANJA_HOME/lib/system/jarfactoryofmodelinstancefactory_2.10-1.0.jar:$KAMANJA_HOME/lib/system/ExtDependencyLibs2_2.10-1.4.0.jar:$KAMANJA_HOME/lib/system/ExtDependencyLibs_2.10-1.4.0.jar:$KAMANJA_HOME/lib/system/KamanjaInternalDeps_2.10-1.4.0.jar:$KAMANJA_HOME/lib/system/MetadataAPI_2.10-1.4.0.jar com.ligadata.MetadataAPI.StartMetadataAPI $INPUT
+    else
+        java -Dlog4j.configurationFile=file:$KAMANJA_HOME/config/log4j2.xml -cp $KAMANJA_HOME/lib/system/jarfactoryofmodelinstancefactory_2.10-1.0.jar:$KAMANJA_HOME/lib/system/ExtDependencyLibs2_2.10-1.4.0.jar:$KAMANJA_HOME/lib/system/ExtDependencyLibs_2.10-1.4.0.jar:$KAMANJA_HOME/lib/system/KamanjaInternalDeps_2.10-1.4.0.jar:$KAMANJA_HOME/lib/system/MetadataAPI_2.10-1.4.0.jar com.ligadata.MetadataAPI.StartMetadataAPI $INPUT
+    fi
+fi

@@ -1,0 +1,71 @@
+/*
+* Copyright 2016 ligaDATA
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+package com.ligadata.jtm.test.grok
+import com.ligadata.KamanjaBase._
+import com.ligadata.KvBase.TimeRange
+import com.ligadata.kamanja.metadata.ModelDef
+import com.ligadata.Utils._
+import org.aicer.grok.dictionary.GrokDictionary
+import com.ligadata.runtime.Conversion
+class ModelFactory(modelDef: ModelDef, nodeContext: NodeContext) extends ModelInstanceFactory(modelDef, nodeContext) {
+  override def isValidMessage(msg: ContainerInterface): Boolean = {
+    msg.isInstanceOf[com.ligadata.kamanja.test.V1000000.msg5]
+  }
+  override def createModelInstance(): ModelInstance = return new Model(this)
+  override def getModelName: String = "com.ligadata.jtm.test.grok"
+  override def getVersion: String = "0.0.1"
+  override def createResultObject(): ModelResultBase = new MappedModelResults()
+}
+class Model(factory: ModelInstanceFactory) extends ModelInstance(factory) {
+  val conversion = new com.ligadata.runtime.Conversion
+  override def execute(txnCtxt: TransactionContext, execMsgsSet: Array[ContainerOrConcept], triggerdSetIndex: Int, outputDefault: Boolean): Array[ContainerOrConcept] = {
+    val messagefactoryinterface = execMsgsSet(0).asInstanceOf[MessageFactoryInterface]
+    //
+    lazy val grok_instance_1: GrokDictionary = {
+      val dict = new GrokDictionary
+      dict.addBuiltInDictionaries
+      dict.addDictionary(new File(getClass.getResource("grok/00346425/path").getPath))
+      dict.bind()
+      dict
+    }
+    lazy val grok_instance_1_0 = grok_instance_1.compileExpression("%{EMAIL:email} %{DOMAIN:domain} %{USER:user}")
+    //
+    def exeGenerated_test1_1(msg1: com.ligadata.kamanja.test.V1000000.msg5): Array[MessageInterface] = {
+      lazy val grok_instance_1_0_in1 = grok_instance_1_0.extractNamedGroups(in1)
+      def process_o1(): Array[MessageInterface] = {
+        val result = new com.ligadata.kamanja.test.V1000000.msg2(messagefactoryinterface)
+        result.out4 = if(grok_instance_1_0_in1.containsKey("user")) grok_instance_1_0_in1.get("user") else "")
+        result.out3 = if(grok_instance_1_0_in1.containsKey("domain")) grok_instance_1_0_in1.get("domain") else "")
+        result.out2 = if(grok_instance_1_0_in1.containsKey("email")) grok_instance_1_0_in1.get("email") else "")
+        result.out1 = msg1.in3
+        Array(result)
+      }
+      process_o1()
+    }
+    // Evaluate messages
+    val msgs = execMsgsSet.map(m => m.getFullTypeName -> m).toMap
+    val msg1 = msgs.get("com.ligadata.kamanja.test.msg5").getOrElse(null).asInstanceOf[com.ligadata.kamanja.test.V1000000.msg5]
+    // Main dependency -> execution check
+    //
+    val results: Array[MessageInterface] =
+    if(msg1!=null) {
+      exeGenerated_test1_1(msg1)
+    } else {
+      Array.empty[MessageInterface]
+    }
+    results.asInstanceOf[Array[ContainerOrConcept]]
+  }
+}

@@ -34,7 +34,6 @@
 //     
 package com.ligadata.models.samples.models
 
-import com.ligadata.KvBase.{ Key, Value }
 import com.ligadata.KamanjaBase._
 import RddUtils._
 import RddDate._
@@ -49,7 +48,7 @@ import java.io._
 import com.ligadata.kamanja.metadata.ModelDef;
 
 class SubscriberUsageAlertFactory(modelDef: ModelDef, nodeContext: NodeContext) extends ModelInstanceFactory(modelDef, nodeContext) {
-  override def isValidMessage(msg: MessageContainerBase): Boolean = return msg.isInstanceOf[SubscriberUsage]
+  override def isValidMessage(msg: ContainerInterface): Boolean = return msg.isInstanceOf[SubscriberUsage]
   override def createModelInstance(): ModelInstance = return new SubscriberUsageAlert(this)
   override def getModelName(): String = "System.SubscriberUsageAlert" // Model Name
   override def getVersion(): String = "0.0.1" // Model Version
@@ -263,12 +262,14 @@ class SubscriberUsageAlert(factory: ModelInstanceFactory) extends ModelInstance(
 
     // aggregate account usage
     val actMonthlyUsage = actAggrUsage.thismonthusage + rcntTxn.get.usage
-    actAggrUsage.withthismonthusage(actMonthlyUsage).Save
+    actAggrUsage.set("thismonthusage",actMonthlyUsage);
+    actAggrUsage.save;
 
     // aggregate the usage 
     // aggregate individual subscriber usage
     val subMonthlyUsage = subAggrUsage.thismonthusage + rcntTxn.get.usage
-    subAggrUsage.withthismonthusage(subMonthlyUsage).Save
+    subAggrUsage.set("thismonthusage",subMonthlyUsage);
+    subAggrUsage.save
 
 
     dumpAppLog(logTag + "After Aggregation: Subscriber current month usage => " + subMonthlyUsage + ",Account current month usage => " + actMonthlyUsage)

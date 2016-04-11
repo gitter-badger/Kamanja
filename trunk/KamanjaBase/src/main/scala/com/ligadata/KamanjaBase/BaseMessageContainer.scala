@@ -19,10 +19,16 @@ package com.ligadata.KamanjaBase
 import java.net.URL
 import java.net.URLClassLoader
 import java.io.{ ByteArrayInputStream, DataInputStream, DataOutputStream, ByteArrayOutputStream }
+import com.ligadata.Exceptions.KamanjaException
+import com.ligadata.Utils.KamanjaClassLoader
+import com.ligadata.kamanja.metadata.MdMgr
 import org.apache.logging.log4j._
 import java.util.Date
 import java.util.Calendar
 import java.text.SimpleDateFormat
+
+import scala.collection.mutable.ArrayBuffer
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 trait MessageContainerBase {
   // System Columns
@@ -143,10 +149,15 @@ trait MessageContainerObjBase {
 }
 
 trait MdBaseResolveInfo {
-  def getMessgeOrContainerInstance(typName: String): MessageContainerBase
+  def getMessgeOrContainerInstance(typName: String): ContainerInterface
+  // Get Latest SchemaId For Type
+  // getMessgeOrContainerInstance for SchemaId
+  // Convert to LatestVersion (Take any object and tries to covert to new version)
 }
 
+/*
 object SerializeDeserialize {
+
   val loggerName = this.getClass.getName
   val logger = LogManager.getLogger(loggerName)
   def Serialize(inst: MessageContainerBase): Array[Byte] = {
@@ -231,6 +242,7 @@ object SerializeDeserialize {
     null
   }
 }
+*/
 
 trait BaseContainer extends MessageContainerBase {
   override def isMessage: Boolean = false
@@ -252,19 +264,218 @@ trait BaseMsgObj extends MessageContainerObjBase {
   override def isMessage: Boolean = true
   override def isContainer: Boolean = false
   def NeedToTransformData: Boolean // Filter & Rearrange input attributes if needed
-  def TransformDataAttributes: TransformMessage // Filter & Rearrange input columns if needed
   def CreateNewMessage: BaseMsg
 }
 
-// BUGBUG:: for now handling only CSV input data.
-// Assuming this is filled properly, we are not checking whether outputFields are subset of inputFields or not.
-// Assuming the field names are all same case (lower or upper). Because we don't want to convert them every time.
-class TransformMessage {
-  var messageType: String = null // Type of the message (first field from incoming data)
-  var inputFields: Array[String] = null // All input fields
-  var outputFields: Array[String] = null // All output fields filters from input field. These are subset of input fields.
-  var outputKeys: Array[String] = null // Output Key field names from input fields.
+trait AdaptersSerializeDeserializers {
+  var mdMgr: MdMgr = _
+  var classLoader: KamanjaClassLoader = _
+  private var msgBindings = scala.collection.mutable.Map[String, String]() // For now we are mapping to one message to one serializer. Later may be we need to handle multiple serializers
+  private val reent_lock = new ReentrantReadWriteLock(true)
+
+  private def ReadLock(reent_lock: ReentrantReadWriteLock): Unit = {
+    if (reent_lock != null)
+      reent_lock.readLock().lock()
+  }
+
+  private def ReadUnlock(reent_lock: ReentrantReadWriteLock): Unit = {
+    if (reent_lock != null)
+      reent_lock.readLock().unlock()
+  }
+
+  private def WriteLock(reent_lock: ReentrantReadWriteLock): Unit = {
+    if (reent_lock != null)
+      reent_lock.writeLock().lock()
+  }
+
+  private def WriteUnlock(reent_lock: ReentrantReadWriteLock): Unit = {
+    if (reent_lock != null)
+      reent_lock.writeLock().unlock()
+  }
+
+  final def setMdMgrAndClassLoader(mdMgr: MdMgr, classLoader: KamanjaClassLoader): Unit = {
+    this.mdMgr = mdMgr
+    this.classLoader = classLoader
+//    resolveBinding()
+  }
+
+//  private def resolveBinding(): Unit = {
+//    //FIXME:- Do we need to lock here & resolve Bindings
+//  }
+
+  final def getAllMessageBindings: Map[String, String] = {
+    var retVal: Map[String, String] = null
+    ReadLock(reent_lock)
+    try {
+      retVal = msgBindings.toMap
+    } catch {
+      case e: Throwable => {
+        throw e
+      }
+    }
+    finally {
+      ReadUnlock(reent_lock)
+    }
+    return retVal
+  }
+
+  final def getMessageBinding(msgName: String): String = {
+    if (msgName == null) return null
+
+    var retVal: String = null
+    ReadLock(reent_lock)
+    try {
+      retVal = msgBindings.getOrElse(msgName, null)
+    } catch {
+      case e: Throwable => {
+        throw e
+      }
+    }
+    finally {
+      ReadUnlock(reent_lock)
+    }
+    return retVal
+  }
+
+  // This tuple has Message Name, Serializer Name.
+  final def addMessageBinding(msgName: String, serName: String): Unit = {
+    if (msgName != null && serName != null)
+      addMessageBinding(Array((msgName, serName)))
+  }
+
+  // This tuple has Message Name, Serializer Name.
+  final def addMessageBinding(binding: (String, String)): Unit = {
+    if (binding != null)
+      addMessageBinding(Array(binding))
+  }
+
+  // This tuple has Message Name, Serializer Name.
+  final def addMessageBinding(bindings: Array[(String, String)]): Unit = {
+    if (bindings == null) return
+
+    WriteLock(reent_lock)
+    try {
+      msgBindings ++= bindings
+    } catch {
+      case e: Throwable => {
+        throw e
+      }
+    }
+    finally {
+      WriteUnlock(reent_lock)
+    }
+  }
+
+  // This tuple has Message Name, Serializer Name.
+  final def removeMessageBinding(msgName: String, serName: String): Unit = {
+    if (msgName != null && serName != null)
+      removeMessageBinding(Array((msgName, serName)))
+  }
+
+  // This tuple has Message Name, Serializer Name.
+  final def removeMessageBinding(binding: (String, String)): Unit = {
+    if (binding != null)
+      removeMessageBinding(Array(binding))
+  }
+
+  // This tuple has Message Name, Serializer Name.
+  final def removeMessageBinding(bindings: Array[(String, String)]): Unit = {
+    if (bindings == null) return
+
+    WriteLock(reent_lock)
+    try {
+      msgBindings --= bindings.map(b => b._1)
+    } catch {
+      case e: Throwable => {
+        throw e
+      }
+    }
+    finally {
+      WriteUnlock(reent_lock)
+    }
+  }
+
+  // This tuple has Message Name, Serializer Name.
+  final def removeMessageBinding(msgName: String): Unit = {
+    if (msgName != null)
+      removeMessageBinding(Array(msgName))
+  }
+
+  // This tuple has Message Name, Serializer Name.
+  final def removeMessageBinding(msgNames: Array[String]): Unit = {
+    if (msgNames == null) return
+
+    WriteLock(reent_lock)
+    try {
+      msgBindings --= msgNames
+    } catch {
+      case e: Throwable => {
+        throw e
+      }
+    }
+    finally {
+      WriteUnlock(reent_lock)
+    }
+  }
+
+  // Returns serialized msgs, serialized msgs data & serializers names applied on these messages.
+  final def serialize(tnxCtxt: TransactionContext, outputContainers: Array[ContainerInterface]): (Array[ContainerInterface], Array[Array[Byte]], Array[String]) = {
+    if (outputContainers == null || outputContainers.size == 0) return (Array[ContainerInterface](), Array[Array[Byte]](), Array[String]())
+
+    val serOutputContainers = ArrayBuffer[ContainerInterface]()
+    val serializedContainerData = ArrayBuffer[Array[Byte]]()
+    val usedSerializersNames = ArrayBuffer[String]()
+
+    val allMsgBindings = getAllMessageBindings
+
+    outputContainers.map(c => {
+      val ser = allMsgBindings.getOrElse(c.getFullTypeName, null)
+      if (ser != null) {
+
+
+      }
+    })
+
+    (serOutputContainers.toArray, serializedContainerData.toArray, usedSerializersNames.toArray)
+  }
+
+  // Returns serialized msgs, serialized msgs data & serializers names applied on these messages.
+  final def serialize(tnxCtxt: TransactionContext, outputContainers: Array[ContainerInterface], serializersNames: Array[String]): (Array[ContainerInterface], Array[Array[Byte]], Array[String]) = {
+    if ((outputContainers == null || outputContainers.size == 0) && (serializersNames == null || serializersNames.size == 0)) return (Array[ContainerInterface](), Array[Array[Byte]](), Array[String]())
+
+    if (((outputContainers == null || outputContainers.size == 0) && !(serializersNames == null || serializersNames.size == 0)) ||
+      (!(outputContainers == null || outputContainers.size == 0) && (serializersNames == null || serializersNames.size == 0)))
+        throw new KamanjaException("Invalid input sizes", null)
+
+    val serOutputContainers = ArrayBuffer[ContainerInterface]()
+    val serializedContainerData = ArrayBuffer[Array[Byte]]()
+    val usedSerializersNames = ArrayBuffer[String]()
+
+    //FIXME:- yet to fix it
+
+    (serOutputContainers.toArray, serializedContainerData.toArray, usedSerializersNames.toArray)
+  }
+
+  // Returns deserialized msg, deserialized msg data & deserializer name applied.
+  final def deserialize(data: Array[Byte]): (ContainerInterface, String) = {
+
+    var container: ContainerInterface = null
+    var deserializerName: String = null
+
+    //FIXME:- Convert incoming data into message using deserializer
+
+    (container, deserializerName)
+  }
+
+  // Returns deserialized msg, deserialized msg data & deserializer name applied.
+  final def deserialize(data: Array[Byte], deserializerName: String): (ContainerInterface, String) = {
+
+    var container: ContainerInterface = null
+
+    //FIXME:- Convert incoming data into message using deserializer
+
+    (container, deserializerName)
+  }
 }
 
-case class MessageContainerBaseWithModFlag(modified: Boolean, value: MessageContainerBase)
-
+case class ContainerInterfaceWithModFlag(modified: Boolean, value: ContainerInterface)

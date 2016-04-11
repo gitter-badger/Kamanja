@@ -19,3 +19,7 @@ libraryDependencies += "org.apache.logging.log4j" % "log4j-core" % "2.4.1"
 libraryDependencies += "commons-dbcp" % "commons-dbcp" % "1.4"
 
 libraryDependencies += "mysql" % "mysql-connector-java" % "5.1.36"
+
+coverageMinimum := 80
+
+coverageFailOnMinimum := false

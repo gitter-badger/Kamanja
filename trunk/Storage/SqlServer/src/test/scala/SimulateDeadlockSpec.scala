@@ -35,7 +35,7 @@ import com.ligadata.StorageBase._
 import com.ligadata.Serialize._
 import com.ligadata.Utils.Utils._
 import com.ligadata.Utils.{ KamanjaClassLoader, KamanjaLoaderInfo }
-import com.ligadata.StorageBase.StorageAdapterObj
+import com.ligadata.StorageBase.StorageAdapterFactory
 import com.ligadata.keyvaluestore.SqlServerAdapter
 
 import com.ligadata.Exceptions._
@@ -146,7 +146,7 @@ class SimulateDeadlockSpec extends FunSuite with BeforeAndAfter with BeforeAndAf
           var custNumber = "4256667777" + batch * keyIndex
           var obj = new Customer(custName, custAddress, custNumber)
           var v = serializer.SerializeObjectToByteArray(obj)
-          var value = new Value("kryo", v)
+          var value = new Value(1,"kryo", v)
           keyValueList = keyValueList :+ (key, value)
           dataList = dataList :+ (containerName, keyValueList)
 	  adapter.put(dataList)
