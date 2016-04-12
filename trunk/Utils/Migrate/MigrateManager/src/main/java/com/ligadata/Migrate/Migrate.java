@@ -66,7 +66,7 @@ public class Migrate {
         boolean excludeData = false;
         int parallelDegree = 0;
         boolean mergeContainersAndMessages = true;
-
+	String tenantId = "kamanja";
         Configuration() {
         }
     }
@@ -352,7 +352,6 @@ public class Migrate {
         URLClassLoader dstKamanjaLoader = null;
         int retCode = 1;
         boolean foundError = false;
-        String tenantId = ""; // FIXME:- RAMANA YOU NEED TO EXPECT tenantId from Input (must) and pass it to Migrater
 
         try {
             if (configuration == null) {
@@ -533,8 +532,9 @@ public class Migrate {
                         configuration.parallelDegree,
                         configuration.mergeContainersAndMessages,
                         scalaFrom,
-                        scalaTo,
-                        tenantId);
+		        scalaTo,
+                        configuration.tenantId);
+
 
                 String metadataStoreInfo = migrateTo.getMetadataStoreInfo();
                 String dataStoreInfo = migrateTo.getDataStoreInfo();

@@ -21,7 +21,11 @@
     "jars": [
       "{NewPackageInstallPath}/lib/system/migratebase-1.0.jar",
       "{NewPackageInstallPath}/lib/system/migrateto_v_1_4_{ScalaToVersion}-1.0.jar",
-      "{NewPackageInstallPath}/bin/KamanjaManager-1.0"
+      "{NewPackageInstallPath}/lib/system/ExtDependencyLibs_{ScalaToVersion}-1.0.jar",
+      "{NewPackageInstallPath}/lib/system/ExtDependencyLibs2_{ScalaToVersion}-1.0.jar",
+      "{NewPackageInstallPath}/lib/system/KamanjaInternalDeps_{ScalaToVersion}-1.0.jar",
+      "{NewPackageInstallPath}/lib/system/jarfactoryofmodelinstancefactory_{ScalaToVersion}-1.0.jar",
+      "{NewPackageInstallPath}/lib/system/nodeinfoextract_{ScalaToVersion}-1.0.jar"
     ]
   },
   "dataSaveThreshold": 2048,

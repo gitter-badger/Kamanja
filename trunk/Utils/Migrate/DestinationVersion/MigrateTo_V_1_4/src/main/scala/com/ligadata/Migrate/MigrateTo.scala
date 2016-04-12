@@ -225,7 +225,6 @@ class MigrateTo_V_1_4 extends MigratableTo {
     _sourceVersion = sourceVersion
     _fromScalaVersion = fromScalaVersion
     _toScalaVersion = toScalaVersion
-
     _unhandledMetadataDumpDir = unhandledMetadataDumpDir
     _curMigrationSummaryFlPath = curMigrationSummaryFlPath
 
@@ -495,6 +494,8 @@ class MigrateTo_V_1_4 extends MigratableTo {
   }
 
   private def isFailedStatus(retRes: String): Boolean = {
+    logger.info("MetadataAPI Response => " + retRes)
+
     implicit val formats = org.json4s.DefaultFormats
     val json = org.json4s.jackson.JsonMethods.parse(retRes)
     val statusCodeAny = (json \\ "Status Code").values

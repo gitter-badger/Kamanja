@@ -1,0 +1,235 @@
+ "Adapters": [
+        {
+          "Name": "COPS_Input",
+          "TypeString": "Input",
+          "DataFormat": "KV",
+          "AssociatedMessage": "com.bofa.messages.InputMessage",
+          "KeyAndValueDelimiter": "\\x01",
+          "FieldDelimiter": "\\x01",
+          "ValueDelimiter": ";",
+          "ClassName": "com.ligadata.InputAdapters.KafkaSimpleConsumer$",
+          "JarName": "kafkasimpleinputoutputadapters_2.10-1.0.jar",
+         "DependencyJars": [
+            "kafka_2.10-0.8.2.2.jar",
+            "kafka-clients-0.8.2.2.jar",
+            "slf4j-api-1.7.6.jar",
+            "snappy-java-1.1.1.7.jar",
+            "lz4-1.2.0.jar",
+            "metrics-core-2.2.0.jar",
+            "zookeeper-3.4.6.jar",
+            "slf4j-log4j12-1.6.1.jar",
+            "log4j-1.2.17.jar",
+            "jline-0.9.94.jar",
+            "junit-3.8.1.jar",
+            "netty-3.7.0.Final.jar",
+            "jopt-simple-3.2.jar",
+            "zkclient-0.3.jar",
+            "kamanjabase_2.10-1.0.jar",
+            "kvbase_2.10-0.1.0.jar"
+          ],
+          "AdapterSpecificCfg": {
+            "HostList": "172.30.2.172:9092",
+            "TopicName": "cops_input"
+          }
+        },
+        {
+          "Name": "COPS_Config",
+          "TypeString": "Input",
+          "DataFormat": "CSV",
+          "AssociatedMessage": "com.bofa.messages.COPSConfigMessage",
+          "ClassName": "com.ligadata.InputAdapters.KafkaSimpleConsumer$",
+          "JarName": "kafkasimpleinputoutputadapters_2.10-1.0.jar",
+          "DependencyJars": [
+            "kafka_2.10-0.8.2.2.jar",
+            "kafka-clients-0.8.2.2.jar",
+            "slf4j-api-1.7.6.jar",
+            "snappy-java-1.1.1.7.jar",
+            "lz4-1.2.0.jar",
+            "metrics-core-2.2.0.jar",
+            "zookeeper-3.4.6.jar",
+            "slf4j-log4j12-1.6.1.jar",
+            "log4j-1.2.17.jar",
+            "jline-0.9.94.jar",
+            "junit-3.8.1.jar",
+            "netty-3.7.0.Final.jar",
+            "jopt-simple-3.2.jar",
+            "zkclient-0.3.jar",
+            "kamanjabase_2.10-1.0.jar",
+            "kvbase_2.10-0.1.0.jar"
+          ],
+          "AdapterSpecificCfg": {
+            "HostList": "172.30.2.172:9092",
+            "TopicName": "cops_config"
+          }
+        },
+        {
+          "Name": "COPS_Output",
+          "TypeString": "Output",
+          "ClassName": "com.ligadata.OutputAdapters.KafkaProducer$",
+          "JarName": "kafkasimpleinputoutputadapters_2.10-1.0.jar",
+          "DependencyJars": [
+            "kafka_2.10-0.8.2.2.jar",
+            "kafka-clients-0.8.2.2.jar",
+            "slf4j-api-1.7.6.jar",
+            "snappy-java-1.1.1.7.jar",
+            "lz4-1.2.0.jar",
+            "metrics-core-2.2.0.jar",
+            "zookeeper-3.4.6.jar",
+            "slf4j-log4j12-1.6.1.jar",
+            "log4j-1.2.17.jar",
+            "jline-0.9.94.jar",
+            "junit-3.8.1.jar",
+            "netty-3.7.0.Final.jar",
+            "jopt-simple-3.2.jar",
+           "zkclient-0.3.jar",
+            "kamanjabase_2.10-1.0.jar",
+            "kvbase_2.10-0.1.0.jar"
+          ],
+          "AdapterSpecificCfg": {
+            "HostList": "172.30.2.172:9092",
+            "TopicName": "cops_output"
+          }
+        },
+        {
+          "Name": "COPS_DQ",
+          "TypeString": "Output",
+          "ClassName": "com.ligadata.OutputAdapters.KafkaProducer$",
+          "JarName": "kafkasimpleinputoutputadapters_2.10-1.0.jar",
+          "DependencyJars": [
+            "kafka_2.10-0.8.2.2.jar",
+            "kafka-clients-0.8.2.2.jar",
+            "slf4j-api-1.7.6.jar",
+            "snappy-java-1.1.1.7.jar",
+            "lz4-1.2.0.jar",
+            "metrics-core-2.2.0.jar",
+            "zookeeper-3.4.6.jar",
+            "slf4j-log4j12-1.6.1.jar",
+            "log4j-1.2.17.jar",
+            "jline-0.9.94.jar",
+            "junit-3.8.1.jar",
+            "netty-3.7.0.Final.jar",
+            "jopt-simple-3.2.jar",
+            "zkclient-0.3.jar",
+            "kamanjabase_2.10-1.0.jar",
+            "kvbase_2.10-0.1.0.jar"
+          ],
+          "AdapterSpecificCfg": {
+            "HostList": "172.30.2.172:9092",
+            "TopicName": "cops_dq"
+          }
+        },
+        {
+          "Name": "COPS_Status",
+          "TypeString": "Status",
+          "ClassName": "com.ligadata.OutputAdapters.KafkaProducer$",
+          "JarName": "kafkasimpleinputoutputadapters_2.10-1.0.jar",
+          "DependencyJars": [
+            "kafka_2.10-0.8.2.2.jar",
+            "kafka-clients-0.8.2.2.jar",
+            "slf4j-api-1.7.6.jar",
+            "snappy-java-1.1.1.7.jar",
+            "lz4-1.2.0.jar",
+            "metrics-core-2.2.0.jar",
+            "zookeeper-3.4.6.jar",
+            "slf4j-log4j12-1.6.1.jar",
+            "log4j-1.2.17.jar",
+            "jline-0.9.94.jar",
+            "junit-3.8.1.jar",
+            "netty-3.7.0.Final.jar",
+            "jopt-simple-3.2.jar",
+            "zkclient-0.3.jar",
+            "kamanjabase_2.10-1.0.jar",
+            "kvbase_2.10-0.1.0.jar"
+          ],
+          "AdapterSpecificCfg": {
+            "HostList": "172.30.2.172:9092",
+            "TopicName": "cops_status"
+          }
+        },
+        {
+          "Name": "COPS_Dedup",
+          "TypeString": "Output",
+          "ClassName": "com.ligadata.OutputAdapters.KafkaProducer$",
+          "JarName": "kafkasimpleinputoutputadapters_2.10-1.0.jar",
+          "DependencyJars": [
+            "kafka_2.10-0.8.2.2.jar",
+            "kafka-clients-0.8.2.2.jar",
+            "slf4j-api-1.7.6.jar",
+            "snappy-java-1.1.1.7.jar",
+            "lz4-1.2.0.jar",
+            "metrics-core-2.2.0.jar",
+            "zookeeper-3.4.6.jar",
+            "slf4j-log4j12-1.6.1.jar",
+            "log4j-1.2.17.jar",
+            "jline-0.9.94.jar",
+            "junit-3.8.1.jar",
+            "netty-3.7.0.Final.jar",
+            "jopt-simple-3.2.jar",
+            "zkclient-0.3.jar",
+            "kamanjabase_2.10-1.0.jar",
+            "kvbase_2.10-0.1.0.jar"
+          ],
+          "AdapterSpecificCfg": {
+            "HostList": "172.30.2.172:9092",
+            "TopicName": "cops_dedup"
+          }
+        },
+        {
+          "Name": "Credit_Event_Reporting_Output",
+          "TypeString": "Output",
+          "ClassName": "com.ligadata.OutputAdapters.KafkaProducer$",
+          "JarName": "kafkasimpleinputoutputadapters_2.10-1.0.jar",
+          "DependencyJars": [
+            "kafka_2.10-0.8.2.2.jar",
+            "kafka-clients-0.8.2.2.jar",
+            "slf4j-api-1.7.6.jar",
+            "snappy-java-1.1.1.7.jar",
+            "lz4-1.2.0.jar",
+            "metrics-core-2.2.0.jar",
+            "zookeeper-3.4.6.jar",
+            "slf4j-log4j12-1.6.1.jar",
+            "log4j-1.2.17.jar",
+            "jline-0.9.94.jar",
+            "junit-3.8.1.jar",
+            "netty-3.7.0.Final.jar",
+            "jopt-simple-3.2.jar",
+            "zkclient-0.3.jar",
+            "kamanjabase_2.10-1.0.jar",
+            "kvbase_2.10-0.1.0.jar"
+          ],
+          "AdapterSpecificCfg": {
+            "HostList": "172.30.2.172:9092",
+            "TopicName": "credit_event_reporting_output"
+          }
+        },
+        {
+          "Name": "Credit_Report_View_Output",
+          "TypeString": "Output",
+          "ClassName": "com.ligadata.OutputAdapters.KafkaProducer$",
+          "JarName": "kafkasimpleinputoutputadapters_2.10-1.0.jar",
+          "DependencyJars": [
+            "kafka_2.10-0.8.2.2.jar",
+            "kafka-clients-0.8.2.2.jar",
+            "slf4j-api-1.7.6.jar",
+            "snappy-java-1.1.1.7.jar",
+            "lz4-1.2.0.jar",
+            "metrics-core-2.2.0.jar",
+            "zookeeper-3.4.6.jar",
+            "slf4j-log4j12-1.6.1.jar",
+            "log4j-1.2.17.jar",
+            "jline-0.9.94.jar",
+            "junit-3.8.1.jar",
+            "netty-3.7.0.Final.jar",
+            "jopt-simple-3.2.jar",
+            "zkclient-0.3.jar",
+            "kamanjabase_2.10-1.0.jar",
+            "kvbase_2.10-0.1.0.jar"
+          ],
+          "AdapterSpecificCfg": {
+            "HostList": "172.30.2.172:9092",
+            "TopicName": "credit_report_view_output"
+          }
+        }
+      ]
+    }
+  ]
