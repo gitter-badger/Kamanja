@@ -90,6 +90,10 @@ class FileProducer(val inputConfig: AdapterConfiguration, val nodeContext: NodeC
     return new MonitorComponentInfo(AdapterConfiguration.TYPE_OUTPUT, fc.Name, FileProducer.ADAPTER_DESCRIPTION, startTime, lastSeen,  Serialization.write(metrics).toString)
   }
 
+  override def getComponentSimpleStats: String = {
+    ""
+  }
+
   // Locking before we write into file
   // To send an array of messages. messages.size should be same as partKeys.size
   override def send(tnxCtxt: TransactionContext, outputContainers: Array[ContainerInterface]): Unit = _lock.synchronized {

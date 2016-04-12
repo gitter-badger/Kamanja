@@ -34,4 +34,10 @@ case class MonitorComponentInfo(typ: String, name: String, description: String, 
  */
 trait Monitorable {
   def getComponentStatusAndMetrics: MonitorComponentInfo
+
+  /**
+    * this is a very simple string to be externalized on a Status timer for the adapter.
+    * @return String
+    */
+  def getComponentSimpleStats: String
 }

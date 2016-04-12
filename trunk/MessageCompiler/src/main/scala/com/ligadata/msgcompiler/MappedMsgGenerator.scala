@@ -465,4 +465,262 @@ class MappedMsgGenerator {
     return keys
   }
 
+  /*
+   * From Function for Mappped messages
+   */
+  def getFromFuncFixed(message: Message, mdMgr: MdMgr): String = {  //""" + fromFuncScalarMapped + getFromFuncStr(message, mdMgr) + """   
+    """
+    private def fromFunc(other: """ + message.Name + """): """ + message.Name + """ = {  
+      //this.timePartitionData = com.ligadata.BaseTypes.LongImpl.Clone(other.timePartitionData);
+      return this;
+    }
+    
+"""
+  }
+
+  /*
+   * generate FromFunc code for message fields 
+   */
+  private def getFromFuncStr(message: Message, mdMgr: MdMgr): String = {
+    var fromFuncBuf = new StringBuilder(8 * 1024)
+    try {
+      if (message.Elements != null) {
+        message.Elements.foreach(field => {
+          if (field != null) {
+            val fieldBaseType: BaseTypeDef = field.FldMetaataType
+            val fieldType = fieldBaseType.tType.toString().toLowerCase()
+            val fieldTypeType = fieldBaseType.tTypeType.toString().toLowerCase()
+            fieldTypeType match {
+              case "tscalar" => {
+                // do nothing already added 
+              }
+              case "tcontainer" => {
+                fieldType match {
+                  case "tarray" => {
+                    var arrayType: ArrayTypeDef = null
+                    arrayType = fieldBaseType.asInstanceOf[ArrayTypeDef]
+                    fromFuncBuf = fromFuncBuf.append(fromFuncForArrayMapped(field, true))
+                  }
+                  case "tstruct" => {
+                    var ctrDef: ContainerDef = mdMgr.Container(field.Ttype, -1, true).getOrElse(null) //field.FieldtypeVer is -1 for now, need to put proper version
+                    fromFuncBuf = fromFuncBuf.append(fromFuncForStructMapped(field, ctrDef))
+                  }
+                  case "tmap" => {
+                    fromFuncBuf = fromFuncBuf.append(fromFuncForMapMapped(field))
+                  }
+                  case "tmsgmap" => {
+                    var ctrDef: ContainerDef = mdMgr.Container(field.Ttype, -1, true).getOrElse(null) //field.FieldtypeVer is -1 for now, need to put proper version
+                    fromFuncBuf = fromFuncBuf.append(fromFuncForStructMapped(field, ctrDef))
+                  }
+                  case _ => {
+                    throw new Exception("This types is not handled at this time ") // BUGBUG - Need to handled other cases
+                  }
+                }
+              }
+              case _ => {
+                throw new Exception("This types is not handled at this time ") // BUGBUG - Need to handled other cases
+              }
+            }
+          }
+        })
+      }
+    } catch {
+      case e: Exception => {
+        log.debug("", e)
+        throw e
+      }
+    }
+
+    return fromFuncBuf.toString();
+  }
+
+  /*
+   * From Func - generate code for array
+   */
+  private def fromFuncForArrayMapped(field: Element, isArray: Boolean): String = {
+    var fromFuncBuf = new StringBuilder(8 * 1024)
+    var typeStr: String = ""
+    var typetype: String = ""
+    try {
+      val implName = field.FieldTypeImplementationName
+      log.info("111111111111 " + field.Ttype);
+      if (field.Ttype.contains("arrayof")) {
+        log.info("2222222222222 " + field.Ttype);
+
+        var arrayType = field.FldMetaataType.asInstanceOf[ArrayTypeDef]
+        typetype = arrayType.elemDef.tTypeType.toString().toLowerCase()
+        if (field.FldMetaataType.typeString.toString().split("\\[").size == 2) {
+          typeStr = field.FldMetaataType.typeString.toString().split("\\[")(1)
+        }
+      }
+      if (typetype.equals("tscalar")) {
+        if (implName != null && implName.trim() != "") {
+          fromFuncBuf.append(fromFuncForArrayScalarMapped(field, isArray));
+        }
+      } else if (typetype.equals("tcontainer")) {
+        fromFuncBuf.append(fromFuncForArrayContainerMapped(field, isArray, typeStr));
+      }
+    } catch {
+      case e: Exception => throw e
+    }
+    fromFuncBuf.toString
+  }
+
+  /*
+   * From Func for Array of Scalar
+   */
+  private def fromFuncForArrayScalarMapped(field: Element, isArray: Boolean): String = {
+    var fromFuncBuf = new StringBuilder(8 * 1024)
+    try {
+      val implName = field.FieldTypeImplementationName
+      if (implName != null && implName.trim() != "") {
+        fromFuncBuf = fromFuncBuf.append("%s { %s".format(msgConstants.pad2, msgConstants.newline))
+        fromFuncBuf = fromFuncBuf.append("%s  if (other.valuesMap.containsKey(\"%s\")) { %s".format(msgConstants.pad3, field.Name, msgConstants.newline))
+        fromFuncBuf = fromFuncBuf.append("%s val fld = other.valuesMap.get(\"%s\").getValue  ;%s".format(msgConstants.pad3, field.Name, msgConstants.newline))
+        fromFuncBuf = fromFuncBuf.append("%s if (fld == null) valuesMap.put(\"%s\", null); %s".format(msgConstants.pad2, field.Name, msgConstants.newline))
+        fromFuncBuf = fromFuncBuf.append("%s else { %s".format(msgConstants.pad2, msgConstants.newline))
+        fromFuncBuf = fromFuncBuf.append("%s  val o = fld.asInstanceOf[%s] %s".format(msgConstants.pad3, field.FldMetaataType.typeString, msgConstants.newline))
+        fromFuncBuf = fromFuncBuf.append("%s var %s = new %s(o.size) %s".format(msgConstants.pad3, field.Name, field.FldMetaataType.typeString, msgConstants.newline))
+        fromFuncBuf = fromFuncBuf.append("%s for (i <- 0 until o.length) { %s".format(msgConstants.pad3, msgConstants.newline))
+        if (isArray)
+          fromFuncBuf = fromFuncBuf.append("%s %s(i) = %s.Clone(o(i)) %s".format(msgConstants.pad3, field.Name, implName, msgConstants.newline))
+        else
+          fromFuncBuf = fromFuncBuf.append("%s %s += %s.Clone(o(i)) %s".format(msgConstants.pad3, field.Name, implName, msgConstants.newline))
+
+        fromFuncBuf = fromFuncBuf.append("%s } %s".format(msgConstants.pad3, msgConstants.newline))
+        fromFuncBuf = fromFuncBuf.append("%s var attributeValue: AttributeValue = new AttributeValue(); %s".format(msgConstants.pad3, msgConstants.newline))
+        fromFuncBuf = fromFuncBuf.append("%s attributeValue.setValue(%s); %s".format(msgConstants.pad3, field.Name, msgConstants.newline))
+        fromFuncBuf = fromFuncBuf.append("%s  attributeValue.setValueType(\"%s\")%s".format(msgConstants.pad3, field.FldMetaataType.typeString, msgConstants.newline))
+        fromFuncBuf = fromFuncBuf.append("%s  valuesMap.put(\"%s\", attributeValue);; %s".format(msgConstants.pad3, field.Name, msgConstants.newline))
+        fromFuncBuf = fromFuncBuf.append("%s  } %s".format(msgConstants.pad3, msgConstants.newline))
+        fromFuncBuf = fromFuncBuf.append("%s  } else valuesMap.put(\"%s\", null);%s".format(msgConstants.pad3, field.Name, msgConstants.newline))
+        fromFuncBuf = fromFuncBuf.append("%s } ;%s".format(msgConstants.pad2, msgConstants.newline))
+
+      }
+
+    } catch {
+      case e: Exception => throw e
+    }
+    fromFuncBuf.toString
+  }
+  /*
+   * From Func for Array of Container
+   */
+  private def fromFuncForArrayContainerMapped(field: Element, isArray: Boolean, typeStr: String): String = {
+    var fromFuncBuf = new StringBuilder(8 * 1024)
+    try {
+      /*var arrayType = field.FldMetaataType.asInstanceOf[ArrayTypeDef]
+      var typeStr: String = ""
+      if (field.FldMetaataType.typeString.toString().split("\\[").size == 2) {
+        typeStr = field.FldMetaataType.typeString.toString().split("\\[")(1)
+      }*/
+      fromFuncBuf = fromFuncBuf.append("%s { %s".format(msgConstants.pad2, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s if (other.valuesMap.containsKey(\"%s\")) {  %s".format(msgConstants.pad3, field.Name, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s val fld = other.valuesMap.get(\"%s\").getValue  ;%s".format(msgConstants.pad3, field.Name, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s if (fld == null) valuesMap.put(\"%s\", null); %s".format(msgConstants.pad2, field.Name, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s else { %s".format(msgConstants.pad2, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s  val o = fld.asInstanceOf[%s] ; %s".format(msgConstants.pad3, field.FldMetaataType.typeString, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s var %s = new %s(o.size) ;%s".format(msgConstants.pad3, field.Name, field.FldMetaataType.typeString, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s for(i <- 0 until o.length){ %s".format(msgConstants.pad3, msgConstants.newline))
+      if (isArray)
+        fromFuncBuf = fromFuncBuf.append("%s  %s(i) = o(i).Clone.asInstanceOf[%s  ;%s".format(msgConstants.pad3, field.Name, typeStr, msgConstants.newline))
+      else
+        fromFuncBuf = fromFuncBuf.append("%s  %s += o(i).Clone.asInstanceOf[%s  ;%s".format(msgConstants.pad3, field.Name, typeStr, msgConstants.newline))
+
+      fromFuncBuf = fromFuncBuf.append("%s  } %s".format(msgConstants.pad3, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s var attributeValue: AttributeValue = new AttributeValue(); %s".format(msgConstants.pad3, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s attributeValue.setValue(%s); %s".format(msgConstants.pad3, field.Name, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s  attributeValue.setValueType(\"%s\")%s".format(msgConstants.pad3, field.FldMetaataType.typeString, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s  valuesMap.put(\"%s\", attributeValue); %s".format(msgConstants.pad3, field.Name, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s  } %s".format(msgConstants.pad3, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s  } else valuesMap.put(\"%s\", null);%s".format(msgConstants.pad3, field.Name, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s } ;%s".format(msgConstants.pad2, msgConstants.newline))
+
+    } catch {
+      case e: Exception => throw e
+    }
+    fromFuncBuf.toString
+  }
+
+  /*
+   * From Func for Containertype as Message
+   */
+  private def fromFuncForStructMapped(field: Element, ctrDef: ContainerDef): String = {
+    var fromFuncBuf = new StringBuilder(8 * 1024)
+    try {
+      fromFuncBuf = fromFuncBuf.append("%s { %s".format(msgConstants.pad2, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s if (other.valuesMap.containsKey(\"%s\")) { %s".format(msgConstants.pad3, field.Name, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s val %s = other.valuesMap.get(\"%s\").getValue; %s".format(msgConstants.pad3, field.Name, field.Name, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s if(%s == null) valuesMap.put(\"%s\", null); %s".format(msgConstants.pad2, field.Name, field.Name, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s else { %s".format(msgConstants.pad2, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s var attributeValue: AttributeValue = new AttributeValue(); %s".format(msgConstants.pad3, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s attributeValue.setValue(%s.asInstanceOf[%s].Clone.asInstanceOf[%s]); %s".format(msgConstants.pad3, field.Name, ctrDef.PhysicalName, ctrDef.PhysicalName, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s  attributeValue.setValueType(\"%s\")%s".format(msgConstants.pad3, field.FldMetaataType.typeString, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s  valuesMap.put(\"%s\", attributeValue);; %s".format(msgConstants.pad3, field.Name, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s  } %s".format(msgConstants.pad3, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s  } else valuesMap.put(\"%s\", null);%s".format(msgConstants.pad3, field.Name, msgConstants.newline))
+      fromFuncBuf = fromFuncBuf.append("%s } ;%s".format(msgConstants.pad2, msgConstants.newline))
+    } catch {
+      case e: Exception => throw e
+    }
+    fromFuncBuf.toString
+
+  }
+
+  /*
+   * From Func for Containertype as Message
+   */
+  private def fromFuncForMapMapped(field: Element): String = {
+
+    return "";
+  }
+
+  /**
+   * From Func generation for mapped messages
+   */
+  private def fromFuncScalarMapped() = {
+    """
+     if (other.valuesMap != null) {
+        val iter = other.valuesMap.entrySet().iterator()
+        while (iter.hasNext()) {
+          val valueType = iter.next().getValue.getValueType.toLowerCase
+          val key = iter.next().getKey.toLowerCase
+          if (valueType != null && valueType.trim() != "") {
+            var attributeValue: AttributeValue = new AttributeValue();
+            attributeValue.setValueType(valueType);
+            valueType match {
+              case "string" => {
+                attributeValue.setValue(com.ligadata.BaseTypes.StringImpl.Clone(iter.next().getValue.getValue.asInstanceOf[String]))
+              }
+              case "int" => {
+                attributeValue.setValue(com.ligadata.BaseTypes.IntImpl.Clone(iter.next().getValue.getValue.asInstanceOf[Int]))
+              }
+              case "float" => {
+                attributeValue.setValue(com.ligadata.BaseTypes.FloatImpl.Clone(iter.next().getValue.getValue.asInstanceOf[Float]))
+              }
+              case "double" => {
+                attributeValue.setValue(com.ligadata.BaseTypes.DoubleImpl.Clone(iter.next().getValue.getValue.asInstanceOf[Double]))
+              }
+              case "boolean" => {
+                attributeValue.setValue(com.ligadata.BaseTypes.BoolImpl.Clone(iter.next().getValue.getValue.asInstanceOf[Boolean]))
+              }
+              case "long" => {
+                attributeValue.setValue(com.ligadata.BaseTypes.LongImpl.Clone(iter.next().getValue.getValue.asInstanceOf[Long]))
+              }
+              case "char" => {
+                attributeValue.setValue(com.ligadata.BaseTypes.CharImpl.Clone(iter.next().getValue.getValue.asInstanceOf[Char]))
+              }
+              case "any" => {
+                attributeValue.setValue(com.ligadata.BaseTypes.StringImpl.Clone(iter.next().getValue.getValue.asInstanceOf[String]))
+              }
+              case _ => { } // do nothhing
+            }
+            valuesMap.put(key, attributeValue);  
+          };
+        }
+      }
+        
+    """
+  }
+
 }

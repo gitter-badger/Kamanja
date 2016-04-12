@@ -872,6 +872,10 @@ class SmartFileConsumer(val inputConfig: AdapterConfiguration, val execCtxtObj: 
       startHeartBeat, lastSeen,  Serialization.write(metrics).toString)
   }
 
+  override def getComponentSimpleStats: String = {
+   ""
+  }
+
   private def incrementCountForPartition(pid: Int): Unit = {
     var cVal: Long = partitonCounts.getOrElse(pid.toString, 0)
     partitonCounts(pid.toString) = cVal + 1

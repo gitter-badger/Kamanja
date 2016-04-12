@@ -62,7 +62,9 @@ class FileConsumer(val inputConfig: AdapterConfiguration, val execCtxtObj: ExecC
     return new MonitorComponentInfo(AdapterConfiguration.TYPE_OUTPUT, fc.Name, FileConsumer.ADAPTER_DESCRIPTION, startTime, lastSeen,  Serialization.write(metrics).toString)
   }
 
-
+  override def getComponentSimpleStats: String = {
+    ""
+  }
 
   private def ProcessFile(sFileName: String, msg: String, st: Stats, ignorelines: Int, AddTS2MsgFlag: Boolean, isGz: Boolean): Unit = {
     var is: InputStream = null

@@ -29,9 +29,10 @@ public interface SerializeDeserialize {
     /**
      * From the supplied byte array, resurrect a ContainerInterface instance.
      * @param b the byte array containing the ContainerInterface instance
+     * @param containerName  full type name of container to be instantiated and populated
      * @return an instance of T
      */
-    public ContainerInterface deserialize(byte[] b);
+    public ContainerInterface deserialize(byte[] b, String containerName);
 
     /**
      * Allow the object resolver to be changed by a client object if desired.

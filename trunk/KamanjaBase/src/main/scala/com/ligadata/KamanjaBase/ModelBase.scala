@@ -474,8 +474,7 @@ trait EnvContext /* extends Monitorable */  {
   // We are handling only one listener at this moment
   def postMessagesListener(postMsgListenerCallback: (Array[ContainerInterface]) => Unit): Unit
 
-  def setDefaultDatastoresForTenants(defaultDatastores: scala.collection.immutable.Map[String, String]): Unit
-  def getDefaultDatastoreForTenantId(tenantId: String): String
+  def getPrimaryDatastoreForTenantId(tenantId: String): String
 
   def setSystemCatalogDatastore(sysCatalog: String): Unit
   def getSystemCatalogDatastore(): String

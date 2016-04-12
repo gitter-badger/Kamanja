@@ -252,6 +252,7 @@ object KamanjaMdCfg {
           // envCtxt.setClassLoader(KamanjaConfiguration.metadataLoader.loader) // Using Metadata Loader
           envCtxt.setMetadataResolveInfo(KamanjaMetadata)
           envCtxt.setMdMgr(KamanjaMetadata.getMdMgr)
+          envCtxt.setSystemCatalogDatastore(initConfigs.dataDataStoreInfo)
           val containerNames = KamanjaMetadata.getAllContainers.map(container => container._1.toLowerCase).toList.sorted.toArray // Sort topics by names
           val topMessageNames = KamanjaMetadata.getAllMessges.filter(msg => msg._2.parents.size == 0).map(msg => msg._1.toLowerCase).toList.sorted.toArray // Sort topics by names
 

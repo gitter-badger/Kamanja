@@ -101,7 +101,7 @@ class KBinarySerDeser() extends SerializeDeserialize with LogTrait {
             throw new ObjectNotFoundException(s"The container ${containerTypeName} surprisingly has no fields...serialize fails", null)
         }
 
-        val fields : java.util.HashMap[String,com.ligadata.KamanjaBase.AttributeValue] = v.getAllAttributeValues
+       /* val fields : java.util.HashMap[String,com.ligadata.KamanjaBase.AttributeValue] = v.getAllAttributeValues
         var processCnt : Int = 0
         val fieldCnt : Int = fields.size()
         fieldsToConsider.foreach(fldname => {
@@ -121,13 +121,13 @@ class KBinarySerDeser() extends SerializeDeserialize with LogTrait {
                 }
             } else {
                 if (mappedMsgType == null) {
-                    /** is permissible that a mapped field has no value in the container. */
+                    *//** is permissible that a mapped field has no value in the container. *//*
                 } else {
-                    /** blow it up when fixed msg field is missing */
+                    *//** blow it up when fixed msg field is missing *//*
                     throw new ObjectNotFoundException(s"The fixed container $containerTypeName field $fldname has no value",null)
                 }
             }
-        })
+        })*/
 
         val strRep : String = dos.toString
         logger.debug(s"container $containerTypeName as JSON:\n$strRep")
@@ -364,7 +364,7 @@ class KBinarySerDeser() extends SerializeDeserialize with LogTrait {
       * @param b the byte array containing the serialized ContainerInterface instance
       * @return a ContainerInterface
       */
-    def deserialize(b: Array[Byte]) : ContainerInterface = {
+    def deserialize(b: Array[Byte], containerName: String) : ContainerInterface = {
         var dis = new DataInputStream(new ByteArrayInputStream(b));
         val container : ContainerInterface = deserialize(dis)
         container
@@ -380,7 +380,7 @@ class KBinarySerDeser() extends SerializeDeserialize with LogTrait {
     @throws(classOf[com.ligadata.Exceptions.MissingPropertyException])
     @throws(classOf[com.ligadata.Exceptions.UnsupportedObjectException])
     @throws(classOf[IOException])
-    def deserialize(dis : DataInputStream) : ContainerInterface = {
+    private def deserialize(dis : DataInputStream) : ContainerInterface = {
 
         val containerTypeName : String = dis.readUTF
         val containerVersion : String = dis.readUTF

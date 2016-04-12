@@ -39,8 +39,8 @@ object hl7 extends RDDObject[hl7] with ContainerFactoryInterface {
 
   override def getContainerType: ContainerFactoryInterface.ContainerType = ContainerFactoryInterface.ContainerType.MESSAGE
   override def isFixed: Boolean = false
-  override def getSchema: String = ""
-
+  override def getAvroSchema: String = ""
+  override def getSchemaId = 0;
   override def getPrimaryKeyNames: Array[String] = {
     var primaryKeyNames: Array[String] = Array("desynpuf_id", "clm_id");
     return primaryKeyNames;
@@ -57,24 +57,42 @@ object hl7 extends RDDObject[hl7] with ContainerFactoryInterface {
   override def getTypeName: String = "HL7"
   override def getTypeVersion: String = "000000.000001.000000"
   override def toJavaRDDObject: JavaRDDObject[T] = JavaRDDObject.fromRDDObject[T](this);
-
   override def getFullName: String = ""
   override def build: T = null
   override def build(from: T): T = null
 }
 
 class hl7(factory: ContainerFactoryInterface) extends ContainerInterface(factory) {
-  val logger = this.getClass.getName
-  lazy val log = LogManager.getLogger(logger)
+  private val log = LogManager.getLogger(getClass)
 
-  private var valuesMap = new java.util.HashMap[String, AttributeValue]()
-  private val keyTypes = Map("desynpuf_id" -> "String", "clm_id" -> "Long", "clm_from_dt" -> "Int")
+  var valuesMap = scala.collection.mutable.Map[String, AttributeValue]()
+
+  var attributeTypes = generateAttributeTypes
+
+  val keyTypes: Map[String, AttributeTypeInfo] = attributeTypes.map { a => (a.getName, a) }.toMap
+
+  private def generateAttributeTypes(): Array[AttributeTypeInfo] = {
+    var attributeTypes = new Array[AttributeTypeInfo](7)
+    attributeTypes :+ new AttributeTypeInfo("desynpuf_id", 0, AttributeTypeInfo.TypeCategory.STRING, 0, 0, 0)
+    attributeTypes :+ new AttributeTypeInfo("clm_id", 1, AttributeTypeInfo.TypeCategory.LONG, 0, 0, 0)
+    attributeTypes :+ new AttributeTypeInfo("clm_from_dt", 2, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+    attributeTypes :+ new AttributeTypeInfo("clm_thru_dt", 3, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+    attributeTypes :+ new AttributeTypeInfo("bene_birth_dt", 4, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+    attributeTypes :+ new AttributeTypeInfo("bene_death_dt", 5, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+    attributeTypes :+ new AttributeTypeInfo("bene_sex_ident_cd", 6, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+    return attributeTypes
+  }
+  
+  override def getAttributeTypes(): Array[AttributeTypeInfo] = {
+    val attributeTyps = valuesMap.map(f => f._2.getValueType).toArray;
+    if (attributeTyps == null) return null else return attributeTyps
+  }
 
   override def getPrimaryKey(): Array[String] = {
     var primaryKeys: scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer[String]();
     try {
-      primaryKeys += com.ligadata.BaseTypes.StringImpl.toString(get("desynpuf_id").getValue.asInstanceOf[String]);
-      primaryKeys += com.ligadata.BaseTypes.LongImpl.toString(get("clm_id").getValue.asInstanceOf[Long]);
+      primaryKeys += com.ligadata.BaseTypes.StringImpl.toString(get("desynpuf_id").asInstanceOf[String]);
+      primaryKeys += com.ligadata.BaseTypes.LongImpl.toString(get("clm_id").asInstanceOf[Long]);
     } catch {
       case e: Exception => {
         log.debug("", e.getStackTrace)
@@ -87,7 +105,7 @@ class hl7(factory: ContainerFactoryInterface) extends ContainerInterface(factory
   override def getPartitionKey(): Array[String] = {
     var partitionKeys: scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer[String]();
     try {
-      partitionKeys += com.ligadata.BaseTypes.StringImpl.toString(get("desynpuf_id").getValue.toString());
+      partitionKeys += com.ligadata.BaseTypes.StringImpl.toString(get("desynpuf_id").asInstanceOf[String]);
     } catch {
       case e: Exception => {
         log.debug("", e)
@@ -101,47 +119,11 @@ class hl7(factory: ContainerFactoryInterface) extends ContainerInterface(factory
   override def Clone(): ContainerOrConcept = { hl7.build(this) }
 
   override def getAttributeNames(): Array[String] = {
-    var attributeNames: scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer[String]();
     try {
-      val iter = valuesMap.entrySet().iterator();
-      while (iter.hasNext()) {
-        val attributeName = iter.next().getKey;
-        if (attributeName != null && attributeName.trim() != "")
-          attributeNames += attributeName;
-      }
-    } catch {
-      case e: Exception => {
-        log.debug("", e)
-        throw e
-      }
-    }
-    return attributeNames.toArray;
-  }
-
-  override def get(key: String): AttributeValue = { // Return (value, type)
-    try {
-      return valuesMap.get(key.toLowerCase())
-    } catch {
-      case e: Exception => {
-        log.debug("", e)
-        throw e
-      }
-    }
-    return null;
-  }
-
-  override def getOrElse(key: String, defaultVal: Any): AttributeValue = { // Return (value, type)
-    var attributeValue: AttributeValue = new AttributeValue();
-
-    try {
-      val value = valuesMap.get(key.toLowerCase())
-      if (value == null) {
-        attributeValue.setValue(defaultVal);
-        attributeValue.setValueType("Any");
-        return attributeValue;
+      if (valuesMap.isEmpty) {
+        return null;
       } else {
-
-        return value;
+        return valuesMap.keySet.toArray;
       }
     } catch {
       case e: Exception => {
@@ -149,33 +131,52 @@ class hl7(factory: ContainerFactoryInterface) extends ContainerInterface(factory
         throw e
       }
     }
+  }
+
+  override def get(key: String): AnyRef = { // Return (value, type)
+    val value = valuesMap(key).getValue
+    if (value == null) return null; else return value;
+  }
+
+  override def getOrElse(key: String, defaultVal: Any): AnyRef = { // Return (value, type)
+    try {
+      val value = valuesMap(key).getValue
+      if (value == null) return defaultVal.asInstanceOf[AnyRef];
+      return value;
+    } catch {
+      case e: Exception => {
+        log.debug("", e)
+        throw e
+      }
+    }
+  }
+
+  override def get(index: Int): AnyRef = { // Return (value, type)
+    throw new Exception("Get By Index is not supported in mapped messages");
+  }
+
+  override def getOrElse(index: Int, defaultVal: Any): AnyRef = { // Return (value,  type)
+    throw new Exception("Get By Index is not supported in mapped messages");
+  }
+
+  override def getAllAttributeValues(): Array[AttributeValue] = { // Has (name, value, type))
+    return valuesMap.map(f => f._2).toArray;
+  }
+
+  override def getAttributeNameAndValueIterator(): java.util.Iterator[AttributeValue] = {
+    //valuesMap.iterator.asInstanceOf[java.util.Iterator[AttributeValue]];
     return null;
-  }
-
-  override def get(index: Int): AttributeValue = { // Return (value, type)
-    throw new Exception("Get By Index is not supported in mapped messages");
-  }
-
-  override def getOrElse(index: Int, defaultVal: Any): AttributeValue = { // Return (value,  type)
-    throw new Exception("Get By Index is not supported in mapped messages");
-  }
-
-  override def getAllAttributeValues(): java.util.HashMap[String, AttributeValue] = { // Has (name, value, type))
-    return valuesMap;
-  }
-
-  override def getAttributeNameAndValueIterator(): java.util.Iterator[java.util.Map.Entry[String, AttributeValue]] = {
-    valuesMap.entrySet().iterator();
   }
 
   override def set(key: String, value: Any) = {
-    var attributeValue: AttributeValue = new AttributeValue();
     try {
       val keyName: String = key.toLowerCase();
-      val valType = keyTypes.getOrElse(keyName, "Any")
-      attributeValue.setValue(value)
-      attributeValue.setValueType(valType)
-      valuesMap.put(keyName, attributeValue)
+      if (keyTypes.contains(key)) {
+        valuesMap(key) = new AttributeValue(value, keyTypes(keyName))
+      } else {
+        valuesMap(key) = new AttributeValue(ValueToString(value), new AttributeTypeInfo(key, -1, AttributeTypeInfo.TypeCategory.STRING, 0, 0, 0))
+      }
+
     } catch {
       case e: Exception => {
         log.debug("", e)
@@ -185,11 +186,17 @@ class hl7(factory: ContainerFactoryInterface) extends ContainerInterface(factory
   }
 
   override def set(key: String, value: Any, valTyp: String) = {
-    var attributeValue: AttributeValue = new AttributeValue();
     try {
-      attributeValue.setValue(value)
-      attributeValue.setValueType(valTyp)
-      valuesMap.put(key.toLowerCase(), attributeValue)
+      val keyName: String = key.toLowerCase();
+      if (keyTypes.contains(key)) {
+        valuesMap = valuesMap + (key -> new AttributeValue(value, keyTypes(keyName)))
+      } else {
+        val typeCategory = AttributeTypeInfo.TypeCategory.valueOf(valTyp.toUpperCase())
+        val keytypeId = typeCategory.getValue.toShort
+        val valtypeId = typeCategory.getValue.toShort
+        valuesMap(key) = new AttributeValue(value, new AttributeTypeInfo(key, -1, typeCategory, valtypeId, keytypeId, 0))
+      }
+
     } catch {
       case e: Exception => {
         log.debug("", e)
@@ -200,6 +207,19 @@ class hl7(factory: ContainerFactoryInterface) extends ContainerInterface(factory
 
   override def set(index: Int, value: Any) = {
     throw new Exception("Set By Index is not supported in mapped messages");
+  }
+
+  private def ValueToString(v: Any): String = {
+    if (v.isInstanceOf[Set[_]]) {
+      return v.asInstanceOf[Set[_]].mkString(",")
+    }
+    if (v.isInstanceOf[List[_]]) {
+      return v.asInstanceOf[List[_]].mkString(",")
+    }
+    if (v.isInstanceOf[Array[_]]) {
+      return v.asInstanceOf[Array[_]].mkString(",")
+    }
+    v.toString
   }
 }
 

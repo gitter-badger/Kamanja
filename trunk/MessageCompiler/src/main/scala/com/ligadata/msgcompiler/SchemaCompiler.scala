@@ -4,8 +4,8 @@ import org.apache.logging.log4j.{ Logger, LogManager }
 import com.ligadata.kamanja.metadata._;
 
 class SchemaCompiler {
-  val recordType = "\\\"type\\\": \\\"record\\\", ";
-  val fieldsConstant = "\\\"fields\\\":";
+  val recordType = """ "type": "record", """;
+  val fieldsConstant = """ "fields":""";
   val avroType = "type";
   val bslash = "\\";
   val quote = "\"";
@@ -16,7 +16,7 @@ class SchemaCompiler {
   val openBrace = "{";
   val closeBrace = "}";
   val integer = "integer";
-  val primitiveTypes = Array("null", "int", "long", "float", "double", "bytes", "string");
+  val primitiveTypes = Array("null", "int", "long", "float", "double", "bytes", "string", "char");
   val int = "int";
 
   val logger = this.getClass.getName
@@ -28,7 +28,6 @@ class SchemaCompiler {
     var strBuf = new StringBuilder(8 * 1024);
     try {
       val fldsStr = getAvroFldTypes(message, mdMgr: MdMgr);
-
       strBuf = strBuf.append(openBrace + recordType)
       strBuf = strBuf.append(generateNameSpace(message.NameSpace.toLowerCase()) + comma)
       strBuf = strBuf.append(generateName(message.Name.toLowerCase()) + comma)
@@ -49,17 +48,17 @@ class SchemaCompiler {
 
   private def generateNameSpace(nameSpace: String): String = {
 
-    return "\\\"namespace\\\" : \\\"" + nameSpace + "\\\"";
+    return """ "namespace" : """" + nameSpace + """" """;
   }
 
   private def generateName(name: String): String = {
 
-    return "\\\"name\\\" : \\\"" + name + "\\\"";
+    return """ "name" : """" + name + """" """;
   }
 
   private def generateFieldType(fldType: String, slash: String, quote: String): String = {
 
-    return "\\\"type\\\" : " + slash + quote + fldType + slash + quote;
+    return """ "type" : """ + quote + fldType + quote;
   }
 
   private def generateRecordType: String = {
@@ -93,12 +92,11 @@ class SchemaCompiler {
               }
               retFldStr = generateFieldType(fldStr, bslash, quote)
             } else if (fieldTypestr.size == 2) {
-              if (fieldTypestr(0).equalsIgnoreCase("system")) {
-                retFldStr = parseFldStr(fieldTypestr)
+              log.info("fieldTypestr(1).substring(7) " + fieldTypestr(1));
+              if (primitiveTypes.contains(fieldTypestr(1)) || primitiveTypes.contains(fieldTypestr(1).substring(7)) || primitiveTypes.contains(fieldTypestr(1).substring(5))) {
+                retFldStr = parseFldStr(fieldTypestr) //handling array of primitive types (scalar types)
               } else {
-
-                //BUGBUG - handle if the container namespace is one word
-
+                retFldStr = parseContainer(field, mdMgr) //handling array of containers if the container if the namespace is one word
               }
             } else if (fieldTypestr.size > 2) {
               /*
@@ -107,7 +105,7 @@ class SchemaCompiler {
            * get the type from metadata and get object definition
            */
               retFldStr = parseContainer(field, mdMgr)
-              log.info("Parse Container from Object Definition" + retFldStr);
+              //log.info("Parse Container from Object Definition" + retFldStr);
             }
 
             strBuf.append(openBrace + generateName(field.Name) + comma)
@@ -151,7 +149,10 @@ class SchemaCompiler {
       } else if (fieldTypestr1.startsWith("array") || fieldTypestr1.startsWith("arraybuf")) {
 
         fldStr = parseArrayPrimitives(fieldTypestr1)
+        // log.info("===================================fldStr " + fldStr)
         retFldStr = generateFieldType(fldStr, "", "")
+        //  log.info("===================================retFldStr " + retFldStr)
+
         // println("retFldStr   " + retFldStr);
       } else if (fieldTypestr(1).startsWith("map")) {
 
@@ -177,10 +178,10 @@ class SchemaCompiler {
       var index: Int = 0;
       if (arrayType.startsWith("arrayof")) index = 7
       else if (arrayType.startsWith("arraybufferof")) index = 13
-      log.info("\n\n" + index);
+      //log.info("\n\n" + index);
       fldtypeStr = arrayType.substring(index, arrayType.length);
-      log.info(arrayType);
-      log.info(fldtypeStr);
+      // log.info(arrayType);
+      //log.info(fldtypeStr);
 
       if (primitiveTypes.contains(fldtypeStr)) {
         ftype = primitiveTypes(primitiveTypes.indexOf(fldtypeStr));
@@ -190,8 +191,8 @@ class SchemaCompiler {
         ftype = parseArrayPrimitives(fldtypeStr)
       }
     }
-    retFldtypeStr = "{\\\"type\\\" : \\\"array\\\", \\\"items\\\" : \\\"" + ftype + "\\\"}";
-    log.info(retFldtypeStr + "\n\n");
+    retFldtypeStr = """ {"type" : "array", "items" : """" + ftype + """"}""";
+    //log.info(retFldtypeStr + "\n\n");
 
     retFldtypeStr
   }
@@ -209,7 +210,7 @@ class SchemaCompiler {
 
       if (fldtypeStr.startsWith("string")) {
         val flsValType = fldtypeStr.substring(6)
-        log.info("flsValType  " + flsValType)
+        //log.info("flsValType  " + flsValType)
         if (primitiveTypes.contains(flsValType)) {
           ftype = primitiveTypes(primitiveTypes.indexOf(flsValType));
         } else if (fldtypeStr.startsWith("array")) {
@@ -219,7 +220,7 @@ class SchemaCompiler {
       }
     }
 
-    retFldtypeStr = "{\\\"type\\\" : \\\"map\\\", \\\"values\\\" : \\\"" + ftype + "\\\"}"; //{"type" : "map", "values" : "int"}
+    retFldtypeStr = """{"type" : "map", "values" : """" + ftype + """"}"""; //{"type" : "map", "values" : "int"}
     retFldtypeStr
   }
 
@@ -233,9 +234,9 @@ class SchemaCompiler {
     var message: Message = null
 
     try {
-      log.info("field.Name" + field.Name);
+      //log.info("field.Name" + field.Name);
       val fieldBaseType: BaseTypeDef = field.FldMetaataType
-      log.info("field.fieldBaseType" + fieldBaseType);
+      //log.info("field.fieldBaseType" + fieldBaseType);
 
       val fieldType = fieldBaseType.tType.toString().toLowerCase()
       val fieldTypeType = fieldBaseType.tTypeType.toString().toLowerCase()
@@ -250,36 +251,39 @@ class SchemaCompiler {
             case "tarray" => {
               var arrayType: ArrayTypeDef = fieldBaseType.asInstanceOf[ArrayTypeDef]
               if (arrayType != null) {
-                var ctrDef: ContainerDef = mdMgr.Container(arrayType.elemDef.FullName, -1, true).getOrElse(null) //field.FieldtypeVer is -1 for now, need to put proper version
-                msgdefStr = ctrDef.objectDefinition
-                message = messageParser.processJson(msgdefStr, mdMgr, false)
-                message = generateAvroSchema(message, mdMgr)
-                val typeStr = "\\\"type\\\": {\\\"type\\\": \\\"array\\\", \\\"items\\\": "
-                containerTypeStr.append(typeStr + message.Schema + closeBrace)
-                log.info("tarray *************************************************" + typeStr);
+                var ctrDef: ContainerDef = null;
+                ctrDef = mdMgr.Container(arrayType.elemDef.FullName, -1, true).getOrElse(null) //field.FieldtypeVer is -1 for now, need to put proper version
+                if (ctrDef == null)
+                  ctrDef = mdMgr.Message(arrayType.elemDef.FullName, -1, true).getOrElse(null) //field.FieldtypeVer is -1 for now, need to put proper version
+
+                msgdefStr = ctrDef.containerType.AvroSchema
+                // message = messageParser.processJson(msgdefStr, mdMgr, false)
+                // message = generateAvroSchema(message, mdMgr)
+                val typeStr = """"type": {"type": "array", "items": """
+                containerTypeStr.append(typeStr + msgdefStr + closeBrace)
 
               }
               //  fromFuncBuf = fromFuncBuf.append(fromFuncForArrayFixed(field))
             }
             case "tstruct" => {
-              var ctrDef: ContainerDef = mdMgr.Container(field.Ttype, -1, true).getOrElse(null) //field.FieldtypeVer is -1 for now, need to put proper version
-              if (ctrDef != null) {
-                msgdefStr = ctrDef.objectDefinition
-                message = messageParser.processJson(msgdefStr, mdMgr, false)
-                message = generateAvroSchema(message, mdMgr)
+              var msgDef: MessageDef = mdMgr.Message(field.Ttype, -1, true).getOrElse(null) //field.FieldtypeVer is -1 for now, need to put proper version
+              if (msgDef != null) {
+                msgdefStr = msgDef.containerType.AvroSchema
+                //message = messageParser.processJson(msgdefStr, mdMgr, false)
+                //message = generateAvroSchema(message, mdMgr)
 
-                containerTypeStr.append("\\\"type\": " + message.Schema)
+                containerTypeStr.append(""" "type": """ + msgdefStr)
               }
             }
             case "tmsgmap" => {
               var ctrDef: ContainerDef = mdMgr.Container(field.Ttype, -1, true).getOrElse(null) //field.FieldtypeVer is -1 for now, need to put proper version
               if (ctrDef != null) {
-                msgdefStr = ctrDef.objectDefinition
-                message = messageParser.processJson(msgdefStr, mdMgr, false)
-                message = generateAvroSchema(message, mdMgr)
+                msgdefStr = ctrDef.containerType.AvroSchema
+                // message = messageParser.processJson(msgdefStr, mdMgr, false)
+                //message = generateAvroSchema(message, mdMgr)
 
-                containerTypeStr.append("\\\"type\\\": " + message.Schema)
-                log.info(" tmsgmap *************************************************" + containerTypeStr.toString());
+                containerTypeStr.append(""""type" : """ + msgdefStr)
+                //log.info(" tmsgmap *************************************************" + containerTypeStr.toString());
 
               }
               //    fromFuncBuf = fromFuncBuf.append(fromFuncForStructFixed(field))
@@ -287,13 +291,17 @@ class SchemaCompiler {
             case "tmap" => {
               var maptypeDef = fieldBaseType.asInstanceOf[MapTypeDef]
               if (maptypeDef != null) {
-                var ctrDef: ContainerDef = mdMgr.Container(maptypeDef.valDef.FullName, -1, true).getOrElse(null) //field.FieldtypeVer is -1 for now, need to put proper version
-                msgdefStr = ctrDef.objectDefinition
-                message = messageParser.processJson(msgdefStr, mdMgr, false)
-                message = generateAvroSchema(message, mdMgr)
-                val typeStr = "\\\"type\\\" : \\\"map\\\", \\\"values\\\" : "
-                containerTypeStr.append(typeStr + message.Schema)
-                log.info("tmap******************************" + maptypeDef.valDef.tType)
+                var ctrDef: ContainerDef = null;
+                ctrDef = mdMgr.Container(maptypeDef.valDef.FullName, -1, true).getOrElse(null) //field.FieldtypeVer is -1 for now, need to put proper version
+                if (ctrDef == null)
+                  ctrDef = mdMgr.Message(maptypeDef.valDef.FullName, -1, true).getOrElse(null) //field.FieldtypeVer is -1 for now, need to put proper version
+
+                msgdefStr = ctrDef.containerType.AvroSchema
+                //message = messageParser.processJson(msgdefStr, mdMgr, false)
+                //message = generateAvroSchema(message, mdMgr)
+                val typeStr = """ "type" : "map", "values" : """
+                containerTypeStr.append(typeStr + msgdefStr)
+                //log.info("tmap******************************" + maptypeDef.valDef.tType)
               }
             }
             case _ => {

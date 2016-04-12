@@ -90,7 +90,6 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
   private var txnIdsRangeForNode: Int = 100000 // Each time get txnIdsRange of transaction ids for each Node
   private var txnIdsRangeForPartition: Int = 10000 // Each time get txnIdsRange of transaction ids for each partition
   private var _sysCatalogDatastore: String = _
-  private val _defaultDatastoresForTenants = scala.collection.mutable.Map[String, String]()
   private var _postMsgListenerCallback: (Array[ContainerInterface]) => Unit = null
 
   case class LeaderListenerCallback(val EventChangeCallback: (ClusterStatus) => Unit)
@@ -2963,11 +2962,12 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
       null
   }
 
-  override def setDefaultDatastoresForTenants(defaultDatastores: scala.collection.immutable.Map[String, String]): Unit = {
-    _defaultDatastoresForTenants ++= defaultDatastores
+  override def getPrimaryDatastoreForTenantId(tenantId: String): String = {
+    val tntInfo = _mgr.GetTenantInfo(tenantId)
+    if (tntInfo == null)
+      throw new KamanjaException("Not found tenantId:%s in metadata".format(tenantId), null)
+    tntInfo.primaryDataStore
   }
-
-  override def getDefaultDatastoreForTenantId(tenantId: String): String = _defaultDatastoresForTenants.getOrElse(tenantId, null)
 
   override def setSystemCatalogDatastore(sysCatalog: String): Unit = {
     _sysCatalogDatastore = sysCatalog

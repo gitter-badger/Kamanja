@@ -268,9 +268,13 @@ class StorageAdapter(nodeCtxt: NodeContext, adapterInfo: AdapterInfo, datastore:
 
   def Category = "Storage"
 
-  def getComponentStatusAndMetrics: MonitorComponentInfo = {
+  override def getComponentStatusAndMetrics: MonitorComponentInfo = {
     val lastSeen = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
     MonitorComponentInfo(_TYPE_STORAGE, _storageConfig.Name, _storageConfig.Name, _startTime, lastSeen, "{}")
+  }
+
+  override def getComponentSimpleStats: String = {
+    ""
   }
 }
 

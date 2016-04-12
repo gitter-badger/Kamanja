@@ -342,6 +342,10 @@ class KafkaProducer(val inputConfig: AdapterConfiguration, val nodeContext: Node
     return new MonitorComponentInfo( AdapterConfiguration.TYPE_OUTPUT, qc.Name, KafkaProducer.ADAPTER_DESCRIPTION, startTime, lastSeen,  Serialization.write(metrics).toString)
   }
 
+  override def getComponentSimpleStats: String = {
+    "" // Not implemented yet
+  }
+
   /**
    *
    * @param tnxCtxt

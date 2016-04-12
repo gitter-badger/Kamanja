@@ -17,7 +17,7 @@ public interface ContainerFactoryInterface extends ContainerOrConceptFactory {
 
 	public abstract boolean isFixed();
 
-	public abstract String getSchema();
+	public abstract String getAvroSchema();
 
 	public abstract String[] getPrimaryKeyNames();
 

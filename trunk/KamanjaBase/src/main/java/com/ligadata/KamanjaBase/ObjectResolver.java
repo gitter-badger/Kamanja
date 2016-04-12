@@ -32,5 +32,6 @@ public interface ObjectResolver {
      * @return an instance whose class can be located with the supplied typName
      */
     public ContainerInterface getInstance(java.lang.ClassLoader loader, String typName);
+    public ContainerInterface getInstance(java.lang.ClassLoader loader, Long schemaId);
 }
 

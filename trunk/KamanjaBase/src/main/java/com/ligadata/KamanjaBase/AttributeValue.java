@@ -2,22 +2,30 @@ package com.ligadata.KamanjaBase;
 
 public class AttributeValue {
 
-	String valueType = "";
+	AttributeTypeInfo valueType;
 	Object value = "";
-
-	public String getValueType() {
-		return this.valueType;
+	
+	public AttributeValue(){
+		
+	}
+	public AttributeValue(Object value, AttributeTypeInfo valueType) {		
+		this.value = value;
+		this.valueType = valueType;
 	}
 
-	public void setValueType(String valType) {
-		this.valueType = valType;
+	public AttributeTypeInfo getValueType() {
+		return valueType;
+	}
+
+	public void setValueType(AttributeTypeInfo valueType) {
+		this.valueType = valueType;
 	}
 
 	public Object getValue() {
-		return this.value;
+		return value;
 	}
 
-	public void setValue(Object val) {
-		this.value = val;
-	}
+	public void setValue(Object value) {
+		this.value = value;
+	}	
 }

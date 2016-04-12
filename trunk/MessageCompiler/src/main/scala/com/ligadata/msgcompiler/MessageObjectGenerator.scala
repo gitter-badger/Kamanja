@@ -123,8 +123,8 @@ class MessageObjectGenerator {
    */
 
   private def keysCodeGeneration(message: Message) = {
-   
-"""   """ + getPartitionKeyNames(message) + """
+
+    """   """ + getPartitionKeyNames(message) + """
   """ + getPrimaryKeyNames(message) + """   
   """ + getTimeParitionInfo(message) + """   
     override def hasPrimaryKey(): Boolean = {
@@ -142,7 +142,7 @@ class MessageObjectGenerator {
       return (tmInfo != null && tmInfo.getTimePartitionType != TimePartitionInfo.TimePartitionType.NONE);
     }
   
-    override def getSchema: String = " """ + message.Schema + """";  
+    override def getAvroSchema: String = """ + "\"\"\"" + message.Schema + "\"\"\"" + """;  
 """
   }
 
@@ -193,12 +193,12 @@ class MessageObjectGenerator {
       message.PartitionKeys.foreach(key => {
         paritionKeys.append("\"" + key + "\", ")
       })
-      val partitionKys = "("+paritionKeys.toString.substring(0, paritionKeys.toString.length() - 2)+")";
+      val partitionKys = "(" + paritionKeys.toString.substring(0, paritionKeys.toString.length() - 2) + ")";
       partitionInfo = msgConstants.getPartitionKeyNames.format(partitionKys, msgConstants.newline)
 
     } else partitionInfo = msgConstants.getPartitionKeyNames.format("[String]()", msgConstants.newline)
 
-  """override def getPartitionKeyNames: Array[String] = """ + partitionInfo 
+    """override def getPartitionKeyNames: Array[String] = """ + partitionInfo
   }
 
   /*
@@ -213,12 +213,12 @@ class MessageObjectGenerator {
       message.PrimaryKeys.foreach(key => {
         primaryKeys.append("\"" + key + "\", ")
       })
-      val primaryKys = "("+ primaryKeys.toString.substring(0, primaryKeys.toString.length()-2)+")";
+      val primaryKys = "(" + primaryKeys.toString.substring(0, primaryKeys.toString.length() - 2) + ")";
       primaryInfo = msgConstants.getPrimaryKeyNames.format(primaryKys, msgConstants.newline)
 
     } else primaryInfo = msgConstants.getPrimaryKeyNames.format("[String]()", msgConstants.newline)
 
-  """override def getPrimaryKeyNames: Array[String] = """ + primaryInfo 
+    """override def getPrimaryKeyNames: Array[String] = """ + primaryInfo
   }
 
 }

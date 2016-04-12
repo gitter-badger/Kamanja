@@ -1,6 +1,6 @@
 name := "MigrateBase"
 
-version := "1.0"
+version := "1.4.0"
 
 // Enables publishing to maven repo
 // publishMavenStyle := true

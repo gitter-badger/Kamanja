@@ -141,7 +141,7 @@ trait ExecContext extends AdaptersSerializeDeserializers {
   val (txnIdsRangeForPartition, txnIdsRangeForNode)  = nodeContext.getEnvCtxt().getTransactionRanges
 
   NodeLevelTransService.init(zkConnectString, zkSessionTimeoutMs, zkConnectionTimeoutMs, zkNodeBasePath, txnIdsRangeForNode,
-    nodeContext.getEnvCtxt().getDefaultDatastoreForTenantId(input.inputConfig.tenantId), nodeContext.getEnvCtxt().getJarPaths())
+    nodeContext.getEnvCtxt().getSystemCatalogDatastore(), nodeContext.getEnvCtxt().getJarPaths())
   private val transService = new SimpleTransService
   transService.init(txnIdsRangeForPartition)
 

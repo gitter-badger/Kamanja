@@ -1,9 +1,7 @@
 package org.kamanja.serdeser.csv
 
-
 import scala.collection.mutable.{Map, ArrayBuffer}
 import scala.collection.JavaConverters._
-
 import java.io.{DataInputStream, ByteArrayInputStream, DataOutputStream, ByteArrayOutputStream}
 
 import org.apache.logging.log4j._
@@ -46,12 +44,13 @@ object CsvContainerInterfaceKeys extends Enumeration {
 
 class CsvSerDeser() extends SerializeDeserialize with LogTrait {
 
-    var _mgr : MdMgr = null
+ //   var _mgr : MdMgr = null
     var _objResolver : ObjectResolver = null
     var _classLoader : java.lang.ClassLoader = null
     var _isReady : Boolean = false
-    var _config : Map[String,String] = Map[String,String]()
+    var _config = Map[String,String]()
     var _emitHeaderFirst : Boolean = false
+    var _fieldDelimiter  = ""
 
     /**
       * Csv supports an initial header record in a stream of csv records.  Call this function
@@ -80,9 +79,7 @@ class CsvSerDeser() extends SerializeDeserialize with LogTrait {
         val withComma : Boolean = true
         val withoutComma :Boolean = false
         val containerName : String = v.getFullTypeName
-        val containerVersion :String = v.getTypeVersion
-        val container : ContainerTypeDef = _mgr.ActiveType(containerName).asInstanceOf[ContainerTypeDef]
-        val className : String = container.PhysicalName
+        val containerType = v.getContainerType
 
 
         /** write the first field with the appropriate field delimiter suffixed to it. */
@@ -90,62 +87,37 @@ class CsvSerDeser() extends SerializeDeserialize with LogTrait {
         val containerNameCsv : String = csvTypeInfo(CsvContainerInterfaceKeys.typename.toString, fieldDelimiter)
         dos.writeUTF(containerNameCsv)
 
-        val containerType : ContainerTypeDef = if (container != null) container.asInstanceOf[ContainerTypeDef] else null
-        if (containerType == null) {
-            throw new ObjectNotFoundException(s"type name $containerName is not a container type... serialize fails.",null)
-        }
-        val mappedMsgType : MappedMsgTypeDef = if (containerType.isInstanceOf[MappedMsgTypeDef]) containerType.asInstanceOf[MappedMsgTypeDef] else null
-        val fixedMsgType : StructTypeDef = if (containerType.isInstanceOf[StructTypeDef]) containerType.asInstanceOf[StructTypeDef] else null
+//        if ((containerType != ContainerFactoryInterface.MESSAGE) && (containerType != ContainerFactoryInterface.CONTAINER)) {
+//            throw new ObjectNotFoundException(s"type name $containerName is not a container type... serialize fails.",null)
+//        }
 
         /** The Csv implementation of the SerializeDeserialize interface will not support the mapped message type.  Instead there will be another
           * implementation that supports the Kamanja Variable Comma Separated Value (VCSV) format.  That one deals with sparse data as does the
           * JSON implementation.  Either of those should be chosen
           */
-        if (mappedMsgType != null) {
+        if (v.isFixed == false) {
             throw new UnsupportedObjectException(s"type name $containerName is a mapped message container type... Csv emcodings of mapped messages are not currently supported...choose JSON or (when available) Kamanja VCSV serialize/deserialize... deserialize fails.",null)
         }
-        if (fixedMsgType == null) {
-            throw new UnsupportedObjectException(s"type name $containerName is not a fixed message container type... serialize fails.",null)
-        }
 
-        /**
-          * Note:
-          * The fields from the ContainerInstance are unordered, a java.util.HashMap.  The fields from a FixedMsg are ordered.
-          *
-          * The fields will be processed in the order of the StructTypeDef's memberDefs array for fixed messages. For
-          * the fixed ones, all of the ContainerInterface's fields will be emitted.
-          *
-          */
-        val fieldsToConsider : Array[BaseAttributeDef] = if (fixedMsgType != null) {
-            fixedMsgType.memberDefs
-        } else {
-            Array[BaseAttributeDef]()
-        }
-
-        if (fieldsToConsider.isEmpty) {
+        /* The check for empty container should be done at adapter binding level rather than here.
+           For now, keep it here for debugging purpose, but needs to be removed as it is too low level to have this check and fail.
+         */
+        val fields = v.getAllAttributeValues
+        if (fields.isEmpty) {
             throw new ObjectNotFoundException(s"The container ${containerName} surprisingly has no fields...serialize fails", null)
         }
 
-        val fields : java.util.HashMap[String,com.ligadata.KamanjaBase.AttributeValue] = v.getAllAttributeValues
-        val fieldTypes : Array[BaseTypeDef] = fieldsToConsider.map(fld => fld.typeDef)
-
-        if (_emitHeaderFirst) {
-            emitHeaderRecord(dos, fieldTypes)
-            _emitHeaderFirst = false
-        }
-
         var processCnt : Int = 0
-        val fieldCnt : Int = fields.size()
-        fieldsToConsider.foreach(attr => {
-
+        val fieldCnt = fields.size
+        fields.foreach(attr => {
             processCnt += 1
-
-            val fld : com.ligadata.KamanjaBase.AttributeValue = fields.get(attr.FullName)
+            val fld = attr.getValue
             if (fld != null) {
                 val doTrailingComma : Boolean = processCnt < fieldCnt
-                emitField(dos, attr.typeDef, fld, doTrailingComma)
+                emitField(dos, attr, doTrailingComma)
             } else {
-                throw new ObjectNotFoundException(s"during serialize()...attribute ${attr.FullName} could not be found in the container... mismatch", null)
+              // right thing to do is to emit NULL as special value - either as empty in output or some special indication such as -
+                throw new ObjectNotFoundException(s"during serialize()...attribute ${attr.getValueType.getName} could not be found in the container... mismatch", null)
             }
         })
 
@@ -178,16 +150,15 @@ class CsvSerDeser() extends SerializeDeserialize with LogTrait {
       * @param dos
       * @param containerFieldsInOrder
       */
-    private def emitHeaderRecord(dos : DataOutputStream, containerFieldsInOrder : Array[BaseTypeDef]) = {
+    private def emitHeaderRecord(dos : DataOutputStream, containerFieldsInOrder : Array[AttributeValue]) = {
         val quote : String = s"${'"'}"
         val fieldCnt : Int = containerFieldsInOrder.length
         var cnt : Int = 0
-        val fieldDelimiter : String = _config.getOrElse("fieldDelimiter", null)
 
-        containerFieldsInOrder.foreach(typedef => {
+        containerFieldsInOrder.foreach(av => {
             cnt += 1
-            val delim : String = if (cnt < fieldCnt) fieldDelimiter else ""
-            val value : String = s"$quote${typedef.FullName}$quote"
+            val delim : String = if (cnt < fieldCnt) _fieldDelimiter else ""
+            val value : String = s"$quote${av.getValueType.getName}$quote"
             dos.writeUTF(s"$value$delim")
         })
     }
@@ -218,17 +189,15 @@ class CsvSerDeser() extends SerializeDeserialize with LogTrait {
       * (\n) is also supported.
       *
       * @param dos the data output stream to receive the emissions of the decorated value
-      * @param typedef a data type metadata from the ContainerInterface's ContainerTypeDef ElementTypes
       * @param attr the attribute value that contains the data value
       * @param doTrailingComma when true follow data emission with comma; when false, emit the line delimiter configured
       */
     private def emitField( dos : DataOutputStream
-                          ,typedef : BaseTypeDef
                           ,attr : com.ligadata.KamanjaBase.AttributeValue
                           ,doTrailingComma : Boolean) = {
-        val valueType : String = attr.getValueType
+        val valueType  = attr.getValueType
         val rawValue : Any = attr.getValue
-        val typeName : String = typedef.FullName
+        val typeName : String = valueType.getName
         logger.debug(s"emit field $typeName with original value = ${rawValue.toString}")
 
         val valueStr : String = attr.getValue.toString
@@ -300,15 +269,6 @@ class CsvSerDeser() extends SerializeDeserialize with LogTrait {
         aType.isInstanceOf[ContainerTypeDef]
     }
 
-    /**
-      * Answer if the supplied BaseTypeDef is a StructTypeDef (used for fixed messages).
-      *
-      * @param aType a BaseTypeDef
-      * @return true if a StructTypeDef
-      */
-    private def isFixedMsgTypeDef(aType : BaseTypeDef) : Boolean = {
-        aType.isInstanceOf[StructTypeDef]
-    }
 
     /**
       * Set the object resolver to be used for this serializer
@@ -331,13 +291,14 @@ class CsvSerDeser() extends SerializeDeserialize with LogTrait {
                   , objResolver: ObjectResolver
                   , classLoader: ClassLoader
                   , configProperties : java.util.Map[String,String]): Unit = {
-        _mgr  = mgr
         _objResolver = objResolver
         _classLoader  = classLoader
         _config = configProperties.asScala
-        _isReady = (_mgr != null && _objResolver != null && _classLoader != null && _config != null &&
+        _isReady = (_objResolver != null && _classLoader != null && _config != null &&
             _config.contains("fieldDelimiter") && _config.contains("alwaysQuoteField") &&
             _config.contains("lineDelimiter"))
+        _fieldDelimiter = _config.getOrElse("fieldDelimiter", null)
+
     }
 
     /**
@@ -351,132 +312,59 @@ class CsvSerDeser() extends SerializeDeserialize with LogTrait {
     @throws(classOf[com.ligadata.Exceptions.MissingPropertyException])
     @throws(classOf[com.ligadata.Exceptions.ObjectNotFoundException])
     @throws(classOf[com.ligadata.Exceptions.UnsupportedObjectException])
-    def deserialize(b: Array[Byte]) : ContainerInterface = {
+    def deserialize(b: Array[Byte], containerName: String) : ContainerInterface = {
 
         val rawCsvContainerStr : String = new String(b)
-        val (containerfFieldMap, containerType, containerFldTypes)
-                : (scala.collection.immutable.Map[String, Any], ContainerTypeDef, Array[BaseTypeDef])
-                    = dataMapAndTypesForCsvString(rawCsvContainerStr)
 
-        /** Decode the map to produce an instance of ContainerInterface */
-
-        /** get the container key information.. the top level object must be a ContainerInterface... if these
-          * are not present, nothing good will come of it */
-        val containerNameCsv : String = if (containerType != null) containerType.FullName else ""
-        //val containerVersionCsv : String = containerfFieldMap.getOrElse(CsvContainerInterfaceKeys.version.toString, "").asInstanceOf[String]
-        //val containerPhyNameCsv : String = containerfFieldMap.getOrElse(CsvContainerInterfaceKeys.physicalname.toString, "").asInstanceOf[String]
-
-        if (containerNameCsv.isEmpty) {
-            throw new MissingPropertyException("the supplied byte array to deserialize does not have a known container name.", null)
+        val rawCsvFields : Array[String] = if (rawCsvContainerStr != null) {
+          rawCsvContainerStr.split(_fieldDelimiter)
+        } else {
+          Array[String]()
         }
-
+        if (rawCsvFields.isEmpty) {
+          logger.error("The supplied CSV record is empty...abandoning processing")
+          throw new ObjectNotFoundException("The supplied CSV record is empty...abandoning processing", null)
+        }
         /** get an empty ContainerInterface instance for this type name from the _objResolver */
-        val ci : ContainerInterface = _objResolver.getInstance(_classLoader, containerNameCsv)
+        val ci : ContainerInterface = _objResolver.getInstance(_classLoader, containerName)
         if (ci == null) {
-            throw new ObjectNotFoundException(s"type name $containerNameCsv could not be resolved and built for deserialize",null)
+            throw new ObjectNotFoundException(s"type name $containerName could not be resolved and built for deserialize",null)
         }
-
+        val containerType = ci.getContainerType
         /** get the fields information */
         if (containerType == null) {
-            throw new ObjectNotFoundException(s"type name $containerNameCsv is not a container type... deserialize fails.",null)
+            throw new ObjectNotFoundException(s"type name $containerName is not a container type... deserialize fails.",null)
         }
         val mappedMsgType : MappedMsgTypeDef = if (containerType.isInstanceOf[MappedMsgTypeDef]) containerType.asInstanceOf[MappedMsgTypeDef] else null
         val fixedMsgType : StructTypeDef = if (containerType.isInstanceOf[StructTypeDef]) containerType.asInstanceOf[StructTypeDef] else null
         if (mappedMsgType != null) {
-            throw new UnsupportedObjectException(s"type name $containerNameCsv has a mapped message container type...these are not supported in CSV... use either JSON or VCSV (when available) instead... deserialize fails.",null)
+            throw new UnsupportedObjectException(s"type name $containerName has a mapped message container type...these are not supported in CSV... use either JSON or VCSV (when available) instead... deserialize fails.",null)
         }
 
-        val fieldsToConsider : Array[BaseAttributeDef] = if (fixedMsgType != null) {
-            fixedMsgType.memberDefs
-        } else {
-            Array[BaseAttributeDef]()
-        }
+        val fieldsToConsider = ci.getAttributeTypes
         if (fieldsToConsider.isEmpty) {
-            throw new ObjectNotFoundException(s"The container $containerNameCsv surprisingly has no fields...deserialize fails", null)
+            throw new ObjectNotFoundException(s"The container $containerName surprisingly has no fields...deserialize fails", null)
         }
-
-
-        /** get the fields information */
-        if (containerType == null) {
-            throw new ObjectNotFoundException(s"type name $containerNameCsv is not a container type... deserialize fails.",null)
-        }
+        val fldIdx = 0
+        val numFields = rawCsvFields.length
         fieldsToConsider.foreach(attr => {
-            val fieldsCsv : Any = containerfFieldMap.getOrElse(attr.typeDef.FullName, null)
-            val isContainerType : Boolean = isContainerTypeDef(attr.typeDef)
-            val fld : Any = if (isContainerType) {
-                val containerTypeInfo : ContainerTypeDef = attr.typeDef.asInstanceOf[ContainerTypeDef]
-                logger.error(s"field type name ${containerTypeInfo.FullName} is a container type... containers are not supported by the CSV deserializer at this time... deserialization fails.")
-                throw new UnsupportedObjectException(s"field type name ${containerTypeInfo.FullName} is a container type... containers are not supported by the CSV deserializer at this time... deserialization fails.",null)
-            } else {
-                /** currently assumed to be one of the scalars or simple types supported by json/avro */
-                fieldsCsv
+            if (attr.IsContainer) {
+                logger.error(s"field type name ${attr.getName} is a container type... containers are not supported by the CSV deserializer at this time... deserialization fails.")
+                throw new UnsupportedObjectException(s"field type name ${attr.getName} is a container type... containers are not supported by the CSV deserializer at this time... deserialization fails.",null)
             }
-            ci.set(attr.typeDef.FullName, fld)
+            /** currently assumed to be one of the scalars or simple types supported by json/avro **/
+            if(fldIdx >= numFields) {
+                logger.error(s"input contains less number of fields than expected in container - attribute name: ${attr.getName}, fieldIndex: ${fldIdx}, numFields: ${numFields}")
+                throw new UnsupportedObjectException(s"field type name ${attr.getName} is a container type... containers are not supported by the CSV deserializer at this time... deserialization fails.",null)
+            }
+            val fld = rawCsvFields(fldIdx)
+          // @TODO: need to handle failure condition for set - string is not in expected format?
+          // @TODO: is there any need to strip quotes? since serializer is putting escape information while serializing, this should be done. probably more configuration information is needed
+            ci.set(fldIdx, fld)
         })
 
         val container : ContainerInterface = null
         container
-    }
-
-    /**
-      * Translate the supplied CSV string to a Map[String, Any]. The expectation is that the first field is expected
-      * to be the ContainerInterface's ContainerTypeDef's namespace.name.  With this name, the type is obtained from
-      * the metadata so that the BaseTypeDef instances that describe each field in the supplied csv record can be
-      * determined.
-      *
-      * @param configCsv string containing the raw csv data for the current record.
-      * @return (Map[String, Any], ContainerTypeDef, Array[BaseTypeDef]) corresponding to (raw data by field name,
-      *         the StructTypeDef of the fixed message that is to be built, corresponding field types)
-      */
-
-    @throws(classOf[com.ligadata.Exceptions.ObjectNotFoundException])
-    @throws(classOf[com.ligadata.Exceptions.TypeParsingException])
-    def dataMapAndTypesForCsvString(configCsv: String)
-                : (scala.collection.immutable.Map[String, Any], ContainerTypeDef, Array[BaseTypeDef]) = {
-        val rawCsvFields : Array[String] = if (configCsv != null) {
-            val fieldDelimiter : String = _config.getOrElse("fieldDelimiter", null)
-            configCsv.split(fieldDelimiter)
-        } else {
-            Array[String]()
-        }
-        if (rawCsvFields.isEmpty) {
-            logger.error("The supplied CSV record is empty...abandoning processing")
-            throw new ObjectNotFoundException("The supplied CSV record is empty...abandoning processing", null)
-        }
-
-        val containerTypeName : String = rawCsvFields.head
-        val containerCsvFields : Array[String] = rawCsvFields.tail
-
-        /** Fixme: were we to support more than the "current" type, the version key would be part of the column 1 serialization...
-          *  used to discern which type is to be deserialized */
-
-        val basetypedef : BaseTypeDef = mdMgr.ActiveType(containerTypeName)
-        if (basetypedef == null) {
-            logger.error("The supplied CSV record's first field that describes the container type was not found in the metadata...abandoning processing")
-            throw new ObjectNotFoundException("The supplied CSV record's first field that describes the container type was not found in the metadata...abandoning processing", null)
-        }
-        if (! (isFixedMsgTypeDef(basetypedef))) {
-            logger.error("The supplied CSV record's first field is not a fixed message container type...abandoning processing.  Mapped messages should be formed with either the JSON or Kamanja VCSV formatter... abandoning deserialize processing")
-            throw new TypeParsingException("The supplied CSV record's first field is not a fixed message container type...abandoning processing.  Mapped messages should be formed with either the JSON or Kamanja VCSV formatter... abandoning deserialize processing", null)
-        }
-        val containerTypeDef : StructTypeDef = basetypedef.asInstanceOf[StructTypeDef]
-
-        val fieldAttrs : Array[BaseAttributeDef] = containerTypeDef.memberDefs
-        if (fieldAttrs == null || (fieldAttrs != null && fieldAttrs.isEmpty)) {
-            logger.error("The supplied CSV record's container type is either not a container or has no fields...abandoning processing")
-            throw new TypeParsingException("The supplied CSV record's container type is either not a container or has no fields...abandoning processing", null)
-        }
-
-       /** Produce the Map[typename,descapedStringValue] */
-        var idx : Int = -1
-        val containerCsvFieldMap : scala.collection.immutable.Map[String, Any] = fieldAttrs.map(fld => {
-            idx += 1
-            val descapedString : String = containerCsvFields(idx)
-            (fld.FullName,descapedString)
-        }).toMap
-
-        val fieldTypes : Array[BaseTypeDef] = fieldAttrs.map(attr => attr.typeDef)
-        (containerCsvFieldMap, containerTypeDef, fieldTypes)
     }
 
     /**
@@ -502,7 +390,6 @@ class CsvSerDeser() extends SerializeDeserialize with LogTrait {
         }
         returnStr
     }
-
 
 
     /**
@@ -544,7 +431,5 @@ class CsvSerDeser() extends SerializeDeserialize with LogTrait {
         val escapeQuotedStr : String = if (buffer.isEmpty) valueStr else buffer.toString
         escapeQuotedStr
     }
-
-
 }
 

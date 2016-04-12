@@ -39,8 +39,8 @@ object hl7Fixed extends RDDObject[hl7Fixed] with ContainerFactoryInterface {
 
   override def getContainerType: ContainerFactoryInterface.ContainerType = ContainerFactoryInterface.ContainerType.MESSAGE
   override def isFixed: Boolean = true
-  override def getSchema: String = ""
-
+  override def getAvroSchema: String = ""
+  override def getSchemaId = 0;
   override def getPrimaryKeyNames: Array[String] = {
     var primaryKeyNames: Array[String] = Array("desynpuf_id", "clm_id");
     return primaryKeyNames;
@@ -75,13 +75,36 @@ class hl7Fixed(factory: ContainerFactoryInterface) extends ContainerInterface(fa
   var bene_sex_ident_cd: Int = _;
   var bene_race_cd: Int = _;
 
-  private val keyTypes = Map("desynpuf_id" -> "String", "clm_id" -> "Long", "clm_from_dt" -> "Int", "clm_thru_dt" -> "Int", "bene_birth_dt" -> "Int", "bene_death_dt" -> "Int", "bene_sex_ident_cd" -> "Int", "bene_race_cd" -> "Int")
+  //AttributeTypeInfo -- 0 -> index, 1 -> typeCategary (standard), 0 -> valueTypeId (since scalar type field), 0 - SchemaId (since not message/container type element), "string" -> keyTypeId
+
+  var attributeTypes = generateAttributeTypes
+
+  //(new AttributeTypeInfo(0, 1, 0, 0, "string"), new AttributeTypeInfo(1, 1, 0, 0, "long"), new AttributeTypeInfo(2, 1, 0, 0, "int"), new AttributeTypeInfo(3, 1, 0, 0, "int"), new AttributeTypeInfo(4, 1, 0, 0, "int"), new AttributeTypeInfo(5, 1, 0, 0, "int"), new AttributeTypeInfo(6, 1, 0, 0, "int"), new AttributeTypeInfo(7, 1, 0, 0, "int"));
+
+  private val keyTypes: Map[String, AttributeTypeInfo] = attributeTypes.map { a => (a.getName, a) }.toMap
+
+  private def generateAttributeTypes(): Array[AttributeTypeInfo] = {
+    var attributeTypes = new Array[AttributeTypeInfo](7)
+    attributeTypes :+ new AttributeTypeInfo("desynpuf_id", 0, AttributeTypeInfo.TypeCategory.STRING, 0, 0, 0)
+    attributeTypes :+ new AttributeTypeInfo("clm_id", 1, AttributeTypeInfo.TypeCategory.LONG, 0, 0, 0)
+    attributeTypes :+ new AttributeTypeInfo("clm_from_dt", 2, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+    attributeTypes :+ new AttributeTypeInfo("clm_thru_dt", 3, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+    attributeTypes :+ new AttributeTypeInfo("bene_birth_dt", 4, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+    attributeTypes :+ new AttributeTypeInfo("bene_death_dt", 5, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+    attributeTypes :+ new AttributeTypeInfo("bene_sex_ident_cd", 6, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+    return attributeTypes
+  }
+
+  override def getAttributeTypes(): Array[AttributeTypeInfo] = {
+    if (attributeTypes == null) return null;
+    return attributeTypes
+  }
 
   override def getPrimaryKey(): Array[String] = {
     var primaryKeys: scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer[String]();
     try {
-      primaryKeys += com.ligadata.BaseTypes.StringImpl.toString(get("desynpuf_id").getValue.asInstanceOf[String]);
-      primaryKeys += com.ligadata.BaseTypes.LongImpl.toString(get("clm_id").getValue.asInstanceOf[Long]);
+      primaryKeys += com.ligadata.BaseTypes.StringImpl.toString(get("desynpuf_id").asInstanceOf[String]);
+      primaryKeys += com.ligadata.BaseTypes.LongImpl.toString(get("clm_id").asInstanceOf[Long]);
     } catch {
       case e: Exception => {
         log.debug("", e.getStackTrace)
@@ -94,7 +117,7 @@ class hl7Fixed(factory: ContainerFactoryInterface) extends ContainerInterface(fa
   override def getPartitionKey(): Array[String] = {
     var partitionKeys: scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer[String]();
     try {
-      partitionKeys += com.ligadata.BaseTypes.StringImpl.toString(get("desynpuf_id").getValue.toString());
+      partitionKeys += com.ligadata.BaseTypes.StringImpl.toString(get("desynpuf_id").toString());
     } catch {
       case e: Exception => {
         log.debug("", e)
@@ -124,91 +147,31 @@ class hl7Fixed(factory: ContainerFactoryInterface) extends ContainerInterface(fa
     return null;
   }
 
-  override def get(key: String): AttributeValue = {
+  override def get(key: String): AnyRef = {
     try {
       // Try with reflection
-      return getWithReflection(key.toLowerCase())
+      return getByName(key.toLowerCase())
     } catch {
       case e: Exception => {
         val stackTrace = StackTrace.ThrowableTraceString(e)
         log.debug("StackTrace:" + stackTrace)
         // Call By Name
-        return getByName(key.toLowerCase())
+        return getWithReflection(key.toLowerCase())
       }
     }
   }
-
-  private def getWithReflection(key: String): AttributeValue = {
-    var attributeValue = new AttributeValue();
-    val ru = scala.reflect.runtime.universe
-    val m = ru.runtimeMirror(getClass.getClassLoader)
-    val im = m.reflect(this)
-    val fieldX = ru.typeOf[hl7Fixed].declaration(ru.newTermName(key)).asTerm.accessed.asTerm
-    val fmX = im.reflectField(fieldX)
-    attributeValue.setValue(fmX.get);
-    attributeValue.setValueType(keyTypes(key))
-    attributeValue
-
-  }
-
-  private def getByName(key: String): AttributeValue = {
-    try {
-      if (!keyTypes.contains(key)) throw new Exception("Key does not exists");
-      var attributeValue = new AttributeValue();
-      if (key.equals("desynpuf_id")) { attributeValue.setValue(this.desynpuf_id); }
-      if (key.equals("clm_id")) { attributeValue.setValue(this.clm_id); }
-      if (key.equals("clm_from_dt")) { attributeValue.setValue(this.clm_from_dt); }
-      if (key.equals("clm_thru_dt")) { attributeValue.setValue(this.clm_thru_dt); }
-      if (key.equals("bene_birth_dt")) { attributeValue.setValue(this.bene_birth_dt); }
-      if (key.equals("bene_death_dt")) { attributeValue.setValue(this.bene_death_dt); }
-      if (key.equals("bene_sex_ident_cd")) { attributeValue.setValue(this.bene_sex_ident_cd); }
-      attributeValue.setValueType(keyTypes(key.toLowerCase()));
-      return attributeValue;
-    } catch {
-      case e: Exception => {
-        val stackTrace = StackTrace.ThrowableTraceString(e)
-        log.debug("StackTrace:" + stackTrace)
-        throw e
-      }
-    }
-  }
-
-  override def get(index: Int): AttributeValue = { // Return (value, type)
-    var attributeValue = new AttributeValue();
+  override def get(index: Int): AnyRef = { // Return (value, type)
     try {
       index match {
-        case 0 => {
-          attributeValue.setValue(this.desynpuf_id);
-          attributeValue.setValueType(keyTypes("desynpuf_id"));
-        }
-        case 1 => {
-          attributeValue.setValue(this.clm_id);
-          attributeValue.setValueType(keyTypes("clm_id"));
-        }
-        case 2 => {
-          attributeValue.setValue(this.clm_from_dt);
-          attributeValue.setValueType(keyTypes("clm_from_dt"));
-        }
-        case 3 => {
-          attributeValue.setValue(this.clm_thru_dt);
-          attributeValue.setValueType(keyTypes("clm_thru_dt"));
-        }
-        case 4 => {
-          attributeValue.setValue(this.bene_birth_dt);
-          attributeValue.setValueType(keyTypes("bene_birth_dt"));
-        }
-        case 5 => {
-          attributeValue.setValue(this.bene_death_dt);
-          attributeValue.setValueType(keyTypes("bene_death_dt"));
-        }
-        case 6 => {
-          attributeValue.setValue(this.bene_sex_ident_cd);
-          attributeValue.setValueType(keyTypes("bene_sex_ident_cd"));
-        }
+        case 0 => return this.desynpuf_id.asInstanceOf[AnyRef];
+        case 1 => return this.clm_id.asInstanceOf[AnyRef];
+        case 2 => return this.clm_from_dt.asInstanceOf[AnyRef]
+        case 3 => return this.clm_thru_dt.asInstanceOf[AnyRef]
+        case 4 => return this.bene_birth_dt.asInstanceOf[AnyRef]
+        case 5 => return this.bene_death_dt.asInstanceOf[AnyRef]
+        case 6 => return this.bene_sex_ident_cd.asInstanceOf[AnyRef]
         case _ => throw new Exception("Bad index");
       }
-
-      return attributeValue;
     } catch {
       case e: Exception => {
         val stackTrace = StackTrace.ThrowableTraceString(e)
@@ -218,17 +181,11 @@ class hl7Fixed(factory: ContainerFactoryInterface) extends ContainerInterface(fa
     }
   }
 
-  override def getOrElse(key: String, defaultVal: Any): AttributeValue = { // Return (value, type)
-    var attributeValue: AttributeValue = new AttributeValue();
+  override def getOrElse(key: String, defaultVal: Any): AnyRef = { // Return value
     try {
       val value = get(key.toLowerCase())
-      if (value == null) {
-        attributeValue.setValue(defaultVal);
-        attributeValue.setValueType("Any");
-        return attributeValue;
-      } else {
-        return value;
-      }
+      if (value == null) return defaultVal.asInstanceOf[AnyRef]; else return value;
+
     } catch {
       case e: Exception => {
         log.debug("", e)
@@ -238,87 +195,57 @@ class hl7Fixed(factory: ContainerFactoryInterface) extends ContainerInterface(fa
     return null;
   }
 
-  override def getOrElse(index: Int, defaultVal: Any): AttributeValue = { // Return (value,  type)
-    var attributeValue: AttributeValue = new AttributeValue();
+  override def getOrElse(index: Int, defaultVal: Any): AnyRef = { // Return (value,  type)
     try {
       val value = get(index)
-      if (value == null) {
-        attributeValue.setValue(defaultVal);
-        attributeValue.setValueType("Any");
-        return attributeValue;
-      } else {
-        return value;
-      }
+      if (value == null) return defaultVal.asInstanceOf[AnyRef]; else return value;
+
     } catch {
       case e: Exception => {
         log.debug("", e)
         throw e
       }
     }
-    return null; ;
+    return null;
   }
 
-  override def getAllAttributeValues(): java.util.HashMap[String, AttributeValue] = { // Has (name, value, type))
-    var attributeValsMap = new java.util.HashMap[String, AttributeValue];
-    {
-      var attributeVal = new AttributeValue();
-      attributeVal.setValue(desynpuf_id)
-      attributeVal.setValueType(keyTypes("desynpuf_id"))
-      attributeValsMap.put("desynpuf_id", attributeVal)
-    };
-    {
-      var attributeVal = new AttributeValue();
-      attributeVal.setValue(clm_id)
-      attributeVal.setValueType(keyTypes("clm_id"))
-      attributeValsMap.put("clm_id", attributeVal)
-    };
-    {
-      var attributeVal = new AttributeValue();
-      attributeVal.setValue(clm_from_dt)
-      attributeVal.setValueType(keyTypes("clm_from_dt"))
-      attributeValsMap.put("clm_from_dt", attributeVal)
-    };
-    {
-      var attributeVal = new AttributeValue();
-      attributeVal.setValue(clm_from_dt)
-      attributeVal.setValueType(keyTypes("clm_thru_dt"))
-      attributeValsMap.put("clm_thru_dt", attributeVal)
-    };
-    {
-      var attributeVal = new AttributeValue();
-      attributeVal.setValue(bene_birth_dt)
-      attributeVal.setValueType(keyTypes("bene_birth_dt"))
-      attributeValsMap.put("bene_birth_dt", attributeVal)
-    };
-    {
-      var attributeVal = new AttributeValue();
-      attributeVal.setValue(bene_death_dt)
-      attributeVal.setValueType(keyTypes("bene_death_dt"))
-      attributeValsMap.put("bene_death_dt", attributeVal)
-    };
-    {
-      var attributeVal = new AttributeValue();
-      attributeVal.setValue(bene_sex_ident_cd)
-      attributeVal.setValueType(keyTypes("bene_sex_ident_cd"))
-      attributeValsMap.put("bene_sex_ident_cd", attributeVal)
-    };
+  private def getWithReflection(key: String): AnyRef = {
+    val ru = scala.reflect.runtime.universe
+    val m = ru.runtimeMirror(getClass.getClassLoader)
+    val im = m.reflect(this)
+    val fieldX = ru.typeOf[hl7Fixed].declaration(ru.newTermName(key)).asTerm.accessed.asTerm
+    val fmX = im.reflectField(fieldX)
+    return fmX.get.asInstanceOf[AnyRef]
 
-    return attributeValsMap;
   }
 
-  override def getAttributeNameAndValueIterator(): java.util.Iterator[java.util.Map.Entry[String, AttributeValue]] = {
-    getAllAttributeValues.entrySet().iterator();
+  private def getByName(key: String): AnyRef = {
+    if (!keyTypes.contains(key)) throw new Exception(s"Key $key does not exists in message/container hl7Fixed ");
+    return get(keyTypes(key).getIndex)
+
+  }
+
+  override def getAllAttributeValues(): Array[AttributeValue] = { // Has (name, value, type))
+    var attributeVals = new Array[AttributeValue](7);
+    attributeVals :+ new AttributeValue(this.desynpuf_id, keyTypes("desynpuf_id"))
+    attributeVals :+ new AttributeValue(this.clm_id, keyTypes("clm_id"))
+    attributeVals :+ new AttributeValue(this.clm_from_dt, keyTypes("clm_from_dt"))
+    attributeVals :+ new AttributeValue(this.clm_thru_dt, keyTypes("clm_thru_dt"))
+    attributeVals :+ new AttributeValue(this.bene_birth_dt, keyTypes("bene_birth_dt"))
+    attributeVals :+ new AttributeValue(this.bene_death_dt, keyTypes("bene_death_dt"))
+    attributeVals :+ new AttributeValue(this.bene_sex_ident_cd, keyTypes("bene_sex_ident_cd"))
+    return attributeVals;
+  }
+
+  override def getAttributeNameAndValueIterator(): java.util.Iterator[AttributeValue] = {
+    //getAllAttributeValues.iterator.asInstanceOf[java.util.Iterator[AttributeValue]];
+    return null; // Fix - need to test to mae sure the above iterator works properly
   }
 
   override def set(key: String, value: Any) = {
     try {
-      if (key.equals("desynpuf_id")) { this.desynpuf_id = value.asInstanceOf[String]; }
-      if (key.equals("clm_id")) { this.clm_id = value.asInstanceOf[Long]; }
-      if (key.equals("clm_from_dt")) { this.clm_from_dt = value.asInstanceOf[Int]; }
-      if (key.equals("clm_thru_dt")) { this.clm_thru_dt = value.asInstanceOf[Int]; }
-      if (key.equals("bene_birth_dt")) { this.bene_birth_dt = value.asInstanceOf[Int]; }
-      if (key.equals("bene_death_dt")) { this.bene_death_dt = value.asInstanceOf[Int]; }
-      if (key.equals("bene_sex_ident_cd")) { this.bene_sex_ident_cd = value.asInstanceOf[Int]; }
+      if (!keyTypes.contains(key)) throw new Exception(s"Key $key does not exists in message hl7fixed");
+      set(keyTypes(key).getIndex, value)
     } catch {
       case e: Exception => {
         log.debug("", e)
@@ -328,15 +255,44 @@ class hl7Fixed(factory: ContainerFactoryInterface) extends ContainerInterface(fa
   }
 
   override def set(index: Int, value: Any) = {
+    if (value == null) throw new Exception(s"Value is null for index $index in message hl7fixed")
     index match {
-      case 0 => { this.desynpuf_id = value.asInstanceOf[String]; }
-      case 1 => { this.clm_id = value.asInstanceOf[Long]; }
-      case 2 => { this.clm_from_dt = value.asInstanceOf[Int]; }
-      case 3 => { this.clm_thru_dt = value.asInstanceOf[Int]; }
-      case 4 => { this.bene_birth_dt = value.asInstanceOf[Int]; }
-      case 5 => { this.bene_death_dt = value.asInstanceOf[Int]; }
-      case 6 => { this.bene_sex_ident_cd = value.asInstanceOf[Int]; }
-      case _ => throw new Exception("Bad index");
+      case 0 => {
+        if (value.isInstanceOf[String])
+          this.desynpuf_id = value.asInstanceOf[String];
+        else throw new Exception("Value is the not the correct type for index $index in message hl7fixed")
+      }
+      case 1 => {
+        if (value.isInstanceOf[Long])
+          this.clm_id = value.asInstanceOf[Long];
+        else throw new Exception("Value is the not the correct type for index $index in message hl7fixed")
+      }
+      case 2 => {
+        if (value.isInstanceOf[Int])
+          this.clm_from_dt = value.asInstanceOf[Int];
+        else throw new Exception("Value is the not the correct type for index $index in message hl7fixed")
+      }
+      case 3 => {
+        if (value.isInstanceOf[Int])
+          this.clm_thru_dt = value.asInstanceOf[Int];
+        else throw new Exception("Value is the not the correct type for index $index in message hl7fixed")
+      }
+      case 4 => {
+        if (value.isInstanceOf[Int])
+          this.bene_birth_dt = value.asInstanceOf[Int];
+        else throw new Exception("Value is the not the correct type for index $index in message hl7fixed")
+      }
+      case 5 => {
+        if (value.isInstanceOf[Int])
+          this.bene_death_dt = value.asInstanceOf[Int];
+        else throw new Exception("Value is the not the correct type for index $index in message hl7fixed")
+      }
+      case 6 => {
+        if (value.isInstanceOf[Int])
+          this.bene_sex_ident_cd = value.asInstanceOf[Int];
+        else throw new Exception("Value is the not the correct type for index $index in message hl7fixed")
+      }
+      case _ => throw new Exception(s"$index is a bad index for message hl7Fixed");
     }
   }
 

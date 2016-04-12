@@ -507,7 +507,7 @@ object PostMessageExecutionQueue {
     val (txnIdsRangeForPartition, txnIdsRangeForNode)  = nodeContext.getEnvCtxt().getTransactionRanges
 
     NodeLevelTransService.init(zkConnectString, zkSessionTimeoutMs, zkConnectionTimeoutMs, zkNodeBasePath, txnIdsRangeForNode,
-      nodeContext.getEnvCtxt().getSystemCatalogDatastore, nodeContext.getEnvCtxt().getJarPaths())
+      nodeContext.getEnvCtxt().getSystemCatalogDatastore(), nodeContext.getEnvCtxt().getJarPaths())
     val tmpTransService = new SimpleTransService
     tmpTransService.init(txnIdsRangeForPartition)
     transService  = tmpTransService
