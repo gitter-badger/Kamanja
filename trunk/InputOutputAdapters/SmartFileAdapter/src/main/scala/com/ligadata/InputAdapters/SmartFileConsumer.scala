@@ -13,7 +13,14 @@ import org.apache.logging.log4j.LogManager
 import org.json4s.jackson.Serialization
 
 import scala.actors.threadpool.{Executors, ExecutorService}
-import scala.collection.mutable.{MultiMap, HashMap, ArrayBuffer}
+import scala.collection.mutable.{Map, MultiMap, HashMap, ArrayBuffer}
+
+case class BufferLeftoversArea(workerNumber: Int, leftovers: Array[Byte], relatedChunk: Int)
+case class BufferToChunk(len: Int, payload: Array[Byte], chunkNumber: Int, relatedFileHandler: SmartFileHandler, firstValidOffset: Int, isEof: Boolean, partMap: scala.collection.mutable.Map[Int,Int])
+case class SmartFileMessage(msg: Array[Byte], offsetInFile: Int, isLast: Boolean, isLastDummy: Boolean, relatedFileHandler: SmartFileHandler, partMap: scala.collection.mutable.Map[Int,Int], msgOffset: Long)
+case class FileStatus(status: Int, offset: Long, createDate: Long)
+case class OffsetValue (lastGoodOffset: Int, partitionOffsets: Map[Int,Int])
+case class EnqueuedFileHandler(fileHandler: SmartFileHandler, offset: Int, createDate: Long,  partMap: scala.collection.mutable.Map[Int,Int])
 
 
 class SmartFileConsumerContext{
@@ -24,6 +31,13 @@ class SmartFileConsumerContext{
   //var fileOffsetCacheKey : String = _
   var statusUpdateCacheKey : String = _
   var statusUpdateInterval : Int = _
+}
+
+/**
+  * Counter of buffers used by the FileProcessors... there is a limit on how much memory File Consumer can use up.
+  */
+object BufferCounters {
+  val inMemoryBuffersCntr = new java.util.concurrent.atomic.AtomicLong()
 }
 
 /**
@@ -98,6 +112,26 @@ class SmartFileConsumer(val inputConfig: AdapterConfiguration, val execCtxtObj: 
 
   //add the node callback
   private def initializeNode: Unit ={
+    if(nodeContext == null)
+      LOG.debug("Smart File Consumer - nodeContext = null" )
+
+    if (nodeContext.getEnvCtxt() == null)
+      LOG.debug("Smart File Consumer - nodeContext.getEnvCtxt() = null" )
+
+    if(envContext == null)
+      LOG.debug("Smart File Consumer - envContext = null" )
+    else{
+      if(envContext.getClusterInfo() == null)
+        LOG.debug("Smart File Consumer - envContext.getClusterInfo() = null")
+    }
+
+    if(clusterStatus == null)
+      LOG.debug("Smart File Consumer - clusterStatus = null")
+    else{
+      LOG.debug("Smart File Consumer - clusterStatus.nodeId = " + clusterStatus.nodeId)
+      LOG.debug("Smart File Consumer - clusterStatus.leaderNodeId = " +clusterStatus.leaderNodeId)
+    }
+
     if (initialized == false)
       envContext.createListenerForCacheKey(filesParallelismParentPath + "/" + envContext.getClusterInfo().nodeId, filesParallelismCallback)
 

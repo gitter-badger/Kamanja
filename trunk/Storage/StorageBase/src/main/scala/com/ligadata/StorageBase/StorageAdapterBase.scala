@@ -6,12 +6,17 @@
  */
 package com.ligadata.StorageBase
 
-import com.ligadata.Exceptions.{NotImplementedFunctionException, InvalidArgumentException}
-import com.ligadata.KamanjaBase.{AdaptersSerializeDeserializers, TransactionContext, ContainerInterface}
+import com.ligadata.Exceptions.{KamanjaException, NotImplementedFunctionException, InvalidArgumentException}
+import com.ligadata.HeartBeat.{MonitorComponentInfo, Monitorable}
+import com.ligadata.KamanjaBase.{NodeContext, AdaptersSerializeDeserializers, TransactionContext, ContainerInterface}
 import com.ligadata.KvBase.{ Key, TimeRange }
 import com.ligadata.Utils.{ KamanjaLoaderInfo }
+import com.ligadata.kamanja.metadata.AdapterInfo
 
 import scala.collection.mutable.ArrayBuffer
+//import org.json4s._
+//import org.json4s.JsonDSL._
+//import org.json4s.jackson.JsonMethods._
 
 case class Value(schemaId: Int, serializerType: String, serializedInfo: Array[Byte])
 
@@ -224,4 +229,48 @@ trait Transaction extends DataStoreOperations {
 // Storage Adapter Object to create storage adapter
 trait StorageAdapterFactory {
   def CreateStorageAdapter(kvManagerLoader: KamanjaLoaderInfo, datastoreConfig: String): DataStore
+//  final def CreateStorageAdapter(nodeCtxt: NodeContext, kvManagerLoader: KamanjaLoaderInfo, adapterInfo: AdapterInfo): StorageAdapter = {
+//    val datastore = CreateStorageAdapter(kvManagerLoader, adapterInfo.FullAdapterConfig)
+//    new StorageAdapter(nodeCtxt, adapterInfo, datastore)
+//  }
 }
+
+class StorageAdapterConfiguration {
+  var Name: String = _
+  var tenantId: String = _
+  var adapterInfo: AdapterInfo = _
+}
+
+class StorageAdapter(nodeCtxt: NodeContext, adapterInfo: AdapterInfo, datastore: DataStore) extends AdaptersSerializeDeserializers with Monitorable {
+  // NodeContext
+  val _nodeContext: NodeContext = nodeCtxt
+  val _TYPE_STORAGE = "Storage_Adapter"
+  val _startTime: String = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
+
+  val _storageConfig: StorageAdapterConfiguration = {
+    val cfg = new StorageAdapterConfiguration
+    cfg.Name = adapterInfo.Name
+    cfg.tenantId = adapterInfo.TenantId
+    cfg.adapterInfo = adapterInfo
+    cfg
+  }
+
+  var _datastore: DataStore = datastore
+
+//  def write(tnxCtxt: TransactionContext, outputContainers: Array[ContainerInterface]): Unit
+//  def read(tnxCtxt: TransactionContext, outputContainers: Array[ContainerInterface]): Unit
+
+  def Shutdown: Unit = {
+    if (_datastore != null)
+      _datastore.Shutdown()
+    _datastore = null
+  }
+
+  def Category = "Storage"
+
+  def getComponentStatusAndMetrics: MonitorComponentInfo = {
+    val lastSeen = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
+    MonitorComponentInfo(_TYPE_STORAGE, _storageConfig.Name, _storageConfig.Name, _startTime, lastSeen, "{}")
+  }
+}
+

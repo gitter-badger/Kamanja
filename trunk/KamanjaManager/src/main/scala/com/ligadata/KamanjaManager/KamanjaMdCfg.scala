@@ -17,6 +17,8 @@
 
 package com.ligadata.KamanjaManager
 
+import com.ligadata.StorageBase.StorageAdapter
+import com.ligadata.keyvaluestore.KeyValueManager
 import org.apache.logging.log4j.{ Logger, LogManager }
 import com.ligadata.kamanja.metadata._
 import com.ligadata.kamanja.metadata.MdMgr._
@@ -149,6 +151,7 @@ object KamanjaMdCfg {
         (a._2.TypeString.compareToIgnoreCase("Validate") == 0) ||
         (a._2.TypeString.compareToIgnoreCase("Output") == 0) ||
         (a._2.TypeString.compareToIgnoreCase("FailedEvents") == 0) ||
+        (a._2.TypeString.compareToIgnoreCase("Storage") == 0) ||
         (a._2.TypeString.compareToIgnoreCase("Status") == 0)) {
         val jar = a._2.JarName
         val depJars = if (a._2.DependencyJars != null) a._2.DependencyJars.map(str => str.trim).filter(str => str.size > 0).toSet else null
@@ -160,7 +163,7 @@ object KamanjaMdCfg {
           allJarsToBeValidated ++= depJars.map(j => Utils.GetValidJarFile(jarPaths, j))
         }
       } else {
-        LOG.error("Found unhandled adapter type %s for adapter %s".format(a._2.TypeString, a._2.Name))
+        LOG.error("Found unhandled adapter of type %s for adapter %s".format(a._2.TypeString, a._2.Name))
         return false
       }
     })
@@ -296,7 +299,7 @@ object KamanjaMdCfg {
     null
   }
 
-  def LoadAdapters(inputAdapters: ArrayBuffer[InputAdapter], outputAdapters: ArrayBuffer[OutputAdapter]): Boolean = {
+  def LoadAdapters(inputAdapters: ArrayBuffer[InputAdapter], outputAdapters: ArrayBuffer[OutputAdapter], storageAdapters: ArrayBuffer[StorageAdapter]): Boolean = {
     LOG.info("Loading Adapters started @ " + Utils.GetCurDtTmStr)
     val s0 = System.nanoTime
     val allAdapters = mdMgr.Adapters
@@ -306,23 +309,25 @@ object KamanjaMdCfg {
     val outputAdaps = scala.collection.mutable.Map[String, AdapterInfo]()
 //    val statusAdaps = scala.collection.mutable.Map[String, AdapterInfo]()
 //    val failedEventsAdaps = scala.collection.mutable.Map[String, AdapterInfo]()
+    val storageAdaps = scala.collection.mutable.Map[String, AdapterInfo]()
 
     allAdapters.foreach(a => {
       if (a._2.TypeString.compareToIgnoreCase("Input") == 0) {
         inputAdaps(a._1.toLowerCase) = a._2
-//      } else if (a._2.TypeString.compareToIgnoreCase("Validate") == 0) {
-//        validateAdaps(a._1.toLowerCase) = a._2
+      } else if (a._2.TypeString.compareToIgnoreCase("Storage") == 0) {
+        storageAdaps(a._1.toLowerCase) = a._2
       } else if (a._2.TypeString.compareToIgnoreCase("Output") == 0) {
         outputAdaps(a._1.toLowerCase) = a._2
-//      } else if (a._2.TypeString.compareToIgnoreCase("Status") == 0) {
-//        statusAdaps(a._1.toLowerCase) = a._2
-//      } else if (a._2.TypeString.compareToIgnoreCase("FailedEvents") == 0) {
-//        failedEventsAdaps(a._1.toLowerCase) = a._2
       } else {
         LOG.error("Found unhandled adapter type %s for adapter %s".format(a._2.TypeString, a._2.Name))
         return false
       }
     })
+
+    // Get output adapter
+    LOG.debug("Getting Storage Adapters")
+    if (!LoadStorageAdapsForCfg(storageAdaps, storageAdapters, KamanjaMetadata.gNodeContext))
+      return false
 
     // Get status adapter
 //    LOG.debug("Getting Status Adapter")
@@ -354,6 +359,46 @@ object KamanjaMdCfg {
     LOG.info("Loading Adapters done @ " + Utils.GetCurDtTmStr + totaltm)
 
     true
+  }
+
+  private def CreateStorageAdapterFromConfig(adapterInfo: AdapterInfo, nodeContext: NodeContext): StorageAdapter = {
+    if (adapterInfo == null || nodeContext == null) return null
+
+    var allJars: collection.immutable.Set[String] = null
+    if (adapterInfo.dependencyJars != null && adapterInfo.jarName != null) {
+      allJars = (adapterInfo.dependencyJars.toSet + adapterInfo.jarName)
+    } else if (adapterInfo.dependencyJars != null) {
+      allJars = adapterInfo.dependencyJars.toSet
+    } else if (adapterInfo.jarName != null) {
+      allJars = collection.immutable.Set(adapterInfo.jarName)
+    }
+
+    val datastore = KeyValueManager.Get(allJars, adapterInfo.FullAdapterConfig)
+
+    if (datastore != null)
+      return new StorageAdapter(nodeContext, adapterInfo, datastore)
+    null
+  }
+
+  private def LoadStorageAdapsForCfg(adaps: scala.collection.mutable.Map[String, AdapterInfo], storageAdapters: ArrayBuffer[StorageAdapter], nodeContext: NodeContext): Boolean = {
+    // ConfigurationName
+    adaps.foreach(ac => {
+      try {
+        val adapter = CreateStorageAdapterFromConfig(ac._2, nodeContext)
+        if (adapter == null) return false
+        storageAdapters += adapter
+      } catch {
+        case e: Exception => {
+          LOG.error("Failed to get output adapter for %s".format(ac), e)
+          return false
+        }
+        case e: Throwable => {
+          LOG.error("Failed to get output adapter for %s".format(ac), e)
+          return false
+        }
+      }
+    })
+    return true
   }
 
   private def CreateOutputAdapterFromConfig(statusAdapterCfg: AdapterConfiguration, nodeContext: NodeContext): OutputAdapter = {

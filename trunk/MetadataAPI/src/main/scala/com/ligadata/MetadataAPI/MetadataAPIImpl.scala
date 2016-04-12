@@ -1286,11 +1286,11 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
         }
 
         allJars.foreach(jar => {
-          if (jar != null && jar.trim.size > 0) {
+          if (jar != null && jar.trim.size > 0 && PersistenceUtils.excludeSystemJars.contains(jar.trim) == false) {
             curJar = jar
             try {
               // download only if it doesn't already exists
-              val b = IsDownloadNeeded(jar, obj)
+              val b = IsDownloadNeeded(jar, obj) // Already checking for PersistenceUtils.excludeSystemJars.contains(jar.trim) == false
               if (b == true) {
                 val key = jar
                 val mObj = GetObject(key, "jar_store")

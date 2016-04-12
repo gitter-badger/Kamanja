@@ -294,7 +294,7 @@ cp $srcPath/Utils/ClusterInstaller/ClusterInstallerDriver/src/main/resources/log
 # copy models, messages, containers, config, scripts, types  messages data prep
 # *******************************
 
-mkdir $installPath/Kamanja-$ver210/input/SampleApplications/template/script
+mkdir -p $installPath/Kamanja-$ver210/input/SampleApplications/template/script
 
 #HelloWorld
 cd $srcPath/SampleApplication/HelloWorld/data
@@ -438,7 +438,7 @@ if [ "$migration2_10libsCopiesFor2_11" == "false" ]; then
 	cp $srcPath/Utils/Migrate/SourceVersion/MigrateFrom_V_1_1/target/scala-2.10/migratefrom_v_1_1_2.10-1.0.jar $kamanjainstallsystemlib
 	cp $srcPath/Utils/Migrate/SourceVersion/MigrateFrom_V_1_2/target/scala-2.10/migratefrom_v_1_2_2.10-1.0.jar $kamanjainstallsystemlib
 	cp $srcPath/Utils/Migrate/SourceVersion/MigrateFrom_V_1_3/target/scala-2.10/migratefrom_v_1_3_2.10-1.0.jar $kamanjainstallsystemlib
-	cp $srcPath/Utils/Migrate/DestnationVersion/MigrateTo_V_1_4/target/scala-2.10/migrateto_v_1_4_2.10-1.0.jar $kamanjainstallsystemlib
+	cp $srcPath/Utils/Migrate/DestinationVersion/MigrateTo_V_1_4/target/scala-2.10/migrateto_v_1_4_2.10-1.0.jar $kamanjainstallsystemlib
 fi
 
 #Now do full build of 2.11
@@ -582,7 +582,7 @@ cp $srcPath/Utils/ClusterInstaller/ClusterInstallerDriver/src/main/resources/log
 # copy models, messages, containers, config, scripts, types  messages data prep
 # *******************************
 
-mkdir $installPath/Kamanja-$ver211/input/SampleApplications/template/script
+mkdir -p $installPath/Kamanja-$ver211/input/SampleApplications/template/script
 
 #HelloWorld
 cd $srcPath/SampleApplication/HelloWorld/data

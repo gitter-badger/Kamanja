@@ -176,6 +176,7 @@ class SmartFilePartitionUniqueRecordKey extends PartitionUniqueRecordKey {
   val json =
     ("Version" -> Version) ~
       ("Type" -> Type) ~
+      ("Name" -> Name) ~
       ("PartitionId" -> PartitionId)
     compact(render(json))
   }
@@ -184,6 +185,7 @@ class SmartFilePartitionUniqueRecordKey extends PartitionUniqueRecordKey {
   implicit val jsonFormats: Formats = DefaultFormats
     val keyData = parse(key).extract[SmartFileKeyData]
     if (keyData.Version == Version && keyData.Type.compareTo(Type) == 0) {
+      Name = keyData.Name
       PartitionId = keyData.PartitionId
     }
     // else { } // Not yet handling other versions

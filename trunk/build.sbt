@@ -66,7 +66,7 @@ lazy val KamanjaBase = project.in(file("KamanjaBase")).configs(TestConfigs.all: 
 
 lazy val DataDelimiters = project.in(file("DataDelimiters")).configs(TestConfigs.all: _*).settings(TestSettings.settings: _*).dependsOn(ExtDependencyLibs % "provided", ExtDependencyLibs2 % "provided")
 
-lazy val SmartFileAdapter = project.in(file("InputOutputAdapters/SmartFileAdapter")).configs(TestConfigs.all: _*).settings(TestSettings.settings: _*).dependsOn(ExtDependencyLibs % "provided", ExtDependencyLibs2 % "provided", InputOutputAdapterBase, Exceptions, DataDelimiters, MetadataAPI)
+lazy val SmartFileAdapter = project.in(file("InputOutputAdapters/SmartFileAdapter")).configs(TestConfigs.all: _*).settings(TestSettings.settings: _*).dependsOn(ExtDependencyLibs % "provided", ExtDependencyLibs2 % "provided", InputOutputAdapterBase, Exceptions, DataDelimiters)
 
 lazy val MessageCompiler = project.in(file("MessageCompiler")).configs(TestConfigs.all: _*).settings(TestSettings.settings: _*).dependsOn(Metadata, MetadataBootstrap, Exceptions).dependsOn(ExtDependencyLibs % "provided", ExtDependencyLibs2 % "provided")
 

@@ -4,6 +4,7 @@ package com.ligadata.KamanjaManager
 import com.ligadata.HeartBeat.MonitoringContext
 import com.ligadata.KamanjaBase._
 import com.ligadata.InputOutputAdapterInfo.{ ExecContext, InputAdapter, OutputAdapter, ExecContextFactory, PartitionUniqueRecordKey, PartitionUniqueRecordValue }
+import com.ligadata.StorageBase.StorageAdapter
 import com.ligadata.ZooKeeper.CreateClient
 import org.json4s.jackson.JsonMethods._
 
@@ -225,6 +226,7 @@ class KamanjaManager extends Observer {
 
   private val inputAdapters = new ArrayBuffer[InputAdapter]
   private val outputAdapters = new ArrayBuffer[OutputAdapter]
+  private val storageAdapters = new ArrayBuffer[StorageAdapter]
 //  private val statusAdapters = new ArrayBuffer[OutputAdapter]
 //  private val validateInputAdapters = new ArrayBuffer[InputAdapter]
 
@@ -353,6 +355,25 @@ class KamanjaManager extends Observer {
     })
 
     outputAdapters.clear
+
+    storageAdapters.foreach(sa => {
+      try {
+        sa.Shutdown
+      } catch {
+        case fae: FatalAdapterException => {
+          LOG.error("Storage adapter failed to shutdown", fae)
+        }
+        case e: Exception => {
+          LOG.error("Storage adapter failed to shutdown", e)
+        }
+        case e: Throwable => {
+          LOG.error("Storage adapter failed to shutdown", e)
+        }
+      }
+    })
+
+    storageAdapters.clear
+
 //
 //    statusAdapters.foreach(oa => {
 //      try {
@@ -468,7 +489,6 @@ class KamanjaManager extends Observer {
 
       KamanjaMetadata.envCtxt.setNodeInfo(KamanjaConfiguration.nodeId.toString, KamanjaConfiguration.clusterId)
 
-
       KamanjaMetadata.gNodeContext = new NodeContext(KamanjaMetadata.envCtxt)
 
       PostMessageExecutionQueue.init(KamanjaMetadata.gNodeContext)
@@ -476,7 +496,7 @@ class KamanjaManager extends Observer {
       LOG.debug("Loading Adapters")
       // Loading Adapters (Do this after loading metadata manager & models & Dimensions (if we are loading them into memory))
 
-      retval = KamanjaMdCfg.LoadAdapters(inputAdapters, outputAdapters)
+      retval = KamanjaMdCfg.LoadAdapters(inputAdapters, outputAdapters, storageAdapters)
 
       if (retval) {
         LOG.debug("Initialize Metadata Manager")
@@ -509,7 +529,7 @@ class KamanjaManager extends Observer {
           }
         }
 
-        KamanjaLeader.Init(KamanjaConfiguration.nodeId.toString, zkConnectString, engineLeaderZkNodePath, engineDistributionZkNodePath, adaptersStatusPath, inputAdapters, outputAdapters, KamanjaMetadata.envCtxt, zkSessionTimeoutMs, zkConnectionTimeoutMs, dataChangeZkNodePath)
+        KamanjaLeader.Init(KamanjaConfiguration.nodeId.toString, zkConnectString, engineLeaderZkNodePath, engineDistributionZkNodePath, adaptersStatusPath, inputAdapters, outputAdapters, storageAdapters, KamanjaMetadata.envCtxt, zkSessionTimeoutMs, zkConnectionTimeoutMs, dataChangeZkNodePath)
       }
 
       /*
@@ -835,6 +855,7 @@ class KamanjaManager extends Observer {
 
     inputAdapters.foreach(ad => { adapterMetricInfo += ad.getComponentStatusAndMetrics })
     outputAdapters.foreach(ad => { adapterMetricInfo += ad.getComponentStatusAndMetrics })
+    storageAdapters.foreach(ad => { adapterMetricInfo += ad.getComponentStatusAndMetrics })
 //    statusAdapters.foreach(ad => { adapterMetricInfo += ad.getComponentStatusAndMetrics })
 //    failedEventsAdapters.foreach(ad => { adapterMetricInfo += ad.getComponentStatusAndMetrics })
 //    validateInputAdapters.foreach(ad => { adapterMetricInfo += ad.getComponentStatusAndMetrics })

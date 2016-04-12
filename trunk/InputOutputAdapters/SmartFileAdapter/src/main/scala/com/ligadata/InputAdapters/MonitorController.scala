@@ -16,6 +16,8 @@ class MonitorController(adapterConfig : SmartFileAdapterConfiguration,
                         newFileDetectedCallback :(String) => Unit,
                        initialFiles :  Array[(String, Int, String, Int)]) {
 
+  val NOT_RECOVERY_SITUATION = -1
+
   private val bufferingQ_map: scala.collection.mutable.Map[SmartFileHandler, (Long, Long, Int)] = scala.collection.mutable.Map[SmartFileHandler, (Long, Long, Int)]()
   private val bufferingQLock = new Object
   private var smartFileMonitor : SmartFileMonitor = null
@@ -113,7 +115,7 @@ class MonitorController(adapterConfig : SmartFileAdapterConfiguration,
                   // told otherwise by BofA, not sure what else we can do here.
                   if (thisFileOrigLength > 0 && MonitorUtils.isValidFile(fileHandler)) {
                     logger.info("SMART FILE CONSUMER (MonitorController):  File READY TO PROCESS " + fileHandler.getFullPath)
-                    enQFile(fileTuple._1, FileProcessor.NOT_RECOVERY_SITUATION, fileHandler.lastModified)
+                    enQFile(fileTuple._1, NOT_RECOVERY_SITUATION, fileHandler.lastModified)
                     bufferingQ_map.remove(fileTuple._1)
                   } else {
                     // Here becayse either the file is sitll of len 0,or its deemed to be invalid.

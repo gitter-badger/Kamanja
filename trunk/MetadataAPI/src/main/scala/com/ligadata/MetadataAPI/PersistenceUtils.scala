@@ -695,16 +695,18 @@ object PersistenceUtils {
         allJars.foreach(jar => {
           curJar = jar
           try {
-            // download only if it doesn't already exists
-            val b = MetadataAPIImpl.IsDownloadNeeded(jar, obj)
-            if (b == true) {
-              val key = jar
-              val mObj = GetObject(key, "jar_store")
-              val ba = mObj._2.asInstanceOf[Array[Byte]]
-              val jarName = dirPath + "/" + jar
-              MetadataAPIImpl.PutArrayOfBytesToJar(ba, jarName)
-            } else {
-              logger.debug("The jar " + curJar + " was already downloaded... ")
+            if (PersistenceUtils.excludeSystemJars.contains(jar.trim) == false) {
+              // download only if it doesn't already exists
+              val b = MetadataAPIImpl.IsDownloadNeeded(jar, obj)
+              if (b == true) {
+                val key = jar
+                val mObj = GetObject(key, "jar_store")
+                val ba = mObj._2.asInstanceOf[Array[Byte]]
+                val jarName = dirPath + "/" + jar
+                MetadataAPIImpl.PutArrayOfBytesToJar(ba, jarName)
+              } else {
+                logger.debug("The jar " + curJar + " was already downloaded... ")
+              }
             }
           } catch {
             case e: Exception => {
