@@ -553,6 +553,7 @@ class AddModelSpec extends FunSpec with LocalTestFixtures with BeforeAndAfter wi
 
 	And("Call AddModel MetadataAPI Function to add Model from " + file.getPath)
 	var modStr = Source.fromFile(file).mkString
+	logger.info("scala model => " + modStr)
 	res = MetadataAPIImpl.AddModel(ModelType.SCALA, // modelType
 				       modStr, // input
 				       userid,   // optUserid

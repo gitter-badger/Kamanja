@@ -31,7 +31,7 @@ class HelloWorld2Model(factory: ModelInstanceFactory) extends ModelInstance(fact
   
    override def execute(txnCtxt: TransactionContext, outputDefault: Boolean):ModelResultBase = {
      
-     var helloWorld : helloworld_msg_def =  txnCtxt.getMessage().asInstanceOf[helloworld_msg_def]
+     var helloWorld : helloworld_msg_def_2 =  txnCtxt.getMessage().asInstanceOf[helloworld_msg_def_2]
      
         if(helloWorld.score!=1)
           return null;
