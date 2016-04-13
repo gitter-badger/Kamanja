@@ -234,6 +234,8 @@ class MigrateTo_V_1_4 extends MigratableTo {
     _metaDataStoreDb = GetDataStoreHandle(toVersionJarPaths, metaDataStoreInfo)
     _dataStoreDb = GetDataStoreHandle(toVersionJarPaths, dataStoreInfo)
 
+    MetadataAPIImpl.CreateMetadataTables
+
     if (_statusStoreInfo.size > 0) {
       _statusStoreDb = GetDataStoreHandle(toVersionJarPaths, _statusStoreInfo)
     }

@@ -394,7 +394,8 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
     try {
       if (containerList.contains(containerName)) {
         return isMetadataMap(containerName)
-      } else {
+      }
+      lock.synchronized {
         val isMetadata = getIsMetadataFlag(containerName)
 	var fullTableName = toFullTableName(containerName)
 	if ( ! admin.tableExists(fullTableName)) {
