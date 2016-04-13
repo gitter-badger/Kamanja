@@ -43,7 +43,7 @@ class MessageGenerator {
       messageGenerator = messageGenerator.append(msgConstants.newline);
       messageGenerator = messageGenerator.append(classGen(message));
       messageGenerator = messageGenerator.append(getMessgeBasicDetails(message));
-	  messageGenerator = messageGenerator.append(getAttributeTypes(message));	  
+      messageGenerator = messageGenerator.append(getAttributeTypes(message));	  
       messageGenerator = messageGenerator.append(msgConstants.newline + keyTypesMap(message.Elements));
       messageGenerator = messageGenerator.append(methodsFromMessageInterface(message));
       messageGenerator = messageGenerator.append(msgConstants.newline + generateParitionKeysData(message) + msgConstants.newline);

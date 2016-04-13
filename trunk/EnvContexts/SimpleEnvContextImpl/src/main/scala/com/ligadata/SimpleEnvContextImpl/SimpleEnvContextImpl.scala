@@ -2698,7 +2698,7 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
     }
   }
 
-  override def setDataToZNode(zNodePath: String, value: Array[Byte]): Unit = {
+  private def setData2ZNode(zNodePath: String, value: Array[Byte]): Unit = {
     if (!hasZkConnectionString)
       throw new KamanjaException("Zookeeper information is not yet set", null)
     val MAX_ZK_RETRIES = 1
@@ -2721,6 +2721,10 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
             throw new KamanjaException("Connection to ZK does not exists", null)
           }
         } catch {
+          case e:org.apache.zookeeper.KeeperException.NoNodeException => {
+            finalException = e
+            // No need to rerun. Just exit
+          }
           case e: Throwable => {
             finalException = e
             retriesAttempted += 1
@@ -2743,6 +2747,38 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
     if (finalException != null) {
       throw finalException
     }
+  }
+
+  override def setDataToZNode(zNodePath: String, value: Array[Byte]): Unit = {
+    var tryAgain = true
+    var retriesAttempted = 0
+    var finalException: Throwable = null
+    while (tryAgain && retriesAttempted <= 1) {
+      tryAgain = false
+      finalException = null
+      try {
+        setData2ZNode(zNodePath, value)
+      } catch {
+        case e: org.apache.zookeeper.KeeperException.NoNodeException => {
+          finalException = e
+          try {
+            CreateClient.CreateNodeIfNotExists(_zkConnectString, zNodePath)
+            tryAgain = true
+            retriesAttempted += 1
+          } catch {
+            case e: Throwable => {
+              finalException = e
+            }
+          }
+        }
+        case e: Throwable => {
+          finalException = e
+        }
+      }
+    }
+
+    if (finalException != null)
+      throw finalException
   }
 
   override def getDataFromZNode(zNodePath: String): Array[Byte] = {
@@ -2875,7 +2911,7 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
   def createListenerForCacheChildern(listenPath: String, ListenCallback: (String, String, String) => Unit): Unit = {
 
     val sendOne = (evntTyp: String, key: String, value: Array[Byte], other: Array[(String, Array[Byte])]) => {
-      ListenCallback(evntTyp, key, new String(value))
+      ListenCallback(evntTyp, key, if (value != null) new String(value) else null)
     }
     createZkPathChildrenCacheListener(listenPath, false, sendOne)
   }

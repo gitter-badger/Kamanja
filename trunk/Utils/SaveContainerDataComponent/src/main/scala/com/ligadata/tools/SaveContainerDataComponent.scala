@@ -297,7 +297,7 @@ class SaveContainerDataCompImpl extends LogTrait with MdBaseResolveInfo {
 
     // If we have cached obj, just create from it
     if (cachedObj != null) {
-      if (cachedObj.getContainerType == ContainerFactoryInterface.ContainerType.MESSAGE)
+      if (cachedObj.getContainerType == ContainerTypes.ContainerType.MESSAGE)
         return cachedObj.createInstance.asInstanceOf[ContainerInterface]
       return cachedObj.createInstance.asInstanceOf[ContainerInterface]
     }

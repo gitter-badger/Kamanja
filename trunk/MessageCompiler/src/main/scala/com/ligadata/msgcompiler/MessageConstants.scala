@@ -37,8 +37,8 @@ class MessageConstants {
   val createInstance = "%soverride def createInstance: %s = new %s(%s); %s"; //ContainerInterface = new CustAlertHistory()
   val containerInstanceType = "ContainerInterface";
   val messageInstanceType = "MessageInterface";
-  val getContainerTypeMsg = "%soverride def getContainerType: ContainerFactoryInterface.ContainerType = ContainerFactoryInterface.ContainerType.MESSAGE";
-  val getContainerTypeContainer = "%soverride def getContainerType: ContainerFactoryInterface.ContainerType = ContainerFactoryInterface.ContainerType.CONTAINER";
+  val getContainerTypeMsg = "%soverride def getContainerType: ContainerTypes.ContainerType = ContainerTypes.ContainerType.MESSAGE";
+  val getContainerTypeContainer = "%soverride def getContainerType: ContainerTypes.ContainerType = ContainerTypes.ContainerType.CONTAINER";
 
   val createNewContainer = "%soverride def CreateNewContainer: %s = new %s(); %s"; //ContainerInterface = new CustAlertHistory()
   val createNewMessage = "%soverride def CreateNewMessage: %s = new %s(); %s"; //ContainerInterface = new CustAlertHistory()
@@ -92,14 +92,16 @@ class MessageConstants {
 
   def importStatements() = {
     """
-import org.json4s.jackson.JsonMethods._
-import org.json4s.DefaultFormats
-import org.json4s.Formats
-import com.ligadata.KamanjaBase.{ AttributeTypeInfo, AttributeValue, ContainerFactoryInterface, ContainerInterface, MessageFactoryInterface, MessageInterface, TimePartitionInfo, ContainerOrConceptFactory, RDDObject, JavaRDDObject, ContainerOrConcept}
-import com.ligadata.BaseTypes._
+import org.json4s.jackson.JsonMethods._;
+import org.json4s.DefaultFormats;
+import org.json4s.Formats;
+import com.ligadata.KamanjaBase._;
+import com.ligadata.BaseTypes._;
 import com.ligadata.Exceptions.StackTrace;
 import org.apache.logging.log4j.{ Logger, LogManager }
-import java.util.Date
+import java.util.Date;
+import java.io.{ DataInputStream, DataOutputStream, ByteArrayOutputStream }
+
     
  """
   }
@@ -418,4 +420,22 @@ import java.util.Date
  """
   }
 
+ def classDeprecatedMethods(msg: Message) = {
+    """
+  override def IsFixed: Boolean = """ + msg.Name + """.IsFixed;
+  override def IsKv: Boolean = """ + msg.Name + """.IsKv;
+  override def CanPersist: Boolean = """ + msg.Name + """.CanPersist;
+  override def FullName: String = """ + msg.Name + """.FullName
+  override def NameSpace: String = """ + msg.Name + """.NameSpace
+  override def Name: String = """ + msg.Name + """.Name
+  override def Version: String = """ + msg.Name + """.Version
+  override def isMessage: Boolean = """ + msg.Name + """.isMessage;
+  override def isContainer: Boolean = """ + msg.Name + """.isContainer();
+  override def PartitionKeyData: Array[String] = getPartitionKey
+  override def PrimaryKeyData: Array[String] = getPrimaryKey
+  def populate(inputdata: InputData) = { throw new Exception("populate method in message is deprecated "); }
+  override def Serialize(dos: DataOutputStream): Unit = { throw new Exception("Serialize method in message is deprecated   "); };
+  override def Deserialize(dis: DataInputStream, mdResolver: MdBaseResolveInfo, loader: java.lang.ClassLoader, savedDataVersion: String): Unit = { throw new Exception("Deserialize method in message is deprecated   "); };
+"""
+  }
 }

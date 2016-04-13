@@ -20,11 +20,14 @@ package com.ligadata.KamanjaManager
 import com.ligadata.KamanjaBase._
 import com.ligadata.InputOutputAdapterInfo._
 import com.ligadata.KvBase.{ Key }
+import com.ligadata.StorageBase.StorageAdapter
+import com.ligadata.kamanja.metadata.AdapterMessageBinding
+import com.ligadata.kamanja.metadata.MdMgr._
 
 import org.apache.logging.log4j.{ Logger, LogManager }
-import org.json4s._
-import org.json4s.JsonDSL._
-import org.json4s.jackson.JsonMethods._
+//import org.json4s._
+//import org.json4s.JsonDSL._
+//import org.json4s.jackson.JsonMethods._
 import scala.collection.mutable.ArrayBuffer
 import com.ligadata.Exceptions.{ FatalAdapterException, MessagePopulationException, StackTrace }
 
@@ -36,6 +39,12 @@ import scala.actors.threadpool.{ ExecutorService }
 // There are no locks at this moment. Make sure we don't call this with multiple threads for same object
 class ExecContextImpl(val input: InputAdapter, val curPartitionKey: PartitionUniqueRecordKey, val nodeContext: NodeContext) extends ExecContext {
   private val LOG = LogManager.getLogger(getClass);
+  private var adapterChangedCntr: Long = -1
+
+  // Mapping Adapter to Msgs
+//  private var inputAdapters = Array[(InputAdapter, Array[AdapterMessageBinding])]()
+  private var outputAdapters = Array[(OutputAdapter, Array[AdapterMessageBinding])]()
+  private var storageAdapters = Array[(StorageAdapter, Array[AdapterMessageBinding])]()
 
 //  NodeLevelTransService.init(KamanjaConfiguration.zkConnectString, KamanjaConfiguration.zkSessionTimeoutMs, KamanjaConfiguration.zkConnectionTimeoutMs, KamanjaConfiguration.zkNodeBasePath, KamanjaConfiguration.txnIdsRangeForNode, KamanjaConfiguration.dataDataStoreInfo, KamanjaConfiguration.jarPaths)
 //
@@ -111,7 +120,64 @@ class ExecContextImpl(val input: InputAdapter, val curPartitionKey: PartitionUni
 
   protected override def commitData(txnCtxt: TransactionContext): Unit = {
     try {
+      val adapterChngCntr = KamanjaManager.getAdapterChangedCntr
+      if (adapterChngCntr != adapterChangedCntr) {
+        val (ins, outs, storages, cntr) = KamanjaManager.getAllAdaptersInfo
+        adapterChangedCntr = cntr
+
+        val mdMgr = GetMdMgr
+
+//        val newIns = ins.map(in => {
+//          (in, mdMgr.BindingsForAdapter(in.inputConfig.Name).map(bind => bind._2).toArray)
+//        })
+
+        val newOuts = outs.map(out => {
+          (out, mdMgr.BindingsForAdapter(out.inputConfig.Name).map(bind => bind._2).toArray)
+        })
+
+        val newStorages = storages.map(storage => {
+          (storage, mdMgr.BindingsForAdapter(storage._storageConfig.Name).map(bind => bind._2).toArray)
+        })
+
+//        inputAdapters = newIns
+        outputAdapters = newOuts
+        storageAdapters = newStorages
+      }
+
+      //FIXME:- Fix this
+      //BUGBUG:: Fix this
+      outputAdapters.foreach(adap => {
+        val sendSerializer = ArrayBuffer[String]();
+        val sendSerOptions = ArrayBuffer[scala.collection.immutable.Map[String,String]]();
+        val sendContainers = ArrayBuffer[ContainerInterface]();
+        // val sendInfo = ArrayBuffer[(String, scala.collection.immutable.Map[String,String], ContainerInterface)]();
+        adap._2.foreach(bind => (bind, txnCtxt.getContainersOrConcepts(bind.messageName).foreach(orginAndmsg => {
+          // sendInfo += ((bind.serializer, bind.options, orginAndmsg._2.asInstanceOf[ContainerInterface]))
+          sendSerializer += bind.serializer;
+          sendSerOptions += bind.options;
+          sendContainers += orginAndmsg._2.asInstanceOf[ContainerInterface];
+        })))
+        // adap._1.send(txnCtxt, sendContainers, sendSerializer, sendSerOptions)
+      })
+
+      storageAdapters.foreach(adap => {
+        val sendSerializer = ArrayBuffer[String]();
+        val sendSerOptions = ArrayBuffer[scala.collection.immutable.Map[String,String]]();
+        val sendContainers = ArrayBuffer[ContainerInterface]();
+        // val sendInfo = ArrayBuffer[(String, scala.collection.immutable.Map[String,String], ContainerInterface)]();
+        adap._2.foreach(bind => (bind, txnCtxt.getContainersOrConcepts(bind.messageName).foreach(orginAndmsg => {
+          // sendInfo += ((bind.serializer, bind.options, orginAndmsg._2.asInstanceOf[ContainerInterface]))
+          sendSerializer += bind.serializer;
+          sendSerOptions += bind.options;
+          sendContainers += orginAndmsg._2.asInstanceOf[ContainerInterface];
+        })))
+        // adap._1.serialize()
+      })
+
+
+
       // Commit. Writing into OutputAdapters & Storage Adapters
+
 
     } catch {
       case e: Throwable => throw e

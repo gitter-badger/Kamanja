@@ -19,7 +19,7 @@ object KamanjaModelEvent extends RDDObject[KamanjaModelEvent] with MessageFactor
   override def getSchemaId: Int = 1000003;
   override def createInstance: KamanjaModelEvent = new KamanjaModelEvent(KamanjaModelEvent);
   override def isFixed: Boolean = true;
-  override def getContainerType: ContainerFactoryInterface.ContainerType = ContainerFactoryInterface.ContainerType.MESSAGE
+  override def getContainerType: ContainerTypes.ContainerType = ContainerTypes.ContainerType.MESSAGE
   override def getFullName = getFullTypeName;
   override def toJavaRDDObject: JavaRDDObject[T] = JavaRDDObject.fromRDDObject[T](this);
 
@@ -47,6 +47,22 @@ object KamanjaModelEvent extends RDDObject[KamanjaModelEvent] with MessageFactor
   }
 
   override def getAvroSchema: String = """{ "type": "record",  "namespace" : "com.ligadata.kamanjabase" , "name" : "kamanjamodelevent" , "fields":[{ "name" : "modelid" , "type" : "long"},{ "name" : "elapsedtimeinms" , "type" : "float"},{ "name" : "eventepochtime" , "type" : "long"},{ "name" : "isresultproduced" ,},{ "name" : "producedmessages" , "type" :  {"type" : "array", "items" : "long"}},{ "name" : "error" , "type" : "string"}]}""";
+ /** Deprecated Methods **/
+  def NeedToTransformData: Boolean = false
+  override def FullName: String = getFullTypeName
+  override def NameSpace: String = getTypeNameSpace
+  override def Name: String = getTypeName
+  override def Version: String = getTypeVersion
+  def CreateNewMessage: BaseMsg = createInstance.asInstanceOf[BaseMsg];
+  def CreateNewContainer: BaseContainer = null;
+  def IsFixed: Boolean = true
+  def IsKv: Boolean = false
+  override def CanPersist: Boolean = false
+  override def isMessage: Boolean = true
+  override def isContainer: Boolean = false
+  override def PartitionKeyData(inputdata: InputData): Array[String] = createInstance.getPartitionKey();
+  override def PrimaryKeyData(inputdata: InputData): Array[String] = createInstance.getPrimaryKey();
+  override def TimePartitionData(inputdata: InputData): Long = createInstance.getTimePartitionData;
 }
 
 class KamanjaModelEvent(factory: MessageFactoryInterface, other: KamanjaModelEvent) extends MessageInterface(factory) {
@@ -71,11 +87,11 @@ class KamanjaModelEvent(factory: MessageFactoryInterface, other: KamanjaModelEve
   private def generateAttributeTypes(): Array[AttributeTypeInfo] = {
     var attributeTypes = new Array[AttributeTypeInfo](6);
     attributeTypes(0) = new AttributeTypeInfo("modelid", 0, AttributeTypeInfo.TypeCategory.LONG, 4, 4, 0)
-    attributeTypes(0) = new AttributeTypeInfo("elapsedtimeinms", 1, AttributeTypeInfo.TypeCategory.FLOAT, 2, 2, 0)
-    attributeTypes(0) = new AttributeTypeInfo("eventepochtime", 2, AttributeTypeInfo.TypeCategory.LONG, 4, 4, 0)
-    attributeTypes(0) = new AttributeTypeInfo("isresultproduced", 3, AttributeTypeInfo.TypeCategory.BOOLEAN, 7, 7, 0)
-    attributeTypes(0) = new AttributeTypeInfo("producedmessages", 4, AttributeTypeInfo.TypeCategory.ARRAY, 4, 1003, 0)
-    attributeTypes(0) = new AttributeTypeInfo("error", 5, AttributeTypeInfo.TypeCategory.STRING, 1, 1, 0)
+    attributeTypes(1) = new AttributeTypeInfo("elapsedtimeinms", 1, AttributeTypeInfo.TypeCategory.FLOAT, 2, 2, 0)
+    attributeTypes(2) = new AttributeTypeInfo("eventepochtime", 2, AttributeTypeInfo.TypeCategory.LONG, 4, 4, 0)
+    attributeTypes(3) = new AttributeTypeInfo("isresultproduced", 3, AttributeTypeInfo.TypeCategory.BOOLEAN, 7, 7, 0)
+    attributeTypes(4) = new AttributeTypeInfo("producedmessages", 4, AttributeTypeInfo.TypeCategory.ARRAY, 4, 1003, 0)
+    attributeTypes(5) = new AttributeTypeInfo("error", 5, AttributeTypeInfo.TypeCategory.STRING, 1, 1, 0)
 
     return attributeTypes
   }
@@ -173,12 +189,12 @@ class KamanjaModelEvent(factory: MessageFactoryInterface, other: KamanjaModelEve
   override def getAllAttributeValues(): Array[AttributeValue] = { // Has ( value, attributetypeinfo))
     var attributeVals = new Array[AttributeValue](6);
     try {
-      attributeVals :+ new AttributeValue(this.modelid, keyTypes("modelid"))
-      attributeVals :+ new AttributeValue(this.elapsedtimeinms, keyTypes("elapsedtimeinms"))
-      attributeVals :+ new AttributeValue(this.eventepochtime, keyTypes("eventepochtime"))
-      attributeVals :+ new AttributeValue(this.isresultproduced, keyTypes("isresultproduced"))
-      attributeVals :+ new AttributeValue(this.producedmessages, keyTypes("producedmessages"))
-      attributeVals :+ new AttributeValue(this.error, keyTypes("error"))
+      attributeVals(0) = new AttributeValue(this.modelid, keyTypes("modelid"))
+      attributeVals(1) = new AttributeValue(this.elapsedtimeinms, keyTypes("elapsedtimeinms"))
+      attributeVals(2) = new AttributeValue(this.eventepochtime, keyTypes("eventepochtime"))
+      attributeVals(3) = new AttributeValue(this.isresultproduced, keyTypes("isresultproduced"))
+      attributeVals(4) = new AttributeValue(this.producedmessages, keyTypes("producedmessages"))
+      attributeVals(5) = new AttributeValue(this.error, keyTypes("error"))
 
     } catch {
       case e: Exception => {

@@ -4,7 +4,7 @@ package com.ligadata.KamanjaBase;
 import org.json4s.jackson.JsonMethods._
 import org.json4s.DefaultFormats
 import org.json4s.Formats
-import com.ligadata.KamanjaBase.{ AttributeTypeInfo, AttributeValue, ContainerFactoryInterface, ContainerInterface, MessageFactoryInterface, MessageInterface, TimePartitionInfo, ContainerOrConceptFactory, RDDObject, JavaRDDObject, ContainerOrConcept }
+import com.ligadata.KamanjaBase._;
 import com.ligadata.BaseTypes._
 import com.ligadata.Exceptions.StackTrace;
 import org.apache.logging.log4j.{ Logger, LogManager }
@@ -20,7 +20,7 @@ object KamanjaExecutionFailureEvent extends RDDObject[KamanjaExecutionFailureEve
   override def getSchemaId: Int = 1000005;
   override def createInstance: KamanjaExecutionFailureEvent = new KamanjaExecutionFailureEvent(KamanjaExecutionFailureEvent);
   override def isFixed: Boolean = true;
-  override def getContainerType: ContainerFactoryInterface.ContainerType = ContainerFactoryInterface.ContainerType.MESSAGE
+  override def getContainerType: ContainerTypes.ContainerType = ContainerTypes.ContainerType.MESSAGE
   override def getFullName = getFullTypeName;
   override def toJavaRDDObject: JavaRDDObject[T] = JavaRDDObject.fromRDDObject[T](this);
 
@@ -48,6 +48,22 @@ object KamanjaExecutionFailureEvent extends RDDObject[KamanjaExecutionFailureEve
   }
 
   override def getAvroSchema: String = """{ "type": "record",  "namespace" : "com.ligadata.kamanjabase" , "name" : "kamanjaexecutionfailureevent" , "fields":[{ "name" : "msgid" , "type" : "long"},{ "name" : "timeoferrorepochms" , "type" : "long"},{ "name" : "msgcontent" , "type" : "string"},{ "name" : "errordetail" , "type" : "string"}]}""";
+ /** Deprecated Methods **/
+  def NeedToTransformData: Boolean = false
+  override def FullName: String = getFullTypeName
+  override def NameSpace: String = getTypeNameSpace
+  override def Name: String = getTypeName
+  override def Version: String = getTypeVersion
+  def CreateNewMessage: BaseMsg = createInstance.asInstanceOf[BaseMsg];
+  def CreateNewContainer: BaseContainer = null;
+  def IsFixed: Boolean = true
+  def IsKv: Boolean = false
+  override def CanPersist: Boolean = false
+  override def isMessage: Boolean = true
+  override def isContainer: Boolean = false
+  override def PartitionKeyData(inputdata: InputData): Array[String] = createInstance.getPartitionKey();
+  override def PrimaryKeyData(inputdata: InputData): Array[String] = createInstance.getPrimaryKey();
+  override def TimePartitionData(inputdata: InputData): Long = createInstance.getTimePartitionData;
 }
 
 class KamanjaExecutionFailureEvent(factory: MessageFactoryInterface, other: KamanjaExecutionFailureEvent) extends MessageInterface(factory) {
@@ -171,10 +187,10 @@ class KamanjaExecutionFailureEvent(factory: MessageFactoryInterface, other: Kama
   override def getAllAttributeValues(): Array[AttributeValue] = { // Has ( value, attributetypeinfo))
     var attributeVals = new Array[AttributeValue](4);
     try {
-      attributeVals :+ new AttributeValue(this.msgid, keyTypes("msgid"))
-      attributeVals :+ new AttributeValue(this.timeoferrorepochms, keyTypes("timeoferrorepochms"))
-      attributeVals :+ new AttributeValue(this.msgcontent, keyTypes("msgcontent"))
-      attributeVals :+ new AttributeValue(this.errordetail, keyTypes("errordetail"))
+      attributeVals(0) = new AttributeValue(this.msgid, keyTypes("msgid"))
+      attributeVals(1) = new AttributeValue(this.timeoferrorepochms, keyTypes("timeoferrorepochms"))
+      attributeVals(2) = new AttributeValue(this.msgcontent, keyTypes("msgcontent"))
+      attributeVals(3) = new AttributeValue(this.errordetail, keyTypes("errordetail"))
 
     } catch {
       case e: Exception => {

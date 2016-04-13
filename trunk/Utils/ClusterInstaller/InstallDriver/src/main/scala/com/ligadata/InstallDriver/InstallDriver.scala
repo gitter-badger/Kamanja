@@ -1046,10 +1046,12 @@ Try again.
       }
     } catch {
       case e: Exception => {
+        logger.error("Failed to validateClusterEnvironment", e)
         phyDirLast = rootDirPath // substitute the symbol link to see if we can test more ... this is temporary hack
         false
       }
       case t: Throwable => {
+        logger.error("Failed to validateClusterEnvironment", t)
         phyDirLast = rootDirPath
         false
       }
@@ -1770,7 +1772,7 @@ class ClusterConfigMap(cfgStr: String, var clusterIdOfInterest: String) {
 
   def KafkaConnections: String = {
     val kafkaAdapters: List[Map[String, Any]] = adapters.filter(adapterMap => {
-      val adapterJars: List[String] = adapterMap.getOrElse("DependencyJars", "").asInstanceOf[List[String]]
+      val adapterJars: List[String] = adapterMap.getOrElse("DependencyJars", List[String]()).asInstanceOf[List[String]]
       val hasKafka: Boolean = adapterJars.filter(jarName => jarName.contains("kafka_2")).nonEmpty
       hasKafka
     })

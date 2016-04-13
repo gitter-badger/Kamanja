@@ -4,7 +4,7 @@ package com.ligadata.KamanjaBase;
 import org.json4s.jackson.JsonMethods._
 import org.json4s.DefaultFormats
 import org.json4s.Formats
-import com.ligadata.KamanjaBase.{ AttributeTypeInfo, AttributeValue, ContainerFactoryInterface, ContainerInterface, MessageFactoryInterface, MessageInterface, TimePartitionInfo, ContainerOrConceptFactory, RDDObject, JavaRDDObject, ContainerOrConcept }
+import com.ligadata.KamanjaBase._;
 import com.ligadata.BaseTypes._
 import com.ligadata.Exceptions.StackTrace;
 import org.apache.logging.log4j.{ Logger, LogManager }
@@ -19,7 +19,7 @@ object KamanjaExceptionEvent extends RDDObject[KamanjaExceptionEvent] with Messa
   override def getSchemaId: Int = 1000004;
   override def createInstance: KamanjaExceptionEvent = new KamanjaExceptionEvent(KamanjaExceptionEvent);
   override def isFixed: Boolean = true;
-  override def getContainerType: ContainerFactoryInterface.ContainerType = ContainerFactoryInterface.ContainerType.MESSAGE
+  override def getContainerType: ContainerTypes.ContainerType = ContainerTypes.ContainerType.MESSAGE
   override def getFullName = getFullTypeName;
   override def toJavaRDDObject: JavaRDDObject[T] = JavaRDDObject.fromRDDObject[T](this);
 
@@ -47,6 +47,22 @@ object KamanjaExceptionEvent extends RDDObject[KamanjaExceptionEvent] with Messa
   }
 
   override def getAvroSchema: String = """{ "type": "record",  "namespace" : "com.ligadata.kamanjabase" , "name" : "kamanjaexceptionevent" , "fields":[{ "name" : "componentname" , "type" : "string"},{ "name" : "timeoferrorepochms" , "type" : "long"},{ "name" : "errortype" , "type" : "string"},{ "name" : "errorstring" , "type" : "string"}]}""";
+ 
+  def NeedToTransformData: Boolean = false
+  override def FullName: String = getFullTypeName
+  override def NameSpace: String = getTypeNameSpace
+  override def Name: String = getTypeName
+  override def Version: String = getTypeVersion
+  def CreateNewMessage: BaseMsg = createInstance.asInstanceOf[BaseMsg];
+  def CreateNewContainer: BaseContainer = null; 
+  def IsFixed: Boolean = true
+  def IsKv: Boolean = false
+  override def CanPersist: Boolean = false
+  override def isMessage: Boolean = true
+  override def isContainer: Boolean = false
+  override def PartitionKeyData(inputdata: InputData): Array[String] = createInstance.getPartitionKey();
+  override def PrimaryKeyData(inputdata: InputData): Array[String] = createInstance.getPrimaryKey();
+  override def TimePartitionData(inputdata: InputData): Long = createInstance.getTimePartitionData;
 }
 
 class KamanjaExceptionEvent(factory: MessageFactoryInterface, other: KamanjaExceptionEvent) extends MessageInterface(factory) {
@@ -170,10 +186,10 @@ class KamanjaExceptionEvent(factory: MessageFactoryInterface, other: KamanjaExce
   override def getAllAttributeValues(): Array[AttributeValue] = { // Has ( value, attributetypeinfo))
     var attributeVals = new Array[AttributeValue](4);
     try {
-      attributeVals :+ new AttributeValue(this.componentname, keyTypes("componentname"))
-      attributeVals :+ new AttributeValue(this.timeoferrorepochms, keyTypes("timeoferrorepochms"))
-      attributeVals :+ new AttributeValue(this.errortype, keyTypes("errortype"))
-      attributeVals :+ new AttributeValue(this.errorstring, keyTypes("errorstring"))
+      attributeVals(0) = new AttributeValue(this.componentname, keyTypes("componentname"))
+      attributeVals(1) = new AttributeValue(this.timeoferrorepochms, keyTypes("timeoferrorepochms"))
+      attributeVals(2) = new AttributeValue(this.errortype, keyTypes("errortype"))
+      attributeVals(3) = new AttributeValue(this.errorstring, keyTypes("errorstring"))
 
     } catch {
       case e: Exception => {

@@ -39,11 +39,15 @@ class MonitorController(adapterConfig : SmartFileAdapterConfiguration,
   def startMonitoring(): Unit ={
     smartFileMonitor = SmartFileMonitorFactory.createSmartFileMonitor(adapterConfig.Name, adapterConfig._type, fileDetectedCallback)
     smartFileMonitor.init(adapterConfig.adapterSpecificCfg)
+    logger.debug("SMART FILE CONSUMER (MonitorController):  running smartFileMonitor.monitor()")
     smartFileMonitor.monitor()
 
     globalFileMonitorService.execute(new Runnable() {
       override def run() = {
-        monitorBufferingFiles
+        logger.debug("SMART FILE CONSUMER (MonitorController):  buffering files monitoring thread run")
+        //while(true) {
+          monitorBufferingFiles
+        //}
       }
     })
   }
@@ -51,7 +55,7 @@ class MonitorController(adapterConfig : SmartFileAdapterConfiguration,
   def stopMonitoring(): Unit ={
     smartFileMonitor.shutdown()
 
-    globalFileMonitorService.shutdown()
+    globalFileMonitorService.shutdownNow()
   }
 
   /**
@@ -60,6 +64,7 @@ class MonitorController(adapterConfig : SmartFileAdapterConfiguration,
     * @param fileHandler
     */
   def fileDetectedCallback (fileHandler : SmartFileHandler) : Unit = {
+    logger.debug("SMART FILE CONSUMER (MonitorController): got file {}", fileHandler.getFullPath)
     if (MonitorUtils.isValidFile(fileHandler))
       enQBufferedFile(fileHandler)
   }
@@ -82,6 +87,8 @@ class MonitorController(adapterConfig : SmartFileAdapterConfiguration,
   private def monitorBufferingFiles: Unit = {
     // This guys will keep track of when to exgernalize a WARNING Message.  Since this loop really runs every second,
     // we want to throttle the warning messages.
+    logger.debug("SMART FILE CONSUMER (MonitorController):  monitorBufferingFiles")
+
     var specialWarnCounter: Int = 1
     while (true) {
       // Scan all the files that we are buffering, if there is not difference in their file size.. move them onto
@@ -98,6 +105,8 @@ class MonitorController(adapterConfig : SmartFileAdapterConfiguration,
 
           try {
             val fileHandler = fileTuple._1
+
+            logger.debug("SMART FILE CONSUMER (MonitorController):  monitorBufferingFiles - file " + fileHandler.getFullPath)
 
             if (initialFiles != null && initialFiles.exists(tuple => tuple._3.equals(fileHandler.getFullPath))) {
               //this is an initial file, the leader will take care of it, ignore
@@ -193,8 +202,10 @@ class MonitorController(adapterConfig : SmartFileAdapterConfiguration,
     }
 
     //notify leader about the new file
-    if(newFileDetectedCallback != null)
+    if(newFileDetectedCallback != null){
+      logger.debug("Smart File Adapter (MonitorController) - New file is enqueued in monitor controller queue ({})", fileHandler.getFullPath)
       newFileDetectedCallback(fileHandler.getFullPath)
+    }
   }
 
   private def deQFile: EnqueuedFileHandler = {

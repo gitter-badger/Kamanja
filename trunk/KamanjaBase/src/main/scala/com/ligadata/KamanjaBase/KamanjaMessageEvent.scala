@@ -4,7 +4,7 @@ package com.ligadata.KamanjaBase;
 import org.json4s.jackson.JsonMethods._
 import org.json4s.DefaultFormats
 import org.json4s.Formats
-import com.ligadata.KamanjaBase.{ AttributeTypeInfo, AttributeValue, ContainerFactoryInterface, ContainerInterface, MessageFactoryInterface, MessageInterface, TimePartitionInfo, ContainerOrConceptFactory, RDDObject, JavaRDDObject, ContainerOrConcept }
+import com.ligadata.KamanjaBase._;
 import com.ligadata.BaseTypes._
 import com.ligadata.Exceptions.StackTrace;
 import org.apache.logging.log4j.{ Logger, LogManager }
@@ -19,7 +19,7 @@ object KamanjaMessageEvent extends RDDObject[KamanjaMessageEvent] with MessageFa
   override def getSchemaId: Int = 1000002;
   override def createInstance: KamanjaMessageEvent = new KamanjaMessageEvent(KamanjaMessageEvent);
   override def isFixed: Boolean = true;
-  override def getContainerType: ContainerFactoryInterface.ContainerType = ContainerFactoryInterface.ContainerType.MESSAGE
+  override def getContainerType: ContainerTypes.ContainerType = ContainerTypes.ContainerType.MESSAGE
   override def getFullName = getFullTypeName;
   override def toJavaRDDObject: JavaRDDObject[T] = JavaRDDObject.fromRDDObject[T](this);
 
@@ -47,6 +47,22 @@ object KamanjaMessageEvent extends RDDObject[KamanjaMessageEvent] with MessageFa
   }
 
   override def getAvroSchema: String = """{ "type": "record",  "namespace" : "com.ligadata.kamanjabase" , "name" : "kamanjamessageevent" , "fields":[{ "name" : "messageid" , "type" : "long"},{ "name" : "modelinfo" ,"type": {"type": "array", "items": { "type": "record",  "namespace" : "com.ligadata.kamanjabase" , "name" : "kamanjamodelevent" , "fields":[{ "name" : "modelid" , "type" : "long"},{ "name" : "elapsedtimeinms" , "type" : "float"},{ "name" : "eventepochtime" , "type" : "long"},{ "name" : "isresultproduced" ,},{ "name" : "producedmessages" , "type" :  {"type" : "array", "items" : "long"}},{ "name" : "error" , "type" : "string"}]}}},{ "name" : "elapsedtimeinms" , "type" : "float"},{ "name" : "messagekey" , "type" : "string"},{ "name" : "messagevalue" , "type" : "string"},{ "name" : "error" , "type" : "string"}]}""";
+ /** Deprecated Methods **/
+  def NeedToTransformData: Boolean = false
+  override def FullName: String = getFullTypeName
+  override def NameSpace: String = getTypeNameSpace
+  override def Name: String = getTypeName
+  override def Version: String = getTypeVersion
+  def CreateNewMessage: BaseMsg = createInstance.asInstanceOf[BaseMsg];
+  def CreateNewContainer: BaseContainer = null;
+  def IsFixed: Boolean = true
+  def IsKv: Boolean = false
+  override def CanPersist: Boolean = false
+  override def isMessage: Boolean = true
+  override def isContainer: Boolean = false
+  override def PartitionKeyData(inputdata: InputData): Array[String] = createInstance.getPartitionKey();
+  override def PrimaryKeyData(inputdata: InputData): Array[String] = createInstance.getPrimaryKey();
+  override def TimePartitionData(inputdata: InputData): Long = createInstance.getTimePartitionData;
 }
 
 class KamanjaMessageEvent(factory: MessageFactoryInterface, other: KamanjaMessageEvent) extends MessageInterface(factory) {
@@ -174,12 +190,12 @@ class KamanjaMessageEvent(factory: MessageFactoryInterface, other: KamanjaMessag
   override def getAllAttributeValues(): Array[AttributeValue] = { // Has ( value, attributetypeinfo))
     var attributeVals = new Array[AttributeValue](6);
     try {
-      attributeVals :+ new AttributeValue(this.messageid, keyTypes("messageid"))
-      attributeVals :+ new AttributeValue(this.modelinfo, keyTypes("modelinfo"))
-      attributeVals :+ new AttributeValue(this.elapsedtimeinms, keyTypes("elapsedtimeinms"))
-      attributeVals :+ new AttributeValue(this.messagekey, keyTypes("messagekey"))
-      attributeVals :+ new AttributeValue(this.messagevalue, keyTypes("messagevalue"))
-      attributeVals :+ new AttributeValue(this.error, keyTypes("error"))
+      attributeVals(0) = new AttributeValue(this.messageid, keyTypes("messageid"))
+      attributeVals(1) = new AttributeValue(this.modelinfo, keyTypes("modelinfo"))
+      attributeVals(2) = new AttributeValue(this.elapsedtimeinms, keyTypes("elapsedtimeinms"))
+      attributeVals(3) = new AttributeValue(this.messagekey, keyTypes("messagekey"))
+      attributeVals(4) = new AttributeValue(this.messagevalue, keyTypes("messagevalue"))
+      attributeVals(5) = new AttributeValue(this.error, keyTypes("error"))
 
     } catch {
       case e: Exception => {
