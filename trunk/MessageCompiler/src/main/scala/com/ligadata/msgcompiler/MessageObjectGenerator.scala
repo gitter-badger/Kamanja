@@ -237,7 +237,7 @@ class MessageObjectGenerator {
       isMsg = "true";
       isCntr = "false"
 
-      createMsgStr = "def CreateNewMessage: " + msgType + "= createInstance.asInstanceOf[" + msgType + "];"
+      createMsgStr = "override def CreateNewMessage: " + msgType + "= createInstance.asInstanceOf[" + msgType + "];"
       createContrStr = "override def CreateNewContainer: " + containerType + "= null;"
 
       tranformData = "override def NeedToTransformData: Boolean = false";
@@ -245,7 +245,7 @@ class MessageObjectGenerator {
       isMsg = "false";
       isCntr = "true"
       containerType = "BaseContainer"
-      createMsgStr = "def CreateNewMessage: " + msgType + "= null;"
+      createMsgStr = "override def CreateNewMessage: " + msgType + "= null;"
       createContrStr = "override def CreateNewContainer: " + containerType + "= createInstance.asInstanceOf[" + containerType + "];"
       tranformData = "override def NeedToTransformData: Boolean = false"
     }
