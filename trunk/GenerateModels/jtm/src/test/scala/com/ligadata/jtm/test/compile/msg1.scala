@@ -1,9 +1,9 @@
-package com.ligadata.kamanja.test.v1000000;
+package com.ligadata.kamanja.test.V1000000;
 
 import org.json4s.jackson.JsonMethods._
 import org.json4s.DefaultFormats
 import org.json4s.Formats
-import com.ligadata.KamanjaBase.{ AttributeValue, ContainerFactoryInterface, ContainerInterface, MessageFactoryInterface, MessageInterface, TimePartitionInfo, ContainerOrConceptFactory, RDDObject, JavaRDDObject, ContainerOrConcept}
+import com.ligadata.KamanjaBase.{ AttributeTypeInfo, AttributeValue, ContainerFactoryInterface, ContainerInterface, MessageFactoryInterface, MessageInterface, TimePartitionInfo, ContainerOrConceptFactory, RDDObject, JavaRDDObject, ContainerOrConcept}
 import com.ligadata.BaseTypes._
 import com.ligadata.Exceptions.StackTrace;
 import org.apache.logging.log4j.{ Logger, LogManager }
@@ -48,17 +48,33 @@ object msg1 extends RDDObject[msg1] with MessageFactoryInterface {
     return (tmInfo != null && tmInfo.getTimePartitionType != TimePartitionInfo.TimePartitionType.NONE);
   }
 
-  override def getSchema: String = " {\"type\": \"record\", \"namespace\" : \"com.ligadata.kamanja.test\",\"name\" : \"msg1\",\"fields\":[{\"name\" : \"in1\",\"type\" : \"int\"},{\"name\" : \"in2\",\"type\" : \"int\"},{\"name\" : \"in3\",\"type\" : \"int\"}]}";
+  override def getAvroSchema: String = """{ "type": "record",  "namespace" : "com.ligadata.kamanja.test" , "name" : "msg1" , "fields":[{ "name" : "in1" , "type" : "int"},{ "name" : "in2" , "type" : "int"},{ "name" : "in3" , "type" : "int"}]}""";
 }
 
 class msg1(factory: MessageFactoryInterface, other: msg1) extends MessageInterface(factory) {
 
-  val logger = this.getClass.getName
-  lazy val log = LogManager.getLogger(logger)
+  private val log = LogManager.getLogger(getClass)
 
-  private var keyTypes = Map("in1"-> "Int","in2"-> "Int","in3"-> "Int");
+  var attributeTypes = generateAttributeTypes;
 
-  override def save: Unit = { msg1.saveOne(this) }
+  private def generateAttributeTypes(): Array[AttributeTypeInfo] = {
+    var attributeTypes = new Array[AttributeTypeInfo](3);
+    attributeTypes(0) = new AttributeTypeInfo("in1", 0, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+    attributeTypes(1) = new AttributeTypeInfo("in2", 1, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+    attributeTypes(2) = new AttributeTypeInfo("in3", 2, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+
+
+    return attributeTypes
+  }
+
+  var keyTypes: Map[String, AttributeTypeInfo] = attributeTypes.map { a => (a.getName, a) }.toMap;
+
+  if (other != null && other != this) {
+    // call copying fields from other to local variables
+    fromFunc(other)
+  }
+
+  override def save: Unit = { /* msg1.saveOne(this) */}
 
   def Clone(): ContainerOrConcept = { msg1.build(this) }
 
@@ -66,67 +82,57 @@ class msg1(factory: MessageFactoryInterface, other: msg1) extends MessageInterfa
 
   override def getPrimaryKey: Array[String] = Array[String]()
 
+  override def getAttributeType(name: String): AttributeTypeInfo = {
+    if (name == null || name.trim() == "") return null;
+    attributeTypes.foreach(attributeType => {
+      if(attributeType.getName == name.toLowerCase())
+        return attributeType
+    })
+    return null;
+  }
+
+
   var in1: Int = _;
   var in2: Int = _;
   var in3: Int = _;
 
-  private def getWithReflection(key: String): AttributeValue = {
-    var attributeValue = new AttributeValue();
+  override def getAttributeTypes(): Array[AttributeTypeInfo] = {
+    if (attributeTypes == null) return null;
+    return attributeTypes
+  }
+
+  private def getWithReflection(key: String): AnyRef = {
     val ru = scala.reflect.runtime.universe
     val m = ru.runtimeMirror(getClass.getClassLoader)
     val im = m.reflect(this)
     val fieldX = ru.typeOf[msg1].declaration(ru.newTermName(key)).asTerm.accessed.asTerm
     val fmX = im.reflectField(fieldX)
-    attributeValue.setValue(fmX.get);
-    attributeValue.setValueType(keyTypes(key))
-    attributeValue
+    return fmX.get.asInstanceOf[AnyRef];
   }
 
-  override def get(key: String): AttributeValue = {
+  override def get(key: String): AnyRef = {
     try {
       // Try with reflection
-      return getWithReflection(key.toLowerCase())
+      return getByName(key.toLowerCase())
     } catch {
       case e: Exception => {
         val stackTrace = StackTrace.ThrowableTraceString(e)
         log.debug("StackTrace:" + stackTrace)
         // Call By Name
-        return getByName(key.toLowerCase())
+        return getWithReflection(key.toLowerCase())
       }
     }
   }
 
-  private def getByName(key: String): AttributeValue = {
-    try {
-      if (!keyTypes.contains(key)) throw new Exception("Key does not exists");
-      var attributeValue = new AttributeValue();
-      if (key.equals("in1")) { attributeValue.setValue(this.in1); }
-      if (key.equals("in2")) { attributeValue.setValue(this.in2); }
-      if (key.equals("in3")) { attributeValue.setValue(this.in3); }
-
-
-      attributeValue.setValueType(keyTypes(key.toLowerCase()));
-      return attributeValue;
-    } catch {
-      case e: Exception => {
-        log.debug("", e)
-        throw e
-      }
-    };
-
+  private def getByName(key: String): AnyRef = {
+    if (!keyTypes.contains(key)) throw new Exception(s"Key $key does not exists in message/container hl7Fixed ");
+    return get(keyTypes(key).getIndex)
   }
 
-  override def getOrElse(key: String, defaultVal: Any): AttributeValue = { // Return (value, type)
-  var attributeValue: AttributeValue = new AttributeValue();
+  override def getOrElse(key: String, defaultVal: Any): AnyRef = { // Return (value, type)
     try {
       val value = get(key.toLowerCase())
-      if (value == null) {
-        attributeValue.setValue(defaultVal);
-        attributeValue.setValueType("Any");
-        return attributeValue;
-      } else {
-        return value;
-      }
+      if (value == null) return defaultVal.asInstanceOf[AnyRef]; else return value;
     } catch {
       case e: Exception => {
         log.debug("", e)
@@ -136,28 +142,39 @@ class msg1(factory: MessageFactoryInterface, other: msg1) extends MessageInterfa
     return null;
   }
 
-  override def getOrElse(index: Int, defaultVal: Any): AttributeValue = { // Return (value,  type)
-  var attributeValue: AttributeValue = new AttributeValue();
+
+  override def get(index : Int) : AnyRef = { // Return (value, type)
+    try{
+      index match {
+        case 0 => return this.in1.asInstanceOf[AnyRef];
+        case 1 => return this.in2.asInstanceOf[AnyRef];
+        case 2 => return this.in3.asInstanceOf[AnyRef];
+
+        case _ => throw new Exception(s"$index is a bad index for message msg1");
+      }
+    }catch {
+      case e: Exception => {
+        log.debug("", e)
+        throw e
+      }
+    };
+
+  }
+
+  override def getOrElse(index: Int, defaultVal: Any): AnyRef = { // Return (value,  type)
     try {
       val value = get(index)
-      if (value == null) {
-        attributeValue.setValue(defaultVal);
-        attributeValue.setValueType("Any");
-        return attributeValue;
-      } else {
-        return value;
-      }
+      if (value == null) return defaultVal.asInstanceOf[AnyRef]; else return value;
     } catch {
       case e: Exception => {
         log.debug("", e)
         throw e
       }
     }
-    return null; ;
+    return null;
   }
 
   override def getAttributeNames(): Array[String] = {
-    var attributeNames: scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer[String]();
     try {
       if (keyTypes.isEmpty) {
         return null;
@@ -173,27 +190,12 @@ class msg1(factory: MessageFactoryInterface, other: msg1) extends MessageInterfa
     return null;
   }
 
-  override def getAllAttributeValues(): java.util.HashMap[String, AttributeValue] = { // Has (name, value, type))
-  var attributeValsMap = new java.util.HashMap[String, AttributeValue];
+  override def getAllAttributeValues(): Array[AttributeValue] = { // Has ( value, attributetypeinfo))
+  var attributeVals = new Array[AttributeValue](3);
     try{
-      {
-        var attributeVal = new AttributeValue();
-        attributeVal.setValue(in1)
-        attributeVal.setValueType(keyTypes("in1"))
-        attributeValsMap.put("in1", attributeVal)
-      };
-      {
-        var attributeVal = new AttributeValue();
-        attributeVal.setValue(in2)
-        attributeVal.setValueType(keyTypes("in2"))
-        attributeValsMap.put("in2", attributeVal)
-      };
-      {
-        var attributeVal = new AttributeValue();
-        attributeVal.setValue(in3)
-        attributeVal.setValueType(keyTypes("in3"))
-        attributeValsMap.put("in3", attributeVal)
-      };
+      attributeVals(0) = new AttributeValue(this.in1, keyTypes("in1"))
+      attributeVals(1) = new AttributeValue(this.in2, keyTypes("in2"))
+      attributeVals(2) = new AttributeValue(this.in3, keyTypes("in3"))
 
     }catch {
       case e: Exception => {
@@ -202,49 +204,20 @@ class msg1(factory: MessageFactoryInterface, other: msg1) extends MessageInterfa
       }
     };
 
-    return attributeValsMap;
+    return attributeVals;
   }
 
-  override def getAttributeNameAndValueIterator(): java.util.Iterator[java.util.Map.Entry[String, AttributeValue]] = {
-    getAllAttributeValues.entrySet().iterator();
-  }
-
-
-  def get(index : Int) : AttributeValue = { // Return (value, type)
-  var attributeValue = new AttributeValue();
-    try{
-      index match {
-        case 0 => {
-          attributeValue.setValue(this.in1);
-          attributeValue.setValueType(keyTypes("in1"));
-        }
-        case 1 => {
-          attributeValue.setValue(this.in2);
-          attributeValue.setValueType(keyTypes("in2"));
-        }
-        case 2 => {
-          attributeValue.setValue(this.in3);
-          attributeValue.setValueType(keyTypes("in3"));
-        }
-
-        case _ => throw new Exception("Bad index");
-      }
-      return attributeValue;
-    }catch {
-      case e: Exception => {
-        log.debug("", e)
-        throw e
-      }
-    };
+  override def getAttributeNameAndValueIterator(): java.util.Iterator[AttributeValue] = {
+    //getAllAttributeValues.iterator.asInstanceOf[java.util.Iterator[AttributeValue]];
+    return null; // Fix - need to test to make sure the above iterator works properly
 
   }
 
   override def set(key: String, value: Any) = {
     try {
 
-      if (key.equals("in1")) { this.in1 = value.asInstanceOf[Int]; }
-      if (key.equals("in2")) { this.in2 = value.asInstanceOf[Int]; }
-      if (key.equals("in3")) { this.in3 = value.asInstanceOf[Int]; }
+      if (!keyTypes.contains(key)) throw new Exception(s"Key $key does not exists in message msg1")
+      set(keyTypes(key).getIndex, value);
 
     }catch {
       case e: Exception => {
@@ -257,13 +230,26 @@ class msg1(factory: MessageFactoryInterface, other: msg1) extends MessageInterfa
 
 
   def set(index : Int, value :Any): Unit = {
+    if (value == null) throw new Exception(s"Value is null for index $index in message msg1 ")
     try{
       index match {
-        case 0 => {this.in1 = value.asInstanceOf[Int];}
-        case 1 => {this.in2 = value.asInstanceOf[Int];}
-        case 2 => {this.in3 = value.asInstanceOf[Int];}
+        case 0 => {
+          if(value.isInstanceOf[Int])
+            this.in1 = value.asInstanceOf[Int];
+          else throw new Exception(s"Value is the not the correct type for index $index in message msg1")
+        }
+        case 1 => {
+          if(value.isInstanceOf[Int])
+            this.in2 = value.asInstanceOf[Int];
+          else throw new Exception(s"Value is the not the correct type for index $index in message msg1")
+        }
+        case 2 => {
+          if(value.isInstanceOf[Int])
+            this.in3 = value.asInstanceOf[Int];
+          else throw new Exception(s"Value is the not the correct type for index $index in message msg1")
+        }
 
-        case _ => throw new Exception("Bad index");
+        case _ => throw new Exception(s"$index is a bad index for message msg1");
       }
     }catch {
       case e: Exception => {

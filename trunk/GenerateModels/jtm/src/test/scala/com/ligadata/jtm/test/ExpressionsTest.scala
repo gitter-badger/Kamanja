@@ -18,6 +18,7 @@ package com.ligadata.jtm.test
 import java.io.File
 
 import com.ligadata.jtm._
+import com.ligadata.jtm.eval.{Expressions, Tracker}
 import org.apache.commons.io.FileUtils
 import org.apache.logging.log4j.LogManager
 import com.ligadata.jtm.nodes._
@@ -42,5 +43,25 @@ class ExpressionsTest  extends FunSuite with BeforeAndAfter {
   test("test03") {
     val actual = eval.Expressions.ExtractColumnNames("${ns_3.na1_me}")
     assert(Set("ns_3.na1_me") == actual)
+  }
+
+  test("test04") {
+    val aliaseMessages: Map[String, String] = Map("m1" -> "test.m1")
+    val dictMessages: Map[String, String] = Map("d1" ->"msg1")
+    val mapNameSource: Map[String, Tracker] = Map( "m1.v1" -> eval.Tracker("v1", "test.m1", "Map[String]", true, "", ""))
+    // Tracker(variableName: String, className: String, typeName: String, isInput: Boolean, accessor: String, expression: String)
+    val t = Expressions.isVariable("$d1.test", mapNameSource, dictMessages, aliaseMessages)
+    assert(t.variableName == "msg1.test")
+    assert(t.expression == "msg1.get(\"test\")")
+  }
+
+  test("test05") {
+    val aliaseMessages: Map[String, String] = Map("m1" -> "test.m1")
+    val dictMessages: Map[String, String] = Map("d1" ->"msg1")
+    val mapNameSource: Map[String, Tracker] = Map( "m1.v1" -> eval.Tracker("v1", "test.m1", "Map[String]", true, "", ""))
+    // Tracker(variableName: String, className: String, typeName: String, isInput: Boolean, accessor: String, expression: String)
+    val t = Expressions.isVariable("d1.test", mapNameSource, dictMessages, aliaseMessages)
+    assert(t.variableName == "msg1.test")
+    assert(t.expression == "msg1.get(\"test\")")
   }
 }

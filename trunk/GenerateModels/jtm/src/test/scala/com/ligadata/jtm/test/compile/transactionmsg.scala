@@ -3,7 +3,7 @@ package com.ligadata.kamanja.samples.messages.V1000000;
 import org.json4s.jackson.JsonMethods._
 import org.json4s.DefaultFormats
 import org.json4s.Formats
-import com.ligadata.KamanjaBase.{ AttributeValue, ContainerFactoryInterface, ContainerInterface, MessageFactoryInterface, MessageInterface, TimePartitionInfo, ContainerOrConceptFactory, RDDObject, JavaRDDObject, ContainerOrConcept}
+import com.ligadata.KamanjaBase.{ AttributeTypeInfo, AttributeValue, ContainerFactoryInterface, ContainerInterface, MessageFactoryInterface, MessageInterface, TimePartitionInfo, ContainerOrConceptFactory, RDDObject, JavaRDDObject, ContainerOrConcept}
 import com.ligadata.BaseTypes._
 import com.ligadata.Exceptions.StackTrace;
 import org.apache.logging.log4j.{ Logger, LogManager }
@@ -48,24 +48,46 @@ object TransactionMsg extends RDDObject[TransactionMsg] with MessageFactoryInter
     return (tmInfo != null && tmInfo.getTimePartitionType != TimePartitionInfo.TimePartitionType.NONE);
   }
 
-  override def getSchema: String = " {\"type\": \"record\", \"namespace\" : \"com.ligadata.kamanja.samples.messages\",\"name\" : \"transactionmsg\",\"fields\":[{\"name\" : \"custid\",\"type\" : \"long\"},{\"name\" : \"branchid\",\"type\" : \"int\"},{\"name\" : \"accno\",\"type\" : \"long\"},{\"name\" : \"amount\",\"type\" : \"double\"},{\"name\" : \"balance\",\"type\" : \"double\"},{\"name\" : \"date\",\"type\" : \"int\"},{\"name\" : \"time\",\"type\" : \"int\"},{\"name\" : \"locationid\",\"type\" : \"int\"},{\"name\" : \"transtype\",\"type\" : \"string\"}]}";
+  override def getAvroSchema: String = """{ "type": "record",  "namespace" : "com.ligadata.kamanja.samples.messages" , "name" : "transactionmsg" , "fields":[{ "name" : "custid" , "type" : "long"},{ "name" : "branchid" , "type" : "int"},{ "name" : "accno" , "type" : "long"},{ "name" : "amount" , "type" : "double"},{ "name" : "balance" , "type" : "double"},{ "name" : "date" , "type" : "int"},{ "name" : "time" , "type" : "int"},{ "name" : "locationid" , "type" : "int"},{ "name" : "transtype" , "type" : "string"}]}""";
 }
 
 class TransactionMsg(factory: MessageFactoryInterface, other: TransactionMsg) extends MessageInterface(factory) {
 
-  val logger = this.getClass.getName
-  lazy val log = LogManager.getLogger(logger)
+  private val log = LogManager.getLogger(getClass)
 
-  private var keyTypes = Map("custid"-> "Long","branchid"-> "Int","accno"-> "Long","amount"-> "Double","balance"-> "Double","date"-> "Int","time"-> "Int","locationid"-> "Int","transtype"-> "String");
+  var attributeTypes = generateAttributeTypes;
 
-  override def save: Unit = { /* TransactionMsg.saveOne(this) */ }
+  private def generateAttributeTypes(): Array[AttributeTypeInfo] = {
+    var attributeTypes = new Array[AttributeTypeInfo](9);
+    attributeTypes(0) = new AttributeTypeInfo("custid", 0, AttributeTypeInfo.TypeCategory.LONG, 4, 4, 0)
+    attributeTypes(1) = new AttributeTypeInfo("branchid", 1, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+    attributeTypes(2) = new AttributeTypeInfo("accno", 2, AttributeTypeInfo.TypeCategory.LONG, 4, 4, 0)
+    attributeTypes(3) = new AttributeTypeInfo("amount", 3, AttributeTypeInfo.TypeCategory.DOUBLE, 3, 3, 0)
+    attributeTypes(4) = new AttributeTypeInfo("balance", 4, AttributeTypeInfo.TypeCategory.DOUBLE, 3, 3, 0)
+    attributeTypes(5) = new AttributeTypeInfo("date", 5, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+    attributeTypes(6) = new AttributeTypeInfo("time", 6, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+    attributeTypes(7) = new AttributeTypeInfo("locationid", 7, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+    attributeTypes(8) = new AttributeTypeInfo("transtype", 8, AttributeTypeInfo.TypeCategory.STRING, 1, 1, 0)
+
+
+    return attributeTypes
+  }
+
+  var keyTypes: Map[String, AttributeTypeInfo] = attributeTypes.map { a => (a.getName, a) }.toMap;
+
+  if (other != null && other != this) {
+    // call copying fields from other to local variables
+    fromFunc(other)
+  }
+
+  override def save: Unit = { /* TransactionMsg.saveOne(this) */}
 
   def Clone(): ContainerOrConcept = { TransactionMsg.build(this) }
 
   override def getPartitionKey: Array[String] = {
     var partitionKeys: scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer[String]();
     try {
-      partitionKeys += com.ligadata.BaseTypes.LongImpl.toString(get("custid").getValue.asInstanceOf[Long]);
+      partitionKeys += com.ligadata.BaseTypes.LongImpl.toString(get("custid").asInstanceOf[Long]);
     }catch {
       case e: Exception => {
         log.debug("", e)
@@ -79,6 +101,16 @@ class TransactionMsg(factory: MessageFactoryInterface, other: TransactionMsg) ex
 
   override def getPrimaryKey: Array[String] = Array[String]()
 
+  override def getAttributeType(name: String): AttributeTypeInfo = {
+    if (name == null || name.trim() == "") return null;
+    attributeTypes.foreach(attributeType => {
+      if(attributeType.getName == name.toLowerCase())
+        return attributeType
+    })
+    return null;
+  }
+
+
   var custid: Long = _;
   var branchid: Int = _;
   var accno: Long = _;
@@ -89,69 +121,43 @@ class TransactionMsg(factory: MessageFactoryInterface, other: TransactionMsg) ex
   var locationid: Int = _;
   var transtype: String = _;
 
-  private def getWithReflection(key: String): AttributeValue = {
-    var attributeValue = new AttributeValue();
+  override def getAttributeTypes(): Array[AttributeTypeInfo] = {
+    if (attributeTypes == null) return null;
+    return attributeTypes
+  }
+
+  private def getWithReflection(key: String): AnyRef = {
     val ru = scala.reflect.runtime.universe
     val m = ru.runtimeMirror(getClass.getClassLoader)
     val im = m.reflect(this)
     val fieldX = ru.typeOf[TransactionMsg].declaration(ru.newTermName(key)).asTerm.accessed.asTerm
     val fmX = im.reflectField(fieldX)
-    attributeValue.setValue(fmX.get);
-    attributeValue.setValueType(keyTypes(key))
-    attributeValue
+    return fmX.get.asInstanceOf[AnyRef];
   }
 
-  override def get(key: String): AttributeValue = {
+  override def get(key: String): AnyRef = {
     try {
       // Try with reflection
-      return getWithReflection(key.toLowerCase())
+      return getByName(key.toLowerCase())
     } catch {
       case e: Exception => {
         val stackTrace = StackTrace.ThrowableTraceString(e)
         log.debug("StackTrace:" + stackTrace)
         // Call By Name
-        return getByName(key.toLowerCase())
+        return getWithReflection(key.toLowerCase())
       }
     }
   }
 
-  private def getByName(key: String): AttributeValue = {
-    try {
-      if (!keyTypes.contains(key)) throw new Exception("Key does not exists");
-      var attributeValue = new AttributeValue();
-      if (key.equals("custid")) { attributeValue.setValue(this.custid); }
-      if (key.equals("branchid")) { attributeValue.setValue(this.branchid); }
-      if (key.equals("accno")) { attributeValue.setValue(this.accno); }
-      if (key.equals("amount")) { attributeValue.setValue(this.amount); }
-      if (key.equals("balance")) { attributeValue.setValue(this.balance); }
-      if (key.equals("date")) { attributeValue.setValue(this.date); }
-      if (key.equals("time")) { attributeValue.setValue(this.time); }
-      if (key.equals("locationid")) { attributeValue.setValue(this.locationid); }
-      if (key.equals("transtype")) { attributeValue.setValue(this.transtype); }
-
-
-      attributeValue.setValueType(keyTypes(key.toLowerCase()));
-      return attributeValue;
-    } catch {
-      case e: Exception => {
-        log.debug("", e)
-        throw e
-      }
-    };
-
+  private def getByName(key: String): AnyRef = {
+    if (!keyTypes.contains(key)) throw new Exception(s"Key $key does not exists in message/container hl7Fixed ");
+    return get(keyTypes(key).getIndex)
   }
 
-  override def getOrElse(key: String, defaultVal: Any): AttributeValue = { // Return (value, type)
-  var attributeValue: AttributeValue = new AttributeValue();
+  override def getOrElse(key: String, defaultVal: Any): AnyRef = { // Return (value, type)
     try {
       val value = get(key.toLowerCase())
-      if (value == null) {
-        attributeValue.setValue(defaultVal);
-        attributeValue.setValueType("Any");
-        return attributeValue;
-      } else {
-        return value;
-      }
+      if (value == null) return defaultVal.asInstanceOf[AnyRef]; else return value;
     } catch {
       case e: Exception => {
         log.debug("", e)
@@ -161,28 +167,45 @@ class TransactionMsg(factory: MessageFactoryInterface, other: TransactionMsg) ex
     return null;
   }
 
-  override def getOrElse(index: Int, defaultVal: Any): AttributeValue = { // Return (value,  type)
-  var attributeValue: AttributeValue = new AttributeValue();
+
+  override def get(index : Int) : AnyRef = { // Return (value, type)
+    try{
+      index match {
+        case 0 => return this.custid.asInstanceOf[AnyRef];
+        case 1 => return this.branchid.asInstanceOf[AnyRef];
+        case 2 => return this.accno.asInstanceOf[AnyRef];
+        case 3 => return this.amount.asInstanceOf[AnyRef];
+        case 4 => return this.balance.asInstanceOf[AnyRef];
+        case 5 => return this.date.asInstanceOf[AnyRef];
+        case 6 => return this.time.asInstanceOf[AnyRef];
+        case 7 => return this.locationid.asInstanceOf[AnyRef];
+        case 8 => return this.transtype.asInstanceOf[AnyRef];
+
+        case _ => throw new Exception(s"$index is a bad index for message TransactionMsg");
+      }
+    }catch {
+      case e: Exception => {
+        log.debug("", e)
+        throw e
+      }
+    };
+
+  }
+
+  override def getOrElse(index: Int, defaultVal: Any): AnyRef = { // Return (value,  type)
     try {
       val value = get(index)
-      if (value == null) {
-        attributeValue.setValue(defaultVal);
-        attributeValue.setValueType("Any");
-        return attributeValue;
-      } else {
-        return value;
-      }
+      if (value == null) return defaultVal.asInstanceOf[AnyRef]; else return value;
     } catch {
       case e: Exception => {
         log.debug("", e)
         throw e
       }
     }
-    return null; ;
+    return null;
   }
 
   override def getAttributeNames(): Array[String] = {
-    var attributeNames: scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer[String]();
     try {
       if (keyTypes.isEmpty) {
         return null;
@@ -198,63 +221,18 @@ class TransactionMsg(factory: MessageFactoryInterface, other: TransactionMsg) ex
     return null;
   }
 
-  override def getAllAttributeValues(): java.util.HashMap[String, AttributeValue] = { // Has (name, value, type))
-  var attributeValsMap = new java.util.HashMap[String, AttributeValue];
+  override def getAllAttributeValues(): Array[AttributeValue] = { // Has ( value, attributetypeinfo))
+  var attributeVals = new Array[AttributeValue](9);
     try{
-      {
-        var attributeVal = new AttributeValue();
-        attributeVal.setValue(custid)
-        attributeVal.setValueType(keyTypes("custid"))
-        attributeValsMap.put("custid", attributeVal)
-      };
-      {
-        var attributeVal = new AttributeValue();
-        attributeVal.setValue(branchid)
-        attributeVal.setValueType(keyTypes("branchid"))
-        attributeValsMap.put("branchid", attributeVal)
-      };
-      {
-        var attributeVal = new AttributeValue();
-        attributeVal.setValue(accno)
-        attributeVal.setValueType(keyTypes("accno"))
-        attributeValsMap.put("accno", attributeVal)
-      };
-      {
-        var attributeVal = new AttributeValue();
-        attributeVal.setValue(amount)
-        attributeVal.setValueType(keyTypes("amount"))
-        attributeValsMap.put("amount", attributeVal)
-      };
-      {
-        var attributeVal = new AttributeValue();
-        attributeVal.setValue(balance)
-        attributeVal.setValueType(keyTypes("balance"))
-        attributeValsMap.put("balance", attributeVal)
-      };
-      {
-        var attributeVal = new AttributeValue();
-        attributeVal.setValue(date)
-        attributeVal.setValueType(keyTypes("date"))
-        attributeValsMap.put("date", attributeVal)
-      };
-      {
-        var attributeVal = new AttributeValue();
-        attributeVal.setValue(time)
-        attributeVal.setValueType(keyTypes("time"))
-        attributeValsMap.put("time", attributeVal)
-      };
-      {
-        var attributeVal = new AttributeValue();
-        attributeVal.setValue(locationid)
-        attributeVal.setValueType(keyTypes("locationid"))
-        attributeValsMap.put("locationid", attributeVal)
-      };
-      {
-        var attributeVal = new AttributeValue();
-        attributeVal.setValue(transtype)
-        attributeVal.setValueType(keyTypes("transtype"))
-        attributeValsMap.put("transtype", attributeVal)
-      };
+      attributeVals(0) = new AttributeValue(this.custid, keyTypes("custid"))
+      attributeVals(1) = new AttributeValue(this.branchid, keyTypes("branchid"))
+      attributeVals(2) = new AttributeValue(this.accno, keyTypes("accno"))
+      attributeVals(3) = new AttributeValue(this.amount, keyTypes("amount"))
+      attributeVals(4) = new AttributeValue(this.balance, keyTypes("balance"))
+      attributeVals(5) = new AttributeValue(this.date, keyTypes("date"))
+      attributeVals(6) = new AttributeValue(this.time, keyTypes("time"))
+      attributeVals(7) = new AttributeValue(this.locationid, keyTypes("locationid"))
+      attributeVals(8) = new AttributeValue(this.transtype, keyTypes("transtype"))
 
     }catch {
       case e: Exception => {
@@ -263,79 +241,20 @@ class TransactionMsg(factory: MessageFactoryInterface, other: TransactionMsg) ex
       }
     };
 
-    return attributeValsMap;
+    return attributeVals;
   }
 
-  override def getAttributeNameAndValueIterator(): java.util.Iterator[java.util.Map.Entry[String, AttributeValue]] = {
-    getAllAttributeValues.entrySet().iterator();
-  }
-
-
-  def get(index : Int) : AttributeValue = { // Return (value, type)
-  var attributeValue = new AttributeValue();
-    try{
-      index match {
-        case 0 => {
-          attributeValue.setValue(this.custid);
-          attributeValue.setValueType(keyTypes("custid"));
-        }
-        case 1 => {
-          attributeValue.setValue(this.branchid);
-          attributeValue.setValueType(keyTypes("branchid"));
-        }
-        case 2 => {
-          attributeValue.setValue(this.accno);
-          attributeValue.setValueType(keyTypes("accno"));
-        }
-        case 3 => {
-          attributeValue.setValue(this.amount);
-          attributeValue.setValueType(keyTypes("amount"));
-        }
-        case 4 => {
-          attributeValue.setValue(this.balance);
-          attributeValue.setValueType(keyTypes("balance"));
-        }
-        case 5 => {
-          attributeValue.setValue(this.date);
-          attributeValue.setValueType(keyTypes("date"));
-        }
-        case 6 => {
-          attributeValue.setValue(this.time);
-          attributeValue.setValueType(keyTypes("time"));
-        }
-        case 7 => {
-          attributeValue.setValue(this.locationid);
-          attributeValue.setValueType(keyTypes("locationid"));
-        }
-        case 8 => {
-          attributeValue.setValue(this.transtype);
-          attributeValue.setValueType(keyTypes("transtype"));
-        }
-
-        case _ => throw new Exception("Bad index");
-      }
-      return attributeValue;
-    }catch {
-      case e: Exception => {
-        log.debug("", e)
-        throw e
-      }
-    };
+  override def getAttributeNameAndValueIterator(): java.util.Iterator[AttributeValue] = {
+    //getAllAttributeValues.iterator.asInstanceOf[java.util.Iterator[AttributeValue]];
+    return null; // Fix - need to test to make sure the above iterator works properly
 
   }
 
   override def set(key: String, value: Any) = {
     try {
 
-      if (key.equals("custid")) { this.custid = value.asInstanceOf[Long]; }
-      if (key.equals("branchid")) { this.branchid = value.asInstanceOf[Int]; }
-      if (key.equals("accno")) { this.accno = value.asInstanceOf[Long]; }
-      if (key.equals("amount")) { this.amount = value.asInstanceOf[Double]; }
-      if (key.equals("balance")) { this.balance = value.asInstanceOf[Double]; }
-      if (key.equals("date")) { this.date = value.asInstanceOf[Int]; }
-      if (key.equals("time")) { this.time = value.asInstanceOf[Int]; }
-      if (key.equals("locationid")) { this.locationid = value.asInstanceOf[Int]; }
-      if (key.equals("transtype")) { this.transtype = value.asInstanceOf[String]; }
+      if (!keyTypes.contains(key)) throw new Exception(s"Key $key does not exists in message TransactionMsg")
+      set(keyTypes(key).getIndex, value);
 
     }catch {
       case e: Exception => {
@@ -348,19 +267,56 @@ class TransactionMsg(factory: MessageFactoryInterface, other: TransactionMsg) ex
 
 
   def set(index : Int, value :Any): Unit = {
+    if (value == null) throw new Exception(s"Value is null for index $index in message TransactionMsg ")
     try{
       index match {
-        case 0 => {this.custid = value.asInstanceOf[Long];}
-        case 1 => {this.branchid = value.asInstanceOf[Int];}
-        case 2 => {this.accno = value.asInstanceOf[Long];}
-        case 3 => {this.amount = value.asInstanceOf[Double];}
-        case 4 => {this.balance = value.asInstanceOf[Double];}
-        case 5 => {this.date = value.asInstanceOf[Int];}
-        case 6 => {this.time = value.asInstanceOf[Int];}
-        case 7 => {this.locationid = value.asInstanceOf[Int];}
-        case 8 => {this.transtype = value.asInstanceOf[String];}
+        case 0 => {
+          if(value.isInstanceOf[Long])
+            this.custid = value.asInstanceOf[Long];
+          else throw new Exception(s"Value is the not the correct type for index $index in message TransactionMsg")
+        }
+        case 1 => {
+          if(value.isInstanceOf[Int])
+            this.branchid = value.asInstanceOf[Int];
+          else throw new Exception(s"Value is the not the correct type for index $index in message TransactionMsg")
+        }
+        case 2 => {
+          if(value.isInstanceOf[Long])
+            this.accno = value.asInstanceOf[Long];
+          else throw new Exception(s"Value is the not the correct type for index $index in message TransactionMsg")
+        }
+        case 3 => {
+          if(value.isInstanceOf[Double])
+            this.amount = value.asInstanceOf[Double];
+          else throw new Exception(s"Value is the not the correct type for index $index in message TransactionMsg")
+        }
+        case 4 => {
+          if(value.isInstanceOf[Double])
+            this.balance = value.asInstanceOf[Double];
+          else throw new Exception(s"Value is the not the correct type for index $index in message TransactionMsg")
+        }
+        case 5 => {
+          if(value.isInstanceOf[Int])
+            this.date = value.asInstanceOf[Int];
+          else throw new Exception(s"Value is the not the correct type for index $index in message TransactionMsg")
+        }
+        case 6 => {
+          if(value.isInstanceOf[Int])
+            this.time = value.asInstanceOf[Int];
+          else throw new Exception(s"Value is the not the correct type for index $index in message TransactionMsg")
+        }
+        case 7 => {
+          if(value.isInstanceOf[Int])
+            this.locationid = value.asInstanceOf[Int];
+          else throw new Exception(s"Value is the not the correct type for index $index in message TransactionMsg")
+        }
+        case 8 => {
+          if(value.isInstanceOf[String])
+            this.transtype = value.asInstanceOf[String];
+          else throw new Exception(s"Value is the not the correct type for index $index in message TransactionMsg")
+        }
 
-        case _ => throw new Exception("Bad index");
+        case _ => throw new Exception(s"$index is a bad index for message TransactionMsg");
       }
     }catch {
       case e: Exception => {

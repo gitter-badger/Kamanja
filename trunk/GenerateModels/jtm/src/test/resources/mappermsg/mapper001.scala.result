@@ -41,8 +41,8 @@ class Model(factory: ModelInstanceFactory) extends ModelInstance(factory) {
         if (!(out3 != -1 && out3 < 100)) return Array.empty[MessageInterface]
         val t1: String = "s:" + msg1.get("in3").toString()
         val result = new com.ligadata.kamanja.test.V1000000.varout1(messagefactoryinterface)
-        result.out1 = msg1.in1
-        result.out2 = msg1.in2
+        result.out1 = conversion.ToInteger(msg1.in1)
+        result.out2 = conversion.ToString(msg1.in2)
         result.set("out3", t1)
         result.set("out4", msg1.get("in4"))
         Array(result)

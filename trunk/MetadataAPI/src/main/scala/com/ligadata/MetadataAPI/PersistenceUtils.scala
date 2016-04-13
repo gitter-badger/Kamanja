@@ -775,6 +775,7 @@ object PersistenceUtils {
         "outputmsgs" ->("metadata_objects", mainDS),
         "jar_store" ->("jar_store", mainDS),
         "config_objects" ->("config_objects", mainDS),
+        "adapter_message_bindings" ->("config_objects", mainDS),
         "model_config_objects" ->("model_config_objects", mainDS),
         "transaction_id" ->("transaction_id", mainDS))
     } catch {

@@ -29,6 +29,8 @@ object Action extends Enumeration {
   val ADDADAPTERMESSAGEBINDING=Value("addadaptermessagebinding")
   val UPDATEADAPTERMESSAGEBINDING=Value("updateadaptermessagebinding")
   val REMOVEADAPTERMESSAGEBINDING=Value("removeadaptermessagebinding")
+  val LISTADAPTERMESSAGEBINDINGS=Value("listadaptermessagebindings")
+
   //message manangemen
   val ADDMESSAGE=Value("addmessage")
   val UPDATEMESSAGE=Value("updatemessage")

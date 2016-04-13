@@ -36,7 +36,7 @@ class Model(factory: ModelInstanceFactory) extends ModelInstance(factory) {
     //
     def exeGenerated_test1_1(msg1: com.ligadata.kamanja.test.V1000000.msg1): Array[MessageInterface] = {
       // conversion to string
-      val instr: String = msg1.in1
+      val instr: String = conversion.ToString(msg1.in1)
       // conversion to int
       val inint: Int = conversion.ToInteger(instr)
       // in scala, type could be optional

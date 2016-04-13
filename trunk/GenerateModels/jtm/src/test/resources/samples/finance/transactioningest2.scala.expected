@@ -40,15 +40,15 @@ class TransactionIngest(factory: ModelInstanceFactory) extends ModelInstance(fac
         // extract the type
         val typeName: String = mapData.typename
         val result = new com.ligadata.kamanja.samples.messages.V1000000.TransactionMsg(messagefactoryinterface)
-        result.branchid = mapData.get("branchid")
-        result.custid = mapData.get("custid")
-        result.locationid = mapData.get("locationid")
-        result.balance = mapData.get("balance")
-        result.amount = mapData.get("amount")
+        result.branchid = conversion.ToInteger(mapData.get("branchid"))
+        result.custid = conversion.ToLong(mapData.get("custid"))
+        result.locationid = conversion.ToInteger(mapData.get("locationid"))
+        result.balance = conversion.ToDouble(mapData.get("balance"))
+        result.amount = conversion.ToDouble(mapData.get("amount"))
         result.transtype = mapData.get("transtype")
-        result.accno = mapData.get("accno")
-        result.date = mapData.get("date")
-        result.time = mapData.get("time")
+        result.accno = conversion.ToLong(mapData.get("accno"))
+        result.date = conversion.ToInteger(mapData.get("date"))
+        result.time = conversion.ToInteger(mapData.get("time"))
         Array(result)
       }
       process_o1()

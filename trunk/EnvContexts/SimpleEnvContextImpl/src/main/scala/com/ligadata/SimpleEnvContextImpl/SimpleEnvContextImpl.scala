@@ -2798,12 +2798,12 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
   override def setZookeeperInfo(zkConnectString: String, zkBasePath: String, zkSessionTimeoutMs: Int, zkConnectionTimeoutMs: Int): Unit = {
     _zkConnectString = zkConnectString
     _zkBasePath = zkBasePath
-    _zkleaderNodePath = zkBasePath + "/envctxtleader"
+    _zkleaderNodePath = zkBasePath + "/EnvCtxtLeader"
     _zkSessionTimeoutMs = zkSessionTimeoutMs
     _zkConnectionTimeoutMs = zkConnectionTimeoutMs
   }
 
-  override def getZookeeperInfo(): (String, String, Int, Int) = (_zkConnectString, _zkleaderNodePath, _zkSessionTimeoutMs, _zkConnectionTimeoutMs)
+  override def getZookeeperInfo(): (String, String, Int, Int) = (_zkConnectString, _zkBasePath, _zkSessionTimeoutMs, _zkConnectionTimeoutMs)
 
   override def createZkPathListener(znodePath: String, ListenCallback: (String) => Unit): Unit = {
     if (!hasZkConnectionString)

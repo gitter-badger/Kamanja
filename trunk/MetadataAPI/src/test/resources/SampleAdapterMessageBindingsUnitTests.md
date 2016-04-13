@@ -27,7 +27,7 @@ What follows is a number of annotated examples that illustrate the bindings and 
   "Serializer": " org.kamanja.serializer.json.JsonSerDeser"
 }
 
-	$KAMANJA_HOME/bin/kamanja debug $KAMANJA_HOME/config/MetadataAPIConfig.properties add adaptermessagebinding '<json> {"AdapterName": "kafkaAdapterInput1", "MessageName": "com.botanical.json.ordermsg", "Serializer": " org.kamanja.serializer.json.JsonSerDeser"} </json>'
+	$KAMANJA_HOME/bin/kamanja debug $KAMANJA_HOME/config/MetadataAPIConfig.properties add adaptermessagebinding BINDINGFROMSTRING '{"AdapterName": "kafkaAdapterInput1", "MessageName": "com.botanical.json.ordermsg", "Serializer": " org.kamanja.serializer.json.JsonSerDeser"}'
 
 _The keys in the JSON specification are case sensitive.  For example, use "AdapterName", not "ADAPTERname" or "adaptername"._
 
@@ -49,7 +49,7 @@ The serializer used in this case is the name of the builtin CSV deserializer.  N
   }
 }
 
-	$KAMANJA_HOME/bin/kamanja $KAMANJA_HOME/config/MetadataAPIConfig.properties add adaptermessagebinding '<json> {"AdapterName": "kafkaAdapterOutput2", "MessageNames": ["com.botanical.csv.emailmsg"], "Serializer": "org.kamanja.serializer.csv.CsvSerDeser", "Options": {"lineDelimiter": "\r\n", "fieldDelimiter": ",", "produceHeader": true, "alwaysQuoteFields": false } } </json>'
+	$KAMANJA_HOME/bin/kamanja $KAMANJA_HOME/config/MetadataAPIConfig.properties add adaptermessagebinding BINDINGFROMSTRING '{"AdapterName": "kafkaAdapterOutput2", "MessageNames": ["com.botanical.csv.emailmsg"], "Serializer": "org.kamanja.serializer.csv.CsvSerDeser", "Options": {"lineDelimiter": "\r\n", "fieldDelimiter": ",", "produceHeader": true, "alwaysQuoteFields": false } }'
 
 This output adapter also uses the CSV builtin adapter, but notice too that there are two messages mentioned in the MessageNames key value.  What actually happens is that binding metadata is built for each adapter/message/serializer combination.  Think of this as a short hand.
 
@@ -62,7 +62,7 @@ If the key for the message is "MessageName", then only message name is given.  I
   "Serializer": "org.kamanja.serializer.json.JsonSerDeser"
 }
 
-	$KAMANJA_HOME/bin/kamanja $KAMANJA_HOME/config/MetadataAPIConfig.properties add adaptermessagebinding '<json> {"AdapterName": "hBaseStore1", "MessageNames": ["com.botanical.json.audit.ordermsg", "com.botanical.json.audit.shippingmsg"], "Serializer": "org.kamanja.serializer.json.JsonSerDeser"} </json>'
+	$KAMANJA_HOME/bin/kamanja $KAMANJA_HOME/config/MetadataAPIConfig.properties add adaptermessagebinding BINDINGFROMSTRING '{"AdapterName": "hBaseStore1", "MessageNames": ["com.botanical.json.audit.ordermsg", "com.botanical.json.audit.shippingmsg"], "Serializer": "org.kamanja.serializer.json.JsonSerDeser"}'
 
 In this storage adapter binding, the use of the builtin JSON adapter is illustrated.  Again there are multiple messages specified.  The JSON serializer doesn't currently have any options, so it can be omitted.
 
@@ -99,13 +99,31 @@ Using a file to ingest all (or at least the key adapter bindings) for a new clus
 
 If the above file was called $MetadataDir/config/AdapterMessageBindingsForClusterConfig1.4.0.json, a Kamanja command can directly ingest it:
 
-	$KAMANJA_HOME/bin/kamanja debug $KAMANJA_HOME/config/MetadataAPIConfig.properties add adaptermessagebinding $MetadataDir/config/AdapterMessageBindingsForClusterConfig1.4.0.json
+	$KAMANJA_HOME/bin/kamanja debug $KAMANJA_HOME/config/MetadataAPIConfig.properties add adaptermessagebinding BINDINGFROMFILE $MetadataDir/config/AdapterMessageBindingsForClusterConfig1.4.0.json
+
+	$KAMANJA_HOME/bin/kamanja $KAMANJA_HOME/config/MetadataAPIConfig.properties add adaptermessagebinding BINDINGFROMFILE $MetadataDir/config/AdapterMessageBindingsForClusterConfig1.4.0.json
 
 Like the other examples, you can also push this directly on the command line too (it is useful to have an editor that can pretty print/flatten the JSON text to do these more complicated structures for the command line):
 
-	$KAMANJA_HOME/bin/kamanja $KAMANJA_HOME/config/MetadataAPIConfig.properties add adaptermessagebinding '<json> [{"AdapterName": "kafkaAdapterInput1", "MessageNames": ["com.botanical.json.ordermsg", "com.botanical.json.shippingmsg"], "Serializer": "org.kamanja.serializer.json.JsonSerDeser"}, {"AdapterName": "kafkaAdapterOutput2", "MessageNames": ["com.botanical.csv.emailmsg"], "Serializer": "org.kamanja.serializer.csv.CsvSerDeser", "Options": {"lineDelimiter": "\r\n", "fieldDelimiter": ",", "produceHeader": "true", "alwaysQuoteFields": "false"} }, {"AdapterName": "hBaseStore1", "MessageNames": ["com.botanical.json.audit.ordermsg", "com.botanical.json.audit.shippingmsg"], "Serializer": "org.kamanja.serializer.json.JsonSerDeser"} ] </json>'
+	$KAMANJA_HOME/bin/kamanja $KAMANJA_HOME/config/MetadataAPIConfig.properties add adaptermessagebinding BINDINGFROMSTRING '[{"AdapterName": "kafkaAdapterInput1", "MessageNames": ["com.botanical.json.ordermsg", "com.botanical.json.shippingmsg"], "Serializer": "org.kamanja.serializer.json.JsonSerDeser"}, {"AdapterName": "kafkaAdapterOutput2", "MessageNames": ["com.botanical.csv.emailmsg"], "Serializer": "org.kamanja.serializer.csv.CsvSerDeser", "Options": {"lineDelimiter": "\r\n", "fieldDelimiter": ",", "produceHeader": "true", "alwaysQuoteFields": "false"} }, {"AdapterName": "hBaseStore1", "MessageNames": ["com.botanical.json.audit.ordermsg", "com.botanical.json.audit.shippingmsg"], "Serializer": "org.kamanja.serializer.json.JsonSerDeser"} ]'
 
 
+
+**List Adapter Message Bindings**
+
+_List them all_
+	$KAMANJA_HOME/bin/kamanja debug $KAMANJA_HOME/config/MetadataAPIConfig.properties list adaptermessagebindings 
+_List bindings for the supplied adapter_
+	$KAMANJA_HOME/bin/kamanja debug $KAMANJA_HOME/config/MetadataAPIConfig.properties list adaptermessagebindings ADAPTERFILTER hBaseStore1
+_List bindings for a given message_
+	$KAMANJA_HOME/bin/kamanja debug $KAMANJA_HOME/config/MetadataAPIConfig.properties list adaptermessagebindings MESSAGEFILTER com.botanical.csv.emailmsg
+_List bindings for given serializer_
+	$KAMANJA_HOME/bin/kamanja debug $KAMANJA_HOME/config/MetadataAPIConfig.properties list adaptermessagebindings SERIALIZERFILTER org.kamanja.serializer.json.JsonSerDeser
+
+**List Adapter Message Bindings**
+
+_Remove the supplied binding key_
+	$KAMANJA_HOME/bin/kamanja debug $KAMANJA_HOME/config/MetadataAPIConfig.properties remove adaptermessagebindings hBaseStore1.com.botanical.json.audit.ordermsg.org.kamanja.serializer.json.JsonSerDeser
 
 **Test Setup**
 
@@ -121,7 +139,7 @@ _Install the parameterized version of SetPaths.sh called setPathsFor.scala (opti
 
 This step uses a script called setPathsFor.scala that will do the same thing that the SampleApplication/EasyInstall/SetPaths.sh script does for some of the fixed examples we have in the distribution.  This does it for arbitrary files... one at a time.  The script is somewhat useful for setting up testing configurations.  Install it if you like on your PATH.  It can be found at trunk/Utils/Script/setPathsFor.scala 
 
-Alternatively the template may be edited by hand if your really old school.
+Alternatively the template may be edited by hand if you're really old school.
 
 _Configure the cluster configuration json file_ (make location substitutions)
 

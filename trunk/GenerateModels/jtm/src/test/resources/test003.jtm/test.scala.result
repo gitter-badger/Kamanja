@@ -77,7 +77,7 @@ class Model(factory: ModelInstanceFactory) extends ModelInstance(factory) {
         val result = new com.ligadata.kamanja.test.V1000000.msg4(messagefactoryinterface)
         result.out4 = msg2.in1
         result.out3 = msg2.in1
-        result.out2 = msg2.in1
+        result.out2 = conversion.ToString(msg2.in1)
         result.out1 = msg2.in1
         Array(result)
       }

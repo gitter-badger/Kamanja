@@ -82,7 +82,7 @@ class SmartFileConsumer(val inputConfig: AdapterConfiguration, val execCtxtObj: 
   //******************************************************************************************************
   //***************************node sync related code**********
   val communicationBasePath = ""
-  val smartFileCommunicationPath = if(communicationBasePath.length > 0 ) communicationBasePath + "/" + "SmartFileCommunication"
+  val smartFileCommunicationPath = if(communicationBasePath.length > 0 ) (communicationBasePath + "/" + "SmartFileCommunication") else ("/" + "SmartFileCommunication")
   val smartFileFromLeaderPath = smartFileCommunicationPath + "/FromLeader"
   val smartFileToLeaderPath = smartFileCommunicationPath + "/ToLeader"
   val requestFilePath = smartFileToLeaderPath + "/RequestFile"

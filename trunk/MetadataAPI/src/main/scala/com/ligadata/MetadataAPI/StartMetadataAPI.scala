@@ -61,10 +61,13 @@ object StartMetadataAPI {
   val MODELVERSION= "MODELVERSION"
   val MESSAGENAME="MESSAGENAME"
 
-  val JSONBegin="<json>"
-  val JSONEnd="</json>"
-  val JSONKey="___json___"
-  var inJsonBlk : Boolean = false
+  /** AdapterMessageBinding add tags */
+  val BINDINGFROMFILE="BINDINGFROMFILE"
+  val BINDINGFROMSTRING="BINDINGFROMSTRING"
+  /** List AdapterMessageBinding filters */
+  val ADAPTERFILTER="ADAPTERFILTER"
+  val MESSAGEFILTER="MESSAGEFILTER"
+  val SERIALIZERFILTER="SERIALIZERFILTER"
 
   var expectModelName = false
   var expectModelVer = false
@@ -72,6 +75,12 @@ object StartMetadataAPI {
   var foundModelName = false
   var foundModelVer = false
   var foundMessageName = false
+  var expectBindingFromFile = false
+  var expectBindingFromString = false
+  var expectListBindingFilter = false
+  var expectAdapterFilter = false
+  var expectMessageFilter = false
+  var expectSerializerFilter = false
 
   var varmap: scala.collection.mutable.Map[String,String] = scala.collection.mutable.Map[String,String]()
   var expectTid: Boolean = false
@@ -99,77 +108,104 @@ object StartMetadataAPI {
               || arg.endsWith(".scala")
               || arg.endsWith(".java")
               || arg.endsWith(".jar")) {
-          extraCmdArgs(INPUTLOC) = arg
+            extraCmdArgs(INPUTLOC) = arg
+            if (expectBindingFromFile) { /** the json test above can prevent the ordinary catch of the name below */
+              extraCmdArgs(BINDINGFROMFILE) = extraCmdArgs.getOrElse(INPUTLOC,null)
+                expectBindingFromFile = false
+            }
 
           } else if (arg.endsWith(".properties")) {
               config = arg
-
-          } else if (arg.toLowerCase == JSONBegin) { /** start of json config blk */
-              inJsonBlk = true
-          } else if (arg.toLowerCase == JSONEnd) { /** end of json config blk */
-              inJsonBlk = false
-              val jsonConfig : String = jsonBuffer.toString
-              extraCmdArgs(JSONKey) = jsonConfig
-          } else if (inJsonBlk && arg.toLowerCase != JSONEnd) { /** in json config blk .., append */
-              jsonBuffer.append(arg)
           } else {
-            if (arg != "debug") {
-              /** ignore the debug tag */
-              if (arg.equalsIgnoreCase(TENANTID)) {
-                  expectTid = true
-                extraCmdArgs(TENANTID) = ""
-              } else if(arg.equalsIgnoreCase(WITHDEP)) {
-                expectDep = true
-                extraCmdArgs(WITHDEP) = ""
-              } else if (arg.equalsIgnoreCase(MODELNAME)) {
-                expectModelName = true
-              } else if (arg.equalsIgnoreCase(MODELVERSION)) {
-                expectModelVer = true
-              } else if (arg.equalsIgnoreCase(MESSAGENAME)) {
-                expectMessageName = true
-              } else if ( arg.equalsIgnoreCase(OUTPUTMSG) ){
-                expectOutputMsg = true
-              }
+              if (arg != "debug") {
+                  /** ignore the debug tag */
+                  if (arg.equalsIgnoreCase(TENANTID)) {
+                      expectTid = true
+                      extraCmdArgs(TENANTID) = ""
+                  } else if (arg.equalsIgnoreCase(WITHDEP)) {
+                      expectDep = true
+                      extraCmdArgs(WITHDEP) = ""
+                  } else if (arg.equalsIgnoreCase(MODELNAME)) {
+                      expectModelName = true
+                  } else if (arg.equalsIgnoreCase(MODELVERSION)) {
+                      expectModelVer = true
+                  } else if (arg.equalsIgnoreCase(MESSAGENAME)) {
+                      expectMessageName = true
+                  } else if (arg.equalsIgnoreCase(OUTPUTMSG)) {
+                      expectOutputMsg = true
+                  } else if (arg.equalsIgnoreCase(BINDINGFROMFILE)) {
+                      expectBindingFromFile = true
+                  } else if (arg.equalsIgnoreCase(BINDINGFROMSTRING)) {
+                      expectBindingFromString = true
+                  } else if (arg.equalsIgnoreCase(ADAPTERFILTER)) {
+                      expectAdapterFilter = true
+                  } else if (arg.equalsIgnoreCase(MESSAGEFILTER)) {
+                      expectMessageFilter = true
+                  } else if (arg.equalsIgnoreCase(SERIALIZERFILTER)) {
+                      expectSerializerFilter = true
+                  } else {
+                      var argVar = arg
+                      if (expectTid) {
+                          extraCmdArgs(TENANTID) = arg
+                          expectTid = false
+                          argVar = "" // Make sure we dont add to the routing command
+                      }
+                      if (expectDep) {
+                          extraCmdArgs(WITHDEP) = arg
+                          expectDep = false
+                          argVar = "" // Make sure we dont add to the routing command
+                      }
+                      if (expectModelName) {
+                          extraCmdArgs(MODELNAME) = arg
+                          expectModelName = false
+                          argVar = "" // Make sure we dont add to the routing command
+                      }
+                      if (expectModelVer) {
+                          extraCmdArgs(MODELVERSION) = arg
+                          expectModelVer = false
+                          argVar = "" // Make sure we dont add to the routing command
+                      }
+                      if (expectMessageName) {
+                          extraCmdArgs(MESSAGENAME) = arg
+                          expectMessageName = false
+                          argVar = "" // Make sure we dont add to the routing command
+                      }
+                      if (expectBindingFromString) {
+                          extraCmdArgs(BINDINGFROMSTRING) = arg
+                          expectBindingFromString = false
+                          argVar = "" // Make sure we dont add to the routing command
+                      }
+                      if (expectBindingFromFile) {
+                          extraCmdArgs(BINDINGFROMFILE) = arg
+                          expectBindingFromFile = false
+                          argVar = "" // Make sure we dont add to the routing command
+                      }
+                      if (expectAdapterFilter) {
+                          extraCmdArgs(ADAPTERFILTER) = arg
+                          expectAdapterFilter = false
+                          argVar = "" // Make sure we dont add to the routing command
+                      }
+                      if (expectMessageFilter) {
+                          extraCmdArgs(MESSAGEFILTER) = arg
+                          expectMessageFilter = false
+                          argVar = "" // Make sure we dont add to the routing command
+                      }
+                      if (expectSerializerFilter) {
+                          extraCmdArgs(SERIALIZERFILTER) = arg
+                          expectSerializerFilter = false
+                          argVar = "" // Make sure we dont add to the routing command
+                      }
+                      if (expectOutputMsg) {
+                          extraCmdArgs(OUTPUTMSG) = arg
+                          logger.debug("Found output message definition " + arg + " in the command ")
+                          expectOutputMsg = false
+                          argVar = "" // Make sure we dont add to the routing command
+                      }
 
-              else {
-                var argVar = arg
-                if (expectTid) {
-                  extraCmdArgs(TENANTID) = arg
-                  expectTid = false
-                  argVar = ""  // Make sure we dont add to the routing command
-                }
-                if (expectDep) {
-                  extraCmdArgs(WITHDEP) = arg
-                  expectDep = false
-                  argVar = "" // Make sure we dont add to the routing command
-                }
-                if (expectModelName) {
-                  extraCmdArgs(MODELNAME) = arg
-                  expectModelName = false
-                  argVar = ""  // Make sure we dont add to the routing command
-                }
-                if (expectModelVer) {
-                  extraCmdArgs(MODELVERSION) = arg
-                  expectModelVer = false
-                  argVar = "" // Make sure we dont add to the routing command
-                }
-                if (expectMessageName) {
-                  extraCmdArgs(MESSAGENAME) = arg
-                  expectMessageName = false
-                  argVar = ""  // Make sure we dont add to the routing command
-                }
-                if(expectOutputMsg ){
-                  extraCmdArgs(OUTPUTMSG) = arg
-                  logger.debug("Found output message definition " + arg + " in the command ")
-                  expectOutputMsg = false
-                  argVar = ""  // Make sure we dont add to the routing command
-                }
-
-                action += argVar
+                      action += argVar
+                  }
               }
-            }
           }
-
       })
       //add configuration
       if (config == "") {
@@ -402,9 +438,50 @@ object StartMetadataAPI {
         case Action.REMOVEENGINECONFIG => response = ConfigService.removeEngineConfig
 
         // adapter message bindings
-        case Action.ADDADAPTERMESSAGEBINDING => response = AdapterMessageBindingService.addAdapterMessageBinding(extraCmdArgs.getOrElse(JSONKey,input), userId)
+        case Action.ADDADAPTERMESSAGEBINDING => {
+            val bindingString: String = extraCmdArgs.getOrElse(BINDINGFROMSTRING, "")
+            val bindingFilePath: String = extraCmdArgs.getOrElse(BINDINGFROMFILE, "")
+            if (bindingString.nonEmpty && bindingFilePath.nonEmpty) {
+                println("Currently only a file specification OR a string specification for the bindings are permitted, not both.")
+                throw new RuntimeException(s"Currently only a file specification or a string specification for the bindings are permitted, not both.")
+            } else if (bindingString.nonEmpty) {
+                response = AdapterMessageBindingService.addFromInlineAdapterMessageBinding(bindingString, userId)
+            } else if (bindingFilePath.nonEmpty) {
+                response = AdapterMessageBindingService.addFromFileAnAdapterMessageBinding(bindingFilePath, userId)
+            } else {
+                println(s"Add Adapter Message Binding invocation is fouled up.  Check the syntax: \nkamanja <apiconfig> add adaptermessagebinding <binding spec from file path with json content | binding spec from inline json string> <file path|string>")
+                throw new RuntimeException(s"Add Adapter Message Binding invocation is fouled up.  Check the syntax: \nkamanja <apiconfig> add adaptermessagebinding <bindingfromfile|bindingfromstring> <file path|string>")
+            }
+
+        }
         case Action.UPDATEADAPTERMESSAGEBINDING => response = AdapterMessageBindingService.updateAdapterMessageBinding(input, userId)
         case Action.REMOVEADAPTERMESSAGEBINDING => response = AdapterMessageBindingService.removeAdapterMessageBinding(input, userId)
+
+        case Action.LISTADAPTERMESSAGEBINDINGS => {
+            val adapterfilter: String = extraCmdArgs.getOrElse(ADAPTERFILTER, "")
+            val messagefilter: String = extraCmdArgs.getOrElse(MESSAGEFILTER, "")
+            val serializerfilter: String = extraCmdArgs.getOrElse(SERIALIZERFILTER, "")
+
+            val filterCnt : Int = (if (adapterfilter.nonEmpty) 1 else 0) +
+                                  (if (messagefilter.nonEmpty) 1 else 0) +
+                                  (if (serializerfilter.nonEmpty) 1 else 0)
+            response = if (filterCnt == 0) {
+                AdapterMessageBindingService.ListAllAdapterMessageBindings
+            } else {
+                if (filterCnt == 1) {
+                    if (adapterfilter.nonEmpty) {
+                        AdapterMessageBindingService.ListBindingsForAdapter(adapterfilter)
+                    } else if (messagefilter.nonEmpty) {
+                        AdapterMessageBindingService.ListBindingsForMessage(messagefilter)
+                    } else {
+                        AdapterMessageBindingService.ListBindingsUsingSerializer(messagefilter)
+                    }
+                } else {
+                    println("Currently only one filter is permitted for the ListAdapterMessageBindings cmd")
+                    throw new RuntimeException(s"Currently only one filter is permitted for the ListAdapterMessageBindings cmd")
+                }
+            }
+        }
 
         //concept
         case Action.ADDCONCEPT => response = ConceptService.addConcept(input)

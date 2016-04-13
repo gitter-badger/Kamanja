@@ -3,7 +3,7 @@ package com.ligadata.kamanja.samples.messages.V1000000;
 import org.json4s.jackson.JsonMethods._
 import org.json4s.DefaultFormats
 import org.json4s.Formats
-import com.ligadata.KamanjaBase.{ AttributeValue, ContainerFactoryInterface, ContainerInterface, MessageFactoryInterface, MessageInterface, TimePartitionInfo, ContainerOrConceptFactory, RDDObject, JavaRDDObject, ContainerOrConcept}
+import com.ligadata.KamanjaBase.{ AttributeTypeInfo, AttributeValue, ContainerFactoryInterface, ContainerInterface, MessageFactoryInterface, MessageInterface, TimePartitionInfo, ContainerOrConceptFactory, RDDObject, JavaRDDObject, ContainerOrConcept}
 import com.ligadata.BaseTypes._
 import com.ligadata.Exceptions.StackTrace;
 import org.apache.logging.log4j.{ Logger, LogManager }
@@ -48,68 +48,105 @@ object TransactionMsgIn extends RDDObject[TransactionMsgIn] with MessageFactoryI
     return (tmInfo != null && tmInfo.getTimePartitionType != TimePartitionInfo.TimePartitionType.NONE);
   }
 
-  override def getSchema: String = " {\"type\": \"record\", \"namespace\" : \"com.ligadata.kamanja.samples.messages\",\"name\" : \"transactionmsgin\",\"fields\":[{\"name\" : \"data\",\"type\" : \"string\"}]}";
+  override def getAvroSchema: String = """{ "type": "record",  "namespace" : "com.ligadata.kamanja.samples.messages" , "name" : "transactionmsgin" , "fields":[{ "name" : "data" , "type" : "string"}]}""";
 }
 
 class TransactionMsgIn(factory: MessageFactoryInterface, other: TransactionMsgIn) extends MessageInterface(factory) {
 
-  val logger = this.getClass.getName
-  lazy val log = LogManager.getLogger(logger)
+  private val log = LogManager.getLogger(getClass)
 
-  private var keyTypes = Map("data" -> "String");
+  var attributeTypes = generateAttributeTypes;
 
-  override def save: Unit = {
-    /* TransactionMsgIn.saveOne(this) */
+  private def generateAttributeTypes(): Array[AttributeTypeInfo] = {
+    var attributeTypes = new Array[AttributeTypeInfo](1);
+    attributeTypes(0) = new AttributeTypeInfo("data", 0, AttributeTypeInfo.TypeCategory.STRING, 1, 1, 0)
+
+
+    return attributeTypes
   }
 
-  def Clone(): ContainerOrConcept = {
-    TransactionMsgIn.build(this)
+  var keyTypes: Map[String, AttributeTypeInfo] = attributeTypes.map { a => (a.getName, a) }.toMap;
+
+  if (other != null && other != this) {
+    // call copying fields from other to local variables
+    fromFunc(other)
   }
+
+  override def save: Unit = { /* TransactionMsgIn.saveOne(this) */}
+
+  def Clone(): ContainerOrConcept = { TransactionMsgIn.build(this) }
 
   override def getPartitionKey: Array[String] = Array[String]()
 
   override def getPrimaryKey: Array[String] = Array[String]()
 
+  override def getAttributeType(name: String): AttributeTypeInfo = {
+    if (name == null || name.trim() == "") return null;
+    attributeTypes.foreach(attributeType => {
+      if(attributeType.getName == name.toLowerCase())
+        return attributeType
+    })
+    return null;
+  }
+
+
   var data: String = _;
 
-  private def getWithReflection(key: String): AttributeValue = {
-    var attributeValue = new AttributeValue();
+  override def getAttributeTypes(): Array[AttributeTypeInfo] = {
+    if (attributeTypes == null) return null;
+    return attributeTypes
+  }
+
+  private def getWithReflection(key: String): AnyRef = {
     val ru = scala.reflect.runtime.universe
     val m = ru.runtimeMirror(getClass.getClassLoader)
     val im = m.reflect(this)
     val fieldX = ru.typeOf[TransactionMsgIn].declaration(ru.newTermName(key)).asTerm.accessed.asTerm
     val fmX = im.reflectField(fieldX)
-    attributeValue.setValue(fmX.get);
-    attributeValue.setValueType(keyTypes(key))
-    attributeValue
+    return fmX.get.asInstanceOf[AnyRef];
   }
 
-  override def get(key: String): AttributeValue = {
+  override def get(key: String): AnyRef = {
     try {
       // Try with reflection
-      return getWithReflection(key.toLowerCase())
+      return getByName(key.toLowerCase())
     } catch {
       case e: Exception => {
         val stackTrace = StackTrace.ThrowableTraceString(e)
         log.debug("StackTrace:" + stackTrace)
         // Call By Name
-        return getByName(key.toLowerCase())
+        return getWithReflection(key.toLowerCase())
       }
     }
   }
 
-  private def getByName(key: String): AttributeValue = {
+  private def getByName(key: String): AnyRef = {
+    if (!keyTypes.contains(key)) throw new Exception(s"Key $key does not exists in message/container hl7Fixed ");
+    return get(keyTypes(key).getIndex)
+  }
+
+  override def getOrElse(key: String, defaultVal: Any): AnyRef = { // Return (value, type)
     try {
-      if (!keyTypes.contains(key)) throw new Exception("Key does not exists");
-      var attributeValue = new AttributeValue();
-      if (key.equals("data")) {
-        attributeValue.setValue(this.data);
-      }
-
-
-      attributeValue.setValueType(keyTypes(key.toLowerCase()));
-      return attributeValue;
+      val value = get(key.toLowerCase())
+      if (value == null) return defaultVal.asInstanceOf[AnyRef]; else return value;
     } catch {
+      case e: Exception => {
+        log.debug("", e)
+        throw e
+      }
+    }
+    return null;
+  }
+
+
+  override def get(index : Int) : AnyRef = { // Return (value, type)
+    try{
+      index match {
+        case 0 => return this.data.asInstanceOf[AnyRef];
+
+        case _ => throw new Exception(s"$index is a bad index for message TransactionMsgIn");
+      }
+    }catch {
       case e: Exception => {
         log.debug("", e)
         throw e
@@ -118,39 +155,10 @@ class TransactionMsgIn(factory: MessageFactoryInterface, other: TransactionMsgIn
 
   }
 
-  override def getOrElse(key: String, defaultVal: Any): AttributeValue = {
-    // Return (value, type)
-    var attributeValue: AttributeValue = new AttributeValue();
-    try {
-      val value = get(key.toLowerCase())
-      if (value == null) {
-        attributeValue.setValue(defaultVal);
-        attributeValue.setValueType("Any");
-        return attributeValue;
-      } else {
-        return value;
-      }
-    } catch {
-      case e: Exception => {
-        log.debug("", e)
-        throw e
-      }
-    }
-    return null;
-  }
-
-  override def getOrElse(index: Int, defaultVal: Any): AttributeValue = {
-    // Return (value,  type)
-    var attributeValue: AttributeValue = new AttributeValue();
+  override def getOrElse(index: Int, defaultVal: Any): AnyRef = { // Return (value,  type)
     try {
       val value = get(index)
-      if (value == null) {
-        attributeValue.setValue(defaultVal);
-        attributeValue.setValueType("Any");
-        return attributeValue;
-      } else {
-        return value;
-      }
+      if (value == null) return defaultVal.asInstanceOf[AnyRef]; else return value;
     } catch {
       case e: Exception => {
         log.debug("", e)
@@ -158,11 +166,9 @@ class TransactionMsgIn(factory: MessageFactoryInterface, other: TransactionMsgIn
       }
     }
     return null;
-    ;
   }
 
   override def getAttributeNames(): Array[String] = {
-    var attributeNames: scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer[String]();
     try {
       if (keyTypes.isEmpty) {
         return null;
@@ -178,61 +184,34 @@ class TransactionMsgIn(factory: MessageFactoryInterface, other: TransactionMsgIn
     return null;
   }
 
-  override def getAllAttributeValues(): java.util.HashMap[String, AttributeValue] = {
-    // Has (name, value, type))
-    var attributeValsMap = new java.util.HashMap[String, AttributeValue];
-    try { {
-      var attributeVal = new AttributeValue();
-      attributeVal.setValue(data)
-      attributeVal.setValueType(keyTypes("data"))
-      attributeValsMap.put("data", attributeVal)
-    };
+  override def getAllAttributeValues(): Array[AttributeValue] = { // Has ( value, attributetypeinfo))
+  var attributeVals = new Array[AttributeValue](1);
+    try{
+      attributeVals(0) = new AttributeValue(this.data, keyTypes("data"))
 
-    } catch {
+    }catch {
       case e: Exception => {
         log.debug("", e)
         throw e
       }
     };
 
-    return attributeValsMap;
+    return attributeVals;
   }
 
-  override def getAttributeNameAndValueIterator(): java.util.Iterator[java.util.Map.Entry[String, AttributeValue]] = {
-    getAllAttributeValues.entrySet().iterator();
-  }
-
-
-  def get(index: Int): AttributeValue = {
-    // Return (value, type)
-    var attributeValue = new AttributeValue();
-    try {
-      index match {
-        case 0 => {
-          attributeValue.setValue(this.data);
-          attributeValue.setValueType(keyTypes("data"));
-        }
-
-        case _ => throw new Exception("Bad index");
-      }
-      return attributeValue;
-    } catch {
-      case e: Exception => {
-        log.debug("", e)
-        throw e
-      }
-    };
+  override def getAttributeNameAndValueIterator(): java.util.Iterator[AttributeValue] = {
+    //getAllAttributeValues.iterator.asInstanceOf[java.util.Iterator[AttributeValue]];
+    return null; // Fix - need to test to make sure the above iterator works properly
 
   }
 
   override def set(key: String, value: Any) = {
     try {
 
-      if (key.equals("data")) {
-        this.data = value.asInstanceOf[String];
-      }
+      if (!keyTypes.contains(key)) throw new Exception(s"Key $key does not exists in message TransactionMsgIn")
+      set(keyTypes(key).getIndex, value);
 
-    } catch {
+    }catch {
       case e: Exception => {
         log.debug("", e)
         throw e
@@ -242,16 +221,19 @@ class TransactionMsgIn(factory: MessageFactoryInterface, other: TransactionMsgIn
   }
 
 
-  def set(index: Int, value: Any): Unit = {
-    try {
+  def set(index : Int, value :Any): Unit = {
+    if (value == null) throw new Exception(s"Value is null for index $index in message TransactionMsgIn ")
+    try{
       index match {
         case 0 => {
-          this.data = value.asInstanceOf[String];
+          if(value.isInstanceOf[String])
+            this.data = value.asInstanceOf[String];
+          else throw new Exception(s"Value is the not the correct type for index $index in message TransactionMsgIn")
         }
 
-        case _ => throw new Exception("Bad index");
+        case _ => throw new Exception(s"$index is a bad index for message TransactionMsgIn");
       }
-    } catch {
+    }catch {
       case e: Exception => {
         log.debug("", e)
         throw e
@@ -261,7 +243,7 @@ class TransactionMsgIn(factory: MessageFactoryInterface, other: TransactionMsgIn
   }
 
   override def set(key: String, value: Any, valTyp: String) = {
-    throw new Exception("Set Func for Value and ValueType By Key is not supported for Fixed Messages")
+    throw new Exception ("Set Func for Value and ValueType By Key is not supported for Fixed Messages" )
   }
 
   private def fromFunc(other: TransactionMsgIn): TransactionMsgIn = {
@@ -272,11 +254,12 @@ class TransactionMsgIn(factory: MessageFactoryInterface, other: TransactionMsgIn
   }
 
 
-  def this(factory: MessageFactoryInterface) = {
+  def this(factory:MessageFactoryInterface) = {
     this(factory, null)
   }
 
   def this(other: TransactionMsgIn) = {
     this(other.getFactory.asInstanceOf[MessageFactoryInterface], other)
   }
+
 }

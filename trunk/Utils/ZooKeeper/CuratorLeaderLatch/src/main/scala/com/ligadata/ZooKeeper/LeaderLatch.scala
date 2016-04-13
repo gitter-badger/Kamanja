@@ -71,7 +71,7 @@ class ZkLeaderLatch(val zkcConnectString: String, val leaderPath: String, val no
 
   def getClsuterStatus = clstStatus
 
-  def SelectLeader = {
+  def SelectLeader = lock.synchronized {
     try {
       // Make sure we have the path created before we execute this
       CreateClient.CreateNodeIfNotExists(zkcConnectString, leaderPath)
@@ -95,16 +95,18 @@ class ZkLeaderLatch(val zkcConnectString: String, val leaderPath: String, val no
 
   private def updateClusterStatus {
     try {
-      val participants = leaderLatch.getParticipants.asScala
+      if (leaderLatch != null  && leaderLatch.getParticipants != null) {
+        val participants = leaderLatch.getParticipants.asScala
 
-      clstStatus = ClusterStatus(leaderLatch.getId, leaderLatch.hasLeadership, leaderLatch.getLeader.getId, participants.map(_.getId))
+        clstStatus = ClusterStatus(leaderLatch.getId, leaderLatch.hasLeadership, leaderLatch.getLeader.getId, participants.map(_.getId))
 
-      val isLeader = if (clstStatus.isLeader) "true" else "false"
+        val isLeader = if (clstStatus.isLeader) "true" else "false"
 
-      // Do something with cluster status (log leadership change, etc)
-      LOG.info("NodeId:%s, IsLeader:%s, Leader:%s, AllParticipents:{%s}".format(clstStatus.nodeId, isLeader, clstStatus.leaderNodeId, clstStatus.participantsNodeIds.mkString(",")))
-      if (EventChangeCallback != null)
-        EventChangeCallback(clstStatus)
+        // Do something with cluster status (log leadership change, etc)
+        LOG.info("NodeId:%s, IsLeader:%s, Leader:%s, AllParticipents:{%s}".format(clstStatus.nodeId, isLeader, clstStatus.leaderNodeId, clstStatus.participantsNodeIds.mkString(",")))
+        if (EventChangeCallback != null)
+          EventChangeCallback(clstStatus)
+      }
     } catch {
       case e: Exception => {
         LOG.error("Leader callback has some error.", e)

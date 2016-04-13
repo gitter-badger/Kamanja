@@ -1199,7 +1199,15 @@ class AdapterMessageBinding(  val adapterName : String
                             , val serializer : String
                             , val options : scala.collection.immutable.Map[String,String]
                                     = scala.collection.immutable.Map[String,String]())
-        extends BaseElemDef {}
+        extends BaseElemDef {
+
+    def FullBindingName : String = {
+        val adapName : String = if (adapterName != null) adapterName.trim.toLowerCase else "no adapter!"
+        val msgName : String = if (messageName != null) messageName.trim.toLowerCase else "no message!"
+        val serName : String = if (serializer != null) serializer.trim.toLowerCase else "no serializer!"
+        s"$adapName,$msgName,$serName"
+    }
+}
 
 class TenantInfo(val tenantId: String, val description: String, val primaryDataStore: String, val cacheConfig: String) {}
 

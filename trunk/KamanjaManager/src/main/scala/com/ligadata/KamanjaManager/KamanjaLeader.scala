@@ -54,7 +54,7 @@ object KamanjaLeader {
   private[this] val lock = new Object()
   private[this] val lock1 = new Object()
   private[this] var clusterStatus = ClusterStatus("", false, "", null)
-  private[this] var zkLeaderLatch: ZkLeaderLatch = _
+//  private[this] var zkLeaderLatch: ZkLeaderLatch = _
   private[this] var nodeId: String = _
   private[this] var zkConnectString: String = _
   private[this] var engineLeaderZkNodePath: String = _
@@ -87,7 +87,7 @@ object KamanjaLeader {
 
   def Reset: Unit = {
     clusterStatus = ClusterStatus("", false, "", null)
-    zkLeaderLatch = null
+//    zkLeaderLatch = null
     nodeId = null
     zkConnectString = null
     engineLeaderZkNodePath = null
@@ -1256,8 +1256,9 @@ object KamanjaLeader {
         })
 
         SetCanRedistribute(true)
-        zkLeaderLatch = new ZkLeaderLatch(zkConnectString, engineLeaderZkNodePath, nodeId, EventChangeCallback, zkSessionTimeoutMs, zkConnectionTimeoutMs)
-        zkLeaderLatch.SelectLeader
+        envCtxt.registerNodesChangeNotification(EventChangeCallback)
+//          zkLeaderLatch = new ZkLeaderLatch(zkConnectString, engineLeaderZkNodePath, nodeId, EventChangeCallback, zkSessionTimeoutMs, zkConnectionTimeoutMs)
+//        zkLeaderLatch.SelectLeader
         /*
         // Set RE-DISTRIBUTED action in adaptersStatusPath + "/" + nodeId path
         val act = ("action" -> "re-distribute")
@@ -1421,9 +1422,9 @@ object KamanjaLeader {
 
   def Shutdown: Unit = {
     distributionExecutor.shutdown
-    if (zkLeaderLatch != null)
-      zkLeaderLatch.Shutdown
-    zkLeaderLatch = null
+//    if (zkLeaderLatch != null)
+//      zkLeaderLatch.Shutdown
+//    zkLeaderLatch = null
     if (zkEngineDistributionNodeListener != null)
       zkEngineDistributionNodeListener.Shutdown
     zkEngineDistributionNodeListener = null

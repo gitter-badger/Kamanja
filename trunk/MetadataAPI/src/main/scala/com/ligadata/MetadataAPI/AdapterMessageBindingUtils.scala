@@ -181,7 +181,7 @@ object AdapterMessageBindingUtils {
     }
 
     /**
-      * Add multiple AdapterMessageBindings in the supplied map.
+      * Add multiple AdapterMessageBindings from the supplied map list. .
       *
       * @param bindingMaps a list of AdapaterMessageBindings specs as a list of json maps.
       * @param userId the user requesting this operation
@@ -201,5 +201,64 @@ object AdapterMessageBindingUtils {
         val results : String = resultBuffer.toString
         results
     }
+
+    /**
+      * Remove the binding with the supplied fully qualified binding name.  A fully qualified binding name consists
+      * of the adapterName.namespace.messsagename.namespace.serializername. For example, if the name of the adapter is
+      * "kafkaAdapterInput1" and the name of the message is "com.botanical.json.shippingmsg" and the name of the
+      * serializer is "org.kamanja.serializer.json.JsonSerDeser", the key to remove the binding would be
+      * "kafkaAdapterInput1.com.botanical.json.shippingmsg.org.kamanja.serializer.json.JsonSerDeser".
+      *
+      * @param fqBindingName the fully qualified binding name
+      * @param userId the user requesting this operation
+      * @return result string for all of the AdapterMessageBindings added.
+      */
+    def RemoveAdapterMessageBinding(fqBindingName : String, userId : Option[String]) : AdapterMessageBinding = {
+        val result : AdapterMessageBinding = mdMgr.RemoveAdapterMessageBinding(fqBindingName)
+        result
+    }
+
+    /**
+      * Answer all of the  AdapaterMessageBindings defined.
+      *
+      * @return a Map[String, AapterMessageBinding] with 0 or more kv pairs.
+      */
+    def ListAllAdapterMessageBindings : scala.collection.immutable.Map[String,AdapterMessageBinding] = {
+        mdMgr.AllAdapterMessageBindings
+    }
+
+    /**
+      * Answer a map of AdapaterMessageBindings that are used by the supplied adapter name.
+      *
+      * @param adapterName the adapter name that has the AdapterMessageBinding instances of interest
+      * @return a Map[String, AapterMessageBinding] with 0 or more kv pairs.
+      */
+    def ListBindingsForAdapter(adapterName : String) : scala.collection.immutable.Map[String,AdapterMessageBinding] = {
+        val bindingMap :  scala.collection.immutable.Map[String,AdapterMessageBinding] = mdMgr.BindingsForAdapter(adapterName)
+        bindingMap
+    }
+
+    /**
+      * Answer a map of AdapaterMessageBindings that operate on the supplied message name.
+      *
+      * @param namespaceMsgName the namespace.name of the message of interest
+      * @return a Map[String, AapterMessageBinding] with 0 or more kv pairs.
+      */
+    def ListBindingsForMessage(namespaceMsgName : String) : scala.collection.immutable.Map[String,AdapterMessageBinding] = {
+        val bindingMap :  scala.collection.immutable.Map[String,AdapterMessageBinding] = mdMgr.BindingsForMessage(namespaceMsgName)
+        bindingMap
+    }
+
+    /**
+      * Answer a map of AdapaterMessageBindings that are used by the serializer with the supplied name.
+      *
+      * @param namespaceSerializerName the serializer name that is used by the AdapterMessageBinding instances of interest
+      * @return a Map[String, AapterMessageBinding] with 0 or more kv pairs.
+      */
+    def ListBindingsUsingSerializer(namespaceSerializerName : String) : scala.collection.immutable.Map[String,AdapterMessageBinding] = {
+        val bindingMap :  scala.collection.immutable.Map[String,AdapterMessageBinding] = mdMgr.BindingsUsingSerializer(namespaceSerializerName)
+        bindingMap
+    }
+
 
 }
