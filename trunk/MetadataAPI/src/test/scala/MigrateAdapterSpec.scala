@@ -291,8 +291,8 @@ class MigrateAdapterSpec extends FunSpec with LocalTestFixtures with BeforeAndAf
 
 	And("Convert map adapters to json")
 	//val jsonStr = JsonSerializer.SerializeCfgObjectListToJson("Adapters",adapters.toArray.map(x => x._2))
-	val jsonStr = "Adapters" + ": [\n"
-	adapters.toArray.foreach(a => { jsonStr = jsonStr + a.FullAdapterConfig; jsonStr = jsonStr + ",\n" })
+	var jsonStr = "Adapters" + ": [\n"
+	adapters.toArray.map(x => x._2).foreach(a => { jsonStr = jsonStr + a.FullAdapterConfig; jsonStr = jsonStr + ",\n" })
 	jsonStr = jsonStr + "]\n"
 	logger.info(jsonStr)
       })
