@@ -2,7 +2,7 @@
   "Clusters": [
     {
       "ClusterId": "kamanjacluster1",
-      "DataStore": {
+      "SystemCatalog": {
         "StoreType": "hbase",
         "SchemaName": "kamanja",
         "Location": "localhost",
