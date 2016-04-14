@@ -165,11 +165,11 @@ class MessageObjectGenerator {
         timePartType = "TimePartitionInfo.TimePartitionType.DAILY";
 
       return """
-  def getTimePartitionInfo: TimePartitionInfo = {
+  override def getTimePartitionInfo: TimePartitionInfo = {
     var timePartitionInfo: TimePartitionInfo = new TimePartitionInfo();
     timePartitionInfo.setFieldName("""" + message.timePartition.Key.toLowerCase() + """");
     timePartitionInfo.setFormat("""" + message.timePartition.Format.toLowerCase() + """");
-    timePartitionInfo.setTimePartitionType("""" + timePartType + """");
+    timePartitionInfo.setTimePartitionType(""" + timePartType + """);
     return timePartitionInfo
   }
 
@@ -270,10 +270,10 @@ class MessageObjectGenerator {
   override def CanPersist: Boolean = """ + message.Persist + """
   override def isMessage: Boolean = """ + isMsg + """
   override def isContainer: Boolean = """ + isCntr + """
-  override def PartitionKeyData(inputdata: InputData): Array[String] = createInstance.getPartitionKey();
-  override def PrimaryKeyData(inputdata: InputData): Array[String] = createInstance.getPrimaryKey();
-  override def TimePartitionData(inputdata: InputData): Long = createInstance.getTimePartitionData;
-  """ + tranformData + """
+  override def PartitionKeyData(inputdata: InputData): Array[String] = { throw new Exception("Deprecated method PartitionKeyData in obj """ + message.Name + """") };
+  override def PrimaryKeyData(inputdata: InputData): Array[String] = throw new Exception("Deprecated method PrimaryKeyData in obj """ + message.Name + """");
+  override def TimePartitionData(inputdata: InputData): Long = throw new Exception("Deprecated method TimePartitionData in obj """ + message.Name + """");
+ """ + tranformData + """
     """
   }
 }

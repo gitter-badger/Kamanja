@@ -30,7 +30,7 @@ class MessageParser {
   var ParentMsgNameSpace: String = ""
   val timePartitionTypeList: List[String] = List("yearly", "monthly", "daily") //"weekly", "30minutes", "60minutes", "15minutes", "5minutes", "1minute")
   val timePartitionFormatList: List[String] = List("epochtimeinmillis", "epochtimeinseconds", "epochtime")
-  val timePartInfo: String = "TimePartitionInfo"
+  val timePartInfo: String = "timepartitioninfo"
 
   /**
    * process the json map and return the message object
@@ -119,7 +119,7 @@ class MessageParser {
    * Generate the Message object from message definition Map
    */
   private def getMsgorCntrObj(message: scala.collection.mutable.Map[String, Any], mtype: String, mdMgr: MdMgr, recompile: Boolean = false, msgLevel: Int, definition: String): Message = {
-    var ele: List[Element] = null
+    // var ele: List[Element] = null
     var elements: List[Element] = null
     var messages: List[Message] = null
     var tdata: TransformData = null
@@ -218,19 +218,18 @@ class MessageParser {
                 if (!(primaryKeysList.toSet subsetOf fldList))
                   throw new Exception("Primary Key Names should be included in fields/elements of message/container definition " + message.get("Name").get.toString())
               }
+
+              if (message.getOrElse(timePartInfo, null) != null) {
+                timePartition = parseTimePartitionInfo(timePartInfo, message, fldList)
+              }
+
             }
+
           }
         }
 
         if (MsgUtils.isTrue(MsgUtils.LowerCase(Fixed)) && elements == null)
           throw new Exception("Either Fields or Elements or Concepts  do not exist in " + message.get("name").get.toString())
-
-        if (ele != null && ele.size > 0) {
-          ele.foreach(Fld => { fldList += Fld.Name })
-        }
-        if (message.getOrElse(timePartInfo, null) != null) {
-          timePartition = parseTimePartitionInfo(timePartInfo, message, fldList)
-        }
 
         /*
         if (elements != null)
@@ -648,7 +647,7 @@ class MessageParser {
         if (timePartitionMap.contains("Format") && (timePartitionMap.get("Format").get.isInstanceOf[String])) {
           timePartitionKeyFormat = timePartitionMap.get("Format").get.asInstanceOf[String] //.toLowerCase()
 
-          if (!validateTimePartitionFormat(timePartitionKeyFormat))
+          if (!validateTimePartitionFormat(timePartitionKeyFormat.toLowerCase()))
             throw new Exception("Time Parition format given in message definition " + timePartitionKeyFormat + " is not a valid format");
         } else throw new Exception("Time Partition Format should be defined in the message definition");
 

@@ -420,7 +420,7 @@ import java.io.{ DataInputStream, DataOutputStream, ByteArrayOutputStream }
  """
   }
 
- def classDeprecatedMethods(msg: Message) = {
+  def classDeprecatedMethods(msg: Message) = {
     """
   override def IsFixed: Boolean = """ + msg.Name + """.IsFixed;
   override def IsKv: Boolean = """ + msg.Name + """.IsKv;

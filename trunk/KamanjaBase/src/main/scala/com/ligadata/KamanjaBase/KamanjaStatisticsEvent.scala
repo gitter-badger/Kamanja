@@ -47,7 +47,7 @@ object KamanjaStatisticsEvent extends RDDObject[KamanjaStatisticsEvent] with Mes
   }
 
   override def getAvroSchema: String = """{ "type": "record",  "namespace" : "com.ligadata.kamanjabase" , "name" : "kamanjastatisticsevent" , "fields":[{ "name" : "statistics" , "type" : "string"}]}""";
-/** Deprecated Methods **/
+  /** Deprecated Methods **/
   def NeedToTransformData: Boolean = false
   override def FullName: String = getFullTypeName
   override def NameSpace: String = getTypeNameSpace
@@ -60,9 +60,9 @@ object KamanjaStatisticsEvent extends RDDObject[KamanjaStatisticsEvent] with Mes
   override def CanPersist: Boolean = false
   override def isMessage: Boolean = true
   override def isContainer: Boolean = false
-  override def PartitionKeyData(inputdata: InputData): Array[String] = createInstance.getPartitionKey();
-  override def PrimaryKeyData(inputdata: InputData): Array[String] = createInstance.getPrimaryKey();
-  override def TimePartitionData(inputdata: InputData): Long = createInstance.getTimePartitionData;
+  override def PartitionKeyData(inputdata: InputData): Array[String] = { throw new Exception("Deprecated method PartitionKeyData in obj KamanjaStatisticsEvent") };
+  override def PrimaryKeyData(inputdata: InputData): Array[String] = throw new Exception("Deprecated method PrimaryKeyData in obj KamanjaStatisticsEvent");
+  override def TimePartitionData(inputdata: InputData): Long = throw new Exception("Deprecated method TimePartitionData in obj KamanjaStatisticsEvent");
 
 }
 
@@ -100,14 +100,14 @@ class KamanjaStatisticsEvent(factory: MessageFactoryInterface, other: KamanjaSta
     return attributeTypes
   }
   override def getAttributeType(name: String): AttributeTypeInfo = {
-      if (name == null || name.trim() == "") return null;
-      attributeTypes.foreach(attributeType => {
-        if(attributeType.getName == name.toLowerCase())
-          return attributeType
-      }) 
-      return null;
-    }
-  
+    if (name == null || name.trim() == "") return null;
+    attributeTypes.foreach(attributeType => {
+      if (attributeType.getName == name.toLowerCase())
+        return attributeType
+    })
+    return null;
+  }
+
   private def getWithReflection(key: String): AnyRef = {
     val ru = scala.reflect.runtime.universe
     val m = ru.runtimeMirror(getClass.getClassLoader)
@@ -136,7 +136,7 @@ class KamanjaStatisticsEvent(factory: MessageFactoryInterface, other: KamanjaSta
     return get(keyTypes(key).getIndex)
   }
 
-  override def getOrElse(key: String, defaultVal: Any): AnyRef = { 
+  override def getOrElse(key: String, defaultVal: Any): AnyRef = {
     try {
       val value = get(key.toLowerCase())
       if (value == null) return defaultVal.asInstanceOf[AnyRef]; else return value;
@@ -149,7 +149,7 @@ class KamanjaStatisticsEvent(factory: MessageFactoryInterface, other: KamanjaSta
     return null;
   }
 
-  override def getOrElse(index: Int, defaultVal: Any): AnyRef = { 
+  override def getOrElse(index: Int, defaultVal: Any): AnyRef = {
     try {
       val value = get(index)
       if (value == null) return defaultVal.asInstanceOf[AnyRef]; else return value;
@@ -199,7 +199,7 @@ class KamanjaStatisticsEvent(factory: MessageFactoryInterface, other: KamanjaSta
 
   }
 
-  override def get(index: Int): AnyRef = { 
+  override def get(index: Int): AnyRef = {
     try {
       index match {
         case 0 => return this.statistics;

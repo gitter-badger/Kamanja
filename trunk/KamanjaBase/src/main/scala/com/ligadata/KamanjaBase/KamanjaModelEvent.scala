@@ -47,7 +47,7 @@ object KamanjaModelEvent extends RDDObject[KamanjaModelEvent] with MessageFactor
   }
 
   override def getAvroSchema: String = """{ "type": "record",  "namespace" : "com.ligadata.kamanjabase" , "name" : "kamanjamodelevent" , "fields":[{ "name" : "modelid" , "type" : "long"},{ "name" : "elapsedtimeinms" , "type" : "float"},{ "name" : "eventepochtime" , "type" : "long"},{ "name" : "isresultproduced" ,},{ "name" : "producedmessages" , "type" :  {"type" : "array", "items" : "long"}},{ "name" : "error" , "type" : "string"}]}""";
- /** Deprecated Methods **/
+  /** Deprecated Methods **/
   def NeedToTransformData: Boolean = false
   override def FullName: String = getFullTypeName
   override def NameSpace: String = getTypeNameSpace
@@ -60,9 +60,9 @@ object KamanjaModelEvent extends RDDObject[KamanjaModelEvent] with MessageFactor
   override def CanPersist: Boolean = false
   override def isMessage: Boolean = true
   override def isContainer: Boolean = false
-  override def PartitionKeyData(inputdata: InputData): Array[String] = createInstance.getPartitionKey();
-  override def PrimaryKeyData(inputdata: InputData): Array[String] = createInstance.getPrimaryKey();
-  override def TimePartitionData(inputdata: InputData): Long = createInstance.getTimePartitionData;
+  override def PartitionKeyData(inputdata: InputData): Array[String] = { throw new Exception("Deprecated method PartitionKeyData in obj KamanjaModelEvent") };
+  override def PrimaryKeyData(inputdata: InputData): Array[String] = throw new Exception("Deprecated method PrimaryKeyData in obj KamanjaModelEvent");
+  override def TimePartitionData(inputdata: InputData): Long = throw new Exception("Deprecated method TimePartitionData in obj KamanjaModelEvent");
 }
 
 class KamanjaModelEvent(factory: MessageFactoryInterface, other: KamanjaModelEvent) extends MessageInterface(factory) {
@@ -108,14 +108,14 @@ class KamanjaModelEvent(factory: MessageFactoryInterface, other: KamanjaModelEve
     return attributeTypes
   }
   override def getAttributeType(name: String): AttributeTypeInfo = {
-      if (name == null || name.trim() == "") return null;
-      attributeTypes.foreach(attributeType => {
-        if(attributeType.getName == name.toLowerCase())
-          return attributeType
-      }) 
-      return null;
-    }
-  
+    if (name == null || name.trim() == "") return null;
+    attributeTypes.foreach(attributeType => {
+      if (attributeType.getName == name.toLowerCase())
+        return attributeType
+    })
+    return null;
+  }
+
   private def getWithReflection(key: String): AnyRef = {
     val ru = scala.reflect.runtime.universe
     val m = ru.runtimeMirror(getClass.getClassLoader)

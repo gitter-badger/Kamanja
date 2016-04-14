@@ -47,7 +47,7 @@ object KamanjaStatusEvent extends RDDObject[KamanjaStatusEvent] with MessageFact
   }
 
   override def getAvroSchema: String = """{ "type": "record",  "namespace" : "com.ligadata.kamanjabase" , "name" : "kamanjastatusevent" , "fields":[{ "name" : "nodeid" , "type" : "string"},{ "name" : "eventtime" , "type" : "long"},{ "name" : "statusstring" , "type" : "string"}]}""";
- /** Deprecated Methods **/
+  /** Deprecated Methods **/
   def NeedToTransformData: Boolean = false
   override def FullName: String = getFullTypeName
   override def NameSpace: String = getTypeNameSpace
@@ -60,9 +60,9 @@ object KamanjaStatusEvent extends RDDObject[KamanjaStatusEvent] with MessageFact
   override def CanPersist: Boolean = false
   override def isMessage: Boolean = true
   override def isContainer: Boolean = false
-  override def PartitionKeyData(inputdata: InputData): Array[String] = createInstance.getPartitionKey();
-  override def PrimaryKeyData(inputdata: InputData): Array[String] = createInstance.getPrimaryKey();
-  override def TimePartitionData(inputdata: InputData): Long = createInstance.getTimePartitionData;
+  override def PartitionKeyData(inputdata: InputData): Array[String] = { throw new Exception("Deprecated method PartitionKeyData in obj KamanjaStatusEvent") };
+  override def PrimaryKeyData(inputdata: InputData): Array[String] = throw new Exception("Deprecated method PrimaryKeyData in obj KamanjaStatusEvent");
+  override def TimePartitionData(inputdata: InputData): Long = throw new Exception("Deprecated method TimePartitionData in obj KamanjaStatusEvent");
 }
 
 class KamanjaStatusEvent(factory: MessageFactoryInterface, other: KamanjaStatusEvent) extends MessageInterface(factory) {
@@ -87,8 +87,8 @@ class KamanjaStatusEvent(factory: MessageFactoryInterface, other: KamanjaStatusE
   private def generateAttributeTypes(): Array[AttributeTypeInfo] = {
     var attributeTypes = new Array[AttributeTypeInfo](3);
     attributeTypes(0) = new AttributeTypeInfo("nodeid", 0, AttributeTypeInfo.TypeCategory.STRING, 1, 1, 0)
-    attributeTypes(1) =  new AttributeTypeInfo("eventtime", 1, AttributeTypeInfo.TypeCategory.LONG, 4, 4, 0)
-    attributeTypes(2) =  new AttributeTypeInfo("statusstring", 2, AttributeTypeInfo.TypeCategory.STRING, 1, 1, 0)
+    attributeTypes(1) = new AttributeTypeInfo("eventtime", 1, AttributeTypeInfo.TypeCategory.LONG, 4, 4, 0)
+    attributeTypes(2) = new AttributeTypeInfo("statusstring", 2, AttributeTypeInfo.TypeCategory.STRING, 1, 1, 0)
 
     return attributeTypes
   }
@@ -99,13 +99,13 @@ class KamanjaStatusEvent(factory: MessageFactoryInterface, other: KamanjaStatusE
   }
 
   override def getAttributeType(name: String): AttributeTypeInfo = {
-      if (name == null || name.trim() == "") return null;
-      attributeTypes.foreach(attributeType => {
-        if(attributeType.getName == name.toLowerCase())
-          return attributeType
-      }) 
-      return null;
-    }
+    if (name == null || name.trim() == "") return null;
+    attributeTypes.foreach(attributeType => {
+      if (attributeType.getName == name.toLowerCase())
+        return attributeType
+    })
+    return null;
+  }
 
   var nodeid: String = _;
   var eventtime: Long = _;

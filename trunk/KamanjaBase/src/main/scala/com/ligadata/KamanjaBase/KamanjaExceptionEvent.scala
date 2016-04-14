@@ -60,9 +60,10 @@ object KamanjaExceptionEvent extends RDDObject[KamanjaExceptionEvent] with Messa
   override def CanPersist: Boolean = false
   override def isMessage: Boolean = true
   override def isContainer: Boolean = false
-  override def PartitionKeyData(inputdata: InputData): Array[String] = createInstance.getPartitionKey();
-  override def PrimaryKeyData(inputdata: InputData): Array[String] = createInstance.getPrimaryKey();
-  override def TimePartitionData(inputdata: InputData): Long = createInstance.getTimePartitionData;
+   override def PartitionKeyData(inputdata: InputData): Array[String] = { throw new Exception("Deprecated method PartitionKeyData in obj IdCodeDimFixedTest") };
+  override def PrimaryKeyData(inputdata: InputData): Array[String] = throw new Exception("Deprecated method PrimaryKeyData in obj IdCodeDimFixedTest");
+  override def TimePartitionData(inputdata: InputData): Long = throw new Exception("Deprecated method TimePartitionData in obj IdCodeDimFixedTest");
+
 }
 
 class KamanjaExceptionEvent(factory: MessageFactoryInterface, other: KamanjaExceptionEvent) extends MessageInterface(factory) {

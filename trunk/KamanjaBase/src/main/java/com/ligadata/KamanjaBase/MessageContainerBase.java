@@ -62,7 +62,24 @@ public abstract class MessageContainerBase extends ContainerOrConcept {
 	}
 
 	final public void setTimePartitionData(long timePrtData) {
+
 		this.timePartitionData = timePrtData;
+	}
+
+	final public void setTimePartitionData() {
+
+		TimePartitionInfo tmPartInfo = getTimePartitionInfo();
+		if (tmPartInfo == null)
+			setTimePartitionData(0);
+		else {
+			// Get column data and pass it
+			long timepartVal = com.ligadata.Utils.ComputeTimePartition
+					.ComputeTimePartitionData(com.ligadata.BaseTypes.StringImpl
+							.Input(get(tmPartInfo.getFieldName()).toString()),
+							tmPartInfo.getFormat(), tmPartInfo
+									.getTimePartitionType().name());
+			setTimePartitionData(timepartVal);
+		}
 	}
 
 	final public void setRowNumber(int rowNbr) {
