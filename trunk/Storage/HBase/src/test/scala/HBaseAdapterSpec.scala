@@ -35,7 +35,6 @@ import com.ligadata.Exceptions._
 
 case class Customer(name: String, address: String, homePhone: String)
 
-@Ignore
 class HBaseAdapterSpec extends FunSpec with BeforeAndAfter with BeforeAndAfterAll with GivenWhenThen {
   var adapter: DataStore = null
   var serializer: Serializer = null

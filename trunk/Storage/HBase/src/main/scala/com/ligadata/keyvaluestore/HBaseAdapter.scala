@@ -367,6 +367,11 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
         containerList.add(containerName)
 	isMetadataMap(containerName) = isMetadata
       }
+      else{
+	// update local cache
+        containerList.add(containerName)
+	isMetadataMap(containerName) = isMetadata
+      }	
     } catch {
       case e: Exception => {
         throw CreateDDLException("Failed to create table " + tableName, e)
@@ -393,7 +398,9 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
   private def CheckTableExists(containerName: String, apiType: String = "dml"): Boolean = {
     try {
       if (containerList.contains(containerName)) {
-        return isMetadataMap(containerName)
+	val isMetadata = isMetadataMap(containerName)
+	logger.info(containerName + ", isMetadata => "  + isMetadata)
+        return isMetadata
       }
       lock.synchronized {
         val isMetadata = getIsMetadataFlag(containerName)
@@ -1217,7 +1224,7 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
           val it = rs.iterator()
           while (it.hasNext()) {
             val r = it.next()
-            var key = GetKeyFromCompositeKey(r.getRow(),false)
+            var key = GetKeyFromCompositeKey(r.getRow(),isMetadata)
             if (bucketKeySet.contains(key.bucketKey)) {
               val st = Bytes.toString(r.getValue(stStrBytes, baseStrBytes))
               val si = r.getValue(siStrBytes, baseStrBytes)
@@ -1263,7 +1270,7 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
           val it = rs.iterator()
           while (it.hasNext()) {
             val r = it.next()
-            var key = GetKeyFromCompositeKey(r.getRow(),false)
+            var key = GetKeyFromCompositeKey(r.getRow(),isMetadata)
             if (bucketKeySet.contains(key.bucketKey)) {
               processKey(key, callbackFunction)
             }
@@ -1300,7 +1307,7 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       var dels = new Array[Delete](0)
       while (it.hasNext()) {
         val r = it.next()
-        var key = GetKeyFromCompositeKey(r.getRow(),false)
+        var key = GetKeyFromCompositeKey(r.getRow(),isMetadata)
         if (bucketKeySet.contains(key.bucketKey)) {
           val st = Bytes.toString(r.getValue(stStrBytes, baseStrBytes))
           val si = r.getValue(siStrBytes, baseStrBytes)
@@ -1336,7 +1343,7 @@ class HBaseAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: 
       val it = rs.iterator()
       while (it.hasNext()) {
         val r = it.next()
-        var key = GetKeyFromCompositeKey(r.getRow(),false)
+        var key = GetKeyFromCompositeKey(r.getRow(),isMetadata)
         if (bucketKeySet.contains(key.bucketKey)) {
           processKey(key, callbackFunction)
         }
