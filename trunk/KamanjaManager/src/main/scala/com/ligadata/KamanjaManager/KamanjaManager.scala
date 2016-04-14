@@ -497,8 +497,6 @@ class KamanjaManager extends Observer {
         zkHeartBeatNodePath = zkNodeBasePath + "/monitor/engine/" + KamanjaConfiguration.nodeId.toString
       }
 
-      KamanjaMetadata.envCtxt.setNodeInfo(KamanjaConfiguration.nodeId.toString, KamanjaConfiguration.clusterId)
-
       KamanjaMetadata.gNodeContext = new NodeContext(KamanjaMetadata.envCtxt)
 
       PostMessageExecutionQueue.init(KamanjaMetadata.gNodeContext)

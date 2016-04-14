@@ -1,13 +1,15 @@
 package com.ligadata.kamanja.samples.messages.V1000000;
 
-import org.json4s.jackson.JsonMethods._
-import org.json4s.DefaultFormats
-import org.json4s.Formats
-import com.ligadata.KamanjaBase.{ AttributeTypeInfo, AttributeValue, ContainerFactoryInterface, ContainerInterface, MessageFactoryInterface, MessageInterface, TimePartitionInfo, ContainerOrConceptFactory, RDDObject, JavaRDDObject, ContainerOrConcept}
-import com.ligadata.BaseTypes._
+import org.json4s.jackson.JsonMethods._;
+import org.json4s.DefaultFormats;
+import org.json4s.Formats;
+import com.ligadata.KamanjaBase._;
+import com.ligadata.BaseTypes._;
 import com.ligadata.Exceptions.StackTrace;
 import org.apache.logging.log4j.{ Logger, LogManager }
-import java.util.Date
+import java.util.Date;
+import java.io.{ DataInputStream, DataOutputStream, ByteArrayOutputStream }
+
 
 
 object TransactionMsg extends RDDObject[TransactionMsg] with MessageFactoryInterface {
@@ -19,7 +21,7 @@ object TransactionMsg extends RDDObject[TransactionMsg] with MessageFactoryInter
   override def getSchemaId: Int = 0;
   override def createInstance: TransactionMsg = new TransactionMsg(TransactionMsg);
   override def isFixed: Boolean = true;
-  override def getContainerType: ContainerFactoryInterface.ContainerType = ContainerFactoryInterface.ContainerType.MESSAGE
+  override def getContainerType: ContainerTypes.ContainerType = ContainerTypes.ContainerType.MESSAGE
   override def getFullName = getFullTypeName;
   override def toJavaRDDObject: JavaRDDObject[T] = JavaRDDObject.fromRDDObject[T](this);
 
@@ -49,6 +51,22 @@ object TransactionMsg extends RDDObject[TransactionMsg] with MessageFactoryInter
   }
 
   override def getAvroSchema: String = """{ "type": "record",  "namespace" : "com.ligadata.kamanja.samples.messages" , "name" : "transactionmsg" , "fields":[{ "name" : "custid" , "type" : "long"},{ "name" : "branchid" , "type" : "int"},{ "name" : "accno" , "type" : "long"},{ "name" : "amount" , "type" : "double"},{ "name" : "balance" , "type" : "double"},{ "name" : "date" , "type" : "int"},{ "name" : "time" , "type" : "int"},{ "name" : "locationid" , "type" : "int"},{ "name" : "transtype" , "type" : "string"}]}""";
+
+  override def FullName: String = getFullTypeName
+  override def NameSpace: String = getTypeNameSpace
+  override def Name: String = getTypeName
+  override def Version: String = getTypeVersion
+  override def CreateNewMessage: BaseMsg= createInstance.asInstanceOf[BaseMsg];
+  override def CreateNewContainer: BaseContainer= null;
+  override def IsFixed: Boolean = true
+  override def IsKv: Boolean = false
+  override def CanPersist: Boolean = true
+  override def isMessage: Boolean = true
+  override def isContainer: Boolean = false
+  override def PartitionKeyData(inputdata: InputData): Array[String] = createInstance.getPartitionKey();
+  override def PrimaryKeyData(inputdata: InputData): Array[String] = createInstance.getPrimaryKey();
+  override def TimePartitionData(inputdata: InputData): Long = createInstance.getTimePartitionData;
+  override def NeedToTransformData: Boolean = false
 }
 
 class TransactionMsg(factory: MessageFactoryInterface, other: TransactionMsg) extends MessageInterface(factory) {

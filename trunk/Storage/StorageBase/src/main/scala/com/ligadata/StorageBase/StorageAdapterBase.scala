@@ -257,6 +257,22 @@ class StorageAdapter(nodeCtxt: NodeContext, adapterInfo: AdapterInfo, datastore:
 
   var _datastore: DataStore = datastore
 
+  def save(tnxCtxt: TransactionContext, outputContainers: Array[ContainerInterface]): Unit = {
+    if (outputContainers.size == 0) return
+
+    val (outContainers, serializedContainerData, serializerNames) = serialize(tnxCtxt, outputContainers)
+
+//    if (outputContainers.size != serializedContainerData.size || outputContainers.size != serializerNames.size) {
+//      val szMsg = qc.Name + " KAFKA PRODUCER: Messages, messages serialized data & serializer names should has same number of elements. Messages:%d, Messages Serialized data:%d, serializerNames:%d".format(outputContainers.size, serializedContainerData.size, serializerNames.size)
+//      LOG.error(szMsg)
+//      throw new Exception(szMsg)
+//    }
+
+    if (serializedContainerData.size == 0) return
+
+
+  }
+
 //  def write(tnxCtxt: TransactionContext, outputContainers: Array[ContainerInterface]): Unit
 //  def read(tnxCtxt: TransactionContext, outputContainers: Array[ContainerInterface]): Unit
 

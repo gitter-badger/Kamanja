@@ -31,14 +31,13 @@ object CacheCustomConfig{
   val SKIPUPDATECHECK:String="net.sf.ehcache.skipUpdateCheck"
 }
 
-class CacheCustomConfig(jsonconfig:Config) extends CacheConfiguration{
+class CacheCustomConfig(val jsonconfig:Config, val listenCallback: CacheCallback) extends CacheConfiguration{
   private val config:Configuration = new Configuration
   private val factory:FactoryConfiguration[Nothing] = new FactoryConfiguration
   private val properties:Properties = new Properties
   private val propertiesBootStrap:Properties = new Properties
   private val some = jsonconfig.getvalue(Config.CACHECONFIG)
   private val values = some.get.asInstanceOf[Map[String, String]]
-
 
   this.name(jsonconfig.getvalue(Config.NAME).getOrElse("Ligadata").toString)
     .eternal(values.getOrElse(CacheCustomConfig.ETERNAL,"false").toBoolean)
@@ -81,7 +80,7 @@ class CacheCustomConfig(jsonconfig:Config) extends CacheConfiguration{
   def  addListeners(cache:Cache) : Unit = {
     cache.getCacheEventNotificationService.registerListener((new JGroupsCacheReplicatorFactory).createCacheEventListener(properties))
     if(enableListener){
-      cache.getCacheEventNotificationService.registerListener(new EventCacheListener)
+      cache.getCacheEventNotificationService.registerListener(new EventCacheListener(listenCallback))
     }
     cache.getRegisteredCacheLoaders.add(new CacheLoaderFactory(cache))
   }

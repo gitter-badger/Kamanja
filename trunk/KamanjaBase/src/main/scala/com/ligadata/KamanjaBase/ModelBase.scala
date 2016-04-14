@@ -20,14 +20,13 @@ package com.ligadata.KamanjaBase
 import com.ligadata.Exceptions.{DeprecatedException, NotImplementedFunctionException}
 
 import scala.collection.immutable.Map
-import com.ligadata.Utils.Utils
+import com.ligadata.Utils.{CacheConfig, Utils, KamanjaLoaderInfo, ClusterStatus}
 import com.ligadata.kamanja.metadata.{MdMgr, ModelDef}
 import org.json4s._
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
 import java.io.{DataInputStream, DataOutputStream}
 import com.ligadata.KvBase.{Key, TimeRange /* , KvBaseDefalts, KeyWithBucketIdAndPrimaryKey, KeyWithBucketIdAndPrimaryKeyCompHelper */}
-import com.ligadata.Utils.{KamanjaLoaderInfo, ClusterStatus}
 import com.ligadata.HeartBeat._
 
 import scala.collection.mutable.ArrayBuffer
@@ -478,6 +477,9 @@ trait EnvContext /* extends Monitorable */  {
 
   def setSystemCatalogDatastore(sysCatalog: String): Unit
   def getSystemCatalogDatastore(): String
+
+  def startCache(conf: CacheConfig): Unit
+  def getCacheConfig(): CacheConfig
 }
 
 // partitionKey is the one used for this message

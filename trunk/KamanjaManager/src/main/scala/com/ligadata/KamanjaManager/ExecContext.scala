@@ -157,7 +157,7 @@ class ExecContextImpl(val input: InputAdapter, val curPartitionKey: PartitionUni
           sendSerOptions += bind.options;
           sendContainers += orginAndmsg._2.asInstanceOf[ContainerInterface];
         })))
-        // adap._1.send(txnCtxt, sendContainers, sendSerializer, sendSerOptions)
+        adap._1.send(txnCtxt, sendContainers.toArray)
       })
 
       storageAdapters.foreach(adap => {
@@ -171,10 +171,8 @@ class ExecContextImpl(val input: InputAdapter, val curPartitionKey: PartitionUni
           sendSerOptions += bind.options;
           sendContainers += orginAndmsg._2.asInstanceOf[ContainerInterface];
         })))
-        // adap._1.serialize()
+        adap._1.save(txnCtxt, sendContainers.toArray)
       })
-
-
 
       // Commit. Writing into OutputAdapters & Storage Adapters
 

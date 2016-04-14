@@ -3019,11 +3019,20 @@ class MdMgr {
     ni
   }
 
-  def AddNode(ni: NodeInfo): Unit = {
+  def AddNode(ni: NodeInfo): Option[String] = {
+    // Enforce the presence of clusterId int he node
     if (ni.clusterId == null) {
       throw InvalidArgumentException("Failed to Add the node, ClusterId Can not be null", null)
     }
-    nodes(ni.nodeId.toLowerCase) = ni
+
+    if (nodes.contains(ni.nodeId.trim.toLowerCase)) {
+      var isSame = nodes.get(ni.nodeId.trim.toLowerCase).get.asInstanceOf[NodeInfo].equals(ni)
+      nodes(ni.nodeId.toLowerCase) = ni
+      if (!isSame) return Some("Update") else return None
+    } else {
+      nodes(ni.nodeId.toLowerCase) = ni
+      return Some("Add")
+    }
   }
 
   def GetNode(nodeId: String): NodeInfo = {
@@ -3062,8 +3071,15 @@ class MdMgr {
     *
     * @param upi : UserPropertiesInfo
     */
-  def AddUserProperty(upi: UserPropertiesInfo): Unit = {
-    configurations(upi.ClusterId) = upi
+  def AddUserProperty(upi: UserPropertiesInfo): Option[String] = {
+    if (configurations.contains(upi.ClusterId.trim.toLowerCase)) {
+      var isSame = configurations.get(upi.ClusterId.trim.toLowerCase).get.asInstanceOf[UserPropertiesInfo].equals(upi)
+      configurations(upi.ClusterId) = upi
+      if (!isSame) return Some("Update") else return None
+    } else {
+      configurations(upi.ClusterId) = upi
+      return Some("Add")
+    }
   }
 
   /**
@@ -3085,15 +3101,17 @@ class MdMgr {
     AddTenantInfo(MakeTenantInfo(tenantId, description, primaryDataStore, cacheConfig))
   }
 
-  def AddTenantInfo(tenant : TenantInfo) : Boolean = {
+  def AddTenantInfo(tenant : TenantInfo) : Option[String] = {
     // Update the tenantId in this cache, but also see if there was a meaniful change
     // in the existing element - it will not need to be sent to other nodes.
-    var isChanged = true
     if (tenantIdMap.contains(tenant.tenantId.trim.toLowerCase)) {
-      isChanged = tenant.equals(tenantIdMap.get(tenant.tenantId.trim.toLowerCase).get.asInstanceOf[TenantInfo])
+      var isSame = tenant.equals(tenantIdMap.get(tenant.tenantId.trim.toLowerCase).get.asInstanceOf[TenantInfo])
+      tenantIdMap(tenant.tenantId.trim.toLowerCase) = tenant
+      if (!isSame) return Some("Update") else return None
+    } else {
+      tenantIdMap(tenant.tenantId.trim.toLowerCase) = tenant
+      return Some("Add")
     }
-    tenantIdMap(tenant.tenantId.trim.toLowerCase) = tenant
-    return isChanged
   }
 
   def UpdateTenantInfo(tenant : TenantInfo) : Boolean = {
@@ -3396,8 +3414,15 @@ class MdMgr {
     ci
   }
 
-  def AddCluster(ci: ClusterInfo): Unit = {
-    clusters(ci.clusterId.toLowerCase) = ci
+  def AddCluster(ci: ClusterInfo): Option[String] = {
+    if (clusters.contains(ci.clusterId.toLowerCase)) {
+      val isSame = clusters.get(ci.clusterId.toLowerCase).get.asInstanceOf[ClusterInfo].equals(ci)
+      clusters(ci.clusterId.toLowerCase) = ci
+      if (!isSame) return Some("Update") else return None
+    } else {
+      clusters(ci.clusterId.toLowerCase) = ci
+      return Some("Add")
+    }
   }
 
   def GetCluster(clusterId: String): ClusterInfo ={
@@ -3421,8 +3446,15 @@ class MdMgr {
     ci
   }
 
-  def AddClusterCfg(ci: ClusterCfgInfo): Unit = {
-    clusterCfgs(ci.clusterId.toLowerCase) = ci
+  def AddClusterCfg(ci: ClusterCfgInfo): Option[String] = {
+    if (clusterCfgs.contains(ci.clusterId.toLowerCase)) {
+      var isSame = clusterCfgs.get(ci.clusterId.trim.toLowerCase).get.asInstanceOf[ClusterCfgInfo].equals(ci)
+      clusterCfgs(ci.clusterId.toLowerCase) = ci
+      if (!isSame) return Some("Update") else return None
+    } else {
+      clusterCfgs(ci.clusterId.toLowerCase) = ci
+      return Some("Add")
+    }
   }
 
   def GetClusterCfg(key: String): ClusterCfgInfo = {
@@ -3451,8 +3483,16 @@ class MdMgr {
     ai
   }
 
-  def AddAdapter(ai: AdapterInfo): Unit = {
-    adapters(ai.name.toLowerCase) = ai
+  def AddAdapter(ai: AdapterInfo): Option[String] = {
+    if (adapters.contains(ai.name.trim.toLowerCase)) {
+      var isSame = ai.equals(adapters.get(ai.name.trim.toLowerCase).get.asInstanceOf[AdapterInfo])
+      adapters(ai.name.trim.toLowerCase) = ai
+      if (!isSame) return Some("Update") else return None
+    } else {
+      adapters(ai.name.trim.toLowerCase) = ai
+      return Some("Add")
+    }
+
   }
 
   def GetAdapter(adapterName: String): AdapterInfo = {

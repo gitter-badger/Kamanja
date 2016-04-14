@@ -1060,42 +1060,12 @@ class AdapterInfo {
     } else if(!(name == null && aInfo.name == null)) {
       return false
     }
-    // Check dataFormat
-//    if ((dataFormat != null && aInfo.dataFormat != null)) {
-//      if(!dataFormat.equals(aInfo.dataFormat)) return false
-//    } else if(!(dataFormat == null && aInfo.dataFormat == null)) {
-//      return false
-//    }
     // Check className
     if ((className != null && aInfo.className != null)) {
       if(!className.equals(aInfo.className)) return false
     } else if(!(className == null && aInfo.className == null)) {
       return false
     }
-    // Check inputAdapterToValidate
-  //  if ((inputAdapterToValidate != null && aInfo.inputAdapterToValidate != null)) {
- //     if(!inputAdapterToValidate.equals(aInfo.inputAdapterToValidate)) return false
- //   } else if(!(inputAdapterToValidate == null && aInfo.inputAdapterToValidate == null)) {
-  //    return false
-  //  }
-    // Check failedEventsAdapter
-    /*if ((failedEventsAdapter != null && aInfo.failedEventsAdapter != null)) {
-      if(!failedEventsAdapter.equals(aInfo.failedEventsAdapter)) return false
-    } else if(!(failedEventsAdapter == null && aInfo.failedEventsAdapter == null)) {
-      return false
-    }
-    // Check delimiterString1
-    if ((delimiterString1 != null && aInfo.delimiterString1 != null)) {
-      if(!delimiterString1.equals(aInfo.delimiterString1)) return false
-    } else if(!(delimiterString1 == null && aInfo.delimiterString1 == null)) {
-      return false
-    }
-    // Check associatedMsg
-    if ((associatedMsg != null && aInfo.associatedMsg != null)) {
-      if(!associatedMsg.equals(aInfo.associatedMsg)) return false
-    } else if(!(associatedMsg == null && aInfo.associatedMsg == null)) {
-      return false
-    } */
     // Check jarName
     if ((jarName != null && aInfo.jarName != null)) {
       if(!jarName.equals(aInfo.jarName)) return false
@@ -1114,24 +1084,6 @@ class AdapterInfo {
     } else if(!(adapterSpecificCfg == null && aInfo.adapterSpecificCfg == null)) {
       return false
     }
-    // Check keyAndValueDelimiter
-  /*   if ((keyAndValueDelimiter != null && aInfo.keyAndValueDelimiter != null)) {
-      if(!keyAndValueDelimiter.equals(aInfo.keyAndValueDelimiter)) return false
-    } else if(!(keyAndValueDelimiter == null && aInfo.keyAndValueDelimiter == null)) {
-      return false
-    }
-    // Check FieldDelimiter
-    if ((fieldDelimiter != null && aInfo.fieldDelimiter != null)) {
-      if(!fieldDelimiter.equals(aInfo.fieldDelimiter)) return false
-    } else if(!(fieldDelimiter == null && aInfo.fieldDelimiter == null)) {
-      return false
-    }
-    // Check valueDelimiter
-    if ((valueDelimiter != null && aInfo.valueDelimiter != null)) {
-      if(!valueDelimiter.equals(aInfo.valueDelimiter)) return false
-    } else if(!(valueDelimiter == null && aInfo.valueDelimiter == null)) {
-      return false
-    }*/
 
     if ((tenantId != null && aInfo.tenantId != null)) {
       if(!tenantId.equals(aInfo.tenantId)) return false

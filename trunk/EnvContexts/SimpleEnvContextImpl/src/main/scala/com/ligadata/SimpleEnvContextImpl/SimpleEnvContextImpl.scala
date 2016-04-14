@@ -16,7 +16,7 @@
 
 package com.ligadata.SimpleEnvContextImpl
 
-import com.ligadata.Utils.{KamanjaLoaderInfo, ClusterStatus}
+import com.ligadata.Utils.{CacheConfig, KamanjaLoaderInfo, ClusterStatus}
 import com.ligadata.ZooKeeper.{ZkLeaderLatch, ZooKeeperListener, CreateClient}
 import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.framework.recipes.locks.InterProcessMutex
@@ -24,6 +24,7 @@ import org.json4s.jackson.Serialization
 
 import scala.actors.threadpool.{Executors, ExecutorService}
 import scala.collection.immutable.Map
+import scala.collection.mutable
 import scala.collection.mutable._
 import scala.util.control.Breaks._
 import scala.reflect.runtime.{universe => ru}
@@ -45,6 +46,8 @@ import com.ligadata.keyvaluestore.KeyValueManager
 import java.io.{ByteArrayInputStream, DataInputStream, DataOutputStream, ByteArrayOutputStream}
 import java.util.{TreeMap, Date}
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import com.ligadata.cache.{CacheCallback, DataCache, CacheCallbackData}
+import scala.collection.JavaConverters._
 
 trait LogTrait {
   val loggerName = this.getClass.getName()
@@ -60,6 +63,7 @@ case class AdapterUniqueValueDes(T: Long, V: String, Out: Option[List[List[Strin
   * The SimpleEnvContextImpl supports kv stores that are based upon MapDb hash tables.
   */
 object SimpleEnvContextImpl extends EnvContext with LogTrait {
+  case class CacheInfo(HostList: String, CachePort: Int, CacheSizePerNode: Long, ReplicateFactor: Int, TimeToIdleSeconds: Long, EvictionPolicy: String)
 
   val CLASSNAME = "com.ligadata.SimpleEnvContextImpl.SimpleEnvContextImpl$"
   private var hbExecutor: ExecutorService = Executors.newFixedThreadPool(1)
@@ -82,8 +86,10 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
   private val _zkListeners = ArrayBuffer[ZooKeeperListener]()
   private val _zkListeners_reent_lock = new ReentrantReadWriteLock(true)
   private val _zkLeader_reent_lock = new ReentrantReadWriteLock(true)
+  private val _cacheListener_reent_lock = new ReentrantReadWriteLock(true)
   private var _zkLeaderLatch: ZkLeaderLatch = _
   private val _zkLeaderListeners = ArrayBuffer[LeaderListenerCallback]()
+  private val _cacheListeners = ArrayBuffer[ReturnCacheListenerCallback]()
   private var _clusterStatusInfo: ClusterStatus = _
   private val _nodeCacheMap = collection.mutable.Map[String, Any]()
   private val _nodeCache_reent_lock = new ReentrantReadWriteLock(true)
@@ -91,8 +97,97 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
   private var txnIdsRangeForPartition: Int = 10000 // Each time get txnIdsRange of transaction ids for each partition
   private var _sysCatalogDatastore: String = _
   private var _postMsgListenerCallback: (Array[ContainerInterface]) => Unit = null
+  private var _listenerCache: DataCache = null
+  private var _listenerConfigClusterCache: DataCache = null
+  private var _cacheConfig: CacheConfig = null
+  private val _cacheConfigTemplate =
+    """
+      |
+      |{
+      |  "name": "%s",
+      |  "diskSpoolBufferSizeMB": "20",
+      |  "jgroups.tcpping.initial_hosts": "%s",
+      |  "jgroups.port": "%d",
+      |  "replicatePuts": "true",
+      |  "replicateUpdates": "true",
+      |  "replicateUpdatesViaCopy": "false",
+      |  "replicateRemovals": "true",
+      |  "replicateAsynchronously": "true",
+      |  "CacheConfig": {
+      |    "maxBytesLocalHeap": "%d",
+      |    "eternal": "false",
+      |    "bootstrapAsynchronously": "false",
+      |    "timeToIdleSeconds": "%d",
+      |    "timeToLiveSeconds": "%d",
+      |    "memoryStoreEvictionPolicy": "%s",
+      |    "transactionalMode": "off",
+      |    "class": "net.sf.ehcache.distribution.jgroups.JGroupsCacheManagerPeerProviderFactory",
+      |    "separator": "::",
+      |    "peerconfig": "channelName=EH_CACHE::file=jgroups_tcp.xml",
+      |    "enableListener": "%s"
+      |  }
+      |}
+      |
+      | """.stripMargin
+
+  private def addCacheListener(listenPath: String, ListenCallback: (String, String, String) => Unit, childCache: Boolean): Unit = {
+    if (ListenCallback == null || listenPath == null || listenPath.size == 0 /* || listenPath.trim.size == 0 */) {
+      return
+    }
+
+    WriteLock(_cacheListener_reent_lock)
+    try {
+      if (_listenerCache != null) {
+        _cacheListeners += ReturnCacheListenerCallback(listenPath, ListenCallback, childCache)
+      }
+    } catch {
+      case e: Throwable => {
+        throw e
+      }
+    } finally {
+      WriteUnlock(_cacheListener_reent_lock)
+    }
+
+    try {
+      if (_listenerCache != null) {
+        if (!childCache && _listenerCache.isKeyInCache(listenPath)) {
+          val value = _listenerCache.get(listenPath);
+          ListenCallback("Put", listenPath, value.toString)
+        } else if (childCache) {
+          val keys = _listenerCache.getKeys().filter(k => k.startsWith(listenPath))
+          if (keys.size > 0) {
+            val map = _listenerCache.get(keys)
+            map.asScala.foreach(kv => {
+              ListenCallback("Put", kv._1, kv._2.toString)
+            })
+          }
+        }
+      }
+    } catch {
+      case e: Throwable => {
+        throw e
+      }
+    }
+  }
+
+  private def getMatchedCacheListeners(key: String): Array[ReturnCacheListenerCallback] = {
+    var matchedListerners = Array[ReturnCacheListenerCallback]()
+    ReadLock(_cacheListener_reent_lock)
+    try {
+      matchedListerners = _cacheListeners.filter(l => (l.childCache && key.startsWith(l.listenPath)) || key == l.listenPath).toArray
+    } catch {
+      case e: Throwable => {
+        throw e
+      }
+    } finally {
+      ReadUnlock(_cacheListener_reent_lock)
+    }
+
+    matchedListerners
+  }
 
   case class LeaderListenerCallback(val EventChangeCallback: (ClusterStatus) => Unit)
+  case class ReturnCacheListenerCallback(val listenPath: String, val ListenCallback: (String, String, String) => Unit, val childCache: Boolean)
 
 //  case class PostMessageListenerCallback(val callback: (Array[ContainerInterface]) => Unit)
 
@@ -2575,9 +2670,6 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
   //
   //  def getAllNodeLocks(nodeId: String): Array[String] = null
 
-  // Saving & getting temporary objects in cache
-  def saveConfigInClusterCache(key: String, value: Array[Byte]): Unit = {}
-
   override def saveObjectInNodeCache(key: String, value: Any): Unit = {
     WriteLock(_nodeCache_reent_lock)
     try {
@@ -2591,8 +2683,6 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
       WriteUnlock(_nodeCache_reent_lock)
     }
   }
-
-  def getConfigFromClusterCache(key: String): Array[Byte] = null
 
   override def getObjectFromNodeCache(key: String): Any = {
     var retVal: Any = null
@@ -2611,8 +2701,6 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
     retVal
   }
 
-  def getAllKeysFromClusterCache(): Array[String] = null
-
   override def getAllKeysFromNodeCache(): Array[String] = {
     var retVal = Array[String]()
     ReadLock(_nodeCache_reent_lock)
@@ -2629,8 +2717,6 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
 
     retVal
   }
-
-  def getAllConfigFromClusterCache(): Array[KeyValuePair] = null
 
   override def getAllObjectsFromNodeCache(): Array[KeyValuePair] = {
     var retVal = Array[KeyValuePair]()
@@ -2747,6 +2833,78 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
     if (finalException != null) {
       throw finalException
     }
+  }
+
+  private def ValidateCacheListener(conf: CacheConfig): Unit = {
+    if (conf == null)
+      throw new KamanjaException("Got null CacheConfig", null)
+
+    val sb = new scala.StringBuilder()
+    if (conf.HostList == null)
+      sb.append("Got null HostList in CacheConfig\n")
+
+    var foundLocalNodeId = false
+
+    conf.HostList.foreach(h => {
+      if (h.NodeId == null || h.NodeIp == null || h.Port <= 0)
+        sb.append("Got invalid HostConfig in CacheConfig. NodeId:" + h.NodeId + ", NodeIp:" + h.NodeIp + ", Port:" + h.Port)
+      else if (! foundLocalNodeId && h.NodeId != null && _nodeId != null) {
+        foundLocalNodeId = h.NodeId.equalsIgnoreCase(_nodeId)
+//        _cachePort = h.Port
+      }
+    })
+
+    if (!foundLocalNodeId)
+      sb.append("Not found local NodeId:" + _nodeId + " in CacheConfig HostList")
+
+    if (conf.CacheStartPort <= 0)
+      sb.append("Got invalid CacheStartPort (%d) in CacheConfig\n".format(conf.CacheStartPort))
+    if (conf.CacheSizePerNode <= 0)
+      sb.append("Got invalid CacheSizePerNode (%d) in CacheConfig\n".format(conf.CacheSizePerNode))
+    if (conf.ReplicateFactor <= 0)
+      sb.append("Got invalid ReplicateFactor (%d) in CacheConfig\n".format(conf.ReplicateFactor))
+    if (conf.TimeToIdleSeconds <= 0)
+      sb.append("Got invalid TimeToIdleSeconds (%d) in CacheConfig\n".format(conf.TimeToIdleSeconds))
+    if ((!conf.EvictionPolicy.equalsIgnoreCase("LFU")) && (!conf.EvictionPolicy.equalsIgnoreCase("LRU")) && (!conf.EvictionPolicy.equalsIgnoreCase("FIFO")))
+      sb.append("Got invalid EvictionPolicy (%s) in CacheConfig\n".format(conf.EvictionPolicy))
+
+    if (sb.length > 0) {
+      throw new KamanjaException(sb.toString(), null)
+    }
+  }
+
+  class CacheListenerCallback extends CacheCallback {
+    @throws(classOf[Exception])
+    override def call(callbackData: CacheCallbackData): Unit = {
+      val matchedListerners = getMatchedCacheListeners(callbackData.key)
+      matchedListerners.foreach(l => {
+        if (l.ListenCallback != null) {
+          l.ListenCallback(callbackData.eventType, callbackData.key, callbackData.value)
+        }
+      })
+    }
+  }
+
+  private def CreateCacheListener(conf: CacheConfig): Unit = {
+    val hosts = conf.HostList.map(h => { "%s[%d]".format(h.NodeIp, conf.CacheStartPort) }).mkString(",")
+    val cacheCfg = _cacheConfigTemplate.format("EnvCtxtListenersCache", hosts, conf.CacheStartPort, conf.CacheSizePerNode / 2, conf.TimeToIdleSeconds, conf.TimeToIdleSeconds, conf.EvictionPolicy.toUpperCase, "true")
+
+    val listenCallback = new CacheListenerCallback()
+
+    val aclass = Class.forName("com.ligadata.cache.MemoryDataCacheImp").newInstance
+    _listenerCache = aclass.asInstanceOf[DataCache]
+    _listenerCache.init(cacheCfg, listenCallback)
+    _listenerCache.start()
+  }
+
+  private def CreateConfigClusterCache(conf: CacheConfig): Unit = {
+    val hosts = conf.HostList.map(h => { "%s[%d]".format(h.NodeIp, conf.CacheStartPort) }).mkString(",")
+    val cacheCfg = _cacheConfigTemplate.format("EnvCtxtConfigClusterCache", hosts, conf.CacheStartPort, conf.CacheSizePerNode / 2, conf.TimeToIdleSeconds, conf.TimeToIdleSeconds, conf.EvictionPolicy.toUpperCase, "true")
+
+    val aclass = Class.forName("com.ligadata.cache.MemoryDataCacheImp").newInstance
+    _listenerConfigClusterCache = aclass.asInstanceOf[DataCache]
+    _listenerConfigClusterCache.init(cacheCfg, null)
+    _listenerConfigClusterCache.start()
   }
 
   override def setDataToZNode(zNodePath: String, value: Array[Byte]): Unit = {
@@ -2878,8 +3036,10 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
   }
 
   // Cache Listeners
-  def setListenerCacheKey(key: String, value: String): Unit = {
-    setDataToZNode(key: String, value.getBytes())
+  override def setListenerCacheKey(key: String, value: String): Unit = {
+    if (_listenerCache != null)
+      _listenerCache.put(key, value)
+//    setDataToZNode(key: String, value.getBytes())
   }
 
   // listenPath is the Path where it has to listen. Ex: /kamanja/notification/node1
@@ -2887,7 +3047,9 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
   // eventType is PUT, UPDATE, REMOVE etc
   // eventPath is the Path where it changed the data
   // eventPathData is the data of that path
-  def createListenerForCacheKey(listenPath: String, ListenCallback: (String, String, String) => Unit): Unit = {
+  override def createListenerForCacheKey(listenPath: String, ListenCallback: (String, String, String) => Unit): Unit = {
+    addCacheListener(listenPath, ListenCallback, false)
+/*
     class Test(path: String, ListenCallback: (String, String, String) => Unit) {
       def Callback(data: String): Unit = {
         if (ListenCallback != null)
@@ -2898,6 +3060,7 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
     val tst = new Test(listenPath, ListenCallback)
 
     createZkPathListener(listenPath: String, tst.Callback)
+*/
   }
 
   // listenPath is the Path where it has to listen and its children
@@ -2908,12 +3071,14 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
   // eventPath is the Path where it changed the data
   // eventPathData is the data of that path
   // eventType: String, eventPath: String, eventPathData: Array[Byte]
-  def createListenerForCacheChildern(listenPath: String, ListenCallback: (String, String, String) => Unit): Unit = {
-
+  override def createListenerForCacheChildern(listenPath: String, ListenCallback: (String, String, String) => Unit): Unit = {
+    addCacheListener(listenPath, ListenCallback, true)
+/*
     val sendOne = (eventType: String, eventPath: String, eventPathData: Array[Byte], childs: Array[(String, Array[Byte])]) => {
       ListenCallback(eventType, eventPath, if (eventPathData != null) new String(eventPathData) else null)
     }
     createZkPathChildrenCacheListener(listenPath, false, sendOne)
+*/
   }
 
   override def getClusterInfo(): ClusterStatus = _clusterStatusInfo
@@ -3010,4 +3175,51 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
   }
 
   override def getSystemCatalogDatastore(): String = _sysCatalogDatastore
+
+  override def startCache(conf: CacheConfig): Unit = {
+    ValidateCacheListener(conf)
+    CreateCacheListener(conf)
+    CreateConfigClusterCache(conf)
+    _cacheConfig = conf
+  }
+
+  override def getCacheConfig(): CacheConfig = _cacheConfig
+
+  // Saving & getting temporary objects in cache
+  override def saveConfigInClusterCache(key: String, value: Array[Byte]): Unit = {
+    if (_listenerConfigClusterCache != null)
+      _listenerConfigClusterCache.put(key, value)
+  }
+
+  override def getConfigFromClusterCache(key: String): Array[Byte] = {
+    if (_listenerConfigClusterCache != null && _listenerConfigClusterCache.isKeyInCache(key)) {
+      val v = _listenerConfigClusterCache.get(key)
+      if (v != null)
+        v.asInstanceOf[Array[Byte]]
+      else
+        null
+    }
+    else
+      null
+  }
+
+  override def getAllKeysFromClusterCache(): Array[String] = {
+    if (_listenerConfigClusterCache != null)
+      _listenerConfigClusterCache.getKeys
+    else
+      Array[String]()
+  }
+
+  override def getAllConfigFromClusterCache(): Array[KeyValuePair] = {
+    if (_listenerConfigClusterCache != null) {
+      val allValues = _listenerConfigClusterCache.getAll
+      if (allValues != null && allValues.size() > 0)
+        allValues.asScala.map(kv => KeyValuePair(kv._1, if (kv._2 != null) kv._2.asInstanceOf[Array[Byte]] else null)).toArray
+      else
+        Array[KeyValuePair]()
+    }
+    else {
+      Array[KeyValuePair]()
+    }
+  }
 }

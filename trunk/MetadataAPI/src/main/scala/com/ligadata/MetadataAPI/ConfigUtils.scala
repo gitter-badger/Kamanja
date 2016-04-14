@@ -96,7 +96,7 @@ object ConfigUtils {
 
 
   // This is used to exclude all non-engine related configs from Uplodad Config method 
-  private val excludeList: Set[String] = Set[String]("ClusterId", "Nodes", "Config", "Adapters", "SystemCatalog", "ZooKeeperInfo", "EnvironmentContext")
+  private val excludeList: Set[String] = Set[String]("ClusterId", "Nodes", "Config", "Adapters", "SystemCatalog", "ZooKeeperInfo", "EnvironmentContext", "Cache")
 
     /**
      * AddNode
@@ -652,6 +652,7 @@ object ConfigUtils {
 
     //TODO: BOOOYA
     var clusterNotifications: ArrayBuffer[BaseElemDef] = new ArrayBuffer[BaseElemDef]
+    var clusterNotifyActions: ArrayBuffer[String] =  new ArrayBuffer[String]
 
     MetadataAPIImpl.logAuditRec(userid, Some(AuditConstants.WRITE), AuditConstants.INSERTCONFIG, cfgStr, AuditConstants.SUCCESS, "", objectList)
 
@@ -672,16 +673,22 @@ object ConfigUtils {
             val ClusterId = cluster.getOrElse("ClusterId", "").toString.trim.toLowerCase
             logger.debug("Processing the cluster => " + ClusterId)
             // save in memory
-            var ci = MdMgr.GetMdMgr.MakeCluster(ClusterId, null, null)
-            MdMgr.GetMdMgr.AddCluster(ci)
+            val ci = MdMgr.GetMdMgr.MakeCluster(ClusterId, null, null)
+            val addCluserReuslt = MdMgr.GetMdMgr.AddCluster(ci)
 
-            var clusterDef: ClusterConfigDef = new ClusterConfigDef
-            clusterDef.clusterId = ci.clusterId
-            clusterDef.elementType = "clusterDef"
-            clusterDef.nameSpace = "cluster"
-            clusterDef.name = ci.clusterId
-            clusterDef.tranId = MetadataAPIImpl.GetNewTranId
-            clusterNotifications.append(clusterDef)
+            if (addCluserReuslt != None) {
+              var clusterDef: ClusterConfigDef = new ClusterConfigDef
+              clusterDef.clusterId = ci.clusterId
+              clusterDef.elementType = "clusterDef"
+              clusterDef.nameSpace = "cluster"
+              clusterDef.name = ci.clusterId
+              clusterDef.tranId = MetadataAPIImpl.GetNewTranId
+              clusterNotifications.append(clusterDef)
+              if (addCluserReuslt.get.equalsIgnoreCase("add"))
+                clusterNotifyActions.append("Add")
+              else
+                clusterNotifyActions.append("Update")
+            }
 
             var key = "ClusterInfo." + ci.clusterId
             var value = MetadataAPISerialization.serializeObjectToJson(ci).getBytes //serializer.SerializeObjectToByteArray(ci)
@@ -696,6 +703,8 @@ object ConfigUtils {
               cfgMap("ZooKeeperInfo") = getStringFromJsonNode(cluster.getOrElse("ZooKeeperInfo", null))
             if (cluster.contains("EnvironmentContext"))
               cfgMap("EnvironmentContext") = getStringFromJsonNode(cluster.getOrElse("EnvironmentContext", null))
+            if (cluster.contains("Cache"))
+              cfgMap("Cache") = getStringFromJsonNode(cluster.getOrElse("Cache", null))
             if (cluster.contains("Config")) {
               val config = cluster.get("Config").get.asInstanceOf[Map[String, Any]] //BUGBUG:: Do we need to check the type before converting
               if (config.contains("SystemCatalog"))
@@ -708,18 +717,24 @@ object ConfigUtils {
 
             // save in memory
             val cic = MdMgr.GetMdMgr.MakeClusterCfg(ClusterId, cfgMap, null, null)
-            MdMgr.GetMdMgr.AddClusterCfg(cic)
+            val addClusterResult = MdMgr.GetMdMgr.AddClusterCfg(cic)
+
+            if (addClusterResult != None) {
+              var clusterInfoDef: ClusterConfigDef = new ClusterConfigDef
+              clusterInfoDef.clusterId = cic.clusterId
+              clusterInfoDef.elementType = "clusterInfoDef"
+              clusterInfoDef.name = cic.clusterId
+              clusterInfoDef.nameSpace = "clusterInfo"
+              clusterInfoDef.tranId = MetadataAPIImpl.GetNewTranId
+              clusterNotifications.append(clusterInfoDef)
+              if (addClusterResult.get.equalsIgnoreCase("add"))
+                clusterNotifyActions.append("Add")
+              else
+                clusterNotifyActions.append("Update")
+            }
+
             key = "ClusterCfgInfo." + cic.clusterId
             value = MetadataAPISerialization.serializeObjectToJson(cic).getBytes//serializer.SerializeObjectToByteArray(cic)
-
-            var clusterInfoDef: ClusterConfigDef = new ClusterConfigDef
-            clusterInfoDef.clusterId = cic.clusterId
-            clusterInfoDef.elementType = "clusterInfoDef"
-            clusterInfoDef.name = cic.clusterId
-            clusterInfoDef.nameSpace = "clusterInfo"
-            clusterInfoDef.tranId = MetadataAPIImpl.GetNewTranId
-            clusterNotifications.append(clusterInfoDef)
-
             keyList = keyList :+ key.toLowerCase
             valueList = valueList :+ value
 
@@ -753,16 +768,23 @@ object ConfigUtils {
                 }
 
                 val ni = MdMgr.GetMdMgr.MakeNode(nodeId, nodePort, nodeIpAddr, jarPaths,
-                  scala_home, java_home, classpath, ClusterId, 0, foundRoles.toArray, null)
-                MdMgr.GetMdMgr.AddNode(ni)
+                                                 scala_home, java_home, classpath, ClusterId, 0, foundRoles.toArray, null)
 
-                var nodeDef: ClusterConfigDef = new ClusterConfigDef
-                nodeDef.name = ni.nodeId
-                nodeDef.tranId = MetadataAPIImpl.GetNewTranId
-                nodeDef.nameSpace = "nodeIds"
-                nodeDef.clusterId = ci.clusterId
-                nodeDef.elementType = "nodeDef"
-                clusterNotifications.append(nodeDef)
+                val addNodeResult = MdMgr.GetMdMgr.AddNode(ni)
+                if (addNodeResult != None) {
+                  var nodeDef: ClusterConfigDef = new ClusterConfigDef
+                  nodeDef.name = ni.nodeId
+                  nodeDef.tranId = MetadataAPIImpl.GetNewTranId
+                  nodeDef.nameSpace = "nodeIds"
+                  nodeDef.clusterId = ci.clusterId
+                  nodeDef.elementType = "nodeDef"
+                  clusterNotifications.append(nodeDef)
+                  if (addNodeResult.get.equalsIgnoreCase("add"))
+                    clusterNotifyActions.append("Add")
+                  else
+                    clusterNotifyActions.append("Update")
+                }
+
 
                 val key = "NodeInfo." + ni.nodeId
                 val value = MetadataAPISerialization.serializeObjectToJson(ni).getBytes//serializer.SerializeObjectToByteArray(ni)
@@ -781,14 +803,19 @@ object ConfigUtils {
                 var cacheConfig = getStringFromJsonNode(tenant.getOrElse("CacheConfig", null))
 
                 val ti = MdMgr.GetMdMgr.MakeTenantInfo(tenantId, description, primaryDataStore, cacheConfig)
-                if (!MdMgr.GetMdMgr.AddTenantInfo(ti)) {
-                  var tenantDef: ClusterConfigDef = new ClusterConfigDef
+                val addTenantResult = MdMgr.GetMdMgr.AddTenantInfo(ti)
+                if (addTenantResult != None) {
+                  val tenantDef: ClusterConfigDef = new ClusterConfigDef
                   tenantDef.name = ti.tenantId.trim.toLowerCase()
                   tenantDef.tranId = MetadataAPIImpl.GetNewTranId
                   tenantDef.nameSpace = "Tenants"
                   tenantDef.clusterId = ci.clusterId
                   tenantDef.elementType = "TenantDef"
                   clusterNotifications.append(tenantDef)
+                  if (addTenantResult.get.equalsIgnoreCase("add"))
+                    clusterNotifyActions.append("Add")
+                  else
+                    clusterNotifyActions.append("Update")
                 }
 
                 val key = "TenantInfo." + ti.tenantId.trim.toLowerCase()
@@ -820,26 +847,32 @@ object ConfigUtils {
                 val clsNm = adap.getOrElse("ClassName", "").toString.trim
                 val jarnm = adap.getOrElse("JarName", "").toString.trim
 
-                var adapterDef: ClusterConfigDef = new ClusterConfigDef
-                adapterDef.name = nm
-                adapterDef.nameSpace = typStr
-                adapterDef.tranId = MetadataAPIImpl.GetNewTranId
-                adapterDef.clusterId = ClusterId
-                adapterDef.elementType = "adapterDef"
-                clusterNotifications.append(adapterDef)
-
                 var depJars: List[String] = null
                 if (adap.contains("DependencyJars")) {
                   depJars = adap.get("DependencyJars").get.asInstanceOf[List[String]]
                 }
-                var ascfg: String = null
+                var ascfg: String = ""
                 if (adap.contains("AdapterSpecificCfg")) {
                   ascfg = getStringFromJsonNode(adap.get("AdapterSpecificCfg"))
                 }
                 val fullAdapterConfig = getStringFromJsonNode(adap) // Saving the full config here in case if we want to use it later. In case of storage we use it
+
                 // save in memory
                 val ai = MdMgr.GetMdMgr.MakeAdapter(nm, typStr, clsNm, jarnm, depJars, ascfg, tenantId, fullAdapterConfig)
-                MdMgr.GetMdMgr.AddAdapter(ai)
+                val addAdapterResult = MdMgr.GetMdMgr.AddAdapter(ai)
+                if (addAdapterResult != None) {
+                  var adapterDef: ClusterConfigDef = new ClusterConfigDef
+                  adapterDef.name = nm
+                  adapterDef.nameSpace = typStr
+                  adapterDef.tranId = MetadataAPIImpl.GetNewTranId
+                  adapterDef.clusterId = ClusterId
+                  adapterDef.elementType = "adapterDef"
+                  clusterNotifications.append(adapterDef)
+                  if (addAdapterResult.get.equalsIgnoreCase("add"))
+                    clusterNotifyActions.append("Add")
+                  else
+                    clusterNotifyActions.append("Update")
+                }
                 val key = "AdapterInfo." + ai.name
                 val value = MetadataAPISerialization.serializeObjectToJson(ai).getBytes//serializer.SerializeObjectToByteArray(ai)
                 keyList = keyList :+ key.toLowerCase
@@ -858,15 +891,21 @@ object ConfigUtils {
                 upProps.Props(key) = userDefinedProps(key).toString
               })
 
-              var upDef: ClusterConfigDef = new ClusterConfigDef
-              upDef.name = upProps.clusterId
-              upDef.nameSpace = "userProperties"
-              upDef.tranId = MetadataAPIImpl.GetNewTranId
-              upDef.clusterId = ClusterId
-              upDef.elementType = "upDef"
-              clusterNotifications.append(upDef)
+              val upAddResults = MdMgr.GetMdMgr.AddUserProperty(upProps)
+              if (upAddResults != None) {
+                var upDef: ClusterConfigDef = new ClusterConfigDef
+                upDef.name = upProps.clusterId
+                upDef.nameSpace = "userProperties"
+                upDef.tranId = MetadataAPIImpl.GetNewTranId
+                upDef.clusterId = ClusterId
+                upDef.elementType = "upDef"
+                clusterNotifications.append(upDef)
+                if (upAddResults.get.equalsIgnoreCase("add"))
+                  clusterNotifyActions.append("Add")
+                else
+                  clusterNotifyActions.append("Update")
+              }
 
-              MdMgr.GetMdMgr.AddUserProperty(upProps)
               val upKey = "userProperties." + upProps.clusterId
               val upValue = MetadataAPISerialization.serializeObjectToJson(upProps).getBytes//serializer.SerializeObjectToByteArray(upProps)
               keyList = keyList :+ upKey.toLowerCase
@@ -879,8 +918,7 @@ object ConfigUtils {
         }
 
         MetadataAPIImpl.SaveObjectList(keyList, valueList, "config_objects", serializerType)
-        val operations = for (op <- clusterNotifications) yield "Add"
-        MetadataAPIImpl.NotifyEngine(clusterNotifications.toArray, operations.toArray)
+        MetadataAPIImpl.NotifyEngine(clusterNotifications.toArray, clusterNotifyActions.toArray)
         var apiResult = new ApiResult(ErrorCodeConstants.Success, "UploadConfig", cfgStr, ErrorCodeConstants.Upload_Config_Successful)
         apiResult.toString()
       }

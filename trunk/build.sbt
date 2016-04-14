@@ -40,15 +40,15 @@ lazy val KamanjaInternalDeps = project.in(file("KamanjaInternalDeps")).configs(T
   Serialize, ZooKeeperListener, ZooKeeperLeaderLatch, KamanjaUtils, TransactionService, StorageManager, PmmlCompiler, ZooKeeperClient, OutputMsgDef, SecurityAdapterBase, HeartBeat,
   JpmmlFactoryOfModelInstanceFactory, JarFactoryOfModelInstanceFactory, KamanjaVersion, InstallDriverBase, BaseFunctions, KafkaSimpleInputOutputAdapters, FileSimpleInputOutputAdapters, SimpleEnvContextImpl,
   GenericMsgCompiler, MethodExtractor, MetadataAPIServiceClient, JsonDataGen, Controller, AuditAdapters, CustomUdfLib, ExtractData, UtilityService,
-  UtilsForModels, MessageCompiler, jtm, Dag, NodeInfoExtract, SmartFileAdapter)
+  UtilsForModels, MessageCompiler, jtm, Dag, NodeInfoExtract, SmartFileAdapter, Cache, CacheImp)
 
 ////////////////////////
 
 lazy val BaseTypes = project.in(file("BaseTypes")).configs(TestConfigs.all: _*).settings(TestSettings.settings: _*).dependsOn(ExtDependencyLibs % "provided", ExtDependencyLibs2 % "provided", Metadata, Exceptions)
 
-lazy val Cache = project.in(file("Utils/Cache"))
+lazy val Cache = project.in(file("Utils/Cache")).configs(TestConfigs.all: _*).settings(TestSettings.settings: _*).dependsOn(ExtDependencyLibs % "provided", ExtDependencyLibs2 % "provided")
 
-lazy val CacheImp = project.in(file("Utils/CacheImp")) dependsOn (Cache)
+lazy val CacheImp = project.in(file("Utils/CacheImp")).configs(TestConfigs.all: _*).settings(TestSettings.settings: _*).dependsOn(ExtDependencyLibs % "provided", ExtDependencyLibs2 % "provided", Cache)
 
 lazy val BaseFunctions = project.in(file("BaseFunctions")).configs(TestConfigs.all: _*).settings(TestSettings.settings: _*).dependsOn(ExtDependencyLibs % "provided", ExtDependencyLibs2 % "provided", Metadata, Exceptions) // has only resolvers , no dependencies
 
@@ -78,7 +78,7 @@ lazy val KafkaSimpleInputOutputAdapters = project.in(file("InputOutputAdapters/K
 
 lazy val FileSimpleInputOutputAdapters = project.in(file("InputOutputAdapters/FileSimpleInputOutputAdapters")).configs(TestConfigs.all: _*).settings(TestSettings.settings: _*).dependsOn(ExtDependencyLibs % "provided", ExtDependencyLibs2 % "provided", InputOutputAdapterBase, Exceptions, DataDelimiters)
 
-lazy val SimpleEnvContextImpl = project.in(file("EnvContexts/SimpleEnvContextImpl")).configs(TestConfigs.all: _*).settings(TestSettings.settings: _*).dependsOn(ExtDependencyLibs % "provided", ExtDependencyLibs2 % "provided", KamanjaBase, StorageManager, Serialize, Exceptions)
+lazy val SimpleEnvContextImpl = project.in(file("EnvContexts/SimpleEnvContextImpl")).configs(TestConfigs.all: _*).settings(TestSettings.settings: _*).dependsOn(ExtDependencyLibs % "provided", ExtDependencyLibs2 % "provided", KamanjaBase, StorageManager, Serialize, Exceptions, Cache, CacheImp)
 
 lazy val StorageBase = project.in(file("Storage/StorageBase")).configs(TestConfigs.all: _*).settings(TestSettings.settings: _*).dependsOn(ExtDependencyLibs % "provided", ExtDependencyLibs2 % "provided", Exceptions, KamanjaUtils, KvBase, KamanjaBase)
 

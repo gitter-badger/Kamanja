@@ -27,7 +27,7 @@
             "keytab": "/home/ligadata/keytab/ligadata.keytab"
           },
           "CacheConfig": {
-            "MaxSize": "1GB"
+            "MaxSizeInMB": 256
           }
         }
       ],
@@ -44,6 +44,13 @@
           "ExtDependencyLibs_2.10-1.4.0.jar",
           "ExtDependencyLibs2_2.10-1.4.0.jar"
         ]
+      },
+      "Cache": {
+        "CacheStartPort": 7800,
+        "CacheSizePerNodeInMB": 256,
+        "ReplicateFactor": 1,
+        "TimeToIdleSeconds": 31622400,
+        "EvictionPolicy": "LFU"
       },
       "Nodes": [
         {

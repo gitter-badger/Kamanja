@@ -19,14 +19,12 @@ class MemoryDataCacheImp extends DataCache{
   var cache:Cache = null
   var cacheConfig:CacheCustomConfig = null
 
-  override def init(jsonString:String): Unit = {
-
-    cacheConfig = new CacheCustomConfig(new Config(jsonString))
+  override def init(jsonString:String, listenCallback: CacheCallback): Unit = {
+    cacheConfig = new CacheCustomConfig(new Config(jsonString), listenCallback)
     cm = CacheManager.create(cacheConfig.getConfiguration())
     val cache = new Cache(cacheConfig)
     cache.setBootstrapCacheLoader(cacheConfig.getBootStrap())
     cm.addCache(cache)
-
   }
 
   override def start(): Unit = {
@@ -55,8 +53,9 @@ class MemoryDataCacheImp extends DataCache{
 
       return ""
     }
-
   }
+
+  override def isKeyInCache(key: String): Boolean = (cache != null && cache.isKeyInCache(key))
 
   override def get(keys: Array[String]): java.util.Map[String, AnyRef] = {
     val map = new java.util.HashMap[String, AnyRef]
@@ -68,5 +67,18 @@ class MemoryDataCacheImp extends DataCache{
   override def put(map: java.util.Map[_, _]): Unit = {
     val scalaMap = map.asScala
     scalaMap.foreach {keyVal => cache.put(new Element(keyVal._1,keyVal._2))}
+  }
+
+  override def getAll(): java.util.Map[String, AnyRef] = {
+    val map = new java.util.HashMap[String, AnyRef]
+    val keys = getKeys()
+    if (keys != null){
+      keys.foreach(str => map.put(str,get(str)))
+    }
+    map
+  }
+
+  override def getKeys(): Array[String] = {
+    cache.getKeys().asScala.map(k => k.toString).toArray
   }
 }

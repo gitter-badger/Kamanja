@@ -348,24 +348,26 @@ class SmartFileConsumer(val inputConfig: AdapterConfiguration, val execCtxtObj: 
     LOG.debug("Smart File Consumer - requestFileLeaderCallback: eventType={}, eventPath={}, eventPathData={}",
       eventType, eventPath, eventPathData)
 
-    var addRequestToQueue =false
-    if(eventType.equalsIgnoreCase("put") || eventType.equalsIgnoreCase("update") ||
-      eventType.equalsIgnoreCase("CHILD_UPDATED") || eventType.equalsIgnoreCase("CHILD_ADDED")) {
-      val keyTokens = eventPath.split("/")
-      val requestingNodeId = keyTokens(keyTokens.length - 2)
-      val requestingThreadId = keyTokens(keyTokens.length - 1)
-      val fileToProcessKeyPath = eventPathData //from leader
+    if(eventPathData != null) {
+      var addRequestToQueue = false
+      if (eventType.equalsIgnoreCase("put") || eventType.equalsIgnoreCase("update") ||
+        eventType.equalsIgnoreCase("CHILD_UPDATED") || eventType.equalsIgnoreCase("CHILD_ADDED")) {
+        val keyTokens = eventPath.split("/")
+        val requestingNodeId = keyTokens(keyTokens.length - 2)
+        val requestingThreadId = keyTokens(keyTokens.length - 1)
+        val fileToProcessKeyPath = eventPathData //from leader
 
-      LOG.info("Smart File Consumer - Leader has received a request from Node {}, Thread {}", requestingNodeId, requestingThreadId)
+        LOG.info("Smart File Consumer - Leader has received a request from Node {}, Thread {}", requestingNodeId, requestingThreadId)
 
-      //just add to request queue
-      var requestQueue = getFileRequestsQueue
-      requestQueue = requestQueue:::List(requestingNodeId + "/" + requestingThreadId + ":" + fileToProcessKeyPath)
-      saveFileRequestsQueue(requestQueue)
+        //just add to request queue
+        var requestQueue = getFileRequestsQueue
+        requestQueue = requestQueue ::: List(requestingNodeId + "/" + requestingThreadId + ":" + fileToProcessKeyPath)
+        saveFileRequestsQueue(requestQueue)
 
-      assignFileProcessingIfPossible()
+        assignFileProcessingIfPossible()
+      }
+      //should do anything for remove?
     }
-    //should do anything for remove?
   }
 
   //this is to be called whenever we have some changes in requests/new files
@@ -495,36 +497,42 @@ class SmartFileConsumer(val inputConfig: AdapterConfiguration, val execCtxtObj: 
 
   //what a leader should do when recieving file processing status update
   def fileProcessingLeaderCallback (eventType: String, eventPath: String, eventPathData: String) : Unit = {
-    if(eventType.equalsIgnoreCase("put") || eventType.equalsIgnoreCase("update") ||
-      eventType.equalsIgnoreCase("CHILD_UPDATED") || eventType.equalsIgnoreCase("CHILD_ADDED")) {
-      val keyTokens = eventPath.split("/")
-      val processingThreadId = keyTokens(keyTokens.length - 1)
-      val processingNodeId = keyTokens(keyTokens.length - 2)
-      //value for file processing has the format <file-name>|<status>
-      val valueTokens = eventPathData.split("\\|")
-      val processingFilePath = valueTokens(0)
-      val status = valueTokens(1)
-      if(status == File_Processing_Status_Finished){
-        LOG.info("Smart File Consumer - File ({}) processing finished", processingFilePath)
+    LOG.debug("Smart File Consumer - fileProcessingLeaderCallback: eventType={}, eventPath={}, eventPathData={}",
+      eventType, eventPath, eventPathData)
 
-        val correspondingRequestFileKeyPath = requestFilePath + "/" + processingNodeId //e.g. SmartFileCommunication/ToLeader/ProcessedFile/<nodeid>
+    if(eventPathData != null) {
+      if (eventType.equalsIgnoreCase("put") || eventType.equalsIgnoreCase("update") ||
+        eventType.equalsIgnoreCase("CHILD_UPDATED") || eventType.equalsIgnoreCase("CHILD_ADDED")) {
+        val keyTokens = eventPath.split("/")
+        val processingThreadId = keyTokens(keyTokens.length - 1)
+        val processingNodeId = keyTokens(keyTokens.length - 2)
+        //value for file processing has the format <file-name>|<status>
+        val valueTokens = eventPathData.split("\\|")
+        val processingFilePath = valueTokens(0)
+        val status = valueTokens(1)
+        if (status == File_Processing_Status_Finished) {
+          LOG.info("Smart File Consumer - File ({}) processing finished", processingFilePath)
 
-        //remove the file from processing queue
-        var processingQueue = getFileProcessingQueue
-        val valueInProcessingQueue = processingNodeId + "/" + processingThreadId + ":" + processingFilePath
-        processingQueue = processingQueue diff List(valueInProcessingQueue)
+          val correspondingRequestFileKeyPath = requestFilePath + "/" + processingNodeId //e.g. SmartFileCommunication/ToLeader/ProcessedFile/<nodeid>
 
-        //since a file just got finished, a new one can be processed
-        assignFileProcessingIfPossible()
+          //remove the file from processing queue
+          var processingQueue = getFileProcessingQueue
+          val valueInProcessingQueue = processingNodeId + "/" + processingThreadId + ":" + processingFilePath
+          processingQueue = processingQueue diff List(valueInProcessingQueue)
 
-        moveFile(processingFilePath)
+          //since a file just got finished, a new one can be processed
+          assignFileProcessingIfPossible()
+
+          moveFile(processingFilePath)
+        }
+        else {
+          //if processing status is NOT finished
+
+        }
+
       }
-      else{//if processing status is NOT finished
-
-      }
-
+      //CHILD_REMOVED should do anything for remove?
     }
-    //CHILD_REMOVED should do anything for remove?
   }
 
   //to be used by leader in case changes happened to nodes

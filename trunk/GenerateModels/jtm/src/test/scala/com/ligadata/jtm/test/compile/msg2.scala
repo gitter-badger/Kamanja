@@ -1,13 +1,15 @@
 package com.ligadata.kamanja.test.V1000000;
 
-import org.json4s.jackson.JsonMethods._
-import org.json4s.DefaultFormats
-import org.json4s.Formats
-import com.ligadata.KamanjaBase.{ AttributeTypeInfo, AttributeValue, ContainerFactoryInterface, ContainerInterface, MessageFactoryInterface, MessageInterface, TimePartitionInfo, ContainerOrConceptFactory, RDDObject, JavaRDDObject, ContainerOrConcept}
-import com.ligadata.BaseTypes._
+import org.json4s.jackson.JsonMethods._;
+import org.json4s.DefaultFormats;
+import org.json4s.Formats;
+import com.ligadata.KamanjaBase._;
+import com.ligadata.BaseTypes._;
 import com.ligadata.Exceptions.StackTrace;
 import org.apache.logging.log4j.{ Logger, LogManager }
-import java.util.Date
+import java.util.Date;
+import java.io.{ DataInputStream, DataOutputStream, ByteArrayOutputStream }
+
 
 
 object msg2 extends RDDObject[msg2] with MessageFactoryInterface {
@@ -19,7 +21,7 @@ object msg2 extends RDDObject[msg2] with MessageFactoryInterface {
   override def getSchemaId: Int = 0;
   override def createInstance: msg2 = new msg2(msg2);
   override def isFixed: Boolean = true;
-  override def getContainerType: ContainerFactoryInterface.ContainerType = ContainerFactoryInterface.ContainerType.MESSAGE
+  override def getContainerType: ContainerTypes.ContainerType = ContainerTypes.ContainerType.MESSAGE
   override def getFullName = getFullTypeName;
   override def toJavaRDDObject: JavaRDDObject[T] = JavaRDDObject.fromRDDObject[T](this);
 
@@ -49,6 +51,22 @@ object msg2 extends RDDObject[msg2] with MessageFactoryInterface {
   }
 
   override def getAvroSchema: String = """{ "type": "record",  "namespace" : "com.ligadata.kamanja.test" , "name" : "msg2" , "fields":[{ "name" : "out1" , "type" : "int"},{ "name" : "out2" , "type" : "string"},{ "name" : "out3" , "type" : "int"},{ "name" : "out4" , "type" : "int"}]}""";
+
+  override def FullName: String = getFullTypeName
+  override def NameSpace: String = getTypeNameSpace
+  override def Name: String = getTypeName
+  override def Version: String = getTypeVersion
+  override def CreateNewMessage: BaseMsg= createInstance.asInstanceOf[BaseMsg];
+  override def CreateNewContainer: BaseContainer= null;
+  override def IsFixed: Boolean = true
+  override def IsKv: Boolean = false
+  override def CanPersist: Boolean = false
+  override def isMessage: Boolean = true
+  override def isContainer: Boolean = false
+  override def PartitionKeyData(inputdata: InputData): Array[String] = createInstance.getPartitionKey();
+  override def PrimaryKeyData(inputdata: InputData): Array[String] = createInstance.getPrimaryKey();
+  override def TimePartitionData(inputdata: InputData): Long = createInstance.getTimePartitionData;
+  override def NeedToTransformData: Boolean = false
 }
 
 class msg2(factory: MessageFactoryInterface, other: msg2) extends MessageInterface(factory) {
