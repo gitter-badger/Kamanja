@@ -25,7 +25,7 @@ public interface MessageContainerObjBase extends ContainerOrConceptFactory {
 
 	public String[] getPartitionKeyNames();
 
-	public MessageContainerBase createInstance();
+	public ContainerInterface createInstance();
 
 	public int getSchemaId();
 

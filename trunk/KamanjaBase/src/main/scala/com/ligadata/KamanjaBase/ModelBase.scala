@@ -527,7 +527,7 @@ abstract class ModelBase(var modelContext: ModelContext, val factory: ModelBaseO
 
 trait ModelBaseObj {
   // Check to fire the model
-  def IsValidMessage(msg: ContainerInterface): Boolean
+  def IsValidMessage(msg: MessageContainerBase): Boolean
 
   // Creating same type of object with given values
   def CreateNewModel(mdlCtxt: ModelContext): ModelBase
@@ -643,7 +643,7 @@ abstract class ModelInstanceFactory(val modelDef: ModelDef, val nodeContext: Nod
 
   // Checking whether the message is valid to execute this model instance or not.
   // Deprecated and no more supported in new versions from 1.4.0
-  def isValidMessage(msg: ContainerInterface): Boolean = {
+  def isValidMessage(msg: MessageContainerBase): Boolean = {
     throw new DeprecatedException("Deprecated", null)
   }
 
@@ -955,7 +955,7 @@ class ModelBaseObjMdlInstanceFactory(modelDef: ModelDef, nodeContext: NodeContex
 
   override def getVersion() = mdlBaseObj.Version() // Model Version
 
-  override def isValidMessage(msg: ContainerInterface): Boolean = mdlBaseObj.IsValidMessage(msg)
+  override def isValidMessage(msg: MessageContainerBase): Boolean = mdlBaseObj.IsValidMessage(msg)
 
   override def createModelInstance() = new ModelBaseMdlInstance(this)
 
