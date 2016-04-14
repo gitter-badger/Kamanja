@@ -2910,8 +2910,8 @@ object SimpleEnvContextImpl extends EnvContext with LogTrait {
   // eventType: String, eventPath: String, eventPathData: Array[Byte]
   def createListenerForCacheChildern(listenPath: String, ListenCallback: (String, String, String) => Unit): Unit = {
 
-    val sendOne = (evntTyp: String, key: String, value: Array[Byte], other: Array[(String, Array[Byte])]) => {
-      ListenCallback(evntTyp, key, if (value != null) new String(value) else null)
+    val sendOne = (eventType: String, eventPath: String, eventPathData: Array[Byte], childs: Array[(String, Array[Byte])]) => {
+      ListenCallback(eventType, eventPath, if (eventPathData != null) new String(eventPathData) else null)
     }
     createZkPathChildrenCacheListener(listenPath, false, sendOne)
   }

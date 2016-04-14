@@ -63,9 +63,9 @@ object KamanjaLeader {
   private[this] var adaptersStatusPath: String = _
   private[this] var zkSessionTimeoutMs: Int = _
   private[this] var zkConnectionTimeoutMs: Int = _
-  private[this] var zkEngineDistributionNodeListener: ZooKeeperListener = _
-  private[this] var zkAdapterStatusNodeListener: ZooKeeperListener = _
-  private[this] var zkDataChangeNodeListener: ZooKeeperListener = _
+//  private[this] var zkEngineDistributionNodeListener: ZooKeeperListener = _
+//  private[this] var zkAdapterStatusNodeListener: ZooKeeperListener = _
+//  private[this] var zkDataChangeNodeListener: ZooKeeperListener = _
   private[this] var zkcForSetData: CuratorFramework = null
   private[this] val setDataLockObj = new Object()
   private[this] var distributionMap = scala.collection.mutable.Map[String, scala.collection.mutable.Map[String, ArrayBuffer[String]]]() // Nodeid & Unique Keys (adapter unique name & unique key)
@@ -96,9 +96,9 @@ object KamanjaLeader {
     adaptersStatusPath = null
     zkSessionTimeoutMs = 0
     zkConnectionTimeoutMs = 0
-    zkEngineDistributionNodeListener = null
-    zkAdapterStatusNodeListener = null
-    zkDataChangeNodeListener = null
+//    zkEngineDistributionNodeListener = null
+//    zkAdapterStatusNodeListener = null
+//    zkDataChangeNodeListener = null
     zkcForSetData = null
     distributionMap = scala.collection.mutable.Map[String, scala.collection.mutable.Map[String, ArrayBuffer[String]]]() // Nodeid & Unique Keys (adapter unique name & unique key)
 //    foundKeysInValidation = null
@@ -1122,12 +1122,16 @@ object KamanjaLeader {
         CreateClient.CreateNodeIfNotExists(zkConnectString, adaptrStatusPathForNode) // Creating path for Adapter Statues
         CreateClient.CreateNodeIfNotExists(zkConnectString, dataChangeZkNodePath) // Creating 
         zkcForSetData = CreateClient.createSimple(zkConnectString, zkSessionTimeoutMs, zkConnectionTimeoutMs)
-        zkAdapterStatusNodeListener = new ZooKeeperListener
-        zkAdapterStatusNodeListener.CreatePathChildrenCacheListener(zkConnectString, adaptersStatusPath, false, ParticipentsAdaptersStatus, zkSessionTimeoutMs, zkConnectionTimeoutMs)
-        zkEngineDistributionNodeListener = new ZooKeeperListener
-        zkEngineDistributionNodeListener.CreateListener(zkConnectString, engineDistributionZkNodePath, ActionOnAdaptersDistribution, zkSessionTimeoutMs, zkConnectionTimeoutMs)
-        zkDataChangeNodeListener = new ZooKeeperListener
-        zkDataChangeNodeListener.CreateListener(zkConnectString, dataChangeZkNodePath, ActionOnDataChange, zkSessionTimeoutMs, zkConnectionTimeoutMs)
+
+        envCtxt.createZkPathChildrenCacheListener(adaptersStatusPath, false, ParticipentsAdaptersStatus)
+        envCtxt.createZkPathListener(engineDistributionZkNodePath, ActionOnAdaptersDistribution)
+        envCtxt.createZkPathListener(dataChangeZkNodePath, ActionOnDataChange)
+//        zkAdapterStatusNodeListener = new ZooKeeperListener
+//        zkAdapterStatusNodeListener.CreatePathChildrenCacheListener(zkConnectString, adaptersStatusPath, false, ParticipentsAdaptersStatus, zkSessionTimeoutMs, zkConnectionTimeoutMs)
+//        zkEngineDistributionNodeListener = new ZooKeeperListener
+//        zkEngineDistributionNodeListener.CreateListener(zkConnectString, engineDistributionZkNodePath, ActionOnAdaptersDistribution, zkSessionTimeoutMs, zkConnectionTimeoutMs)
+//        zkDataChangeNodeListener = new ZooKeeperListener
+//        zkDataChangeNodeListener.CreateListener(zkConnectString, dataChangeZkNodePath, ActionOnDataChange, zkSessionTimeoutMs, zkConnectionTimeoutMs)
         try {
           Thread.sleep(500)
         } catch {
@@ -1425,15 +1429,15 @@ object KamanjaLeader {
 //    if (zkLeaderLatch != null)
 //      zkLeaderLatch.Shutdown
 //    zkLeaderLatch = null
-    if (zkEngineDistributionNodeListener != null)
-      zkEngineDistributionNodeListener.Shutdown
-    zkEngineDistributionNodeListener = null
-    if (zkDataChangeNodeListener != null)
-      zkDataChangeNodeListener.Shutdown
-    zkDataChangeNodeListener = null
-    if (zkAdapterStatusNodeListener != null)
-      zkAdapterStatusNodeListener.Shutdown
-    zkAdapterStatusNodeListener = null
+//    if (zkEngineDistributionNodeListener != null)
+//      zkEngineDistributionNodeListener.Shutdown
+//    zkEngineDistributionNodeListener = null
+//    if (zkDataChangeNodeListener != null)
+//      zkDataChangeNodeListener.Shutdown
+//    zkDataChangeNodeListener = null
+//    if (zkAdapterStatusNodeListener != null)
+//      zkAdapterStatusNodeListener.Shutdown
+//    zkAdapterStatusNodeListener = null
     CloseSetDataZkc
   }
 }

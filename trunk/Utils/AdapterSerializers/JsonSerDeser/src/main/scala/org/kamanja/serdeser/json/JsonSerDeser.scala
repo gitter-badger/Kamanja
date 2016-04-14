@@ -40,11 +40,9 @@ object JsonContainerInterfaceKeys extends Enumeration {
   * before it can be used.
   */
 
-class JSONSerDes() extends SerializeDeserialize with LogTrait {
+class JSONSerDes extends SerializeDeserialize with LogTrait {
 
-    var _mgr : MdMgr = null
     var _objResolver : ObjectResolver = null
-    var _classLoader : java.lang.ClassLoader = null
     var _config : Map[String, String] = Map[String,String]()
     var _isReady : Boolean = false
 
@@ -63,7 +61,9 @@ class JSONSerDes() extends SerializeDeserialize with LogTrait {
         val withoutComma :Boolean = false
         val containerName : String = v.getFullTypeName
         val containerVersion :String = v.getTypeVersion
-        val container : ContainerTypeDef = _mgr.ActiveType(containerName).asInstanceOf[ContainerTypeDef]
+        // BUGBUG::if type is needed we need function to get type information from object resolver
+        //FIXME:- if type is needed we need function to get type information from object resolver
+        val container : ContainerTypeDef = null; // _mgr.ActiveType(containerName).asInstanceOf[ContainerTypeDef]
         val className : String = container.PhysicalName
 
         val containerJsonHead : String = "{ "
@@ -358,18 +358,14 @@ class JSONSerDes() extends SerializeDeserialize with LogTrait {
     /**
       * Configure the SerializeDeserialize adapter.  This must be done before the adapter implementation can be used.
       *
-      * @param mgr         SerializeDeserialize implementations must be supplied a reference to the cluster MdMgr
       * @param objResolver the ObjectResolver instance that can instantiate ContainerInterface instances
-      * @param classLoader the class loader that has access to the classes needed to build fields.
       * @param config a map of options that might be used to configure the execution of this SerializeDeserialize instance. This may
       *               be null if it is not necessary for the SerializeDeserialize implementation
       */
-    def configure(mgr: MdMgr, objResolver: ObjectResolver, classLoader: ClassLoader, config : java.util.Map[String,String]): Unit = {
-        _mgr  = mgr
+    def configure(objResolver: ObjectResolver, config : java.util.Map[String,String]): Unit = {
         _objResolver = objResolver
-        _classLoader  = classLoader
         _config = if (config != null) config.asScala else Map[String,String]()
-        _isReady = _mgr != null && _objResolver != null && _classLoader != null && _config != null
+        _isReady = _objResolver != null && _config != null
     }
 
     /**
@@ -399,13 +395,15 @@ class JSONSerDes() extends SerializeDeserialize with LogTrait {
         /** Fixme: were we to support more than the "current" type, the version key above would be used to discern which type is to be deserialized */
 
         /** get an empty ContainerInterface instance for this type name from the _objResolver */
-        val ci : ContainerInterface = _objResolver.getInstance(_classLoader, containerNameJson)
+        val ci : ContainerInterface = _objResolver.getInstance(containerNameJson)
         if (ci == null) {
             throw new ObjectNotFoundException(s"type name $containerNameJson could not be resolved and built for deserialize",null)
         }
 
         /** get the fields information */
-        val containerBaseType : BaseTypeDef = _mgr.ActiveType(containerNameJson)
+            // BUGBUG::if type is needed we need function to get type information from object resolver
+            //FIXME:- if type is needed we need function to get type information from object resolver
+        val containerBaseType : BaseTypeDef = null // _mgr.ActiveType(containerNameJson)
         val containerType : ContainerTypeDef = if (containerBaseType != null) containerBaseType.asInstanceOf[ContainerTypeDef] else null
         if (containerType == null) {
             throw new ObjectNotFoundException(s"type name $containerNameJson is not a container type... deserialize fails.",null)

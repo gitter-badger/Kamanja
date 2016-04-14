@@ -42,11 +42,9 @@ object CsvContainerInterfaceKeys extends Enumeration {
   * behavior is "one-shot".
   */
 
-class CsvSerDeser() extends SerializeDeserialize with LogTrait {
+class CsvSerDeser extends SerializeDeserialize with LogTrait {
 
- //   var _mgr : MdMgr = null
     var _objResolver : ObjectResolver = null
-    var _classLoader : java.lang.ClassLoader = null
     var _isReady : Boolean = false
     var _config = Map[String,String]()
     var _emitHeaderFirst : Boolean = false
@@ -72,7 +70,7 @@ class CsvSerDeser() extends SerializeDeserialize with LogTrait {
       * @param v a ContainerInterface (describes a standard kamanja container)
       */
     @throws(classOf[com.ligadata.Exceptions.ObjectNotFoundException])
-    def serialize(v : ContainerInterface) : Array[Byte] = {
+    override def serialize(v : ContainerInterface) : Array[Byte] = {
         val bos: ByteArrayOutputStream = new ByteArrayOutputStream(8 * 1024)
         val dos = new DataOutputStream(bos)
 
@@ -275,26 +273,21 @@ class CsvSerDeser() extends SerializeDeserialize with LogTrait {
       *
       * @param objRes an ObjectResolver
       */
-    def setObjectResolver(objRes : ObjectResolver) : Unit = {
+    override def setObjectResolver(objRes : ObjectResolver) : Unit = {
         _objResolver = objRes;
     }
 
     /**
       * Configure the SerializeDeserialize adapter.  This must be done before the adapter implementation can be used.
       *
-      * @param mgr         SerializeDeserialize implementations must be supplied a reference to the cluster MdMgr
       * @param objResolver the ObjectResolver instance that can instantiate ContainerInterface instances
-      * @param classLoader the class loader that has access to the classes needed to build fields.
       * @param configProperties a map of options that might be used to configure the execution of the CsvSerDeser instance.
       */
-    def configure(mgr: MdMgr
-                  , objResolver: ObjectResolver
-                  , classLoader: ClassLoader
+    override def configure(objResolver: ObjectResolver
                   , configProperties : java.util.Map[String,String]): Unit = {
         _objResolver = objResolver
-        _classLoader  = classLoader
         _config = configProperties.asScala
-        _isReady = (_objResolver != null && _classLoader != null && _config != null &&
+        _isReady = (_objResolver != null && _config != null &&
             _config.contains("fieldDelimiter") && _config.contains("alwaysQuoteField") &&
             _config.contains("lineDelimiter"))
         _fieldDelimiter = _config.getOrElse("fieldDelimiter", null)
@@ -326,7 +319,7 @@ class CsvSerDeser() extends SerializeDeserialize with LogTrait {
           throw new ObjectNotFoundException("The supplied CSV record is empty...abandoning processing", null)
         }
         /** get an empty ContainerInterface instance for this type name from the _objResolver */
-        val ci : ContainerInterface = _objResolver.getInstance(_classLoader, containerName)
+        val ci : ContainerInterface = _objResolver.getInstance(containerName)
         if (ci == null) {
             throw new ObjectNotFoundException(s"type name $containerName could not be resolved and built for deserialize",null)
         }

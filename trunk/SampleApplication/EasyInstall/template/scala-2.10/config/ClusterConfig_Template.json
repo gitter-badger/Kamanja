@@ -5,7 +5,7 @@
       "SystemCatalog": {
         "StoreType": "hashmap",
         "SchemaName": "testdata",
-        "Location": "{InstallDirectory}/storage/syscatelog"
+        "Location": "{InstallDirectory}/storage/syscatalog"
       },
       "Tenants": [
         {

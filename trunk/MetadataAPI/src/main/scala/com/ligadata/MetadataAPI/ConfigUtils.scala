@@ -100,7 +100,8 @@ object ConfigUtils {
 
     /**
      * AddNode
-     * @param nodeId a cluster node
+      *
+      * @param nodeId a cluster node
      * @param nodePort
      * @param nodeIpAddr
      * @param jarPaths Set of paths where jars are located
@@ -141,7 +142,8 @@ object ConfigUtils {
 
     /**
      * UpdateNode
-     * @param nodeId a cluster node
+      *
+      * @param nodeId a cluster node
      * @param nodePort
      * @param nodeIpAddr
      * @param jarPaths Set of paths where jars are located
@@ -166,7 +168,8 @@ object ConfigUtils {
 
     /**
      * RemoveNode
-     * @param nodeId a cluster node
+      *
+      * @param nodeId a cluster node
      * @return
      */
   def RemoveNode(nodeId: String): String = {
@@ -212,6 +215,7 @@ object ConfigUtils {
 
   /**
     * RemoveNode
+    *
     * @param tenantId a cluster node
     * @return
     */
@@ -233,7 +237,8 @@ object ConfigUtils {
 
   /**
      * AddAdapter
-     * @param name
+    *
+    * @param name
      * @param typeString
      * @param className
      * @param jarName
@@ -266,7 +271,8 @@ object ConfigUtils {
 
     /**
      * RemoveAdapter
-     * @param name
+      *
+      * @param name
      * @param typeString
      * @param className
      * @param jarName
@@ -282,7 +288,8 @@ object ConfigUtils {
 
     /**
      * RemoveAdapter
-     * @param name
+      *
+      * @param name
      * @return
      */
   def RemoveAdapter(name: String): String = {
@@ -304,7 +311,8 @@ object ConfigUtils {
 
     /**
      * AddCluster
-     * @param clusterId
+      *
+      * @param clusterId
      * @param description
      * @param privileges
      * @return
@@ -332,7 +340,8 @@ object ConfigUtils {
 
     /**
      * UpdateCluster
-     * @param clusterId
+      *
+      * @param clusterId
      * @param description
      * @param privileges
      * @return
@@ -343,7 +352,8 @@ object ConfigUtils {
 
     /**
      * RemoveCluster
-     * @param clusterId
+      *
+      * @param clusterId
      * @return
      */
   def RemoveCluster(clusterId: String): String = {
@@ -365,7 +375,8 @@ object ConfigUtils {
 
     /**
      * Add a cluster configuration from the supplied map with the supplied identifer key
-     * @param clusterCfgId cluster id to add
+      *
+      * @param clusterCfgId cluster id to add
      * @param cfgMap the configuration map
      * @param modifiedTime when modified
      * @param createdTime when created
@@ -395,7 +406,8 @@ object ConfigUtils {
 
     /**
      * Update te configuration for the cluster with the supplied id
-     * @param clusterCfgId
+      *
+      * @param clusterCfgId
      * @param cfgMap
      * @param modifiedTime
      * @param createdTime
@@ -433,7 +445,8 @@ object ConfigUtils {
 
     /**
      * Remove a cluster configuration
-     * @param cfgStr
+      *
+      * @param cfgStr
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @param cobjects
@@ -531,7 +544,8 @@ object ConfigUtils {
 
     /**
      * Upload a model config.  These are for native models written in Scala or Java
-     * @param cfgStr
+      *
+      * @param cfgStr
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @param objectList
@@ -592,7 +606,8 @@ object ConfigUtils {
 
     /**
      * getStringFromJsonNode
-     * @param v just any old thing
+      *
+      * @param v just any old thing
      * @return a string representation
      */
   private def getStringFromJsonNode(v: Any): String = {
@@ -624,7 +639,8 @@ object ConfigUtils {
 
     /**
      * Accept a config specification (a JSON str)
-     * @param cfgStr the json file to be interpted
+      *
+      * @param cfgStr the json file to be interpted
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. If Security and/or Audit are configured, this value must be a value other than None.
      * @param objectList note on the objects in the configuration to be logged to audit adapter
@@ -765,20 +781,21 @@ object ConfigUtils {
                 var cacheConfig = getStringFromJsonNode(tenant.getOrElse("CacheConfig", null))
 
                 val ti = MdMgr.GetMdMgr.MakeTenantInfo(tenantId, description, primaryDataStore, cacheConfig)
-                MdMgr.GetMdMgr.AddTenantInfo(ti)
-
-                var tenantDef: ClusterConfigDef = new ClusterConfigDef
-                tenantDef.name = ti.tenantId.trim.toLowerCase()
-                tenantDef.tranId = MetadataAPIImpl.GetNewTranId
-                tenantDef.nameSpace = "Tenants"
-                tenantDef.clusterId = ci.clusterId
-                tenantDef.elementType = "TenantDef"
-                clusterNotifications.append(tenantDef)
+                if (!MdMgr.GetMdMgr.AddTenantInfo(ti)) {
+                  var tenantDef: ClusterConfigDef = new ClusterConfigDef
+                  tenantDef.name = ti.tenantId.trim.toLowerCase()
+                  tenantDef.tranId = MetadataAPIImpl.GetNewTranId
+                  tenantDef.nameSpace = "Tenants"
+                  tenantDef.clusterId = ci.clusterId
+                  tenantDef.elementType = "TenantDef"
+                  clusterNotifications.append(tenantDef)
+                }
 
                 val key = "TenantInfo." + ti.tenantId.trim.toLowerCase()
                 val value = MetadataAPISerialization.serializeObjectToJson(ti).getBytes//serializer.SerializeObjectToByteArray(ti)
                 keyList = keyList :+ key.toLowerCase
                 valueList = valueList :+ value
+
               })
             }
 
@@ -819,7 +836,7 @@ object ConfigUtils {
                 if (adap.contains("AdapterSpecificCfg")) {
                   ascfg = getStringFromJsonNode(adap.get("AdapterSpecificCfg"))
                 }
-                val fullAdapterConfig= getStringFromJsonNode(adap) // Saving the full config here in case if we want to use it later. In case of storage we use it
+                val fullAdapterConfig = getStringFromJsonNode(adap) // Saving the full config here in case if we want to use it later. In case of storage we use it
                 // save in memory
                 val ai = MdMgr.GetMdMgr.MakeAdapter(nm, typStr, clsNm, jarnm, depJars, ascfg, tenantId, fullAdapterConfig)
                 MdMgr.GetMdMgr.AddAdapter(ai)
@@ -878,7 +895,8 @@ object ConfigUtils {
 
     /**
      * Get a property value
-     * @param ci
+      *
+      * @param ci
      * @param key
      * @return
      */
@@ -888,13 +906,15 @@ object ConfigUtils {
 
     /**
      * Answer nodes as an array.
-     * @return
+      *
+      * @return
      */
   def getNodeList1: Array[NodeInfo] = { MdMgr.GetMdMgr.Nodes.values.toArray }
   // All available nodes(format JSON) as a String
     /**
      * Get the nodes as json.
-     * @param formatType format of the return value, either JSON or XML
+      *
+      * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
      *               Supply one.
@@ -924,7 +944,8 @@ object ConfigUtils {
 
     /**
      * All available adapters(format JSON) as a String
-     * @param formatType format of the return value, either JSON or XML
+      *
+      * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
      *               Supply one.
@@ -955,7 +976,8 @@ object ConfigUtils {
 
     /**
      * All available clusters(format JSON) as a String
-     * @param formatType format of the return value, either JSON or XML
+      *
+      * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
      *               Supply one.
@@ -1018,7 +1040,8 @@ object ConfigUtils {
 
     /**
      * All available config objects(format JSON) as a String
-     * @param formatType format of the return value, either JSON or XML
+      *
+      * @param formatType format of the return value, either JSON or XML
      * @param userid the identity to be used by the security adapter to ascertain if this user has access permissions for this
      *               method. The default is None, but if Security and/or Audit are configured, this value is of little practical use.
      *               Supply one.
@@ -1098,7 +1121,8 @@ object ConfigUtils {
     /**
      * setPropertyFromConfigFile - convert a specific KEY:VALUE pair in the config file into the
      * KEY:VALUE pair in the  Properties object
-     * @param key a property key
+      *
+      * @param key a property key
      * @param value a value
      */
   private def setPropertyFromConfigFile(key: String, value: String) {
@@ -1180,7 +1204,8 @@ object ConfigUtils {
 
     /**
      * Refresh the ClusterConfiguration for the specified node
-     * @param nodeId a cluster node
+      *
+      * @param nodeId a cluster node
      * @return
      */
   def RefreshApiConfigForGivenNode(nodeId: String): Boolean = {
@@ -1252,7 +1277,8 @@ object ConfigUtils {
 
     /**
      * Read metadata api configuration properties
-     * @param configFile the MetadataAPI configuration file 
+      *
+      * @param configFile the MetadataAPI configuration file
      */
   @throws(classOf[MissingPropertyException])
   @throws(classOf[InvalidPropertyException])
@@ -1327,7 +1353,8 @@ object ConfigUtils {
 
     /**
      * Read the default configuration property values from config file.
-     * @param cfgFile
+      *
+      * @param cfgFile
      */
   @throws(classOf[MissingPropertyException])
   @throws(classOf[LoadAPIConfigException])
@@ -1572,7 +1599,8 @@ object ConfigUtils {
 
     /**
      * LoadAllConfigObjectsIntoCache
-     * @return
+      *
+      * @return
      */
   def LoadAllConfigObjectsIntoCache: Boolean = {
     try {

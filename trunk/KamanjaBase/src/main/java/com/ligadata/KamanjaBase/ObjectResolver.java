@@ -27,11 +27,10 @@ public interface ObjectResolver {
      * be the fully qualified class name of some class in the classpath or potentially a metadata cache key that
      * will map to a fully qualified class name of some class in the classpath.  A class loader is supplied
      * to allow for dynamic amendment of the class path if required.
-     * @param loader a ClassLoader that can load a T class if required
      * @param typName the object resolver key that purportedly will select an instance to produce
      * @return an instance whose class can be located with the supplied typName
      */
-    public ContainerInterface getInstance(java.lang.ClassLoader loader, String typName);
-    public ContainerInterface getInstance(java.lang.ClassLoader loader, Long schemaId);
+    public ContainerInterface getInstance(String typName);
+    public ContainerInterface getInstance(Long schemaId);
 }
 

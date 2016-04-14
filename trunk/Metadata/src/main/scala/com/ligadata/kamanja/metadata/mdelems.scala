@@ -19,8 +19,11 @@ package com.ligadata.kamanja.metadata
 import java.io.{DataInputStream, DataOutputStream}
 import java.util._
 
+import com.ligadata.Exceptions.{KamanjaException, Json4sSerializationException}
 import com.ligadata.kamanja.metadata.MiningModelType.MiningModelType
 import com.ligadata.kamanja.metadata.ModelRepresentation.ModelRepresentation
+import org.json4s.jackson.JsonMethods._
+import org.json4s.{DefaultFormats, Formats}
 
 import scala.Enumeration
 import scala.collection.mutable.{Map, Set}
@@ -774,7 +777,8 @@ class MessageAndAttributes {
  * one of our own special types (CustomScala, CustomJava, or Unknown when the caller does not supply one).
  *
  * Models, when marked with isReusable, can be cached (are considered idempotent)
- * @param modelRepresentation The form of model to be cataloged - JAR, PMML etc.
+  *
+  * @param modelRepresentation The form of model to be cataloged - JAR, PMML etc.
  * @param miningModelType a MininingModelType default = "Unknown"
  * @param inputMsgSets Sets of Messages it depends on (attributes referred in this model). Each set must met (all messages should available) to trigger this model
  * @param outputMsgs All possible output messages produced by this model
@@ -1189,6 +1193,7 @@ class SerializeDeserializeConfig(val serDeserType : SerializeDeserializeType.Ser
 /**
   * An AdapterMessageBinding describes a triple: the adapter, a message it either consumes or produces, and a serializer
   * that can interpret a stream represention of an instance of this message or produce a serialized representation of same.
+  *
   * @param adapterName the name of the adapter (input/output/storage)
   * @param messageName the namespace.name of the message that is consumed.
   * @param serializer the SerializeDeserializeConfig namespace.name that can resurrect and serialize the associated message
@@ -1209,7 +1214,32 @@ class AdapterMessageBinding(  val adapterName : String
     }
 }
 
-class TenantInfo(val tenantId: String, val description: String, val primaryDataStore: String, val cacheConfig: String) {}
+class TenantInfo(val tenantId: String, val description: String, val primaryDataStore: String, val cacheConfig: String) {
+
+  def equals(in: TenantInfo): Boolean = {
+    implicit val jsonFormats: Formats = DefaultFormats
+    val map_in: scala.collection.immutable.Map[String, Any] =  (parse(primaryDataStore)).values.asInstanceOf[scala.collection.immutable.Map[String, Any]]
+    val map_new: scala.collection.immutable.Map[String, Any] = (parse(in.primaryDataStore)).values.asInstanceOf[scala.collection.immutable.Map[String, Any]]
+
+    val in_sType =  map_in.get("StoreType").get.asInstanceOf[String]
+    val new_sType =  map_in.getOrElse("StoreType",null)
+    val in_schemaName =  map_in.get("SchemaName").get.asInstanceOf[String]
+    val new_schemaName =  map_in.getOrElse("SchemaName",null)
+    val in_Location =  map_in.get("Location").get.asInstanceOf[String]
+    val new_Location =  map_in.getOrElse("Location",null)
+
+    // Throw an exception if trying to compare to an illegal TenantInfo
+    if (new_sType == null || new_schemaName == null || new_Location == null) throw new KamanjaException("Invalid PrimaryDataStore in the TenantId: " + in.tenantId + " detected",null)
+
+    // All attributes must be case sensitive
+    if (!in_sType.equals(new_sType.asInstanceOf[String]) ||
+      !in_schemaName.equals(new_schemaName.asInstanceOf[String]) ||
+      !in_Location.equals(new_Location.asInstanceOf[String]))
+      return false
+
+    return true
+  }
+}
 
 object ModelCompilationConstants {
   val DEPENDENCIES: String = "Dependencies"

@@ -98,6 +98,7 @@ class MdMgr {
   def truncate {
     typeDefs.clear
     funcDefs.clear
+    compilerFuncDefs.clear
     msgDefs.clear
     containerDefs.clear
     attrbDefs.clear
@@ -110,10 +111,13 @@ class MdMgr {
     nodes.clear
     adapters.clear
     modelConfigs.clear
-    factoryOfMdlInstFactories.clear
     schemaIdMap.clear
     schemaIdToElemntIdMap.clear
     elementIdMap.clear
+    tenantIdMap.clear
+    factoryOfMdlInstFactories.clear
+    serializers.clear
+    adapterMessageBindings.clear
   }
 
   def truncate(objectType: String) {
@@ -3082,10 +3086,14 @@ class MdMgr {
   }
 
   def AddTenantInfo(tenant : TenantInfo) : Boolean = {
-    if (tenantIdMap.contains(tenant.tenantId.trim.toLowerCase))
-      throw new AlreadyExistsException(s"Tenant ${tenant.tenantId} already exists.", null)
+    // Update the tenantId in this cache, but also see if there was a meaniful change
+    // in the existing element - it will not need to be sent to other nodes.
+    var isChanged = true
+    if (tenantIdMap.contains(tenant.tenantId.trim.toLowerCase)) {
+      isChanged = tenant.equals(tenantIdMap.get(tenant.tenantId.trim.toLowerCase).get.asInstanceOf[TenantInfo])
+    }
     tenantIdMap(tenant.tenantId.trim.toLowerCase) = tenant
-    true
+    return isChanged
   }
 
   def UpdateTenantInfo(tenant : TenantInfo) : Boolean = {
