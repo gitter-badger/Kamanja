@@ -1,23 +1,23 @@
 {
-   	"Container": { 
-   		"NameSpace":"System",
-   		"Name":"EnvCodes",
-   		"Version":"00.01.00",
-   		"Description":"Container for Environmental Exposure Codes",
-   		"Fixed":"true",
-   		"Elements" : [
-   		   {
-   		   "Field" : {
-                "Name":"icd9Code",
-                "Type":"System.String"
-   		     }
-   		   },
-   		   {
-   		   "Field" : {
-                "Name":"icd9Description",
-                "Type":"System.String"
-   		     }
-   		   }
-   		]
-   	}
+  "Container": {
+    "NameSpace":"com.ligadata.kamanja.samples.containers",
+    "Name":"EnvCodes",
+    "Version":"00.01.00",
+    "Description":"Container for Environmental Exposure Codes",
+    "Fixed":"true",
+    "Elements" : [
+      {
+        "Field" : {
+          "Name":"icd9Code",
+          "Type":"System.String"
+        }
+      },
+      {
+        "Field" : {
+          "Name":"icd9Description",
+          "Type":"System.String"
+        }
+      }
+    ]
+  }
 }
