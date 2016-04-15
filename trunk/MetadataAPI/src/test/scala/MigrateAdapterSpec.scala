@@ -40,6 +40,9 @@ import com.ligadata.Serialize._
 
 import com.ligadata.kamanja.metadataload.MetadataLoad
 
+case class adapterMessageBinding(var AdapterName: String,var MessageNames: List[String], var Options: List[(String,String)], var Serializer: String)
+case class adapterMessageBindings(var AdapterMessageBindings: List[adapterMessageBinding])
+
 class MigrateAdapterSpec extends FunSpec with LocalTestFixtures with BeforeAndAfter with BeforeAndAfterAll with GivenWhenThen {
   var res: String = null;
   var statusCode: Int = -1;
@@ -282,19 +285,26 @@ class MigrateAdapterSpec extends FunSpec with LocalTestFixtures with BeforeAndAf
 
 	And("AddConfig  from " + file.getPath)
 	var cfgStr = Source.fromFile(file).mkString
-	res = MetadataAPIImpl.UploadConfig(cfgStr, None, "testConfig")
-	res should include regex ("\"Status Code\" : 0")
 
-	And("Check number of the adapters")
-	var adapters = MdMgr.GetMdMgr.Adapters
-	assert(adapters.size == 4)
-
-	And("Convert map adapters to json")
-	//val jsonStr = JsonSerializer.SerializeCfgObjectListToJson("Adapters",adapters.toArray.map(x => x._2))
-	var jsonStr = "Adapters" + ": [\n"
-	adapters.toArray.map(x => x._2).foreach(a => { jsonStr = jsonStr + a.FullAdapterConfig; jsonStr = jsonStr + ",\n" })
-	jsonStr = jsonStr + "]\n"
-	logger.info(jsonStr)
+	val cfgmap = parse(cfgStr).values.asInstanceOf[Map[String, Any]]
+	logger.info("cfgmap => " + cfgmap)
+	cfgmap.keys.foreach(key => {
+	  logger.info("key => " + key)
+	  if ( key.equalsIgnoreCase("adapters") ){
+	    var adapters = cfgmap("Adapters").asInstanceOf[List[Map[String, Any]]]
+	    adapters.foreach( a => {
+	      logger.info("a => " + a)
+	      val adapter = a.asInstanceOf[Map[String,Any]]
+	      adapter.keys.foreach( k => {
+		var am = new adapterMessageBinding(null,null,null,null)
+		logger.info(k + " => " + adapter(k))
+		k match {
+		  case "Name" => am.AdapterName = adapter(k).asInstanceOf[String]
+		}
+	      })
+	    })
+	  }
+	})
       })
     }
   }

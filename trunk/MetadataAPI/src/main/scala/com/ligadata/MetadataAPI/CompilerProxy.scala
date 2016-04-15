@@ -1128,14 +1128,21 @@ class CompilerProxy {
             val inst = getMessageInst(t, loaderInfo)
             if (inst != null) {
               logger.debug("getDefaultInputMsgSets: call mdlFactory.isValidMessage ")
-              if (mdlFactory.isValidMessage(inst)) {
-                logger.debug("getDefaultInputMsgSets: mdlFactory.isValidMessage returned true")
-                defaultInputMsgSets = List(t) :: defaultInputMsgSets
-              }
-              else {
-                logger.debug("getDefaultInputMsgSets: mdlFactory.isValidMessage returned false")
-              }
-            }
+	      try{
+		val isMsg = mdlFactory.isValidMessage(inst)
+		if (isMsg) {
+                  logger.debug("getDefaultInputMsgSets: mdlFactory.isValidMessage returned true")
+                  defaultInputMsgSets = List(t) :: defaultInputMsgSets
+		}
+		else {
+                  logger.debug("getDefaultInputMsgSets: mdlFactory.isValidMessage returned false")
+		}
+	      } catch {
+		case e: Exception => {
+		  logger.error("COMPILER_PROXY: mdlFactory.isValidMessage is throwing an exception for the modelConfig " + modelConfigName + e)
+		}
+	      }
+	    }
             else {
               logger.debug("getDefaultInputMsgSets: message instance for type " + t + " is null")
             }
