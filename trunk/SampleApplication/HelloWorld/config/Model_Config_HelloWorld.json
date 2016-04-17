@@ -13,6 +13,12 @@
     "OutputTypes": [
       "com.ligadata.kamanja.samples.messages.outmsg1"
     ]
+  },
+  "HelloWorldIngestJtmModel": {
+    "MessageAndContainers": [
+      "com.ligadata.kamanja.samples.messages.msg1",
+      "com.ligadata.kamanja.samples.messages.inmsg1"
+    ]
   }
 }
 

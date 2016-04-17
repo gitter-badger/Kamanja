@@ -16,8 +16,8 @@ package com.ligadata.KamanjaBase;
  * limitations under the License.
  */
 
-import com.ligadata.kamanja.metadata.MdMgr;
-import com.ligadata.kamanja.metadata.SerializeDeserializeConfig;
+//import com.ligadata.kamanja.metadata.MdMgr;
+//import com.ligadata.kamanja.metadata.SerializeDeserializeConfig;
 
 public interface SerializeDeserialize {
     /**
@@ -29,9 +29,10 @@ public interface SerializeDeserialize {
     /**
      * From the supplied byte array, resurrect a ContainerInterface instance.
      * @param b the byte array containing the ContainerInterface instance
+     * @param containerName  full type name of container to be instantiated and populated
      * @return an instance of T
      */
-    public ContainerInterface deserialize(byte[] b);
+    public ContainerInterface deserialize(byte[] b, String containerName);
 
     /**
      * Allow the object resolver to be changed by a client object if desired.
@@ -41,13 +42,9 @@ public interface SerializeDeserialize {
 
     /**
      * Configure the SerializeDeserialize adapter
-     * @param mgr SerializeDeserialize implementations must be supplied a reference to the cluster MdMgr
      * @param objResolver the ObjectResolver instance that can instantiate ContainerInterface instances
-     * @param classLoader the class loader that has access to the classes needed to build fields.
      * @param config a map of options that might be used to configure the execution of the SerializeDeserialize instance.
      */
-    public void configure(MdMgr mgr
-                        , ObjectResolver objResolver
-                        , java.lang.ClassLoader classLoader
+    public void configure(ObjectResolver objResolver
                         , java.util.Map<String, String>  config);
 }

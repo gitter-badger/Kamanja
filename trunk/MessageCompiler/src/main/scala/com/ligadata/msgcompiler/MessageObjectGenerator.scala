@@ -36,6 +36,7 @@ class MessageObjectGenerator {
       msgObjeGenerator = msgObjeGenerator.append(msgObjVarsGeneration(message))
       msgObjeGenerator = msgObjeGenerator.append(msgConstants.msgObjectBuildStmts)
       msgObjeGenerator = msgObjeGenerator.append(keysCodeGeneration(message))
+      msgObjeGenerator = msgObjeGenerator.append(ObjDeprecatedMethods(message))
       msgObjeGenerator = msgObjeGenerator.append(msgConstants.closeBrace)
       // log.info("========== Message object End==============")
 
@@ -123,8 +124,8 @@ class MessageObjectGenerator {
    */
 
   private def keysCodeGeneration(message: Message) = {
-   
-"""   """ + getPartitionKeyNames(message) + """
+
+    """   """ + getPartitionKeyNames(message) + """
   """ + getPrimaryKeyNames(message) + """   
   """ + getTimeParitionInfo(message) + """   
     override def hasPrimaryKey(): Boolean = {
@@ -142,7 +143,7 @@ class MessageObjectGenerator {
       return (tmInfo != null && tmInfo.getTimePartitionType != TimePartitionInfo.TimePartitionType.NONE);
     }
   
-    override def getSchema: String = " """ + message.Schema + """";  
+    override def getAvroSchema: String = """ + "\"\"\"" + message.Schema + "\"\"\"" + """;  
 """
   }
 
@@ -164,11 +165,11 @@ class MessageObjectGenerator {
         timePartType = "TimePartitionInfo.TimePartitionType.DAILY";
 
       return """
-  def getTimePartitionInfo: TimePartitionInfo = {
+  override def getTimePartitionInfo: TimePartitionInfo = {
     var timePartitionInfo: TimePartitionInfo = new TimePartitionInfo();
     timePartitionInfo.setFieldName("""" + message.timePartition.Key.toLowerCase() + """");
     timePartitionInfo.setFormat("""" + message.timePartition.Format.toLowerCase() + """");
-    timePartitionInfo.setTimePartitionType("""" + timePartType + """");
+    timePartitionInfo.setTimePartitionType(""" + timePartType + """);
     return timePartitionInfo
   }
 
@@ -193,12 +194,12 @@ class MessageObjectGenerator {
       message.PartitionKeys.foreach(key => {
         paritionKeys.append("\"" + key + "\", ")
       })
-      val partitionKys = "("+paritionKeys.toString.substring(0, paritionKeys.toString.length() - 2)+")";
+      val partitionKys = "(" + paritionKeys.toString.substring(0, paritionKeys.toString.length() - 2) + ")";
       partitionInfo = msgConstants.getPartitionKeyNames.format(partitionKys, msgConstants.newline)
 
     } else partitionInfo = msgConstants.getPartitionKeyNames.format("[String]()", msgConstants.newline)
 
-  """override def getPartitionKeyNames: Array[String] = """ + partitionInfo 
+    """override def getPartitionKeyNames: Array[String] = """ + partitionInfo
   }
 
   /*
@@ -213,12 +214,66 @@ class MessageObjectGenerator {
       message.PrimaryKeys.foreach(key => {
         primaryKeys.append("\"" + key + "\", ")
       })
-      val primaryKys = "("+ primaryKeys.toString.substring(0, primaryKeys.toString.length()-2)+")";
+      val primaryKys = "(" + primaryKeys.toString.substring(0, primaryKeys.toString.length() - 2) + ")";
       primaryInfo = msgConstants.getPrimaryKeyNames.format(primaryKys, msgConstants.newline)
 
     } else primaryInfo = msgConstants.getPrimaryKeyNames.format("[String]()", msgConstants.newline)
 
-  """override def getPrimaryKeyNames: Array[String] = """ + primaryInfo 
+    """override def getPrimaryKeyNames: Array[String] = """ + primaryInfo
   }
 
+  private def ObjDeprecatedMethods(message: Message) = {
+    var isMsg: String = "";
+    var isCntr: String = "";
+    var isFixed: String = ""
+    var containerType: String = "BaseContainer"
+    var msgType: String = "BaseMsg"
+    var isKv: String = ""
+    var createContrStr: String = ""
+    var createMsgStr: String = ""
+    var tranformData: String = ""
+
+    if (msgConstants.isMessageFunc(message)) {
+      isMsg = "true";
+      isCntr = "false"
+
+      createMsgStr = "override def CreateNewMessage: " + msgType + "= createInstance.asInstanceOf[" + msgType + "];"
+      createContrStr = "override def CreateNewContainer: " + containerType + "= null;"
+
+      tranformData = "override def NeedToTransformData: Boolean = false";
+    } else {
+      isMsg = "false";
+      isCntr = "true"
+      containerType = "BaseContainer"
+      createMsgStr = "override def CreateNewMessage: " + msgType + "= null;"
+      createContrStr = "override def CreateNewContainer: " + containerType + "= createInstance.asInstanceOf[" + containerType + "];"
+      tranformData = "override def NeedToTransformData: Boolean = false"
+    }
+
+    if (msgConstants.isFixedFunc(message)) {
+      isFixed = "true";
+      isKv = "false"
+    } else {
+      isFixed = "false";
+      isKv = "true"
+    }
+
+    """  
+  override def FullName: String = getFullTypeName
+  override def NameSpace: String = getTypeNameSpace
+  override def Name: String = getTypeName
+  override def Version: String = getTypeVersion
+  """ + createMsgStr + """
+  """ + createContrStr + """
+  override def IsFixed: Boolean = """ + isFixed + """
+  override def IsKv: Boolean = """ + isKv + """
+  override def CanPersist: Boolean = """ + message.Persist + """
+  override def isMessage: Boolean = """ + isMsg + """
+  override def isContainer: Boolean = """ + isCntr + """
+  override def PartitionKeyData(inputdata: InputData): Array[String] = { throw new Exception("Deprecated method PartitionKeyData in obj """ + message.Name + """") };
+  override def PrimaryKeyData(inputdata: InputData): Array[String] = throw new Exception("Deprecated method PrimaryKeyData in obj """ + message.Name + """");
+  override def TimePartitionData(inputdata: InputData): Long = throw new Exception("Deprecated method TimePartitionData in obj """ + message.Name + """");
+ """ + tranformData + """
+    """
+  }
 }

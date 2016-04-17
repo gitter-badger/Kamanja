@@ -863,6 +863,8 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     try {
       val notifyEngine = GetMetadataAPIConfig.getProperty("NOTIFY_ENGINE")
 
+      if (objList.size == 0) return
+
       // We have to update the currentTranLevel here, since addObjectToCache method does not have the tranId in object
       // yet (a bug that is being ractified now)...  We can remove this code when that is fixed.
       var max: Long = 0
@@ -1286,11 +1288,11 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
         }
 
         allJars.foreach(jar => {
-          if (jar != null && jar.trim.size > 0) {
+          if (jar != null && jar.trim.size > 0 && PersistenceUtils.excludeSystemJars.contains(jar.trim) == false) {
             curJar = jar
             try {
               // download only if it doesn't already exists
-              val b = IsDownloadNeeded(jar, obj)
+              val b = IsDownloadNeeded(jar, obj) // Already checking for PersistenceUtils.excludeSystemJars.contains(jar.trim) == false
               if (b == true) {
                 val key = jar
                 val mObj = GetObject(key, "jar_store")
@@ -3022,8 +3024,8 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
       }
       case "adapterDef" | "nodeDef" | "clusterInfoDef" | "clusterDef" | "upDef"=> {
         zkMessage.Operation match {
-          case "Add" => {
-            updateClusterConfigForKey(zkMessage.ObjectType, zkMessage.Name, zkMessage.NameSpace)
+          case "Add" | "Update" => {
+            updateClusterConfigForKey(zkMessage.ObjectType, zkMessage.Name, zkMessage.NameSpace, zkMessage.Operation)
           }
           case _ => { logger.error("Unknown Operation " + zkMessage.Operation + " in zookeeper notification, notification is not processed ..") }
         }
@@ -3971,127 +3973,85 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     ConfigUtils.GetAllAdapters(formatType,userid)
   }
 
-  private def updateClusterConfigForKey(elemType: String, key: String, clusterId: String): Unit = {
+
+
+  private def updateClusterConfigForKey(elemType: String, key: String, clusterId: String, operation: String): Unit = {
 
     if (elemType.equalsIgnoreCase("adapterDef")) {
       //val obj = GetObject("adapterinfo."+key.toLowerCase, "config_objects")
       val storedInfo: AdapterInfo = MetadataAPISerialization.deserializeMetadata(new String(GetObject("adapterinfo."+key.toLowerCase, "config_objects")._2.asInstanceOf[Array[Byte]])).asInstanceOf[AdapterInfo]
-      //serializer.DeserializeObjectFromByteArray(GetObject("adapterinfo."+key.toLowerCase, "config_objects")._2.asInstanceOf[Array[Byte]]).asInstanceOf[AdapterInfo]
-      val cachedInfo = MdMgr.GetMdMgr.GetAdapter(key.toLowerCase)
-
-      // If storedInfo is null, that means that the adapter has been removed... maybe
-      if (storedInfo == null) {
-        MdMgr.GetMdMgr.addConfigChange(elemType +"."+"remove"+"."+storedInfo.name.toLowerCase)
-      }
-
-      // if cachedInfo is null, this a new apdater
-      if (cachedInfo == null) {
-        MdMgr.GetMdMgr.addConfigChange(elemType +"."+"add"+"."+storedInfo.name.toLowerCase)
-        MdMgr.GetMdMgr.AddAdapter(storedInfo)
+      MdMgr.GetMdMgr.AddAdapter(storedInfo)
+      if (operation.equalsIgnoreCase("add")) {
+        MdMgr.GetMdMgr.addConfigChange((elemType +"."+"add"+"."+storedInfo.name.toLowerCase, storedInfo))
         return
       }
-
-      if (!storedInfo.equals(cachedInfo)) {
-        MdMgr.GetMdMgr.addConfigChange(elemType + "." + "update" + "." + storedInfo.name.toLowerCase)
+      if (operation.equalsIgnoreCase("update")) {
+        MdMgr.GetMdMgr.addConfigChange((elemType + "." + "update" + "." + storedInfo.name.toLowerCase, storedInfo))
+        return
       }
-      MdMgr.GetMdMgr.AddAdapter(storedInfo)
+      return
     }
 
     if (elemType.equalsIgnoreCase("nodeDef")) {
      // val obj = GetObject("nodeinfo."+key.toLowerCase, "config_objects")
       val storedInfo = MetadataAPISerialization.deserializeMetadata(new String(GetObject("nodeinfo."+key.toLowerCase, "config_objects")._2.asInstanceOf[Array[Byte]])).asInstanceOf[NodeInfo]
-      //serializer.DeserializeObjectFromByteArray(GetObject("nodeinfo."+key.toLowerCase, "config_objects")._2.asInstanceOf[Array[Byte]]).asInstanceOf[NodeInfo]
-      val cachedInfo = MdMgr.GetMdMgr.GetNode(key.toLowerCase)
-
-      // If storedInfo is null, that means that the adapter has been removed... maybe
-      if (storedInfo == null) {
-        MdMgr.GetMdMgr.addConfigChange(elemType +"."+"remove"+"."+storedInfo.nodeId.toLowerCase)
-      }
-
-      // if cachedInfo is null, this a new apdater
-      if (cachedInfo == null) {
-        MdMgr.GetMdMgr.addConfigChange(elemType +"."+"add"+"."+storedInfo.nodeId.toLowerCase)
-        MdMgr.GetMdMgr.AddNode(storedInfo)
+      MdMgr.GetMdMgr.AddNode(storedInfo)
+      if (operation.equalsIgnoreCase("add")) {
+        MdMgr.GetMdMgr.addConfigChange((elemType +"."+"add"+"."+storedInfo.nodeId.toLowerCase, storedInfo))
         return
       }
-
-      if (!storedInfo.equals(cachedInfo)) {
-        MdMgr.GetMdMgr.addConfigChange(elemType + "." + "update" + "." + storedInfo.nodeId.toLowerCase)
+      if (operation.equalsIgnoreCase("update")) {
+        MdMgr.GetMdMgr.addConfigChange((elemType + "." + "update" + "." + storedInfo.nodeId.toLowerCase, storedInfo))
+        return
       }
-      MdMgr.GetMdMgr.AddNode(storedInfo)
+      return
     }
 
     if (elemType.equalsIgnoreCase("clusterInfoDef")) {
       //val obj = GetObject("clustercfginfo."+key.toLowerCase, "config_objects")
       val storedInfo = MetadataAPISerialization.deserializeMetadata(new String(GetObject("clustercfginfo."+key.toLowerCase, "config_objects")._2.asInstanceOf[Array[Byte]])).asInstanceOf[ClusterCfgInfo]
-      //serializer.DeserializeObjectFromByteArray(GetObject("clustercfginfo."+key.toLowerCase, "config_objects")._2.asInstanceOf[Array[Byte]]).asInstanceOf[ClusterCfgInfo]
-      val cachedInfo = MdMgr.GetMdMgr.GetClusterCfg(key.toLowerCase)
-
-      // If storedInfo is null, that means that the adapter has been removed... maybe
-      if (storedInfo == null) {
-        MdMgr.GetMdMgr.addConfigChange(elemType +"."+"remove"+"."+storedInfo.clusterId.toLowerCase)
-      }
-
-      // if cachedInfo is null, this a new apdater
-      if (cachedInfo == null) {
-        MdMgr.GetMdMgr.addConfigChange(elemType +"."+"add"+"."+storedInfo.clusterId.toLowerCase)
-        MdMgr.GetMdMgr.AddClusterCfg(storedInfo)
+      MdMgr.GetMdMgr.AddClusterCfg(storedInfo)
+      if (operation.equalsIgnoreCase("add")) {
+        MdMgr.GetMdMgr.addConfigChange((elemType +"."+"add"+"."+storedInfo.clusterId.toLowerCase, storedInfo))
         return
       }
-
-      if (!storedInfo.equals(cachedInfo)) {
-        MdMgr.GetMdMgr.addConfigChange(elemType + "." + "update" + "." + storedInfo.clusterId.toLowerCase)
+      if (operation.equalsIgnoreCase("update")) {
+        MdMgr.GetMdMgr.addConfigChange((elemType + "." + "update" + "." + storedInfo.clusterId.toLowerCase, storedInfo))
+        return
       }
-      MdMgr.GetMdMgr.AddClusterCfg(storedInfo)
+      return
+
     }
 
 
     if (elemType.equalsIgnoreCase("clusterDef")) {
       //val obj = GetObject("clusterinfo."+key.toLowerCase, "config_objects")
       val storedInfo = MetadataAPISerialization.deserializeMetadata(new String(GetObject("clusterinfo."+key.toLowerCase, "config_objects")._2.asInstanceOf[Array[Byte]])).asInstanceOf[ClusterInfo]
-      //serializer.DeserializeObjectFromByteArray(GetObject("clusterinfo."+key.toLowerCase, "config_objects")._2.asInstanceOf[Array[Byte]]).asInstanceOf[ClusterInfo]
-      val cachedInfo = MdMgr.GetMdMgr.GetCluster(key.toLowerCase)
-
-      // If storedInfo is null, that means that the adapter has been removed... maybe
-      if (storedInfo == null) {
-        MdMgr.GetMdMgr.addConfigChange(elemType +"."+"remove"+"."+storedInfo.ClusterId.toLowerCase)
-      }
-
-      // if cachedInfo is null, this a new apdater
-      if (cachedInfo == null) {
-        MdMgr.GetMdMgr.addConfigChange(elemType +"."+"add"+"."+storedInfo.ClusterId.toLowerCase)
-        MdMgr.GetMdMgr.AddCluster(storedInfo)
+      MdMgr.GetMdMgr.AddCluster(storedInfo)
+      if (operation.equalsIgnoreCase("add")) {
+        MdMgr.GetMdMgr.addConfigChange((elemType +"."+"add"+"."+storedInfo.clusterId.toLowerCase, storedInfo))
         return
       }
-
-      if (!storedInfo.equals(cachedInfo)) {
-        MdMgr.GetMdMgr.addConfigChange(elemType + "." + "update" + "." + storedInfo.ClusterId.toLowerCase)
+      if (operation.equalsIgnoreCase("update")) {
+        MdMgr.GetMdMgr.addConfigChange((elemType + "." + "update" + "." + storedInfo.clusterId.toLowerCase, storedInfo))
+        return
       }
-      MdMgr.GetMdMgr.AddCluster(storedInfo)
+      return
     }
 
     if (elemType.equalsIgnoreCase("upDef")) {
       //val obj = GetObject("userproperties."+key.toLowerCase, "config_objects")
       val storedInfo = MetadataAPISerialization.deserializeMetadata(new String(GetObject("userproperties."+key.toLowerCase, "config_objects")._2.asInstanceOf[Array[Byte]])).asInstanceOf[UserPropertiesInfo]
-        //serializer.DeserializeObjectFromByteArray(GetObject("userproperties."+key.toLowerCase, "config_objects")._2.asInstanceOf[Array[Byte]]).asInstanceOf[UserPropertiesInfo]
-      val cachedInfo = MdMgr.GetMdMgr.GetUserProperty(clusterId, key.toLowerCase)
-
-      // If storedInfo is null, that means that the adapter has been removed... maybe
-      if (storedInfo == null) {
-        MdMgr.GetMdMgr.addConfigChange(elemType +"."+"remove"+"."+storedInfo.clusterId.toLowerCase)
-      }
-
-      // if cachedInfo is null, this a new apdater
-      if (cachedInfo == null) {
-        MdMgr.GetMdMgr.addConfigChange(elemType +"."+"add"+"."+storedInfo.clusterId.toLowerCase)
-        MdMgr.GetMdMgr.AddUserProperty(storedInfo)
+      MdMgr.GetMdMgr.AddUserProperty(storedInfo)
+      if (operation.equalsIgnoreCase("add")) {
+        MdMgr.GetMdMgr.addConfigChange((elemType +"."+"add"+"."+storedInfo.clusterId.toLowerCase, storedInfo))
         return
       }
-
-      if (!storedInfo.equals(cachedInfo)) {
-        MdMgr.GetMdMgr.addConfigChange(elemType + "." + "update" + "." + storedInfo.clusterId.toLowerCase)
+      if (operation.equalsIgnoreCase("update")) {
+        MdMgr.GetMdMgr.addConfigChange((elemType + "." + "update" + "." + storedInfo.clusterId.toLowerCase, storedInfo))
+        return
       }
-      MdMgr.GetMdMgr.AddUserProperty(storedInfo)
+      return
     }
   }
     /**

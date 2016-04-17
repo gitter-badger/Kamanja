@@ -19,6 +19,7 @@ package com.ligadata.KamanjaManager
 
 import com.ligadata.KamanjaBase._
 import com.ligadata.InputOutputAdapterInfo.{ InputAdapter, OutputAdapter, PartitionUniqueRecordKey, PartitionUniqueRecordValue, StartProcPartInfo }
+import com.ligadata.StorageBase.StorageAdapter
 import com.ligadata.Utils.ClusterStatus
 import com.ligadata.kamanja.metadata.{ BaseElem, MappedMsgTypeDef, BaseAttributeDef, StructTypeDef, EntityType, AttributeDef, MessageDef, ContainerDef, ModelDef }
 import com.ligadata.kamanja.metadata._
@@ -46,14 +47,14 @@ case class AdapMaxPartitions(Adap: String, MaxParts: Int)
 case class NodeDistMap(Adap: String, Parts: List[String])
 case class DistributionMap(Node: String, Adaps: List[NodeDistMap])
 case class FoundKeysInValidation(K: String, V1: String, V2: Int, V3: Int, V4: Long)
-case class ActionOnAdaptersMap(action: String, adaptermaxpartitions: Option[List[AdapMaxPartitions]], distributionmap: Option[List[DistributionMap]], foundKeysInValidation: Option[List[FoundKeysInValidation]])
+case class ActionOnAdaptersMap(action: String, adaptermaxpartitions: Option[List[AdapMaxPartitions]], distributionmap: Option[List[DistributionMap]])
 
 object KamanjaLeader {
   private[this] val LOG = LogManager.getLogger(getClass);
   private[this] val lock = new Object()
   private[this] val lock1 = new Object()
   private[this] var clusterStatus = ClusterStatus("", false, "", null)
-  private[this] var zkLeaderLatch: ZkLeaderLatch = _
+//  private[this] var zkLeaderLatch: ZkLeaderLatch = _
   private[this] var nodeId: String = _
   private[this] var zkConnectString: String = _
   private[this] var engineLeaderZkNodePath: String = _
@@ -62,13 +63,13 @@ object KamanjaLeader {
   private[this] var adaptersStatusPath: String = _
   private[this] var zkSessionTimeoutMs: Int = _
   private[this] var zkConnectionTimeoutMs: Int = _
-  private[this] var zkEngineDistributionNodeListener: ZooKeeperListener = _
-  private[this] var zkAdapterStatusNodeListener: ZooKeeperListener = _
-  private[this] var zkDataChangeNodeListener: ZooKeeperListener = _
+//  private[this] var zkEngineDistributionNodeListener: ZooKeeperListener = _
+//  private[this] var zkAdapterStatusNodeListener: ZooKeeperListener = _
+//  private[this] var zkDataChangeNodeListener: ZooKeeperListener = _
   private[this] var zkcForSetData: CuratorFramework = null
   private[this] val setDataLockObj = new Object()
   private[this] var distributionMap = scala.collection.mutable.Map[String, scala.collection.mutable.Map[String, ArrayBuffer[String]]]() // Nodeid & Unique Keys (adapter unique name & unique key)
-  private[this] var foundKeysInValidation: scala.collection.immutable.Map[String, (String, Int, Int, Long)] = _
+//  private[this] var foundKeysInValidation: scala.collection.immutable.Map[String, (String, Int, Int, Long)] = _
   private[this] var adapterMaxPartitions = scala.collection.mutable.Map[String, Int]() // Adapters & Max Partitions
   private[this] var allPartitionsToValidate = scala.collection.mutable.Map[String, Set[String]]()
   private[this] var nodesStatus = scala.collection.mutable.Set[String]() // NodeId
@@ -77,6 +78,7 @@ object KamanjaLeader {
   private[this] var canRedistribute = false
   private[this] var inputAdapters: ArrayBuffer[InputAdapter] = _
   private[this] var outputAdapters: ArrayBuffer[OutputAdapter] = _
+  private[this] var storageAdapters: ArrayBuffer[StorageAdapter] = _
   private[this] var envCtxt: EnvContext = _
   private[this] var updatePartitionsFlag = false
   private[this] var distributionExecutor = Executors.newFixedThreadPool(1)
@@ -85,7 +87,7 @@ object KamanjaLeader {
 
   def Reset: Unit = {
     clusterStatus = ClusterStatus("", false, "", null)
-    zkLeaderLatch = null
+//    zkLeaderLatch = null
     nodeId = null
     zkConnectString = null
     engineLeaderZkNodePath = null
@@ -94,12 +96,12 @@ object KamanjaLeader {
     adaptersStatusPath = null
     zkSessionTimeoutMs = 0
     zkConnectionTimeoutMs = 0
-    zkEngineDistributionNodeListener = null
-    zkAdapterStatusNodeListener = null
-    zkDataChangeNodeListener = null
+//    zkEngineDistributionNodeListener = null
+//    zkAdapterStatusNodeListener = null
+//    zkDataChangeNodeListener = null
     zkcForSetData = null
     distributionMap = scala.collection.mutable.Map[String, scala.collection.mutable.Map[String, ArrayBuffer[String]]]() // Nodeid & Unique Keys (adapter unique name & unique key)
-    foundKeysInValidation = null
+//    foundKeysInValidation = null
     adapterMaxPartitions = scala.collection.mutable.Map[String, Int]() // Adapters & Max Partitions
     allPartitionsToValidate = scala.collection.mutable.Map[String, Set[String]]()
     nodesStatus = scala.collection.mutable.Set[String]() // NodeId
@@ -212,7 +214,8 @@ object KamanjaLeader {
                 nodesStatus.clear
                 expectedNodesAction = "distributed"
 
-                val fndKeyInVal = if (foundKeysInValidation == null) scala.collection.immutable.Map[String, (String, Int, Int, Long)]() else foundKeysInValidation
+                // val fndKeyInVal = if (foundKeysInValidation == null) scala.collection.immutable.Map[String, (String, Int, Int, Long)]() else foundKeysInValidation
+                val fndKeyInVal = scala.collection.immutable.Map[String, (String, Int, Int, Long)]()
 
                 // Set DISTRIBUTE Action on engineDistributionZkNodePath
                 // Send all Unique keys to corresponding nodes 
@@ -224,13 +227,7 @@ object KamanjaLeader {
                     ("distributionmap" -> distributionMap.map(kv =>
                       ("Node" -> kv._1) ~
                         ("Adaps" -> kv._2.map(kv1 => ("Adap" -> kv1._1) ~
-                          ("Parts" -> kv1._2.toList))))) ~
-                    ("foundKeysInValidation" -> fndKeyInVal.map(kv =>
-                      ("K" -> kv._1) ~
-                        ("V1" -> kv._2._1) ~
-                        ("V2" -> kv._2._2) ~
-                        ("V3" -> kv._2._3) ~
-                        ("V4" -> kv._2._4)))
+                          ("Parts" -> kv1._2.toList)))))
                 val sendJson = compact(render(distribute))
                 SetNewDataToZkc(engineDistributionZkNodePath, sendJson.getBytes("UTF8"))
               }
@@ -443,7 +440,7 @@ object KamanjaLeader {
           LOG.debug("allPartitionUniqueRecordKeys: %d".format(allPartitionUniqueRecordKeys.size))
           var cntr: Int = 0
           allPartitionUniqueRecordKeys.foreach(k => {
-            val fnd = foundKeysInValidation.getOrElse(k._2.toLowerCase, null)
+//            val fnd = foundKeysInValidation.getOrElse(k._2.toLowerCase, null)
             val af = tmpDistMap(cntr % totalParticipents)._2.getOrElse(k._1, null)
             if (af == null) {
               val af1 = new ArrayBuffer[String]
@@ -547,35 +544,37 @@ object KamanjaLeader {
       remainingInpAdapters.foreach(ia => {
         val name = ia.UniqueName
         try {
-//          val uAK = nodeKeysMap.getOrElse(name, null)
-//          if (uAK != null) {
-//            val uKV = uAK.map(uk => { GetUniqueKeyValue(uk) })
-//            val maxParts = adapMaxPartsMap.getOrElse(name, 0)
-//            LOG.info("On Node %s for Adapter %s with Max Partitions %d UniqueKeys %s, UniqueValues %s".format(nodeId, name, maxParts, uAK.mkString(","), uKV.mkString(",")))
-//
-//            LOG.debug("Deserializing Keys")
-//            val keys = uAK.map(k => ia.DeserializeKey(k))
-//
-//            LOG.debug("Deserializing Values")
-//            val vals = uKV.map(v => ia.DeserializeValue(if (v != null) v._2 else null))
-//
-//            LOG.debug("Deserializing Keys & Values done")
-//
-//            val quads = new ArrayBuffer[StartProcPartInfo](keys.size)
-//
-//            for (i <- 0 until keys.size) {
-//              val key = keys(i)
-//
-//              val info = new StartProcPartInfo
-//              info._key = key
-//              info._val = vals(i)
-//              info._validateInfoVal = vals(i)
-//              quads += info
-//            }
-//
-//            LOG.info(ia.UniqueName + " ==> Processing Keys & values: " + quads.map(q => { (q._key.Serialize, q._val.Serialize, q._validateInfoVal.Serialize) }).mkString(","))
-//            ia.StartProcessing(quads.toArray, true)
-//          }
+          val uAK = nodeKeysMap.getOrElse(name, null)
+          if (uAK != null) {
+            // val uKV = uAK.map(uk => { GetUniqueKeyValue(uk) }) // FIXME:: get save Values for the keys
+            val empty:(Long, String, List[(String, String, String)]) = null
+            val uKV = uAK.map(uk => empty)
+            val maxParts = adapMaxPartsMap.getOrElse(name, 0)
+            LOG.info("On Node %s for Adapter %s with Max Partitions %d UniqueKeys %s, UniqueValues %s".format(nodeId, name, maxParts, uAK.mkString(","), uKV.mkString(",")))
+
+            LOG.debug("Deserializing Keys")
+            val keys = uAK.map(k => ia.DeserializeKey(k))
+
+            LOG.debug("Deserializing Values")
+            val vals = uKV.map(v => ia.DeserializeValue(if (v != null) v._2 else null))
+
+            LOG.debug("Deserializing Keys & Values done")
+
+            val quads = new ArrayBuffer[StartProcPartInfo](keys.size)
+
+            for (i <- 0 until keys.size) {
+              val key = keys(i)
+
+              val info = new StartProcPartInfo
+              info._key = key
+              info._val = vals(i)
+              info._validateInfoVal = vals(i)
+              quads += info
+            }
+
+            LOG.info(ia.UniqueName + " ==> Processing Keys & values: " + quads.map(q => { (q._key.Serialize, q._val.Serialize, q._validateInfoVal.Serialize) }).mkString(","))
+            ia.StartProcessing(quads.toArray, true)
+          }
         } catch {
           case fae: FatalAdapterException => {
             LOG.error("Failed to start processing input adapter:" + name, fae)
@@ -763,12 +762,12 @@ object KamanjaLeader {
 
               var foundKeysInVald = scala.collection.mutable.Map[String, (String, Int, Int, Long)]()
 
-              if (actionOnAdaptersMap.foundKeysInValidation != None && actionOnAdaptersMap.foundKeysInValidation != null) {
-                actionOnAdaptersMap.foundKeysInValidation.get.foreach(ks => {
-                  foundKeysInVald(ks.K.toLowerCase) = (ks.V1, ks.V2, ks.V3, ks.V4)
-                })
-
-              }
+//              if (actionOnAdaptersMap.foundKeysInValidation != None && actionOnAdaptersMap.foundKeysInValidation != null) {
+//                actionOnAdaptersMap.foundKeysInValidation.get.foreach(ks => {
+//                  foundKeysInVald(ks.K.toLowerCase) = (ks.V1, ks.V2, ks.V3, ks.V4)
+//                })
+//
+//              }
               StartNodeKeysMap(nodeDistMap, receivedJsonStr, adapMaxPartsMap, foundKeysInVald.toMap)
             }
 
@@ -1100,8 +1099,12 @@ object KamanjaLeader {
   }
   */
 
+  def forceAdapterRebalance: Unit = {
+    SetUpdatePartitionsFlag
+  }
+
   def Init(nodeId1: String, zkConnectString1: String, engineLeaderZkNodePath1: String, engineDistributionZkNodePath1: String, adaptersStatusPath1: String, inputAdap: ArrayBuffer[InputAdapter], outputAdap: ArrayBuffer[OutputAdapter],
-           enviCxt: EnvContext, zkSessionTimeoutMs1: Int, zkConnectionTimeoutMs1: Int, dataChangeZkNodePath1: String): Unit = {
+           storageAdap: ArrayBuffer[StorageAdapter], enviCxt: EnvContext, zkSessionTimeoutMs1: Int, zkConnectionTimeoutMs1: Int, dataChangeZkNodePath1: String): Unit = {
     nodeId = nodeId1.toLowerCase
     zkConnectString = zkConnectString1
     engineLeaderZkNodePath = engineLeaderZkNodePath1
@@ -1112,6 +1115,7 @@ object KamanjaLeader {
     zkConnectionTimeoutMs = zkConnectionTimeoutMs1
     inputAdapters = inputAdap
     outputAdapters = outputAdap
+    storageAdapters = storageAdap
     envCtxt = enviCxt
 
     if (zkConnectString != null && zkConnectString.isEmpty() == false && engineLeaderZkNodePath != null && engineLeaderZkNodePath.isEmpty() == false && engineDistributionZkNodePath != null && engineDistributionZkNodePath.isEmpty() == false && dataChangeZkNodePath != null && dataChangeZkNodePath.isEmpty() == false) {
@@ -1122,12 +1126,16 @@ object KamanjaLeader {
         CreateClient.CreateNodeIfNotExists(zkConnectString, adaptrStatusPathForNode) // Creating path for Adapter Statues
         CreateClient.CreateNodeIfNotExists(zkConnectString, dataChangeZkNodePath) // Creating 
         zkcForSetData = CreateClient.createSimple(zkConnectString, zkSessionTimeoutMs, zkConnectionTimeoutMs)
-        zkAdapterStatusNodeListener = new ZooKeeperListener
-        zkAdapterStatusNodeListener.CreatePathChildrenCacheListener(zkConnectString, adaptersStatusPath, false, ParticipentsAdaptersStatus, zkSessionTimeoutMs, zkConnectionTimeoutMs)
-        zkEngineDistributionNodeListener = new ZooKeeperListener
-        zkEngineDistributionNodeListener.CreateListener(zkConnectString, engineDistributionZkNodePath, ActionOnAdaptersDistribution, zkSessionTimeoutMs, zkConnectionTimeoutMs)
-        zkDataChangeNodeListener = new ZooKeeperListener
-        zkDataChangeNodeListener.CreateListener(zkConnectString, dataChangeZkNodePath, ActionOnDataChange, zkSessionTimeoutMs, zkConnectionTimeoutMs)
+
+        envCtxt.createZkPathChildrenCacheListener(adaptersStatusPath, false, ParticipentsAdaptersStatus)
+        envCtxt.createZkPathListener(engineDistributionZkNodePath, ActionOnAdaptersDistribution)
+        envCtxt.createZkPathListener(dataChangeZkNodePath, ActionOnDataChange)
+//        zkAdapterStatusNodeListener = new ZooKeeperListener
+//        zkAdapterStatusNodeListener.CreatePathChildrenCacheListener(zkConnectString, adaptersStatusPath, false, ParticipentsAdaptersStatus, zkSessionTimeoutMs, zkConnectionTimeoutMs)
+//        zkEngineDistributionNodeListener = new ZooKeeperListener
+//        zkEngineDistributionNodeListener.CreateListener(zkConnectString, engineDistributionZkNodePath, ActionOnAdaptersDistribution, zkSessionTimeoutMs, zkConnectionTimeoutMs)
+//        zkDataChangeNodeListener = new ZooKeeperListener
+//        zkDataChangeNodeListener.CreateListener(zkConnectString, dataChangeZkNodePath, ActionOnDataChange, zkSessionTimeoutMs, zkConnectionTimeoutMs)
         try {
           Thread.sleep(500)
         } catch {
@@ -1256,8 +1264,9 @@ object KamanjaLeader {
         })
 
         SetCanRedistribute(true)
-        zkLeaderLatch = new ZkLeaderLatch(zkConnectString, engineLeaderZkNodePath, nodeId, EventChangeCallback, zkSessionTimeoutMs, zkConnectionTimeoutMs)
-        zkLeaderLatch.SelectLeader
+        envCtxt.registerNodesChangeNotification(EventChangeCallback)
+//          zkLeaderLatch = new ZkLeaderLatch(zkConnectString, engineLeaderZkNodePath, nodeId, EventChangeCallback, zkSessionTimeoutMs, zkConnectionTimeoutMs)
+//        zkLeaderLatch.SelectLeader
         /*
         // Set RE-DISTRIBUTED action in adaptersStatusPath + "/" + nodeId path
         val act = ("action" -> "re-distribute")
@@ -1421,18 +1430,18 @@ object KamanjaLeader {
 
   def Shutdown: Unit = {
     distributionExecutor.shutdown
-    if (zkLeaderLatch != null)
-      zkLeaderLatch.Shutdown
-    zkLeaderLatch = null
-    if (zkEngineDistributionNodeListener != null)
-      zkEngineDistributionNodeListener.Shutdown
-    zkEngineDistributionNodeListener = null
-    if (zkDataChangeNodeListener != null)
-      zkDataChangeNodeListener.Shutdown
-    zkDataChangeNodeListener = null
-    if (zkAdapterStatusNodeListener != null)
-      zkAdapterStatusNodeListener.Shutdown
-    zkAdapterStatusNodeListener = null
+//    if (zkLeaderLatch != null)
+//      zkLeaderLatch.Shutdown
+//    zkLeaderLatch = null
+//    if (zkEngineDistributionNodeListener != null)
+//      zkEngineDistributionNodeListener.Shutdown
+//    zkEngineDistributionNodeListener = null
+//    if (zkDataChangeNodeListener != null)
+//      zkDataChangeNodeListener.Shutdown
+//    zkDataChangeNodeListener = null
+//    if (zkAdapterStatusNodeListener != null)
+//      zkAdapterStatusNodeListener.Shutdown
+//    zkAdapterStatusNodeListener = null
     CloseSetDataZkc
   }
 }

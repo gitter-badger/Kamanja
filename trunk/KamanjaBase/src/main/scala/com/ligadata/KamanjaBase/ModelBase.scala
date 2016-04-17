@@ -20,14 +20,13 @@ package com.ligadata.KamanjaBase
 import com.ligadata.Exceptions.{DeprecatedException, NotImplementedFunctionException}
 
 import scala.collection.immutable.Map
-import com.ligadata.Utils.Utils
+import com.ligadata.Utils.{CacheConfig, Utils, KamanjaLoaderInfo, ClusterStatus}
 import com.ligadata.kamanja.metadata.{MdMgr, ModelDef}
 import org.json4s._
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
 import java.io.{DataInputStream, DataOutputStream}
 import com.ligadata.KvBase.{Key, TimeRange /* , KvBaseDefalts, KeyWithBucketIdAndPrimaryKey, KeyWithBucketIdAndPrimaryKeyCompHelper */}
-import com.ligadata.Utils.{KamanjaLoaderInfo, ClusterStatus}
 import com.ligadata.HeartBeat._
 
 import scala.collection.mutable.ArrayBuffer
@@ -275,7 +274,7 @@ trait EnvContext /* extends Monitorable */  {
 
   def getAdaptersAndEnvCtxtLoader: KamanjaLoaderInfo
 
-  def setMetadataResolveInfo(mdres: MdBaseResolveInfo): Unit
+  def setObjectResolver(objResolver: ObjectResolver): Unit
 
   // Setting JarPaths
   def setJarPaths(jarPaths: collection.immutable.Set[String]): Unit
@@ -474,11 +473,13 @@ trait EnvContext /* extends Monitorable */  {
   // We are handling only one listener at this moment
   def postMessagesListener(postMsgListenerCallback: (Array[ContainerInterface]) => Unit): Unit
 
-  def setDefaultDatastoresForTenants(defaultDatastores: scala.collection.immutable.Map[String, String]): Unit
-  def getDefaultDatastoreForTenantId(tenantId: String): String
+  def getPrimaryDatastoreForTenantId(tenantId: String): String
 
   def setSystemCatalogDatastore(sysCatalog: String): Unit
   def getSystemCatalogDatastore(): String
+
+  def startCache(conf: CacheConfig): Unit
+  def getCacheConfig(): CacheConfig
 }
 
 // partitionKey is the one used for this message
@@ -526,7 +527,7 @@ abstract class ModelBase(var modelContext: ModelContext, val factory: ModelBaseO
 
 trait ModelBaseObj {
   // Check to fire the model
-  def IsValidMessage(msg: ContainerInterface): Boolean
+  def IsValidMessage(msg: MessageContainerBase): Boolean
 
   // Creating same type of object with given values
   def CreateNewModel(mdlCtxt: ModelContext): ModelBase
@@ -587,7 +588,7 @@ abstract class ModelInstance(val factory: ModelInstanceFactory) {
   def execute(txnCtxt: TransactionContext, execMsgsSet: Array[ContainerOrConcept], triggerdSetIndex: Int, outputDefault: Boolean): Array[ContainerOrConcept] = {
     // Default implementation to invoke old model
     if (execMsgsSet.size == 1 && triggerdSetIndex == 0 && factory.getModelDef().inputMsgSets.size == 1 && factory.getModelDef().inputMsgSets(0).size == 1 &&
-      execMsgsSet(0).isInstanceOf[ContainerInterface] && factory.getModelDef().outputMsgs.size == 1) {
+      factory.getModelDef().outputMsgs.size == 1 && execMsgsSet(0) != null && execMsgsSet(0).isInstanceOf[ContainerInterface]) {
       // This could be calling old model
       // Holding current transaction information original message and set the new information. Because the model will pull the message from transaction context
       val (origin, orgInputMsg) = txnCtxt.getInitialMessage
@@ -610,7 +611,9 @@ abstract class ModelInstance(val factory: ModelInstanceFactory) {
       }
       returnValues
     }
-    throw new NotImplementedFunctionException("Not implemented", null)
+    val mdlNm = if (getModelName() == null) "" else getModelName()
+    val msgsStr = if (execMsgsSet != null) execMsgsSet.map(msg => if (msg != null) msg.getFullTypeName else "").mkString(",") else ""
+    throw new NotImplementedFunctionException("execute method is not implemented for model:%s\nInputMessages (%d) are:%s and triggerdSetIndex:%s".format(mdlNm, execMsgsSet.size, msgsStr, triggerdSetIndex), null)
   }
 }
 
@@ -642,7 +645,7 @@ abstract class ModelInstanceFactory(val modelDef: ModelDef, val nodeContext: Nod
 
   // Checking whether the message is valid to execute this model instance or not.
   // Deprecated and no more supported in new versions from 1.4.0
-  def isValidMessage(msg: ContainerInterface): Boolean = {
+  def isValidMessage(msg: MessageContainerBase): Boolean = {
     throw new DeprecatedException("Deprecated", null)
   }
 
@@ -688,6 +691,10 @@ class TransactionContext(val transId: Long, val nodeCtxt: NodeContext, val msgDa
   final def getPartitionKey(): String = origin.key
 
   final def getMessage(): ContainerInterface = orgInputMsg.container.asInstanceOf[ContainerInterface] // Original messages
+
+  final def getAllMsgNames(): Array[String] = containerOrConceptsMapByName.keys.toArray
+
+  final def getAllContainersOrConcepts(): Map[String, Array[ContaienrWithOriginAndPartKey]] = containerOrConceptsMapByName.map(kv => (kv._1, kv._2.toArray)).toMap
 
   // Need to lock if we are going to run models parallel
   final def getContainersOrConcepts(typeName: String): Array[(String, ContainerOrConcept)] = containerOrConceptsMapByName.getOrElse(typeName.toLowerCase(), ArrayBuffer[ContaienrWithOriginAndPartKey]()).map(v => (v.origin, v.container)).toArray
@@ -954,7 +961,7 @@ class ModelBaseObjMdlInstanceFactory(modelDef: ModelDef, nodeContext: NodeContex
 
   override def getVersion() = mdlBaseObj.Version() // Model Version
 
-  override def isValidMessage(msg: ContainerInterface): Boolean = mdlBaseObj.IsValidMessage(msg)
+  override def isValidMessage(msg: MessageContainerBase): Boolean = mdlBaseObj.IsValidMessage(msg)
 
   override def createModelInstance() = new ModelBaseMdlInstance(this)
 

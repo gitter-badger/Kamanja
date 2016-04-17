@@ -2,9 +2,9 @@
   "Clusters": [
     {
       "ClusterId": "kamanjacluster1",
-      "DataStore": {
+      "SystemCatalog": {
         "StoreType": "hbase",
-        "SchemaName": "kamanja",
+        "SchemaName": "syscatalog",
         "Location": "localhost",
         "authentication": "kerberos",
         "regionserver_principal": "hbase/_HOST@INTRANET.LIGADATA.COM",
@@ -12,6 +12,25 @@
         "principal": "ligadata@INTRANET.LIGADATA.COM",
         "keytab": "/home/ligadata/keytab/ligadata.keytab"
       },
+      "Tenants": [
+        {
+          "TenantId": "tenant1",
+          "Description": "tenant1",
+          "PrimaryDataStore": {
+            "StoreType": "hbase",
+            "SchemaName": "tenant1_default",
+            "Location": "localhost",
+            "authentication": "kerberos",
+            "regionserver_principal": "hbase/_HOST@INTRANET.LIGADATA.COM",
+            "master_principal": "hbase/_HOST@INTRANET.LIGADATA.COM",
+            "principal": "ligadata@INTRANET.LIGADATA.COM",
+            "keytab": "/home/ligadata/keytab/ligadata.keytab"
+          },
+          "CacheConfig": {
+            "MaxSizeInMB": 256
+          }
+        }
+      ],
       "ZooKeeperInfo": {
         "ZooKeeperNodeBasePath": "/kamanja",
         "ZooKeeperConnectString": "localhost:2181",
@@ -26,11 +45,18 @@
           "ExtDependencyLibs2_2.10-1.4.0.jar"
         ]
       },
+      "Cache": {
+        "CacheStartPort": 7800,
+        "CacheSizePerNodeInMB": 256,
+        "ReplicateFactor": 1,
+        "TimeToIdleSeconds": 31622400,
+        "EvictionPolicy": "LFU"
+      },
       "Nodes": [
         {
           "NodeId": "1",
           "NodePort": 6541,
-          "NodeIpAddr": "127.0.0.1",
+          "NodeIpAddr": "localhost",
           "JarPaths": [
             "{InstallDirectory}/lib/system",
             "{InstallDirectory}/lib/application"
@@ -38,6 +64,7 @@
           "Scala_home": "{ScalaInstallDirectory}",
           "Java_home": "{JavaInstallDirectory}",
           "Roles": [
+            "RestAPI",
             "ProcessingEngine"
           ],
           "Classpath": ".:{InstallDirectory}/lib/system/ExtDependencyLibs_2.10-1.4.0.jar:{InstallDirectory}/lib/system/KamanjaInternalDeps_2.10-1.4.0.jar:{InstallDirectory}/lib/system/ExtDependencyLibs2_2.10-1.4.0.jar"
@@ -45,12 +72,19 @@
       ],
       "Adapters": [
         {
+          "Name": "Storage_1",
+          "TypeString": "Storage",
+          "TenantId": "tenant1",
+          "StoreType": "hbase",
+          "SchemaName": "kamanja",
+          "Location": "{InstallDirectory}/storage/tenant1_storage_1"
+        },
+        {
           "Name": "TestIn_1",
           "TypeString": "Input",
-          "DataFormat": "CSV",
+          "TenantId": "tenant1",
           "ClassName": "com.ligadata.InputAdapters.KafkaSimpleConsumer$",
           "JarName": "KamanjaInternalDeps_2.10-1.4.0.jar",
-          "FailedEventsAdapter": "TestFailedEvents_1",
           "DependencyJars": [
             "ExtDependencyLibs_2.10-1.4.0.jar",
             "ExtDependencyLibs2_2.10-1.4.0.jar"
@@ -61,24 +95,9 @@
           }
         },
         {
-          "Name": "TestOut_In_1",
-          "TypeString": "Validate",
-          "DataFormat": "JSON",
-          "ClassName": "com.ligadata.InputAdapters.KafkaSimpleConsumer$",
-          "JarName": "KamanjaInternalDeps_2.10-1.4.0.jar",
-          "DependencyJars": [
-            "ExtDependencyLibs_2.10-1.4.0.jar",
-            "ExtDependencyLibs2_2.10-1.4.0.jar"
-          ],
-          "AdapterSpecificCfg": {
-            "HostList": "localhost:9092",
-            "TopicName": "testout_1"
-          }
-        },
-        {
           "Name": "TestOut_1",
           "TypeString": "Output",
-          "InputAdapterToVerify": "TestOut_In_1",
+          "TenantId": "tenant1",
           "ClassName": "com.ligadata.OutputAdapters.KafkaProducer$",
           "JarName": "KamanjaInternalDeps_2.10-1.4.0.jar",
           "DependencyJars": [
@@ -92,7 +111,8 @@
         },
         {
           "Name": "TestStatus_1",
-          "TypeString": "Status",
+          "TypeString": "Output",
+          "TenantId": "System",
           "ClassName": "com.ligadata.OutputAdapters.KafkaProducer$",
           "JarName": "KamanjaInternalDeps_2.10-1.4.0.jar",
           "DependencyJars": [
@@ -102,20 +122,6 @@
           "AdapterSpecificCfg": {
             "HostList": "localhost:9092",
             "TopicName": "teststatus_1"
-          }
-        },
-        {
-          "Name": "TestFailedEvents_1",
-          "TypeString": "FailedEvents",
-          "ClassName": "com.ligadata.OutputAdapters.KafkaProducer$",
-          "JarName": "KamanjaInternalDeps_2.10-1.4.0.jar",
-          "DependencyJars": [
-            "ExtDependencyLibs_2.10-1.4.0.jar",
-            "ExtDependencyLibs2_2.10-1.4.0.jar"
-          ],
-          "AdapterSpecificCfg": {
-            "HostList": "localhost:9092",
-            "TopicName": "testfailedevents_1"
           }
         }
       ]

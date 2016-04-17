@@ -260,7 +260,7 @@ object KvInitConfiguration {
 }
 
 class KVInit(val loadConfigs: Properties, val typename: String, val dataFiles: Array[String], val keyfieldnames: Array[String], keyAndValueDelimiter1: String,
-             fieldDelimiter1: String, valueDelimiter1: String, ignoreerrors: String, ignoreRecords: Int, format: String, commitBatchSize: Int) extends LogTrait with MdBaseResolveInfo {
+             fieldDelimiter1: String, valueDelimiter1: String, ignoreerrors: String, ignoreRecords: Int, format: String, commitBatchSize: Int) extends LogTrait with ObjectResolver {
   val fieldDelimiter = if (DataDelimiters.IsEmptyDelimiter(fieldDelimiter1) == false) fieldDelimiter1 else ","
   val keyAndValueDelimiter = if (DataDelimiters.IsEmptyDelimiter(keyAndValueDelimiter1) == false) keyAndValueDelimiter1 else "\\x01"
   val valueDelimiter = if (DataDelimiters.IsEmptyDelimiter(valueDelimiter1) == false) valueDelimiter1 else "~"
@@ -504,17 +504,6 @@ class KVInit(val loadConfigs: Properties, val typename: String, val dataFiles: A
     true
   }
 
-  override def getMessgeOrContainerInstance(MsgContainerType: String): ContainerInterface = {
-    if (MsgContainerType.compareToIgnoreCase(objFullName) != 0)
-      return null
-    // Simply creating new object and returning. Not checking for MsgContainerType. This is issue if the child level messages ask for the type 
-    if (isMsg)
-      return messageObj.createInstance.asInstanceOf[ContainerInterface]
-    if (isContainer)
-      return containerObj.createInstance.asInstanceOf[ContainerInterface]
-    return null
-  }
-
   private def GetDataStoreHandle(jarPaths: collection.immutable.Set[String], dataStoreInfo: String): DataStore = {
     try {
       logger.debug("Getting DB Connection for dataStoreInfo:%s".format(dataStoreInfo))
@@ -524,6 +513,32 @@ class KVInit(val loadConfigs: Properties, val typename: String, val dataFiles: A
       case e: Throwable => throw e
     }
   }
+
+  override def getInstance(MsgContainerType: String): ContainerInterface = {
+    if (MsgContainerType.compareToIgnoreCase(objFullName) != 0)
+      return null
+    // Simply creating new object and returning. Not checking for MsgContainerType. This is issue if the child level messages ask for the type
+    if (isMsg)
+      return messageObj.createInstance.asInstanceOf[ContainerInterface]
+    if (isContainer)
+      return containerObj.createInstance.asInstanceOf[ContainerInterface]
+    return null
+  }
+
+  override def getInstance(schemaId: Long): ContainerInterface = {
+    //BUGBUG:: For now we are getting latest class. But we need to get the old one too.
+    if (mdMgr == null)
+      throw new KamanjaException("Metadata Not found", null)
+
+    val contOpt = mdMgr.ContainerForSchemaId(schemaId.toInt)
+
+    if (contOpt == None)
+      throw new KamanjaException("Container Not found for schemaid:" + schemaId, null)
+
+    getInstance(contOpt.get.FullName)
+  }
+
+  override def getMdMgr: MdMgr = mdMgr
 
   // We are not expecting Container/MessageType as first child of JSON. This is just to match to Delimited data, where we don't have type in the data.
   private def prepareInputData(inputStr: String): InputData = {

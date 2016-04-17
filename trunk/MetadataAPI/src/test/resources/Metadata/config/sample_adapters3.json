@@ -1,0 +1,57 @@
+"Adapters": [
+    {
+      "Name": "TestStatus_1",
+      "TypeString": "Status",
+      "ClassName": "com.ligadata.OutputAdapters.FileProducer$",
+      "JarName": "filesimpleinputoutputadapters_2.10-1.0.jar",
+      "DependencyJars": [],
+      "AdapterSpecificCfg": "{\"CompressionString\": \"\",\"append\": \"true\",\"Files\": \"/apps/fatafat/Install/FatafatInstallNew/status.txt\" }"
+    },
+    {
+      "Name": "TestInMq_1",
+      "TypeString": "Input",
+      "DataFormat": "CSV",
+      "DelimiterString": "\\x01",
+      "AssociatedMessage": "System.DrDigMsg",
+      "ClassName": "com.ligadata.InputAdapters.IbmMqConsumer$",
+      "JarName": "ibmmqsimpleinputoutputadapters_2.10-1.0.jar",
+      "DependencyJars": [
+        "dhbcore.jar",
+        "com.ibm.mq.tools.ras.jar",
+        "com.ibm.mq.commonservices.jar",
+        "com.ibm.mqjms.jar",
+        "com.ibm.mq.soap.jar",
+        "com.ibm.mq.pcf.jar",
+        "com.ibm.mq.jms.Nojndi.jar",
+        "com.ibm.mq.jmqi.jar",
+        "com.ibm.mq.jar",
+        "com.ibm.mq.headers.jar",
+        "com.ibm.mq.axis2.jar",
+        "jms.jar",
+        "json-simple-1.1.1.jar"
+      ],
+      "AdapterSpecificCfg": "{\"host_name\": \"gbrdsr000000539\",\"port\": \"1414\",\"channel\": \"MQ.CLT.FAT.CHL.SSL\",\"queue_manager\": \"MQSP58X0\",\"application_name\": \"FatafatIn\",\"queue_name\": \"queue:///RTDE.RTDEFATAFAT.IN.POC\",\"ssl_cipher_suite\":\"SSL_RSA_WITH_3DES_EDE_CBC_SHA\" }"
+    },
+    {
+      "Name": "TestOut_1",
+      "TypeString": "Output",
+      "ClassName": "com.ligadata.OutputAdapters.IbmMqProducer$",
+      "JarName": "ibmmqsimpleinputoutputadapters_2.10-1.0.jar",
+      "DependencyJars": [
+        "dhbcore.jar",
+        "com.ibm.mq.tools.ras.jar",
+        "com.ibm.mq.commonservices.jar",
+        "com.ibm.mqjms.jar",
+        "com.ibm.mq.soap.jar",
+        "com.ibm.mq.pcf.jar",
+        "com.ibm.mq.jms.Nojndi.jar",
+        "com.ibm.mq.jmqi.jar",
+        "com.ibm.mq.jar",
+        "com.ibm.mq.headers.jar",
+        "com.ibm.mq.axis2.jar",
+        "jms.jar",
+        "json-simple-1.1.1.jar"
+      ],
+      "AdapterSpecificCfg": "{\"host_name\": \"gbrdsr000000191\",\"port\": \"1414\",\"channel\": \"BEM.CLT.CHL\",\"queue_manager\": \"MQSP04XB\",\"application_name\": \"FatafatOut\",\"queue_name\": \"queue:///BNE_DEV_IN\" }"
+    }
+]

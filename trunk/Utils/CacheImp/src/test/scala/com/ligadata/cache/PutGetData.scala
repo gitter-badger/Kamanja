@@ -12,7 +12,7 @@ class PutGetData extends FlatSpec with BeforeAndAfter with Matchers {
   before {
     val aclass = Class.forName("com.ligadata.cache.MemoryDataCacheImp").newInstance
     node = aclass.asInstanceOf[DataCache]
-    node.init("""{"name":"CacheCluster","diskSpoolBufferSizeMB":"20","replicatePuts":"true","replicateUpdates":"true","replicateUpdatesViaCopy":"false","replicateRemovals":"true","replicateAsynchronously":"true","CacheConfig":{"maxBytesLocalHeap":"20971520","eternal":"false","bootstrapAsynchronously":"false","timeToIdleSeconds":"3000","timeToLiveSeconds":"3000","memoryStoreEvictionPolicy":"LFU","transactionalMode":"off","class":"net.sf.ehcache.distribution.jgroups.JGroupsCacheManagerPeerProviderFactory","separator":"::","peerconfig":"channelName=EH_CACHE::file=jgroups_udp.xml"}}""")
+    node.init("""{"name":"CacheCluster","diskSpoolBufferSizeMB":"20","replicatePuts":"true","replicateUpdates":"true","replicateUpdatesViaCopy":"false","replicateRemovals":"true","replicateAsynchronously":"true","CacheConfig":{"maxBytesLocalHeap":"20971520","eternal":"false","bootstrapAsynchronously":"false","timeToIdleSeconds":"3000","timeToLiveSeconds":"3000","memoryStoreEvictionPolicy":"LFU","transactionalMode":"off","class":"net.sf.ehcache.distribution.jgroups.JGroupsCacheManagerPeerProviderFactory","separator":"::","peerconfig":"channelName=EH_CACHE::file=jgroups_udp.xml"}}""", null)
   }
 
   "put data in cache" should "get data from memory" in {

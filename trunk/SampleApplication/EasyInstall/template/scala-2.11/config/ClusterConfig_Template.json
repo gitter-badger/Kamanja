@@ -5,7 +5,7 @@
       "SystemCatalog": {
         "StoreType": "hashmap",
         "SchemaName": "testdata",
-        "Location": "{InstallDirectory}/storage/syscatelog"
+        "Location": "{InstallDirectory}/storage/syscatalog"
       },
       "Tenants": [
         {
@@ -17,7 +17,7 @@
             "Location": "{InstallDirectory}/storage/tenant1_default"
           },
           "CacheConfig": {
-            "MaxSize": "1GB"
+            "MaxSizeInMB": 256
           }
         }
       ],
@@ -34,6 +34,13 @@
           "ExtDependencyLibs_2.11-1.4.0.jar",
           "ExtDependencyLibs2_2.11-1.4.0.jar"
         ]
+      },
+      "Cache": {
+        "CacheStartPort": 7800,
+        "CacheSizePerNodeInMB": 256,
+        "ReplicateFactor": 1,
+        "TimeToIdleSeconds": 31622400,
+        "EvictionPolicy": "LFU"
       },
       "Nodes": [
         {

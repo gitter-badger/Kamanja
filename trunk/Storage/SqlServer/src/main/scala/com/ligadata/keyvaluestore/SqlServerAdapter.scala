@@ -68,8 +68,8 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
   val dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
   val adapterConfig = if (datastoreConfig != null) datastoreConfig.trim else ""
-  val loggerName = this.getClass.getName
-  val logger = LogManager.getLogger(loggerName)
+//  val loggerName = this.getClass.getName
+//  val logger = LogManager.getLogger(loggerName)
 
   private val loadedJars: TreeSet[String] = new TreeSet[String];
   private val clsLoader = new JdbcClassLoader(ClassLoader.getSystemClassLoader().asInstanceOf[URLClassLoader].getURLs(), getClass().getClassLoader())
@@ -1561,8 +1561,8 @@ class SqlServerAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConf
 
 class SqlServerAdapterTx(val parent: DataStore) extends Transaction {
 
-  val loggerName = this.getClass.getName
-  val logger = LogManager.getLogger(loggerName)
+//  val loggerName = this.getClass.getName
+//  val logger = LogManager.getLogger(loggerName)
 
   override def put(containerName: String, key: Key, value: Value): Unit = {
     parent.put(containerName,  key, value)

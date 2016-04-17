@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package com.ligadata.jtm.test.grok
+package com.ligadata.jtm.test.grok.V1
 import com.ligadata.KamanjaBase._
 import com.ligadata.KvBase.TimeRange
 import com.ligadata.kamanja.metadata.ModelDef
@@ -21,18 +21,14 @@ import com.ligadata.Utils._
 import org.aicer.grok.dictionary.GrokDictionary
 import com.ligadata.runtime.Conversion
 class ModelFactory(modelDef: ModelDef, nodeContext: NodeContext) extends ModelInstanceFactory(modelDef, nodeContext) {
-  override def isValidMessage(msg: ContainerInterface): Boolean = {
-    msg.isInstanceOf[com.ligadata.kamanja.test.V1000000.msg5]
-  }
   override def createModelInstance(): ModelInstance = return new Model(this)
-  override def getModelName: String = "com.ligadata.jtm.test.grok"
+  override def getModelName: String = "com.ligadata.jtm.test.grok.Model"
   override def getVersion: String = "0.0.1"
   override def createResultObject(): ModelResultBase = new MappedModelResults()
 }
 class Model(factory: ModelInstanceFactory) extends ModelInstance(factory) {
   val conversion = new com.ligadata.runtime.Conversion
   override def execute(txnCtxt: TransactionContext, execMsgsSet: Array[ContainerOrConcept], triggerdSetIndex: Int, outputDefault: Boolean): Array[ContainerOrConcept] = {
-    val messagefactoryinterface = execMsgsSet(0).asInstanceOf[MessageFactoryInterface]
     //
     lazy val grok_instance_1: GrokDictionary = {
       val dict = new GrokDictionary
@@ -46,7 +42,7 @@ class Model(factory: ModelInstanceFactory) extends ModelInstance(factory) {
     def exeGenerated_test1_1(msg1: com.ligadata.kamanja.test.V1000000.msg5): Array[MessageInterface] = {
       lazy val grok_instance_1_0_in1 = grok_instance_1_0.extractNamedGroups(in1)
       def process_o1(): Array[MessageInterface] = {
-        val result = new com.ligadata.kamanja.test.V1000000.msg2(messagefactoryinterface)
+        val result = com.ligadata.kamanja.test.V1000000.msg2.createInstance
         result.out4 = if(grok_instance_1_0_in1.containsKey("user")) grok_instance_1_0_in1.get("user") else "")
         result.out3 = if(grok_instance_1_0_in1.containsKey("domain")) grok_instance_1_0_in1.get("domain") else "")
         result.out2 = if(grok_instance_1_0_in1.containsKey("email")) grok_instance_1_0_in1.get("email") else "")
@@ -57,7 +53,7 @@ class Model(factory: ModelInstanceFactory) extends ModelInstance(factory) {
     }
     // Evaluate messages
     val msgs = execMsgsSet.map(m => m.getFullTypeName -> m).toMap
-    val msg1 = msgs.get("com.ligadata.kamanja.test.msg5").getOrElse(null).asInstanceOf[com.ligadata.kamanja.test.V1000000.msg5]
+    val msg1 = msgs.getOrElse("com.ligadata.kamanja.test.msg5", null).asInstanceOf[com.ligadata.kamanja.test.V1000000.msg5]
     // Main dependency -> execution check
     //
     val results: Array[MessageInterface] =

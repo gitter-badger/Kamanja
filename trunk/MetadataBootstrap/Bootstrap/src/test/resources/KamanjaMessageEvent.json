@@ -15,7 +15,7 @@
       {
         "Field": {
           "Name": "ModelInfo",
-          "Type": "ArrayOfKamanjaModelEvent"
+          "Type": "com.ligadata.KamanjaBase.ArrayOfKamanjaModelEvent"
         }
       },
       {

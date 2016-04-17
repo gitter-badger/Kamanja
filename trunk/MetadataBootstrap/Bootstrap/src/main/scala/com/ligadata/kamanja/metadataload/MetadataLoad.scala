@@ -75,13 +75,18 @@ object MetadataLoad {
 
   def BaseMessagesInfo: Array[(String, String, String, List[(String, String, String, String, Boolean, String)], Int, String)] = {
     return Array[(String, String, String, List[(String, String, String, String, Boolean, String)], Int, String)](
-      (MdMgr.sysNS, "KamanjaStatusEvent", "com.ligadata.KamanjaBase.KamanjaStatusEvent", List(), 1000001, ""), // Assigned SchemaId as 1000001. Never change this for this message
-      (MdMgr.sysNS, "KamanjaMessageEvent", "com.ligadata.KamanjaBase.KamanjaMessageEvent", List(), 1000002, ""), // Assigned SchemaId as 1000002. Never change this for this message
-      (MdMgr.sysNS, "KamanjaModelEvent", "com.ligadata.KamanjaBase.KamanjaModelEvent", List(), 1000003, ""), // Assigned SchemaId as 1000003. Never change this for this message
-      (MdMgr.sysNS, "KamanjaExceptionEvent", "com.ligadata.KamanjaBase.KamanjaExceptionEvent", List(), 1000004, ""), // Assigned SchemaId as 1000004. Never change this for this message
-      (MdMgr.sysNS, "KamanjaExecutionFailureEvent", "com.ligadata.KamanjaBase.KamanjaExecutionFailureEvent", List(), 1000005, ""), // Assigned SchemaId as 1000005. Never change this for this message
-      (MdMgr.sysNS, "KamanjaStatisticsEvent", "com.ligadata.KamanjaBase.KamanjaStatisticsEvent", List(), 1000006, "") // Assigned SchemaId as 1000005. Never change this for this message
+      ("com.ligadata.KamanjaBase", "KamanjaStatusEvent", "com.ligadata.KamanjaBase.KamanjaStatusEvent$", List(("system", "nodeid", "system", "string", false, null), ("system", "eventtime", "system", "long", false, null), ("system", "statusstring", "system", "string", false, null)), 1000001, ""), // Assigned SchemaId as 1000001. Never change this for this message
+      ("com.ligadata.KamanjaBase", "KamanjaModelEvent", "com.ligadata.KamanjaBase.KamanjaModelEvent$", List(("system", "modelid", "system", "Long", false, null), ("system", "elapsedtimeinms", "system", "Float", false, null), ("system", "eventepochtime", "system", "Long", false, null), ("system", "isresultproduced", "system", "Boolean", false, null), ("system", "producedmessages", "system", "ArrayOfLong", false, null), ("system", "error", "system", "String", false, null)), 1000002, ""), // Assigned SchemaId as 1000003. Never change this for this message
+      ("com.ligadata.KamanjaBase", "KamanjaStatisticsEvent", "com.ligadata.KamanjaBase.KamanjaStatisticsEvent$", List(("system", "statistics", "system", "string", false, null)), 1000003, ""), // Assigned SchemaId as 1000005. Never change this for this message
+      ("com.ligadata.KamanjaBase", "KamanjaExceptionEvent", "com.ligadata.KamanjaBase.KamanjaExceptionEvent$", List(("system", "componentname" , "system", "string", false, null),("system", "timeoferrorepochms" , "system", "long", false, null),("system", "errortype" , "system", "string", false, null),("system", "errorstring" , "system", "string", false, null)), 1000004, ""), // Assigned SchemaId as 1000004. Never change this for this message
+      ("com.ligadata.KamanjaBase", "KamanjaExecutionFailureEvent", "com.ligadata.KamanjaBase.KamanjaExecutionFailureEvent$", List(("system", "msgid" , "system", "long", false, null),("system", "timeoferrorepochms" , "system", "long", false, null),("system", "msgcontent" , "system", "string", false, null),("system", "errordetail" , "system", "string", false, null)), 1000005, "") // Assigned SchemaId as 1000005. Never change this for this message
       // NOTE NOTE:- Next SchemaId should start from 1000007
+    )
+  }
+
+  def ExtMessagesInfo: Array[(String, String, String, List[(String, String, String, String, Boolean, String)], Int, String)] = {
+    return Array[(String, String, String, List[(String, String, String, String, Boolean, String)], Int, String)](
+      ("com.ligadata.KamanjaBase", "KamanjaMessageEvent", "com.ligadata.KamanjaBase.KamanjaMessageEvent$", List(("system", "messageid", "system", "long", false, null),("system", "modelinfo", "com.ligadata.KamanjaBase", "ArrayOfKamanjaModelEvent", false, null),("system", "elapsedtimeinms", "system", "float", false, null),("system", "messagekey", "system", "string", false, null),("system", "messagevalue", "system", "string", false, null),("system", "error", "system", "string", false, null)), 1000006, "") // Assigned SchemaId as 1000002. Never change this for this message
     )
   }
 }
@@ -136,8 +141,8 @@ class MetadataLoad(val mgr: MdMgr, val typesPath: String, val fcnPath: String, v
     * Remove once the md api ingestion is complete........
     */
   private def initSerializeDeserializeConfigs: Unit = {
-    mgr.AddSerializer("org.kamanja.serializer.csv" // namespace
-      , "csvserdeser" //name: String
+    mgr.AddSerializer("com.ligadata.kamanja.serializer" // namespace
+      , "delimitedserdeser" //name: String
       , 1 //version: Long = 1
       , SerializeDeserializeType.CSV //serializerType: SerializeDeserializeType.SerDeserType
       , "org.kamanja.serdeser.csv.CsvSerDeser" //physicalName: String
@@ -148,7 +153,7 @@ class MetadataLoad(val mgr: MdMgr, val typesPath: String, val fcnPath: String, v
       , "" //jarNm: String = null. Ex: csvserdeser_2.11-1.0.jar
       , Array() //depJars: Array[String]
     )
-    mgr.AddSerializer("org.kamanja.serializer.json" // namespace
+    mgr.AddSerializer("com.ligadata.kamanja.serializer" // namespace
       , "jsonserdeser" //name: String
       , 1 //version: Long = 1
       , SerializeDeserializeType.JSON //serializerType: SerializeDeserializeType.SerDeserType
@@ -160,7 +165,7 @@ class MetadataLoad(val mgr: MdMgr, val typesPath: String, val fcnPath: String, v
       , "" //jarNm: String = null. Ex: jsonserdeser_2.11-1.0.jar
       , Array() //depJars: Array[String] = null)
     )
-    mgr.AddSerializer("org.kamanja.serializer.kbinary" // namespace
+    mgr.AddSerializer("com.ligadata.kamanja.serializer" // namespace
       , "kbinaryserdeser" //name: String
       , 1 //version: Long = 1
       , SerializeDeserializeType.KBinary //serializerType: SerializeDeserializeType.SerDeserType
@@ -183,6 +188,24 @@ class MetadataLoad(val mgr: MdMgr, val typesPath: String, val fcnPath: String, v
     baseMessageInfo.foreach(bc => {
       logger.debug("MetadataLoad...loading " + bc._2)
       mgr.AddFixedMsg(bc._1, bc._2, bc._3, bc._4, MetadataLoad.baseTypesOwnerId, MetadataLoad.baseTypesTenantId, MetadataLoad.baseTypesUniqId, MetadataLoad.baseTypesElementId, bc._5, bc._6)
+    })
+
+    // Adding Array types
+    baseMessageInfo.foreach(bc => {
+      logger.debug("MetadataLoad... adding array of " + bc._2)
+      mgr.AddArray(bc._1, "ArrayOf" + bc._2, bc._1, bc._2, 1, MetadataLoad.baseTypesVer, MetadataLoad.baseTypesOwnerId, MetadataLoad.baseTypesTenantId, MetadataLoad.baseTypesUniqId, MetadataLoad.baseTypesElementId)
+    })
+
+    val extMessagesInfo = MetadataLoad.ExtMessagesInfo
+    extMessagesInfo.foreach(bc => {
+      logger.debug("MetadataLoad...loading " + bc._2)
+      mgr.AddFixedMsg(bc._1, bc._2, bc._3, bc._4, MetadataLoad.baseTypesOwnerId, MetadataLoad.baseTypesTenantId, MetadataLoad.baseTypesUniqId, MetadataLoad.baseTypesElementId, bc._5, bc._6)
+    })
+
+    // Adding Array types
+    extMessagesInfo.foreach(bc => {
+      logger.debug("MetadataLoad... adding array of " + bc._2)
+      mgr.AddArray(bc._1, "ArrayOf" + bc._2, bc._1, bc._2, 1, MetadataLoad.baseTypesVer, MetadataLoad.baseTypesOwnerId, MetadataLoad.baseTypesTenantId, MetadataLoad.baseTypesUniqId, MetadataLoad.baseTypesElementId)
     })
   }
 

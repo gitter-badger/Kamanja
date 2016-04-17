@@ -16,6 +16,7 @@ import org.apache.commons.vfs2.impl.StandardFileSystemManager
 import com.ligadata.InputAdapters._
 import org.apache.logging.log4j.{ Logger, LogManager }
 import SftpUtility._
+import scala.actors.threadpool.{Executors, ExecutorService}
 
 
 
@@ -240,6 +241,7 @@ class SftpChangesMonitor (adapterName : String, modifiedFileCallback:(SmartFileH
   private var connectionConf : FileAdapterConnectionConfig = null
   private var monitoringConf :  FileAdapterMonitoringConfig = null
 
+  private var monitorsExecutorService: ExecutorService = null
 
   def init(adapterSpecificCfgJson: String): Unit ={
     val(_type, c, m) =  SmartFileAdapterConfiguration.parseSmartFileAdapterSpecificConfig(adapterName, adapterSpecificCfgJson)
@@ -257,82 +259,91 @@ class SftpChangesMonitor (adapterName : String, modifiedFileCallback:(SmartFileH
 
     val manager : StandardFileSystemManager  = new StandardFileSystemManager()
 
-    monitoringConf.locations.foreach(targetRemoteFolder => {
-      try{
-        //Initializes the file manager
-        manager.init();
+    isMonitoring = true
+    //Initializes the file manager
+    manager.init();
 
-        //Setup our SFTP configuration
-        val opts = createDefaultOptions(connectionConf)
+    //Setup our SFTP configuration
+    val opts = createDefaultOptions(connectionConf)
 
-        val sftpEncodedUri = createConnectionString(connectionConf, targetRemoteFolder)
+    monitorsExecutorService = Executors.newFixedThreadPool(monitoringConf.locations.length)
 
-        val filesStatusMap = Map[String, SftpFileEntry]()
-        var firstCheck = true
+    monitoringConf.locations.foreach(folderToWatch => {
+      val dirMonitorthread = new Runnable() {
+        private var targetRemoteFolder: String = _
+        def init(dir: String) = targetRemoteFolder = dir
 
-        isMonitoring = true
+        override def run() = {
+          try {
 
-        while(isMonitoring){
+            val sftpEncodedUri = createConnectionString(connectionConf, targetRemoteFolder)
 
-          try{
-            logger.info(s"Checking configured SFTP directory ($targetRemoteFolder)...")
+            val filesStatusMap = Map[String, SftpFileEntry]()
+            var firstCheck = true
 
-            val modifiedDirs = new ArrayBuffer[String]()
-            modifiedDirs += sftpEncodedUri
-            while(modifiedDirs.nonEmpty ){
-              //each time checking only updated folders: first find direct children of target folder that were modified
-              // then for each folder of these search for modified files and folders, repeat for the modified folders
+            while (isMonitoring) {
 
-              val aFolder = modifiedDirs.head
-              val modifiedFiles = Map[SmartFileHandler, FileChangeType]() // these are the modified files found in folder $aFolder
+              try {
+                logger.info(s"Checking configured SFTP directory ($targetRemoteFolder)...")
 
-              modifiedDirs.remove(0)
-              findDirModifiedDirectChilds(aFolder, manager,  filesStatusMap, modifiedDirs, modifiedFiles, firstCheck)
+                val modifiedDirs = new ArrayBuffer[String]()
+                modifiedDirs += sftpEncodedUri
+                while (modifiedDirs.nonEmpty) {
+                  //each time checking only updated folders: first find direct children of target folder that were modified
+                  // then for each folder of these search for modified files and folders, repeat for the modified folders
 
-              if(modifiedFiles.nonEmpty)
-                modifiedFiles.foreach(tuple =>
-                {
+                  val aFolder = modifiedDirs.head
+                  val modifiedFiles = Map[SmartFileHandler, FileChangeType]() // these are the modified files found in folder $aFolder
 
-                  /*val handler = new MofifiedFileCallbackHandler(tuple._1, tuple._2, modifiedFileCallback)
+                  modifiedDirs.remove(0)
+                  findDirModifiedDirectChilds(aFolder, manager, filesStatusMap, modifiedDirs, modifiedFiles, firstCheck)
+
+                  if (modifiedFiles.nonEmpty)
+                    modifiedFiles.foreach(tuple => {
+
+                      /*val handler = new MofifiedFileCallbackHandler(tuple._1, tuple._2, modifiedFileCallback)
                    // run the callback in a different thread
                   //new Thread(handler).start()
                   globalFileMonitorCallbackService.execute(handler)*/
-                  modifiedFileCallback(tuple._1)
+                      modifiedFileCallback(tuple._1)
 
+                    }
+                    )
                 }
-                )
+
+              }
+              catch {
+                case ex: Exception => ex.printStackTrace()
+              }
+
+              firstCheck = false
+
+              logger.info(s"Sleepng for ${monitoringConf.waitingTimeMS} milliseconds...............................")
+              Thread.sleep(monitoringConf.waitingTimeMS)
             }
 
+            //if(!isMonitoring)
+            //globalFileMonitorCallbackService.shutdown()
           }
-          catch{
-            case ex: Exception => ex.printStackTrace()
+          catch {
+            case ex: Exception => {
+              ex.printStackTrace()
+            }
           }
-
-          firstCheck = false
-
-          logger.info(s"Sleepng for ${monitoringConf.waitingTimeMS} milliseconds...............................")
-          Thread.sleep(monitoringConf.waitingTimeMS)
-        }
-
-        //if(!isMonitoring)
-        //globalFileMonitorCallbackService.shutdown()
-      }
-      catch {
-        case ex : Exception => {
-          ex.printStackTrace()
+          finally {
+            manager.close()
+          }
         }
       }
-      finally {
-        manager.close()
-      }
+      dirMonitorthread.init(folderToWatch)
+      monitorsExecutorService.execute(dirMonitorthread)
     })
 
   }
 
   def shutdown: Unit ={
-    //TODO : use an executor object to run the monitoring and stop here
     isMonitoring = false
-
+    monitorsExecutorService.shutdown()
   }
 
 

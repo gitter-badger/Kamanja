@@ -130,7 +130,7 @@ class InstallDriver extends InstallDriverBase {
   def usage: String = {
     """
 Usage:
-    java -Dlog4j.configurationFile=file:./log4j2.xml -jar <some path> ClusterInstallerDriver-1.0
+    java -Dlog4j.configurationFile=file:./log4j2.xml -jar <some path> ClusterInstallerDriver-1.4.0
             /** Mandatory parameters (always) */
             --{upgrade|install}
             --apiConfig <MetadataAPIConfig.properties file>
@@ -148,6 +148,7 @@ Usage:
             [--skipPrerequisites "scala,java,hbase,kafka,zookeeper,all"]
             [--preRequisitesCheckOnly]
             [--externalJarsDir <external jars directory to be copied to installation lib/application>]
+            [--tenantId <a tenantId is applied to all metadata objects>]
 
     where
         --upgrade explicitly specifies that the intent to upgrade an existing cluster installation with the latest release.
@@ -188,8 +189,9 @@ Usage:
             If both --skipPrerequisites and --preRequisitesOnly are specified, only the prerequisites not given in the skip list will be performed.
             Processing stops after the checks; installation and upgrade are not done.
         [--externalJarsDir <external jars directory to be copied to installation lib/application] External jars to be copied while installing/upgrading new package.
+        [--tenantId <Tenant Id to be applied to all the meta data objects being migrated.
 
-    The ClusterInstallerDriver-1.0 is the cluster installer driver for Kamanja 1.3.  It is capable of installing a new version of 1.3
+    The ClusterInstallerDriver-1.4.0 is the cluster installer driver for Kamanja 1.3.  It is capable of installing a new version of 1.3
     or given the appropriate arguments, installing a new version of Kamanja 1.3 *and* upgrading a 1.1 or 1.2 installation to the 1.3 version.
 
     A log of the installation and optional upgrade is collected in a log file.  This log file is automatically generated and will be found in the
@@ -271,7 +273,7 @@ Usage:
     }
 
     // locate the clusterInstallerDriver app ... need its working directory to refer to others... this function
-    // returns this form:  file:/tmp/drdigital/KamanjaInstall-1.3.3_2.11/bin/clusterInstallerDriver-1.0
+    // returns this form:  file:/tmp/drdigital/KamanjaInstall-1.3.3_2.11/bin/clusterInstallerDriver-1.4.0
 
     /** Obtain location of the clusterInstallerDriver fat jar.  Its directory contains the scripts we use to
       * obtain component info for the env check and the lower level cluster install script that actually does the
@@ -332,6 +334,8 @@ Usage:
           nextOption(map ++ Map('skipPrerequisites -> value), tail)
         case "--externalJarsDir" :: value :: tail =>
           nextOption(map ++ Map('externalJarsDir -> value), tail)
+        case "--tenantId" :: value :: tail =>
+          nextOption(map ++ Map('tenantId -> value), tail)
         case "--version" :: tail =>
           nextOption(map ++ Map('version -> "true"), tail)
         case option :: tail =>
@@ -372,6 +376,7 @@ Usage:
     val skipPrerequisites_opt: String = if (options.contains('skipPrerequisites)) options.apply('skipPrerequisites) else null
     val preRequisitesCheckOnly: Boolean = if (options.contains('preRequisitesCheckOnly)) options.apply('preRequisitesCheckOnly) == "true" else false
     val externalJarsDir_opt: String = if (options.contains('externalJarsDir)) options.apply('externalJarsDir) else null
+    val tenantId_opt: String = if (options.contains('tenantId)) options.apply('tenantId) else null
 
     val toKamanja: String = "1.4"
 
@@ -466,8 +471,14 @@ Try again.
       sys.exit(1)
     }
 
+    var majorVer = KamanjaVersion.getMajorVersion
+    var minVer = KamanjaVersion.getMinorVersion
+    var microVer = KamanjaVersion.getMicroVersion
+    val scalaVersionFull = scala.util.Properties.versionNumberString
+    val scalaVersion = scalaVersionFull.substring(0, scalaVersionFull.lastIndexOf('.'))
+
     val componentVersionScriptAbsolutePath = s"$clusterInstallerDriversLocation/GetComponentsVersions.sh"
-    val componentVersionJarAbsolutePath = s"$clusterInstallerDriversLocation/GetComponent-1.0"
+    val componentVersionJarAbsolutePath = s"$clusterInstallerDriversLocation/GetComponent_${scalaVersion}-${majorVer}.${minVer}.${microVer}.jar"
     val kamanjaClusterInstallPath = s"$clusterInstallerDriversLocation/KamanjaClusterInstall.sh"
 
     var cnt: Int = 0
@@ -479,7 +490,7 @@ Try again.
     }
 
     if (!isFileExists(componentVersionJarAbsolutePath, true)) {
-      printAndLogError("GetComponent-1.0 script is not installed in path " + clusterInstallerDriversLocation, log)
+      printAndLogError("GetComponent-1.4.0 script is not installed in path " + clusterInstallerDriversLocation, log)
       cnt += 1
     }
 
@@ -708,6 +719,9 @@ Try again.
             ""
           }
 
+        val tenantId = if (tenantId_opt == null) {""} else{ tenantId_opt }
+	
+
         /** Install the new installation */
         val nodes: String = ips.mkString(",")
         printAndLogDebug(s"Begin cluster installation... installation found on each cluster node(any {$nodes}) at $installDir", log)
@@ -725,7 +739,8 @@ Try again.
           , workingDir
           , clusterId
           , metadataDataStore
-          , externalJarsDir)
+          , externalJarsDir
+          , tenantId)
         if (installOk) {
           /** Do upgrade if necessary */
           if (upgrade) {
@@ -1031,10 +1046,12 @@ Try again.
       }
     } catch {
       case e: Exception => {
+        logger.error("Failed to validateClusterEnvironment", e)
         phyDirLast = rootDirPath // substitute the symbol link to see if we can test more ... this is temporary hack
         false
       }
       case t: Throwable => {
+        logger.error("Failed to validateClusterEnvironment", t)
         phyDirLast = rootDirPath
         false
       }
@@ -1421,7 +1438,8 @@ Try again.
                      , workDir: String
                      , clusterId: String
                      , metadataDataStore: String
-                     , externalJarsDir: String): Boolean = {
+                     , externalJarsDir: String
+                     , tenantId: String): Boolean = {
 
     val parentPath: String = rootDirPath.split('/').dropRight(1).mkString("/")
 
@@ -1449,7 +1467,12 @@ Try again.
     } else {
       ""
     }
-    val installCmd: Seq[String] = Seq("bash", "-c", s"$kamanjaClusterInstallPath --ClusterId '$clusterId' --WorkingDir '$workDir' --MetadataAPIConfig '$apiConfigPath' --NodeConfigPath '$nodeConfigPath' --TarballPath '$tarballPath' --ipAddrs '$ipDataFile' --ipIdTargPaths '$ipIdCfgTargDataFile' --ipPathPairs '$ipPathDataFile' --priorInstallDirPath '$priorInstallDirPath' --newInstallDirPath '$newInstallDirPath' --installVerificationFile '$verifyFilePath' $externalJarsDirOptStr ")
+    val tenantIdOptStr = if (tenantId != null && tenantId.nonEmpty) {
+      s" --tenantId '$tenantId' "
+    } else {
+      ""
+    }
+    val installCmd: Seq[String] = Seq("bash", "-c", s"$kamanjaClusterInstallPath --ClusterId '$clusterId' --WorkingDir '$workDir' --MetadataAPIConfig '$apiConfigPath' --NodeConfigPath '$nodeConfigPath' --TarballPath '$tarballPath' --ipAddrs '$ipDataFile' --ipIdTargPaths '$ipIdCfgTargDataFile' --ipPathPairs '$ipPathDataFile' --priorInstallDirPath '$priorInstallDirPath' --newInstallDirPath '$newInstallDirPath' --installVerificationFile '$verifyFilePath' $externalJarsDirOptStr $tenantIdOptStr")
     val installCmdRep: String = installCmd.mkString(" ")
     printAndLogDebug(s"KamanjaClusterInstall cmd used: \n\n$installCmdRep", log)
 
@@ -1749,7 +1772,7 @@ class ClusterConfigMap(cfgStr: String, var clusterIdOfInterest: String) {
 
   def KafkaConnections: String = {
     val kafkaAdapters: List[Map[String, Any]] = adapters.filter(adapterMap => {
-      val adapterJars: List[String] = adapterMap.getOrElse("DependencyJars", "").asInstanceOf[List[String]]
+      val adapterJars: List[String] = adapterMap.getOrElse("DependencyJars", List[String]()).asInstanceOf[List[String]]
       val hasKafka: Boolean = adapterJars.filter(jarName => jarName.contains("kafka_2")).nonEmpty
       hasKafka
     })

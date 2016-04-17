@@ -9,6 +9,7 @@ import com.ligadata.Exceptions.{KamanjaException}
 
 import org.apache.logging.log4j.{ Logger, LogManager }
 
+import scala.actors.threadpool.{Executors, ExecutorService}
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 import scala.util.control.Breaks._
 import com.ligadata.AdaptersConfiguration._
@@ -175,9 +176,14 @@ class PosixChangesMonitor(adapterName : String, modifiedFileCallback:(SmartFileH
   private var connectionConf : FileAdapterConnectionConfig = null
   private var monitoringConf :  FileAdapterMonitoringConfig = null
 
+  private var monitorsExecutorService: ExecutorService = null
+
   private var isMonitoring = false
 
   def init(adapterSpecificCfgJson: String): Unit ={
+    logger.debug("PosixChangesMonitor (init)- adapterSpecificCfgJson==null is "+
+      (adapterSpecificCfgJson == null))
+
     val(_type, c, m) =  SmartFileAdapterConfiguration.parseSmartFileAdapterSpecificConfig(adapterName, adapterSpecificCfgJson)
     connectionConf = c
     monitoringConf = m
@@ -187,43 +193,57 @@ class PosixChangesMonitor(adapterName : String, modifiedFileCallback:(SmartFileH
 
     //TODO : consider running each folder monitoring in a separate thread
     isMonitoring = true
-    monitoringConf.locations.foreach(targetFolder => {
-      try{
-        breakable {
-          while (isMonitoring) {
-            try {
-              logger.info(s"Watching directory $targetFolder")
+
+    monitorsExecutorService = Executors.newFixedThreadPool(monitoringConf.locations.length)
+
+    monitoringConf.locations.foreach(folderToWatch => {
+      val dirMonitorthread = new Runnable() {
+        private var targetFolder: String = _
+        def init(dir: String) = targetFolder = dir
+
+        override def run() = {
+          try{
+            breakable {
+              while (isMonitoring) {
+                try {
+                  logger.info(s"Watching directory $targetFolder")
 
 
-              val dirsToCheck = new ArrayBuffer[String]()
-              dirsToCheck += targetFolder
+                  val dirsToCheck = new ArrayBuffer[String]()
+                  dirsToCheck += targetFolder
 
 
-              while(dirsToCheck.nonEmpty ) {
-                val dirToCheck = dirsToCheck.head
-                dirsToCheck.remove(0)
+                  while(dirsToCheck.nonEmpty ) {
+                    val dirToCheck = dirsToCheck.head
+                    dirsToCheck.remove(0)
 
-                val dir = new File(dirToCheck)
-                checkExistingFiles(dir)
-                dir.listFiles.filter(_.isDirectory).foreach(d => dirsToCheck += d.toString)
+                    val dir = new File(dirToCheck)
+                    checkExistingFiles(dir)
+                    dir.listFiles.filter(_.isDirectory).foreach(d => dirsToCheck += d.toString)
 
-                errorWaitTime = 1000
-              }
-            } catch {
-              case e: Exception => {
-                logger.warn("Unable to access Directory, Retrying after " + errorWaitTime + " seconds", e)
-                errorWaitTime = scala.math.min((errorWaitTime * 2), MAX_WAIT_TIME)
+                    errorWaitTime = 1000
+                  }
+                } catch {
+                  case e: Exception => {
+                    logger.warn("Unable to access Directory, Retrying after " + errorWaitTime + " seconds", e)
+                    errorWaitTime = scala.math.min((errorWaitTime * 2), MAX_WAIT_TIME)
+                  }
+                }
+                Thread.sleep(monitoringConf.waitingTimeMS)
+
               }
             }
-            Thread.sleep(monitoringConf.waitingTimeMS)
-
+          }  catch {
+            case ie: InterruptedException => logger.error("InterruptedException: " + ie)
+            case ioe: IOException         => logger.error("Unable to find the directory to watch, Shutting down File Consumer", ioe)
+            case e: Exception             => logger.error("Exception: ", e)
           }
         }
-      }  catch {
-        case ie: InterruptedException => logger.error("InterruptedException: " + ie)
-        case ioe: IOException         => logger.error("Unable to find the directory to watch, Shutting down File Consumer", ioe)
-        case e: Exception             => logger.error("Exception: ", e)
       }
+
+      dirMonitorthread.init(folderToWatch)
+      monitorsExecutorService.execute(dirMonitorthread)
+
     })
 
   }
@@ -231,6 +251,8 @@ class PosixChangesMonitor(adapterName : String, modifiedFileCallback:(SmartFileH
   def shutdown: Unit ={
     //TODO : use an executor object to run the monitoring and stop here
     isMonitoring = false
+
+    monitorsExecutorService.shutdown()
   }
 
 
@@ -241,7 +263,7 @@ class PosixChangesMonitor(adapterName : String, modifiedFileCallback:(SmartFileH
       files.foreach(file => {
         val tokenName = file.toString.split("/")
         if (!checkIfFileHandled(file.toString)) {
-          logger.info("SMART FILE CONSUMER (global)  Processing " + file.toString)
+          //logger.info("SMART FILE CONSUMER (global)  Processing " + file.toString)
           //FileProcessor.enQBufferedFile(file.toString)
           val fileHandler = new PosixFileHandler(file.toString)
           //call the callback for new files

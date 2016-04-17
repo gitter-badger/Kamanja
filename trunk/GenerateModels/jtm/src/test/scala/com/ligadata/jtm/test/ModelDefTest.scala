@@ -48,5 +48,7 @@ class ModelDefTest  extends FunSuite with BeforeAndAfter {
     assert("MDName" == md.Name)
     assert("Description Test" == md.Description)
     assert("com.ligadata.jtm.test.modeldeftest"==md.NameSpace)
+    assert(Array("com.ligadata.kamanja.test.msg2", "com.ligadata.kamanja.test.msg4").deep == md.outputMsgs.deep)
+    //assert(""== md.inputMsgSets.toString)
   }
 }

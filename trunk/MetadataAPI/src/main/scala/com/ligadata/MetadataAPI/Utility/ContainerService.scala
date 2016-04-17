@@ -137,7 +137,7 @@ object ContainerService {
     if (containerKeys.length == 0) {
       response="Sorry, No containers available in the Metadata"
     }else{
-      println("\nPick the container from the following list: ")
+      println("\nPick the container from the list: ")
       var srNo = 0
       for(containerKey <- containerKeys){
         srNo+=1
@@ -150,11 +150,12 @@ object ContainerService {
         response="Invalid choice " + choice + ",start with main menu..."
       }else{
         val containerKey = containerKeys(choice - 1)
-        val contKeyTokens = containerKey.split("\\.")
+        /*val contKeyTokens = containerKey.split("\\.")
         val contNameSpace = contKeyTokens(0)
         val contName = contKeyTokens(1)
-        val contVersion = contKeyTokens(2)
-        response=MetadataAPIImpl.GetContainerDefFromCache(contNameSpace, contName, "JSON", contVersion, userid)
+        val contVersion = contKeyTokens(2)*/
+        val(ns, name, ver) = com.ligadata.kamanja.metadata.Utils.parseNameToken(containerKey)
+        response=MetadataAPIImpl.GetContainerDefFromCache(ns, name, "JSON", ver, userid)
       }
     }
     response

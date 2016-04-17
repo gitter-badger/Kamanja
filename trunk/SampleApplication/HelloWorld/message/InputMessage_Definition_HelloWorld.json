@@ -1,0 +1,15 @@
+{
+  "Message": {
+    "NameSpace": "com.ligadata.kamanja.samples.messages",
+    "Name": "inmsg1",
+    "Version": "00.01.00",
+    "Description": "Hello World Input Message",
+    "Fixed": "true",
+    "Fields": [
+      {
+        "Name": "Msg",
+        "Type": "System.String"
+      }
+    ]
+  }
+}

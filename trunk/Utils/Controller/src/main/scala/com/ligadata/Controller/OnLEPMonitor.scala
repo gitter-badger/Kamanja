@@ -72,6 +72,16 @@ class ExecContextImpl(val input: InputAdapter, val curPartitionKey: PartitionUni
 //      agg.processCSVMessage(new String(data), uniqueVal.asInstanceOf[KafkaPartitionUniqueRecordValue].Offset)
 //    }
   }
+
+  protected override def commitData(txnCtxt: TransactionContext): Unit = {
+    try {
+      // Commit. Writing into OutputAdapters & Storage Adapters
+
+    } catch {
+      case e: Throwable => throw e
+    }
+  }
+
 }
 
 class KamanjaMonitor {

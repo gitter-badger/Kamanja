@@ -1,27 +1,27 @@
 ******************** Help Menu ****************************
 I. Message operations
-kamanja add message input(optional)
-kamanja update message input(optional)
+kamanja add message input(optional) TENANTID <tenantId>
+kamanja update message input(optional) TENANTID <tenantId>
 kamanja get message input(optional)
 kamanja get all messages
 kamanja remove message input(optional)
 II. Model operations
-kamanja add model kpmml input(optional)
-kamanja add model pmml input MODELNAME namespace.name MODELVERSION nn.nn.nn MESSAGENAME namespace.name
-kamanja add model java input(optional)
-kamanja add model scala input(optional)
+kamanja add model kpmml input(optional) TENANTID <tenantId>
+kamanja add model pmml input MODELNAME namespace.name MODELVERSION nn.nn.nn MESSAGENAME namespace.name TENANTID <tenantId>
+kamanja add model java input(optional)  TENANTID <tenantId>
+kamanja add model scala input(optional) TENANTID <tenantId>
 kamanja get model input(optional)
 kamanja get all models
 kamanja remove model input(optional)
-kamanja update model kpmml input(optional)
-kamanja update model pmml input MODELNAME namespace.name MODELVERSION nn.nn.nn
-kamanja update model scala input(optional)
-kamanja update model java input(optional)
+kamanja update model kpmml input(optional) TENANTID <tenantId>
+kamanja update model pmml input MODELNAME namespace.name MODELVERSION nn.nn.nn TENANTID <tenantId>
+kamanja update model scala input(optional) TENANTID <tenantId>
+kamanja update model java input(optional) TENANTID <tenantId>
 kamanja deactivate model input(optional)
 kamanja activate model input(optional)
 III. Container operations
-kamanja add container input(optional)
-kamanja update container input(optional)
+kamanja add container input(optional) TENANTID <tenantId>
+kamanja update container input(optional) TENANTID <tenantId>
 kamanja get container input(optional)
 kamanja get all containers
 kamanja remove container input(optional)

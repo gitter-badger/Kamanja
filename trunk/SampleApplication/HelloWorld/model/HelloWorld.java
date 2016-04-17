@@ -25,7 +25,7 @@ public class HelloWorldModel extends ModelInstance {
     	super(factory);
     }
 
-	public ContainerOrConcept[] execute(TransactionContext txnCtxt, ContainerInterface[] execMsgsSet, int matchedInputSetIndex, boolean outputDefault) {
+	public ContainerOrConcept[] execute(TransactionContext txnCtxt, ContainerOrConcept[] execMsgsSet, int matchedInputSetIndex, boolean outputDefault) {
     	/*
 		System.out.println("inside model");
     	GlobalPreferences gPref = GlobalPreferencesFactory.rddObject.getRecentOrNew(new String[]{"PrefType"});  //(new String[]{"Type1"});

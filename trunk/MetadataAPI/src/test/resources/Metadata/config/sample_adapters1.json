@@ -1,0 +1,37 @@
+{
+  "Adapters": [
+   {
+          "Name": "absa_input",
+          "TypeString": "Input",
+          "DataFormat": "CSV",
+          "AssociatedMessage": "System.BarclaysAfricaDebitOrderAlertsMsg",
+          "ClassName": "com.ligadata.InputAdapters.FileConsumer$",
+          "JarName": "filesimpleinputoutputadapters_2.10-1.0.jar",
+          "DependencyJars": [
+            "metrics-core-2.2.0.jar",
+            "zkclient-0.3.jar",
+            "kamanjabase_2.10-1.0.jar"
+          ],
+          "AdapterSpecificCfg": {
+            "CompressionString": "",
+            "Files": "/bigdata/fatafat/JdbcDataCollector/input_ABSA.CSV"
+          }
+        },
+        {
+          "Name": "absa_output",
+          "TypeString": "Output",
+          "DataFormat": "CSV",
+          "ClassName": "com.ligadata.OutputAdapters.FileProducer$",
+          "JarName": "filesimpleinputoutputadapters_2.10-1.0.jar",
+          "DependencyJars": [
+            "metrics-core-2.2.0.jar",
+            "zkclient-0.3.jar",
+            "kamanjabase_2.10-1.0.jar"
+          ],
+          "AdapterSpecificCfg": {
+            "CompressionString": "",
+            "Files": "/bigdata/fatafat/JdbcDataCollector/output_ABSA.CSV"
+          }
+        }
+      ]
+}

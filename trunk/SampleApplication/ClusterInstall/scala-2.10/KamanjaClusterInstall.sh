@@ -578,9 +578,12 @@ while read LINE; do
     scp -o StrictHostKeyChecking=no "$cfgFile" "$machine:$targetPath/"
 
     # Engine Logfile. For now all nodes log files are same. May be later we can change.
-    sed "s/{InstallPath}/$installDir_repl/g;s/{NodeId}/$id/g" $script_dir/../config/engine_log4j2_template.xml > $workDir/engine_log4j2.xml
-    sed "s/{InstallPath}/$installDir_repl/g;s/{NodeId}/$id/g" $script_dir/../config/restapi_log4j2_template.xml > $workDir/restapi_log4j2.xml
-    sed "s/{InstallPath}/$installDir_repl/g;s/{NodeId}/$id/g" $script_dir/../config/log4j2_template.xml > $workDir/log4j2.xml
+    sed "s/{InstallPath}/$installDir_repl/g;s/{NodeId}/$id/g" $script_dir/engine_log4j2_template.xml > $workDir/engine_log4j2.xml
+    sed "s/{InstallPath}/$installDir_repl/g;s/{NodeId}/$id/g" $script_dir/restapi_log4j2_template.xml > $workDir/restapi_log4j2.xml
+    sed "s/{InstallPath}/$installDir_repl/g;s/{NodeId}/$id/g" $script_dir/log4j2_template.xml > $workDir/log4j2.xml
+    #sed "s/{InstallPath}/$installDir_repl/g;s/{NodeId}/$id/g" $script_dir/../config/engine_log4j2_template.xml > $workDir/engine_log4j2.xml
+    #sed "s/{InstallPath}/$installDir_repl/g;s/{NodeId}/$id/g" $script_dir/../config/restapi_log4j2_template.xml > $workDir/restapi_log4j2.xml
+    #sed "s/{InstallPath}/$installDir_repl/g;s/{NodeId}/$id/g" $script_dir/../config/log4j2_template.xml > $workDir/log4j2.xml
     sed "s/{NodeId}/$id/g;s/{HostName}/$machine/g" $metadataAPIConfig > $workDir/MetadataAPIConfig_${id}.properties
     scp -o StrictHostKeyChecking=no "$workDir/engine_log4j2.xml" "$machine:$targetPath/"
     scp -o StrictHostKeyChecking=no "$workDir/restapi_log4j2.xml" "$machine:$targetPath/"

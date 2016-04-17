@@ -6,12 +6,17 @@
  */
 package com.ligadata.StorageBase
 
-import com.ligadata.Exceptions.{NotImplementedFunctionException, InvalidArgumentException}
-import com.ligadata.KamanjaBase.{AdaptersSerializeDeserializers, TransactionContext, ContainerInterface}
+import com.ligadata.Exceptions.{KamanjaException, NotImplementedFunctionException, InvalidArgumentException}
+import com.ligadata.HeartBeat.{MonitorComponentInfo, Monitorable}
+import com.ligadata.KamanjaBase.{NodeContext, AdaptersSerializeDeserializers, TransactionContext, ContainerInterface}
 import com.ligadata.KvBase.{ Key, TimeRange }
 import com.ligadata.Utils.{ KamanjaLoaderInfo }
+import com.ligadata.kamanja.metadata.AdapterInfo
 
 import scala.collection.mutable.ArrayBuffer
+//import org.json4s._
+//import org.json4s.JsonDSL._
+//import org.json4s.jackson.JsonMethods._
 
 case class Value(schemaId: Int, serializerType: String, serializedInfo: Array[Byte])
 
@@ -21,19 +26,23 @@ trait DataStoreOperations extends AdaptersSerializeDeserializers {
   def put(tnxCtxt: TransactionContext, container: ContainerInterface): Unit = {
     if (container == null)
       throw new InvalidArgumentException("container should not be null", null)
-    // put(tnxCtxt, Array((container.getFullTypeName.toLowerCase(), Array((key, serializerTyp, value)))))
-    // val (outputContainers, serializedContainerData, serializerNames) = serialize(tnxCtxt, Array(container))
-    // Call put methods with container name, key & values
-    throw new NotImplementedFunctionException("Not yet implemented", null)
+    put(tnxCtxt, Array(container))
   }
 
   def put(tnxCtxt: TransactionContext, containers: Array[ContainerInterface]): Unit = {
     if (containers == null)
       throw new InvalidArgumentException("containers should not be null", null)
-    // put(tnxCtxt, Array((containerName, Array((key, serializerTyp, value)))))
-    // val (outputContainers, serializedContainerData, serializerNames) = serialize(tnxCtxt, containers)
-    // Call put methods with container name, key & values
-    throw new NotImplementedFunctionException("Not yet implemented", null)
+    if (containers.size == 0) return
+
+    val data = ArrayBuffer[(Key, String, Any)]()
+
+    val data_list = containers.groupBy(_.getFullTypeName.toLowerCase).map(oneContainerData => {
+      (oneContainerData._1, oneContainerData._2.map(container => {
+        (Key(container.TimePartitionData(), container.PartitionKeyData(), container.TransactionId(), container.RowNumber()), "", container.asInstanceOf[Any])
+      }))
+    }).toArray
+
+    put(tnxCtxt, data_list)
   }
 
   // value could be ContainerInterface or Array[Byte]
@@ -69,8 +78,8 @@ trait DataStoreOperations extends AdaptersSerializeDeserializers {
         if (row._3.isInstanceOf[ContainerInterface]) {
           throw new NotImplementedFunctionException("Not yet implemented serializing ContainerInterface", null)
           val cont = row._3.asInstanceOf[ContainerInterface]
-          // Value(schemaId: Int, serializerType: String, serializedInfo: Array[Byte])
-          (row._1, Value(cont.getSchemaId, "", Array[Byte]()))
+          val (containers, serData, serializers) = serialize(tnxCtxt, Array(cont))
+          (row._1, Value(cont.getSchemaId, serializers(0), serData(0)))
         } else {
           (row._1, Value(0, row._2, row._3.asInstanceOf[Array[Byte]]))
         }
@@ -97,7 +106,7 @@ trait DataStoreOperations extends AdaptersSerializeDeserializers {
       if (callbackFunction != null) {
         if (v.schemaId > 0 /* && v.serializerType != null && v.serializerType.size > 0 */) {
           val typFromSchemaId = "" // schemaId
-          val (cont, deserializerName) = deserialize(v.serializedInfo, v.serializerType)
+          val (cont, deserializerName) = deserialize(v.serializedInfo, v.serializerType, v.schemaId)
           callbackFunction(k, cont, v.serializerType, deserializerName, 0)
         } else {
           callbackFunction(k, v.serializedInfo, v.serializerType, null, 0)
@@ -112,7 +121,7 @@ trait DataStoreOperations extends AdaptersSerializeDeserializers {
     val getCallbackFn = (k: Key, v: Value) => {
       if (callbackFunction != null) {
         if (v.schemaId > 0 /* && v.serializerType != null && v.serializerType.size > 0 */) {
-          val (cont, deserializerName) = deserialize(v.serializedInfo, v.serializerType)
+          val (cont, deserializerName) = deserialize(v.serializedInfo, v.serializerType, v.schemaId)
           callbackFunction(k, cont, v.serializerType, deserializerName, 0)
         } else {
           callbackFunction(k, v.serializedInfo, v.serializerType, null, 0)
@@ -127,7 +136,7 @@ trait DataStoreOperations extends AdaptersSerializeDeserializers {
     val getCallbackFn = (k: Key, v: Value) => {
       if (callbackFunction != null) {
         if (v.schemaId > 0 /* && v.serializerType != null && v.serializerType.size > 0 */) {
-          val (cont, deserializerName) = deserialize(v.serializedInfo, v.serializerType)
+          val (cont, deserializerName) = deserialize(v.serializedInfo, v.serializerType, v.schemaId)
           callbackFunction(k, cont, v.serializerType, deserializerName, 0)
         } else {
           callbackFunction(k, v.serializedInfo, v.serializerType, null, 0)
@@ -142,7 +151,7 @@ trait DataStoreOperations extends AdaptersSerializeDeserializers {
     val getCallbackFn = (k: Key, v: Value) => {
       if (callbackFunction != null) {
         if (v.schemaId > 0 /* && v.serializerType != null && v.serializerType.size > 0 */) {
-          val (cont, deserializerName) = deserialize(v.serializedInfo, v.serializerType)
+          val (cont, deserializerName) = deserialize(v.serializedInfo, v.serializerType, v.schemaId)
           callbackFunction(k, cont, v.serializerType, deserializerName, 0)
         } else {
           callbackFunction(k, v.serializedInfo, v.serializerType, null, 0)
@@ -157,7 +166,7 @@ trait DataStoreOperations extends AdaptersSerializeDeserializers {
     val getCallbackFn = (k: Key, v: Value) => {
       if (callbackFunction != null) {
         if (v.schemaId > 0 /* && v.serializerType != null && v.serializerType.size > 0 */) {
-          val (cont, deserializerName) = deserialize(v.serializedInfo, v.serializerType)
+          val (cont, deserializerName) = deserialize(v.serializedInfo, v.serializerType, v.schemaId)
           callbackFunction(k, cont, v.serializerType, deserializerName, 0)
         } else {
           callbackFunction(k, v.serializedInfo, v.serializerType, null, 0)
@@ -224,4 +233,70 @@ trait Transaction extends DataStoreOperations {
 // Storage Adapter Object to create storage adapter
 trait StorageAdapterFactory {
   def CreateStorageAdapter(kvManagerLoader: KamanjaLoaderInfo, datastoreConfig: String): DataStore
+//  final def CreateStorageAdapter(nodeCtxt: NodeContext, kvManagerLoader: KamanjaLoaderInfo, adapterInfo: AdapterInfo): StorageAdapter = {
+//    val datastore = CreateStorageAdapter(kvManagerLoader, adapterInfo.FullAdapterConfig)
+//    new StorageAdapter(nodeCtxt, adapterInfo, datastore)
+//  }
 }
+
+class StorageAdapterConfiguration {
+  var Name: String = _
+  var tenantId: String = _
+  var adapterInfo: AdapterInfo = _
+}
+
+class StorageAdapter(nodeCtxt: NodeContext, adapterInfo: AdapterInfo, datastore: DataStore) extends AdaptersSerializeDeserializers with Monitorable {
+  // NodeContext
+  val _nodeContext: NodeContext = nodeCtxt
+  val _TYPE_STORAGE = "Storage_Adapter"
+  val _startTime: String = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
+
+  val _storageConfig: StorageAdapterConfiguration = {
+    val cfg = new StorageAdapterConfiguration
+    cfg.Name = adapterInfo.Name
+    cfg.tenantId = adapterInfo.TenantId
+    cfg.adapterInfo = adapterInfo
+    cfg
+  }
+
+  var _datastore: DataStore = datastore
+
+  override final def getAdapterName = adapterInfo.Name
+
+  def save(tnxCtxt: TransactionContext, outputContainers: Array[ContainerInterface]): Unit = {
+    if (outputContainers.size == 0) return
+
+    val (outContainers, serializedContainerData, serializerNames) = serialize(tnxCtxt, outputContainers)
+
+//    if (outputContainers.size != serializedContainerData.size || outputContainers.size != serializerNames.size) {
+//      val szMsg = qc.Name + " KAFKA PRODUCER: Messages, messages serialized data & serializer names should has same number of elements. Messages:%d, Messages Serialized data:%d, serializerNames:%d".format(outputContainers.size, serializedContainerData.size, serializerNames.size)
+//      LOG.error(szMsg)
+//      throw new Exception(szMsg)
+//    }
+
+    if (serializedContainerData.size == 0) return
+
+
+  }
+
+//  def write(tnxCtxt: TransactionContext, outputContainers: Array[ContainerInterface]): Unit
+//  def read(tnxCtxt: TransactionContext, outputContainers: Array[ContainerInterface]): Unit
+
+  def Shutdown: Unit = {
+    if (_datastore != null)
+      _datastore.Shutdown()
+    _datastore = null
+  }
+
+  def Category = "Storage"
+
+  override def getComponentStatusAndMetrics: MonitorComponentInfo = {
+    val lastSeen = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(System.currentTimeMillis))
+    MonitorComponentInfo(_TYPE_STORAGE, _storageConfig.Name, _storageConfig.Name, _startTime, lastSeen, "{}")
+  }
+
+  override def getComponentSimpleStats: String = {
+    ""
+  }
+}
+

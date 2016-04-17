@@ -38,7 +38,13 @@ import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
 import com.ligadata.Serialize._
 
+import org.json4s.native.Serialization
+import org.json4s.native.Serialization.{ read, write, writePretty }
+
 import com.ligadata.kamanja.metadataload.MetadataLoad
+
+case class adapterMessageBinding(var AdapterName: String,var MessageNames: List[String], var Options: List[(String,String)], var Serializer: String)
+
 
 class MigrateAdapterSpec extends FunSpec with LocalTestFixtures with BeforeAndAfter with BeforeAndAfterAll with GivenWhenThen {
   var res: String = null;
@@ -54,8 +60,18 @@ class MigrateAdapterSpec extends FunSpec with LocalTestFixtures with BeforeAndAf
   var newVersion: String = null
   val userid: Option[String] = Some("test")
 
+  val ambs: List[adapterMessageBinding] = null
+
   private val loggerName = this.getClass.getName
   private val logger = LogManager.getLogger(loggerName)
+
+  implicit val formats = Serialization.formats(
+        ShortTypeHints(
+            List(
+                classOf[adapterMessageBinding]
+            )
+        )
+  )
 
   private def TruncateDbStore = {
     val db = MetadataAPIImpl.GetMetadataAPIConfig.getProperty("DATABASE")
@@ -153,6 +169,59 @@ class MigrateAdapterSpec extends FunSpec with LocalTestFixtures with BeforeAndAf
   }
 
 
+  def createAdapterMessageBindings(adapters: List[Map[String, Any]]) : Array[adapterMessageBinding] = {
+    try{
+      var ambs = Array[adapterMessageBinding]()
+      adapters.foreach( a => {
+	logger.info("a => " + a)
+	val adapter = a.asInstanceOf[Map[String,Any]]
+	var am = new adapterMessageBinding(new String(),Array[String]().toList,Array[(String,String)]().toList,new String())
+	adapter.keys.foreach( k => {
+	  logger.info(k + " => " + adapter(k))
+	  k.toUpperCase match {
+	    case "NAME" => am.AdapterName = adapter(k).asInstanceOf[String]
+	    case "ASSOCIATEDMESSAGE" => am.MessageNames = Array(adapter(k).asInstanceOf[String]).toList
+	    case "DATAFORMAT" => {
+	      adapter(k).asInstanceOf[String].toUpperCase match {
+		case "CSV" => am.Serializer = "org.kamanja.serdeser.csv.CsvSerDeser"
+		case "JSON" => am.Serializer = "org.kamanja.serdeser.JSON"
+	      }
+	    }
+	    case "FIELDDELIMITER" => am.Options = am.Options :+ ("fieldDelimiter",adapter(k).asInstanceOf[String])
+	    case "LINEDELIMITER" => am.Options = am.Options :+ ("lineDelimiter",adapter(k).asInstanceOf[String])
+	    case _ => logger.info("Ignore the key " + k)
+	  }
+	})
+	ambs = ambs :+ am
+      })
+      ambs
+    } catch {
+      case e: Exception => throw new Exception("Failed to create adapterMessageBindings", e)
+    }
+  }
+    
+
+  private def parseClusterConfig(cfgStr: String): Array[adapterMessageBinding] = {
+    logger.info("parsing json: " + cfgStr)
+    val cfgmap = parse(cfgStr).values.asInstanceOf[Map[String, Any]]
+    logger.info("cfgmap => " + cfgmap)
+    var ambs = Array[adapterMessageBinding]()
+    cfgmap.keys.foreach(key => {
+      logger.info("key => " + key)
+      if ( key.equalsIgnoreCase("adapters") ){
+	var adapters = cfgmap("Adapters").asInstanceOf[List[Map[String, Any]]]
+	ambs = createAdapterMessageBindings(adapters)
+      }
+    })
+    ambs
+  }
+
+  private def parseAdapterConfig(cfgStr: String): Array[adapterMessageBinding] = {
+    logger.info("parsing json: " + cfgStr)
+    var ambs = parseClusterConfig(cfgStr)
+    ambs
+  }
+  
   describe("Unit Tests for Migration of Adapter objects to 1.4") {
     // validate property setup
     it("Validate properties for MetadataAPI") {
@@ -245,8 +314,14 @@ class MigrateAdapterSpec extends FunSpec with LocalTestFixtures with BeforeAndAf
       assert(null != sc)
     }
 
+    
+    def getCCParams(cc: Product) : scala.collection.mutable.Map[String,Any] = {          
+      val values = cc.productIterator
+      val m = cc.getClass.getDeclaredFields.map( _.getName -> values.next ).toMap
+      scala.collection.mutable.Map(m.toSeq: _*) 
+    }
 
-    it("Load Cluster Config ") {
+    it("Cluster Config Tests") {
 
       And("Check whether CONFIG_FILES_DIR defined as property")
       dirName = MetadataAPIImpl.GetMetadataAPIConfig.getProperty("CONFIG_FILES_DIR")
@@ -280,21 +355,119 @@ class MigrateAdapterSpec extends FunSpec with LocalTestFixtures with BeforeAndAf
 	}
 	assert(true == exists)
 
-	And("AddConfig  from " + file.getPath)
+	And("AddConfig first time from " + file.getPath)
 	var cfgStr = Source.fromFile(file).mkString
 	res = MetadataAPIImpl.UploadConfig(cfgStr, None, "testConfig")
 	res should include regex ("\"Status Code\" : 0")
+
+	And("GetAllCfgObjects to fetch all config objects")
+	res = MetadataAPIImpl.GetAllCfgObjects("JSON", None)
+	res should include regex ("\"Status Code\" : 0")
+
+	And("GetAllNodes to fetch the nodes")
+	res = MetadataAPIImpl.GetAllNodes("JSON", None)
+	res should include regex ("\"Status Code\" : 0")
+	logger.info(res)
+
+	And("GetAllAdapters to fetch the adapters")
+	res = MetadataAPIImpl.GetAllAdapters("JSON", None)
+	res should include regex ("\"Status Code\" : 0")
+
+	And("GetAllClusters to fetch the clusters")
+	res = MetadataAPIImpl.GetAllClusters("JSON", None)
+	res should include regex ("\"Status Code\" : 0")
+
+	And("Check number of the nodes")
+	var nodes = MdMgr.GetMdMgr.Nodes
+	assert(nodes.size == 3)
 
 	And("Check number of the adapters")
 	var adapters = MdMgr.GetMdMgr.Adapters
 	assert(adapters.size == 4)
 
-	And("Convert map adapters to json")
-	val jsonStr = JsonSerializer.SerializeCfgObjectListToJson("Adapters",adapters.toArray.map(x => x._2))
-	logger.info(jsonStr)
+	And("RemoveConfig API for the config that was just added")
+	res = MetadataAPIImpl.RemoveConfig(cfgStr, None, "testConfig")
+	res should include regex ("\"Status Code\" : 0")
+
+	And("Check number of the nodes after removing config")
+	nodes = MdMgr.GetMdMgr.Nodes
+	assert(nodes.size == 0)
+
+	And("Check number of the adapters after removing config")
+	adapters = MdMgr.GetMdMgr.Adapters
+	assert(adapters.size == 0)
+
+	And("AddConfig second time from " + file.getPath)
+	cfgStr = Source.fromFile(file).mkString
+	res = MetadataAPIImpl.UploadConfig(cfgStr, None, "testConfig")
+	res should include regex ("\"Status Code\" : 0")
+      })
+    }
+
+
+    it("Load Adapter Message Bindings") {
+
+      And("Check whether CONFIG_FILES_DIR defined as property")
+      dirName = MetadataAPIImpl.GetMetadataAPIConfig.getProperty("CONFIG_FILES_DIR")
+      assert(null != dirName)
+
+      And("Check Directory Path")
+      iFile = new File(dirName)
+      assert(true == iFile.exists)
+
+      And("Check whether " + dirName + " is a directory ")
+      assert(true == iFile.isDirectory)
+
+      And("Make sure there are few JSON config files in " + dirName);
+      val cfgFiles = new java.io.File(dirName).listFiles.filter(_.getName.endsWith(".json"))
+      assert(0 != cfgFiles.length)
+
+      //fileList = List("sample_adapters1.json","sample_adapters2.json")
+      fileList = List("ClusterConfig.json")
+      fileList.foreach(f1 => {
+	And("Add the Config From " + f1)
+	And("Make Sure " + f1 + " exist")
+	var exists = false
+	var file: java.io.File = null
+	breakable {
+	  cfgFiles.foreach(f2 => {
+	    if (f2.getName() == f1) {
+	      exists = true
+	      file = f2
+	      break
+	    }
+	  })
+	}
+	assert(true == exists)
+	And("AddConfig  from " + file.getPath)
+	var cfgStr = Source.fromFile(file).mkString
+	var ambs = parseClusterConfig(cfgStr)
+	logger.info("ambs => " + ambs)
+	implicit val formats = Serialization.formats(NoTypeHints)
+	val ambsAsJson = writePretty(ambs)
+	logger.info(ambsAsJson)
+
+	// parse the json again
+	val ambs1 = parse(ambsAsJson).extract[Array[adapterMessageBinding]]
+	val ambsAsJson1 = writePretty(ambs1)
+	logger.info(ambsAsJson1)
+	
+	assert(ambsAsJson == ambsAsJson1)
+
+	val ambsMap:Array[scala.collection.mutable.Map[String,Any]] = ambs1.map(amb => { val ambMap = getCCParams(amb); ambMap })
+	ambsMap.toList.foreach(ambMap => { logger.info("ambMap => " + ambMap) })
+
+	val cnt = ambsMap.size
+
+	res = AdapterMessageBindingUtils.AddAdapterMessageBinding(ambsMap.toList,userid)
+	res should include regex ("\"Status Code\" : 0")
+
+	val bindings =  AdapterMessageBindingUtils.ListAllAdapterMessageBindings
+	assert(bindings.size == cnt)
       })
     }
   }
+
 
   override def afterAll = {
     logger.info("Truncating dbstore")

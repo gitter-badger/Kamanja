@@ -17,12 +17,14 @@
 
 package com.ligadata.KamanjaManager
 
+import com.ligadata.StorageBase.StorageAdapter
+import com.ligadata.Utils.{Utils, KamanjaLoaderInfo, HostConfig, CacheConfig}
+import com.ligadata.keyvaluestore.KeyValueManager
 import org.apache.logging.log4j.{ Logger, LogManager }
 import com.ligadata.kamanja.metadata._
 import com.ligadata.kamanja.metadata.MdMgr._
 import com.ligadata.KamanjaBase.{ EnvContext, NodeContext }
 import com.ligadata.InputOutputAdapterInfo._
-import com.ligadata.Utils.{ Utils, KamanjaClassLoader, KamanjaLoaderInfo }
 import scala.collection.mutable.ArrayBuffer
 import com.ligadata.Serialize.{ JDataStore, JZKInfo, JEnvCtxtJsonStr }
 
@@ -31,6 +33,8 @@ import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods._
 import java.io.{ File }
 import com.ligadata.Exceptions._
+
+case class JCacheConfig(CacheStartPort: Int, CacheSizePerNodeInMB: Long, ReplicateFactor: Int, TimeToIdleSeconds: Long, EvictionPolicy: String)
 
 // This is shared by multiple threads to read (because we are not locking). We create this only once at this moment while starting the manager
 object KamanjaMdCfg {
@@ -149,6 +153,7 @@ object KamanjaMdCfg {
         (a._2.TypeString.compareToIgnoreCase("Validate") == 0) ||
         (a._2.TypeString.compareToIgnoreCase("Output") == 0) ||
         (a._2.TypeString.compareToIgnoreCase("FailedEvents") == 0) ||
+        (a._2.TypeString.compareToIgnoreCase("Storage") == 0) ||
         (a._2.TypeString.compareToIgnoreCase("Status") == 0)) {
         val jar = a._2.JarName
         val depJars = if (a._2.DependencyJars != null) a._2.DependencyJars.map(str => str.trim).filter(str => str.size > 0).toSet else null
@@ -160,7 +165,7 @@ object KamanjaMdCfg {
           allJarsToBeValidated ++= depJars.map(j => Utils.GetValidJarFile(jarPaths, j))
         }
       } else {
-        LOG.error("Found unhandled adapter type %s for adapter %s".format(a._2.TypeString, a._2.Name))
+        LOG.error("Found unhandled adapter of type %s for adapter %s".format(a._2.TypeString, a._2.Name))
         return false
       }
     })
@@ -244,11 +249,13 @@ object KamanjaMdCfg {
           val envCtxt = objinst.asInstanceOf[EnvContext]
           // First time creating metadata loader here
           val metadataLoader = new KamanjaLoaderInfo(KamanjaConfiguration.baseLoader, true, true)
+          envCtxt.setNodeInfo(KamanjaConfiguration.nodeId.toString, KamanjaConfiguration.clusterId)
           envCtxt.setMetadataLoader(metadataLoader)
           envCtxt.setAdaptersAndEnvCtxtLoader(adaptersAndEnvCtxtLoader)
           // envCtxt.setClassLoader(KamanjaConfiguration.metadataLoader.loader) // Using Metadata Loader
-          envCtxt.setMetadataResolveInfo(KamanjaMetadata)
+          envCtxt.setObjectResolver(KamanjaMetadata)
           envCtxt.setMdMgr(KamanjaMetadata.getMdMgr)
+          envCtxt.setSystemCatalogDatastore(initConfigs.dataDataStoreInfo)
           val containerNames = KamanjaMetadata.getAllContainers.map(container => container._1.toLowerCase).toList.sorted.toArray // Sort topics by names
           val topMessageNames = KamanjaMetadata.getAllMessges.filter(msg => msg._2.parents.size == 0).map(msg => msg._1.toLowerCase).toList.sorted.toArray // Sort topics by names
 
@@ -256,7 +263,22 @@ object KamanjaMdCfg {
           envCtxt.setDefaultDatastore(initConfigs.dataDataStoreInfo) // Default Datastore
           envCtxt.setZookeeperInfo(initConfigs.zkConnectString, initConfigs.zkNodeBasePath, initConfigs.zkSessionTimeoutMs, initConfigs.zkConnectionTimeoutMs)
 
-          val allMsgsContainers = topMessageNames ++ containerNames
+          val cacheInfo = cluster.cfgMap.getOrElse("Cache", null)
+          if (cacheInfo != null && cacheInfo.trim.size > 0) {
+            try {
+              implicit val jsonFormats: Formats = DefaultFormats
+              val cacheConfigParseInfo = parse(cacheInfo).extract[JCacheConfig]
+              val hosts = mdMgr.Nodes.values.map(nd => HostConfig(nd.nodeId, nd.nodeIpAddr, nd.nodePort)).toList
+              val conf = CacheConfig(hosts, cacheConfigParseInfo.CacheStartPort, cacheConfigParseInfo.CacheSizePerNodeInMB * 1024L * 1024L, cacheConfigParseInfo.ReplicateFactor, cacheConfigParseInfo.TimeToIdleSeconds, cacheConfigParseInfo.EvictionPolicy)
+              envCtxt.startCache(conf)
+            } catch {
+              case e: Exception => { LOG.warn("", e) }
+            }
+          } else {
+            // BUGBUG:- Do we make Cache is Must? Shall we through an error
+          }
+
+            val allMsgsContainers = topMessageNames ++ containerNames
 //          val containerInfos = allMsgsContainers.map(c => { ContainerNameAndDatastoreInfo(c, null) })
 //          envCtxt.RegisterMessageOrContainers(containerInfos) // Messages & Containers
 
@@ -296,7 +318,75 @@ object KamanjaMdCfg {
     null
   }
 
-  def LoadAdapters(inputAdapters: ArrayBuffer[InputAdapter], outputAdapters: ArrayBuffer[OutputAdapter]): Boolean = {
+  def upadateAdapter(inAdapter: AdapterInfo, isNew: Boolean, inputAdapters: ArrayBuffer[InputAdapter], outputAdapters: ArrayBuffer[OutputAdapter], storageAdapters: ArrayBuffer[StorageAdapter]): Boolean = {
+
+    println("Updating adapter ")
+    println(inAdapter.Name)
+
+
+      val conf = new AdapterConfiguration  //BOOOYA
+      conf.Name = inAdapter.Name.toLowerCase
+      conf.className = inAdapter.ClassName
+      conf.jarName = inAdapter.JarName
+      conf.dependencyJars = if (inAdapter.DependencyJars != null) inAdapter.DependencyJars.map(str => str.trim).filter(str => str.size > 0).toSet else null
+      conf.adapterSpecificCfg = inAdapter.AdapterSpecificCfg
+      conf.tenantId = inAdapter.TenantId
+
+      try {
+        if (inAdapter.typeString.equalsIgnoreCase("input")) {
+          val adapter = CreateInputAdapterFromConfig(conf, ExecContextFactoryImpl, KamanjaMetadata.gNodeContext).asInstanceOf[InputAdapter]
+          if (adapter == null) return false
+
+          // If this is a new adapter.. just add to the list of adapters. Else, remvoe the old one and replace with the new one.
+          if (!isNew) {
+            var i = 0
+            var pos = 0
+            inputAdapters.foreach(ad => {
+              if (inAdapter.Name.equalsIgnoreCase(ad.inputConfig.Name)) pos = i
+              i += 1
+            })
+            println("Removing input adapter at pos " + pos)
+            inputAdapters.remove(pos)
+          }
+          inputAdapters.append(adapter)
+          println("adding input adapter")
+        }
+
+        if (inAdapter.typeString.equalsIgnoreCase("output")) {
+          val adapter = CreateOutputAdapterFromConfig(conf, KamanjaMetadata.gNodeContext).asInstanceOf[OutputAdapter]
+          if (adapter == null) return false
+          // If this is a new adapter.. just add to the list of adapters. Else, remvoe the old one and replace with the new one.
+          if (!isNew) {
+            var i = 0
+            var pos = 0
+            outputAdapters.foreach(ad => {
+              if (inAdapter.Name.equalsIgnoreCase(ad.inputConfig.Name)) pos = i
+              i += 1
+            })
+            outputAdapters.remove(pos)
+            println("Removing output adapter at pos " + pos)
+          }
+          outputAdapters.append(adapter)
+          println("adding output adapter")
+        }
+
+      } catch {
+        case e: Exception => {
+          LOG.error("Failed to get input adapter")
+          return false
+        }
+      }
+
+
+    println("--------------------------")
+    return false
+  }
+
+  def updateOutuputAdapter(outAdapter: OutputAdapter, isNew: Boolean) = {
+
+  }
+
+  def LoadAdapters(inputAdapters: ArrayBuffer[InputAdapter], outputAdapters: ArrayBuffer[OutputAdapter], storageAdapters: ArrayBuffer[StorageAdapter]): Boolean = {
     LOG.info("Loading Adapters started @ " + Utils.GetCurDtTmStr)
     val s0 = System.nanoTime
     val allAdapters = mdMgr.Adapters
@@ -306,23 +396,25 @@ object KamanjaMdCfg {
     val outputAdaps = scala.collection.mutable.Map[String, AdapterInfo]()
 //    val statusAdaps = scala.collection.mutable.Map[String, AdapterInfo]()
 //    val failedEventsAdaps = scala.collection.mutable.Map[String, AdapterInfo]()
+    val storageAdaps = scala.collection.mutable.Map[String, AdapterInfo]()
 
     allAdapters.foreach(a => {
       if (a._2.TypeString.compareToIgnoreCase("Input") == 0) {
         inputAdaps(a._1.toLowerCase) = a._2
-//      } else if (a._2.TypeString.compareToIgnoreCase("Validate") == 0) {
-//        validateAdaps(a._1.toLowerCase) = a._2
+      } else if (a._2.TypeString.compareToIgnoreCase("Storage") == 0) {
+        storageAdaps(a._1.toLowerCase) = a._2
       } else if (a._2.TypeString.compareToIgnoreCase("Output") == 0) {
         outputAdaps(a._1.toLowerCase) = a._2
-//      } else if (a._2.TypeString.compareToIgnoreCase("Status") == 0) {
-//        statusAdaps(a._1.toLowerCase) = a._2
-//      } else if (a._2.TypeString.compareToIgnoreCase("FailedEvents") == 0) {
-//        failedEventsAdaps(a._1.toLowerCase) = a._2
       } else {
         LOG.error("Found unhandled adapter type %s for adapter %s".format(a._2.TypeString, a._2.Name))
         return false
       }
     })
+
+    // Get output adapter
+    LOG.debug("Getting Storage Adapters")
+    if (!LoadStorageAdapsForCfg(storageAdaps, storageAdapters, KamanjaMetadata.gNodeContext))
+      return false
 
     // Get status adapter
 //    LOG.debug("Getting Status Adapter")
@@ -354,6 +446,48 @@ object KamanjaMdCfg {
     LOG.info("Loading Adapters done @ " + Utils.GetCurDtTmStr + totaltm)
 
     true
+  }
+
+  private def CreateStorageAdapterFromConfig(adapterInfo: AdapterInfo, nodeContext: NodeContext): StorageAdapter = {
+    if (adapterInfo == null || nodeContext == null) return null
+
+    var allJars: collection.immutable.Set[String] = null
+    if (adapterInfo.dependencyJars != null && adapterInfo.jarName != null) {
+      allJars = (adapterInfo.dependencyJars.toSet + adapterInfo.jarName)
+    } else if (adapterInfo.dependencyJars != null) {
+      allJars = adapterInfo.dependencyJars.toSet
+    } else if (adapterInfo.jarName != null) {
+      allJars = collection.immutable.Set(adapterInfo.jarName)
+    }
+
+    val datastore = KeyValueManager.Get(allJars, adapterInfo.FullAdapterConfig)
+
+    if (datastore != null)
+      return new StorageAdapter(nodeContext, adapterInfo, datastore)
+    null
+  }
+
+  private def LoadStorageAdapsForCfg(adaps: scala.collection.mutable.Map[String, AdapterInfo], storageAdapters: ArrayBuffer[StorageAdapter], nodeContext: NodeContext): Boolean = {
+    // ConfigurationName
+    adaps.foreach(ac => {
+      try {
+        val adapter = CreateStorageAdapterFromConfig(ac._2, nodeContext)
+        if (adapter == null) return false
+        adapter.setObjectResolver(KamanjaMetadata)
+        storageAdapters += adapter
+        KamanjaManager.incrAdapterChangedCntr()
+      } catch {
+        case e: Exception => {
+          LOG.error("Failed to get output adapter for %s".format(ac), e)
+          return false
+        }
+        case e: Throwable => {
+          LOG.error("Failed to get output adapter for %s".format(ac), e)
+          return false
+        }
+      }
+    })
+    return true
   }
 
   private def CreateOutputAdapterFromConfig(statusAdapterCfg: AdapterConfiguration, nodeContext: NodeContext): OutputAdapter = {
@@ -458,7 +592,9 @@ object KamanjaMdCfg {
       try {
         val adapter = CreateOutputAdapterFromConfig(conf, nodeContext)
         if (adapter == null) return false
+        adapter.setObjectResolver(KamanjaMetadata)
         outputAdapters += adapter
+        KamanjaManager.incrAdapterChangedCntr()
       } catch {
         case e: Exception => {
           LOG.error("Failed to get output adapter for %s".format(ac), e)
@@ -554,7 +690,7 @@ object KamanjaMdCfg {
     }
 
     adaps.foreach(ac => {
-      //BUGBUG:: Not yet validating required fields 
+      //BUGBUG:: Not yet validating required fields //BOOOYA
       val conf = new AdapterConfiguration
 
       val adap = ac._2
@@ -577,6 +713,7 @@ object KamanjaMdCfg {
         val adapter = CreateInputAdapterFromConfig(conf, execCtxtObj, nodeContext)
         if (adapter == null) return false
         inputAdapters += adapter
+        KamanjaManager.incrAdapterChangedCntr()
       } catch {
         case e: Exception => {
           LOG.error("Failed to get input adapter for %s.".format(ac), e)

@@ -92,12 +92,13 @@ class MdMgr {
 
   private var tenantIdMap = new HashMap[String, TenantInfo]
 
-  private var propertyChanged: scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer[String]()
+  private var propertyChanged: scala.collection.mutable.ArrayBuffer[(String,Any)] = scala.collection.mutable.ArrayBuffer[(String,Any)]()
   private val lock: Object = new Object
 
   def truncate {
     typeDefs.clear
     funcDefs.clear
+    compilerFuncDefs.clear
     msgDefs.clear
     containerDefs.clear
     attrbDefs.clear
@@ -110,10 +111,13 @@ class MdMgr {
     nodes.clear
     adapters.clear
     modelConfigs.clear
-    factoryOfMdlInstFactories.clear
     schemaIdMap.clear
     schemaIdToElemntIdMap.clear
     elementIdMap.clear
+    tenantIdMap.clear
+    factoryOfMdlInstFactories.clear
+    serializers.clear
+    adapterMessageBindings.clear
   }
 
   def truncate(objectType: String) {
@@ -2226,15 +2230,16 @@ class MdMgr {
     if (depJars != null) depJarSet ++= depJars
     val dJars = if (depJarSet.size > 0) depJarSet.toArray else null
 
+    if (objectDefStr != null)
+      mdl.ObjectDefinition(objectDefStr)
+
     /** In the case of a PMML model, save the string in the model representation now.  PMML strings are
       * (for the first go) to be injested at the last possible minute by the shim model's factory object.
       * The instances so created will be cached for subsequent calls on the thread with which the instance
       * is associated.
       */
-    if (mdl.modelRepresentation == ModelRepresentation.PMML) {
-      mdl.ObjectDefinition(objectDefStr)
+    if (mdl.modelRepresentation == ModelRepresentation.PMML)
       mdl.ObjectFormat(ObjFormatType.fPMML)
-    }
     mdl.PhysicalName(physicalName)
     mdl.tenantId = tenantId
     SetBaseElem(mdl, nameSpace, name, ver, jarNm, dJars, ownerId, tenantId, uniqueId, mdElementId)
@@ -3015,11 +3020,20 @@ class MdMgr {
     ni
   }
 
-  def AddNode(ni: NodeInfo): Unit = {
+  def AddNode(ni: NodeInfo): Option[String] = {
+    // Enforce the presence of clusterId int he node
     if (ni.clusterId == null) {
       throw InvalidArgumentException("Failed to Add the node, ClusterId Can not be null", null)
     }
-    nodes(ni.nodeId.toLowerCase) = ni
+
+    if (nodes.contains(ni.nodeId.trim.toLowerCase)) {
+      var isSame = nodes.get(ni.nodeId.trim.toLowerCase).get.asInstanceOf[NodeInfo].equals(ni)
+      nodes(ni.nodeId.toLowerCase) = ni
+      if (!isSame) return Some("Update") else return None
+    } else {
+      nodes(ni.nodeId.toLowerCase) = ni
+      return Some("Add")
+    }
   }
 
   def GetNode(nodeId: String): NodeInfo = {
@@ -3058,8 +3072,15 @@ class MdMgr {
     *
     * @param upi : UserPropertiesInfo
     */
-  def AddUserProperty(upi: UserPropertiesInfo): Unit = {
-    configurations(upi.ClusterId) = upi
+  def AddUserProperty(upi: UserPropertiesInfo): Option[String] = {
+    if (configurations.contains(upi.ClusterId.trim.toLowerCase)) {
+      var isSame = configurations.get(upi.ClusterId.trim.toLowerCase).get.asInstanceOf[UserPropertiesInfo].equals(upi)
+      configurations(upi.ClusterId) = upi
+      if (!isSame) return Some("Update") else return None
+    } else {
+      configurations(upi.ClusterId) = upi
+      return Some("Add")
+    }
   }
 
   /**
@@ -3081,11 +3102,17 @@ class MdMgr {
     AddTenantInfo(MakeTenantInfo(tenantId, description, primaryDataStore, cacheConfig))
   }
 
-  def AddTenantInfo(tenant : TenantInfo) : Boolean = {
-    if (tenantIdMap.contains(tenant.tenantId.trim.toLowerCase))
-      throw new AlreadyExistsException(s"Tenant ${tenant.tenantId} already exists.", null)
-    tenantIdMap(tenant.tenantId.trim.toLowerCase) = tenant
-    true
+  def AddTenantInfo(tenant : TenantInfo) : Option[String] = {
+    // Update the tenantId in this cache, but also see if there was a meaniful change
+    // in the existing element - it will not need to be sent to other nodes.
+    if (tenantIdMap.contains(tenant.tenantId.trim.toLowerCase)) {
+      var isSame = tenant.equals(tenantIdMap.get(tenant.tenantId.trim.toLowerCase).get.asInstanceOf[TenantInfo])
+      tenantIdMap(tenant.tenantId.trim.toLowerCase) = tenant
+      if (!isSame) return Some("Update") else return None
+    } else {
+      tenantIdMap(tenant.tenantId.trim.toLowerCase) = tenant
+      return Some("Add")
+    }
   }
 
   def UpdateTenantInfo(tenant : TenantInfo) : Boolean = {
@@ -3225,8 +3252,8 @@ class MdMgr {
     def AddAdapterMessageBinding(adapterName: String
                       , namespaceMsgName : String
                       , namespaceSerializerName: String
-                      , serializerOptions : scala.collection.immutable.Map[String,String]
-                                 = scala.collection.immutable.Map[String,String]()): Unit = {
+                      , serializerOptions : scala.collection.immutable.Map[String,Any]
+                                 = scala.collection.immutable.Map[String,Any]()): Unit = {
 
         AddAdapterMessageBinding(MakeAdapterMessageBinding(adapterName
                                                         , namespaceMsgName
@@ -3248,7 +3275,7 @@ class MdMgr {
 
     @throws(classOf[AlreadyExistsException])
     def AddAdapterMessageBinding(binding : AdapterMessageBinding) : Boolean = {
-        val key : String = s"${binding.adapterName}.${binding.messageName}.${binding.serializer}".toLowerCase
+        val key : String = binding.FullBindingName.toLowerCase
         val added : Boolean = if (adapterMessageBindings.contains(key)) {
             throw AlreadyExistsException(s"an AdapterMessageBinding with key $key already exists... binding could not be added.", null)
         } else {
@@ -3269,8 +3296,8 @@ class MdMgr {
     def MakeAdapterMessageBinding(  adapterName: String
                                   , namespaceMsgName : String
                                   , namespaceSerializerName: String
-                                  , serializerOptions : scala.collection.immutable.Map[String,String]
-                                        = scala.collection.immutable.Map[String,String]())
+                                  , serializerOptions : scala.collection.immutable.Map[String,Any]
+                                        = scala.collection.immutable.Map[String,Any]())
                 : AdapterMessageBinding = {
 
         /** Instantiate the AdapterMessageBinding.  Update its base element with basic id information */
@@ -3280,6 +3307,82 @@ class MdMgr {
                                                                        , serializerOptions)
         binding
     }
+
+    /**
+      * Remove the AdapterMessageBinding from the metadata answering the removed instance.
+      *
+      * @param fqBindingName the fully qualified name (adapterName.namespace.msgname.namespace.serializername)
+      * @return the removed AdapterMessageBinding (or null if not present).
+      */
+    def RemoveAdapterMessageBinding(fqBindingName : String) : AdapterMessageBinding = {
+        val key : String = fqBindingName.toLowerCase
+        val binding = adapterMessageBindings.getOrElse(key, null)
+        if (binding != null) {
+            adapterMessageBindings -= key
+        }
+        binding
+    }
+
+    /**
+      * Answer all of the  AdapaterMessageBindings defined.
+      *
+      * @return a Map[String, AapterMessageBinding] with 0 or more kv pairs.
+      */
+    def AllAdapterMessageBindings : scala.collection.immutable.Map[String,AdapterMessageBinding] = {
+        adapterMessageBindings.toMap
+    }
+
+    /**
+      * Answer a map of AdapaterMessageBindings that are used by the supplied adapter name.
+      *
+      * @param adapterName the adapter name that has the AdapterMessageBinding instances of interest
+      * @return a Map[String, AapterMessageBinding] with 0 or more kv pairs.
+      */
+    def BindingsForAdapter(adapterName : String) : scala.collection.immutable.Map[String,AdapterMessageBinding] = {
+        val adapterNameKey = adapterName.trim.toLowerCase + ","
+        val bindingMap :  scala.collection.immutable.Map[String,AdapterMessageBinding] = adapterMessageBindings.filterKeys(key => {
+            key.startsWith(adapterNameKey)
+        }).toMap
+        bindingMap
+    }
+
+    /**
+      * Answer a map of AdapaterMessageBindings that operate on the supplied message name.
+      *
+      * @param namespaceMsgName the namespace.name of the message of interest
+      * @return a Map[String, AapterMessageBinding] with 0 or more kv pairs.
+      */
+    def BindingsForMessage(namespaceMsgName : String) : scala.collection.immutable.Map[String,AdapterMessageBinding] = {
+        val adapterNameKey = "," + namespaceMsgName.trim.toLowerCase + ","
+      val bindingMap :  scala.collection.immutable.Map[String,AdapterMessageBinding] = adapterMessageBindings.filterKeys(key => {
+            key.contains(adapterNameKey)
+        }).toMap
+        bindingMap
+    }
+
+    /**
+      * Answer a map of AdapaterMessageBindings that are used by the serializer with the supplied name.
+      *
+      * @param namespaceSerializerName the adapter name that has the AdapterMessageBinding instances of interest
+      * @return a Map[String, AapterMessageBinding] with 0 or more kv pairs.
+      */
+    def BindingsUsingSerializer(namespaceSerializerName : String) : scala.collection.immutable.Map[String,AdapterMessageBinding] = {
+        val adapterNameKey = "," + namespaceSerializerName.trim.toLowerCase
+        val bindingMap :  scala.collection.immutable.Map[String,AdapterMessageBinding] = adapterMessageBindings.filterKeys(key => {
+            key.endsWith(adapterNameKey)
+        }).toMap
+        bindingMap
+    }
+
+  def Binding(adapterName: String, messageName : String, serializer : String) : AdapterMessageBinding = {
+    val adapName : String = adapterName.trim.toLowerCase
+    val msgName : String = messageName.trim.toLowerCase
+    val serName : String = serializer.trim.toLowerCase
+
+    val key = s"$adapName,$msgName,$serName"
+
+    adapterMessageBindings.getOrElse(key, null)
+  }
 
     /** Retrieve the SerializeDeserializerConfig with the supplied namespace.name
       *
@@ -3323,8 +3426,15 @@ class MdMgr {
     ci
   }
 
-  def AddCluster(ci: ClusterInfo): Unit = {
-    clusters(ci.clusterId.toLowerCase) = ci
+  def AddCluster(ci: ClusterInfo): Option[String] = {
+    if (clusters.contains(ci.clusterId.toLowerCase)) {
+      val isSame = clusters.get(ci.clusterId.toLowerCase).get.asInstanceOf[ClusterInfo].equals(ci)
+      clusters(ci.clusterId.toLowerCase) = ci
+      if (!isSame) return Some("Update") else return None
+    } else {
+      clusters(ci.clusterId.toLowerCase) = ci
+      return Some("Add")
+    }
   }
 
   def GetCluster(clusterId: String): ClusterInfo ={
@@ -3343,13 +3453,21 @@ class MdMgr {
     val ci = new ClusterCfgInfo
     ci.clusterId = clusterId
     ci.cfgMap = cfgMap
+    ci.usrConfigs = scala.collection.mutable.HashMap[String,String]()
     ci.modifiedTime = modifiedTime
     ci.createdTime = createdTime
     ci
   }
 
-  def AddClusterCfg(ci: ClusterCfgInfo): Unit = {
-    clusterCfgs(ci.clusterId.toLowerCase) = ci
+  def AddClusterCfg(ci: ClusterCfgInfo): Option[String] = {
+    if (clusterCfgs.contains(ci.clusterId.toLowerCase)) {
+      var isSame = clusterCfgs.get(ci.clusterId.trim.toLowerCase).get.asInstanceOf[ClusterCfgInfo].equals(ci)
+      clusterCfgs(ci.clusterId.toLowerCase) = ci
+      if (!isSame) return Some("Update") else return None
+    } else {
+      clusterCfgs(ci.clusterId.toLowerCase) = ci
+      return Some("Add")
+    }
   }
 
   def GetClusterCfg(key: String): ClusterCfgInfo = {
@@ -3378,8 +3496,16 @@ class MdMgr {
     ai
   }
 
-  def AddAdapter(ai: AdapterInfo): Unit = {
-    adapters(ai.name.toLowerCase) = ai
+  def AddAdapter(ai: AdapterInfo): Option[String] = {
+    if (adapters.contains(ai.name.trim.toLowerCase)) {
+      var isSame = ai.equals(adapters.get(ai.name.trim.toLowerCase).get.asInstanceOf[AdapterInfo])
+      adapters(ai.name.trim.toLowerCase) = ai
+      if (!isSame) return Some("Update") else return None
+    } else {
+      adapters(ai.name.trim.toLowerCase) = ai
+      return Some("Add")
+    }
+
   }
 
   def GetAdapter(adapterName: String): AdapterInfo = {
@@ -3395,16 +3521,16 @@ class MdMgr {
     }
   }
 
-  def getConfigChanges: Array[String] = {
+  def getConfigChanges: Array[(String, Any)] = {
     lock.synchronized {
-      if (propertyChanged.isEmpty) return new Array[String](0)
-      var changes =  propertyChanged.toArray
+      if (propertyChanged.isEmpty) return new Array[(String, Any)](0)
+      val changes =  propertyChanged.toArray
       propertyChanged.clear
       return changes
     }
   }
 
-  def addConfigChange (in: String) = {
+  def addConfigChange (in: (String, Any)) = {
     lock.synchronized {
       propertyChanged += in
     }

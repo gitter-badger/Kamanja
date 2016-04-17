@@ -2,6 +2,7 @@ package com.ligadata.AdaptersConfiguration
 
 import com.ligadata.Exceptions.KamanjaException
 import com.ligadata.InputOutputAdapterInfo._
+import org.apache.logging.log4j.LogManager
 import org.json4s._
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods._
@@ -43,6 +44,9 @@ object SmartFileAdapterConfiguration{
   val defaultWaitingTimeMS = 1000
   val defaultConsumerCount = 2
 
+  lazy val loggerName = this.getClass.getName
+  lazy val logger = LogManager.getLogger(loggerName)
+
   def getAdapterConfig(inputConfig: AdapterConfiguration): SmartFileAdapterConfiguration = {
 
     if (inputConfig.adapterSpecificCfg == null || inputConfig.adapterSpecificCfg.size == 0) {
@@ -63,6 +67,10 @@ object SmartFileAdapterConfiguration{
 //    adapterConfig.fieldDelimiter = if (inputConfig.fieldDelimiter == null) null else inputConfig.fieldDelimiter.trim
 //    adapterConfig.valueDelimiter = if (inputConfig.valueDelimiter == null) null else inputConfig.valueDelimiter.trim
 
+    adapterConfig.adapterSpecificCfg = inputConfig.adapterSpecificCfg
+
+    logger.debug("SmartFileAdapterConfiguration (getAdapterConfig)- inputConfig.adapterSpecificCfg==null is "+
+      (inputConfig.adapterSpecificCfg == null))
     val (_type, connectionConfig, monitoringConfig) = parseSmartFileAdapterSpecificConfig(inputConfig.Name, inputConfig.adapterSpecificCfg)
     adapterConfig._type = _type
     adapterConfig.connectionConfig = connectionConfig
@@ -176,6 +184,7 @@ class SmartFilePartitionUniqueRecordKey extends PartitionUniqueRecordKey {
   val json =
     ("Version" -> Version) ~
       ("Type" -> Type) ~
+      ("Name" -> Name) ~
       ("PartitionId" -> PartitionId)
     compact(render(json))
   }
@@ -184,6 +193,7 @@ class SmartFilePartitionUniqueRecordKey extends PartitionUniqueRecordKey {
   implicit val jsonFormats: Formats = DefaultFormats
     val keyData = parse(key).extract[SmartFileKeyData]
     if (keyData.Version == Version && keyData.Type.compareTo(Type) == 0) {
+      Name = keyData.Name
       PartitionId = keyData.PartitionId
     }
     // else { } // Not yet handling other versions

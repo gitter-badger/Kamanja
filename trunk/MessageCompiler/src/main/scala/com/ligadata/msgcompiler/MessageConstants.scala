@@ -37,8 +37,8 @@ class MessageConstants {
   val createInstance = "%soverride def createInstance: %s = new %s(%s); %s"; //ContainerInterface = new CustAlertHistory()
   val containerInstanceType = "ContainerInterface";
   val messageInstanceType = "MessageInterface";
-  val getContainerTypeMsg = "%soverride def getContainerType: ContainerFactoryInterface.ContainerType = ContainerFactoryInterface.ContainerType.MESSAGE";
-  val getContainerTypeContainer = "%soverride def getContainerType: ContainerFactoryInterface.ContainerType = ContainerFactoryInterface.ContainerType.CONTAINER";
+  val getContainerTypeMsg = "%soverride def getContainerType: ContainerTypes.ContainerType = ContainerTypes.ContainerType.MESSAGE";
+  val getContainerTypeContainer = "%soverride def getContainerType: ContainerTypes.ContainerType = ContainerTypes.ContainerType.CONTAINER";
 
   val createNewContainer = "%soverride def CreateNewContainer: %s = new %s(); %s"; //ContainerInterface = new CustAlertHistory()
   val createNewMessage = "%soverride def CreateNewMessage: %s = new %s(); %s"; //ContainerInterface = new CustAlertHistory()
@@ -61,6 +61,18 @@ class MessageConstants {
   val rddMessageFactoryInterface = "%spublic static MessageFactoryInterface baseObj = (MessageFactoryInterface) %s$.MODULE$; %s";
   val fieldsForMappedVar = "%svar fields: scala.collection.mutable.Map[String, (Int, Any)] = new scala.collection.mutable.HashMap[String, (Int, Any)];"
 
+  def isFixedFunc(message: Message): Boolean = {
+    if (message.Fixed.equalsIgnoreCase("true"))
+      return true;
+    else return false;
+  }
+
+  def isMessageFunc(message: Message): Boolean = {
+    if (message.MsgType.equalsIgnoreCase("message"))
+      return true;
+    else return false;
+  }
+
   def catchStmt = {
     """catch {
           case e: Exception => {
@@ -80,14 +92,16 @@ class MessageConstants {
 
   def importStatements() = {
     """
-import org.json4s.jackson.JsonMethods._
-import org.json4s.DefaultFormats
-import org.json4s.Formats
-import com.ligadata.KamanjaBase.{ AttributeValue, ContainerFactoryInterface, ContainerInterface, MessageFactoryInterface, MessageInterface, TimePartitionInfo, ContainerOrConceptFactory, RDDObject, JavaRDDObject, ContainerOrConcept}
-import com.ligadata.BaseTypes._
+import org.json4s.jackson.JsonMethods._;
+import org.json4s.DefaultFormats;
+import org.json4s.Formats;
+import com.ligadata.KamanjaBase._;
+import com.ligadata.BaseTypes._;
 import com.ligadata.Exceptions.StackTrace;
 import org.apache.logging.log4j.{ Logger, LogManager }
-import java.util.Date
+import java.util.Date;
+import java.io.{ DataInputStream, DataOutputStream, ByteArrayOutputStream }
+
     
  """
   }
@@ -104,16 +118,16 @@ import java.util.Date
 
   private def getByNameFuncForMapped = {
     """
-    override def get(key: String): AttributeValue = { // Return (value, type)
+    override def get(key: String): AnyRef = { // Return (value, type)
       try {
-        return valuesMap.get(key.toLowerCase())
-      } catch {
+        val value = valuesMap(key).getValue
+        if (value == null) return null; else return value.asInstanceOf[AnyRef];  
+       } catch {
         case e: Exception => {
           log.debug("", e)
           throw e
         }
-      }
-      return null;
+      }      
     }
 """
   }
@@ -123,24 +137,18 @@ import java.util.Date
    */
   private def getOrElseFuncForMapped = {
     """
-    override def getOrElse(key: String, defaultVal: Any): AttributeValue = { // Return (value, type)
+    override def getOrElse(key: String, defaultVal: Any): AnyRef = { // Return (value, type)
       var attributeValue: AttributeValue = new AttributeValue();
       try {
-        val value = valuesMap.get(key.toLowerCase())
-        if (value == null) {
-          attributeValue.setValue(defaultVal);
-          attributeValue.setValueType("Any");
-          return attributeValue;
-          } else {
-          return value;
-        }
+        val value = valuesMap(key).getValue
+        if (value == null) return defaultVal.asInstanceOf[AnyRef];
+        return value.asInstanceOf[AnyRef];   
       } catch {
         case e: Exception => {
           log.debug("", e)
           throw e
         }
-      }
-      return null;
+      }      
     }     
  """
   }
@@ -151,13 +159,11 @@ import java.util.Date
   private def getAttibuteNamesMapped = {
     """
     override def getAttributeNames(): Array[String] = {
-      var attributeNames: scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer[String]();
       try {
-        val iter = valuesMap.entrySet().iterator();
-        while (iter.hasNext()) {
-          val attributeName = iter.next().getKey;
-          if (attributeName != null && attributeName.trim() != "")
-            attributeNames += attributeName;
+        if (valuesMap.isEmpty) {
+          return null;
+        } else {
+          return valuesMap.keySet.toArray;
         }
       } catch {
         case e: Exception => {
@@ -165,7 +171,6 @@ import java.util.Date
           throw e
         }
       }
-      return attributeNames.toArray;
     }  
 """
   }
@@ -175,11 +180,11 @@ import java.util.Date
    */
   private def getByIndexMapped = {
     """
-    override def get(index: Int): AttributeValue = { // Return (value, type)
+    override def get(index: Int): AnyRef = { // Return (value, type)
       throw new Exception("Get By Index is not supported in mapped messages");
     }
 
-    override def getOrElse(index: Int, defaultVal: Any): AttributeValue = { // Return (value,  type)
+    override def getOrElse(index: Int, defaultVal: Any): AnyRef = { // Return (value,  type)
       throw new Exception("Get By Index is not supported in mapped messages");
     }  
     """
@@ -190,8 +195,8 @@ import java.util.Date
 
   private def getAllAttributes = {
     """
-    override def getAllAttributeValues(): java.util.HashMap[String, AttributeValue] = { // Has (name, value, type))
-      return valuesMap;
+    override def getAllAttributeValues(): Array[AttributeValue] = { // Has (name, value, type))
+      return valuesMap.map(f => f._2).toArray;
     }  
     """
   }
@@ -201,9 +206,10 @@ import java.util.Date
    */
   private def getAttributeNameAndValueIteratorMapped = {
     """
-     override def getAttributeNameAndValueIterator(): java.util.Iterator[java.util.Map.Entry[String, AttributeValue]] = {
-       valuesMap.entrySet().iterator();
-     }  
+    override def getAttributeNameAndValueIterator(): java.util.Iterator[AttributeValue] = {
+      //valuesMap.iterator.asInstanceOf[java.util.Iterator[AttributeValue]];
+      return null;
+    }  
    """
   }
 
@@ -214,13 +220,13 @@ import java.util.Date
   private def setByNameFuncForMappedMsgs() = {
     """
     override def set(key: String, value: Any) = {
-      var attributeValue: AttributeValue = new AttributeValue();
       try {
-        val keyName: String = key.toLowerCase();
-        val valType = keyTypes.getOrElse(keyName, "Any")
-        attributeValue.setValue(value)
-        attributeValue.setValueType(valType)
-        valuesMap.put(keyName, attributeValue)
+       val keyName: String = key.toLowerCase();
+        if (keyTypes.contains(key)) {
+          valuesMap(key) = new AttributeValue(value, keyTypes(keyName))
+        } else {
+          valuesMap(key) = new AttributeValue(ValueToString(value), new AttributeTypeInfo(key, -1, AttributeTypeInfo.TypeCategory.STRING, 0, 0, 0))
+        }
       } catch {
         case e: Exception => {
           log.debug("", e)
@@ -237,18 +243,23 @@ import java.util.Date
   private def setValueAndValTypByKeyMapped = {
     """
     override def set(key: String, value: Any, valTyp: String) = {
-      var attributeValue: AttributeValue = new AttributeValue();
-      try {
-        attributeValue.setValue(value)
-        attributeValue.setValueType(valTyp)
-        valuesMap.put(key.toLowerCase(), attributeValue)
-      } catch {
-        case e: Exception => {
-          log.debug("", e)
-          throw e
+       try{
+         val keyName: String = key.toLowerCase();
+         if (keyTypes.contains(key)) {
+           valuesMap(key) = new AttributeValue(value, keyTypes(keyName))
+         } else {
+           val typeCategory = AttributeTypeInfo.TypeCategory.valueOf(valTyp.toUpperCase())
+           val keytypeId = typeCategory.getValue.toShort
+           val valtypeId = typeCategory.getValue.toShort
+           valuesMap(key) = new AttributeValue(value, new AttributeTypeInfo(key, -1, typeCategory, valtypeId, keytypeId, 0))
+          }
+        } catch {
+          case e: Exception => {
+            log.debug("", e)
+            throw e
+          }
         }
-      }
-    }  
+      }  
     """
   }
 
@@ -265,18 +276,39 @@ import java.util.Date
 
   def valuesMapMapped = {
     """
-    private var valuesMap = new java.util.HashMap[String, AttributeValue]()
+    var valuesMap = scala.collection.mutable.Map[String, AttributeValue]()
  """
+  }
+
+  /*
+   * ValueToString method for mapped messages
+   */
+  private def ValueToString = {
+    """
+    private def ValueToString(v: Any): String = {
+      if (v.isInstanceOf[Set[_]]) {
+        return v.asInstanceOf[Set[_]].mkString(",")
+      }
+      if (v.isInstanceOf[List[_]]) {
+        return v.asInstanceOf[List[_]].mkString(",")
+      }
+      if (v.isInstanceOf[Array[_]]) {
+        return v.asInstanceOf[Array[_]].mkString(",")
+      }
+      v.toString
+    }  
+    """
   }
 
   /*
    * All Get Set methods for mapped messages
    */
 
-  def getSetMethods: String = {
+  def getGetSetMethods: String = {
     var getSetMapped = new StringBuilder(8 * 1024)
     try {
       getSetMapped.append(valuesMapMapped);
+      getSetMapped.append(getAttributeTypesMethodMapped)
       getSetMapped.append(getByNameFuncForMapped)
       getSetMapped.append(getOrElseFuncForMapped)
       getSetMapped.append(getAttibuteNamesMapped)
@@ -286,6 +318,7 @@ import java.util.Date
       getSetMapped.append(setByNameFuncForMappedMsgs)
       getSetMapped.append(setValueAndValTypByKeyMapped)
       getSetMapped.append(setByIndex)
+      getSetMapped.append(ValueToString)
     } catch {
       case e: Exception => {
         log.debug("", e)
@@ -343,5 +376,66 @@ import java.util.Date
   }
   """
   }
+  /*
+   * type conversion
+   */
+  def typeConversion = {
+    """
+    private def typeConv(valueType: String, value: Any): AttributeValue = {
+      var attributeValue: AttributeValue = new AttributeValue();
+      attributeValue.setValueType(valueType)
 
+      valueType match {
+        case "string" => { attributeValue.setValue(com.ligadata.BaseTypes.StringImpl.Input(value.asInstanceOf[String])) }
+        case "int" => { attributeValue.setValue(com.ligadata.BaseTypes.IntImpl.Input(value.asInstanceOf[String])) }
+        case "float" => { attributeValue.setValue(com.ligadata.BaseTypes.FloatImpl.Input(value.asInstanceOf[String])) }
+        case "double" => { attributeValue.setValue(com.ligadata.BaseTypes.DoubleImpl.Input(value.asInstanceOf[String])) }
+        case "boolean" => { attributeValue.setValue(com.ligadata.BaseTypes.BoolImpl.Input(value.asInstanceOf[String])) }
+        case "long" => { attributeValue.setValue(com.ligadata.BaseTypes.LongImpl.Input(value.asInstanceOf[String])) }
+        case "char" => { attributeValue.setValue(com.ligadata.BaseTypes.CharImpl.Input(value.asInstanceOf[String])) }
+        case "any" => { attributeValue.setValue(com.ligadata.BaseTypes.StringImpl.Input(value.asInstanceOf[String])) }
+        case _ => {} // do nothhing
+      }
+      attributeValue
+    }  
+    """
+  }
+
+  def getAttributeTypesMethodFixed = {
+
+    """
+    override def getAttributeTypes(): Array[AttributeTypeInfo] = {
+      if (attributeTypes == null) return null;
+      return attributeTypes
+    }
+    """
+  }
+
+  def getAttributeTypesMethodMapped = {
+    """
+    override def getAttributeTypes(): Array[AttributeTypeInfo] = {
+      val attributeTyps = valuesMap.map(f => f._2.getValueType).toArray;
+      if (attributeTyps == null) return null else return attributeTyps
+    }   
+ """
+  }
+
+  def classDeprecatedMethods(msg: Message) = {
+    """
+  override def IsFixed: Boolean = """ + msg.Name + """.IsFixed;
+  override def IsKv: Boolean = """ + msg.Name + """.IsKv;
+  override def CanPersist: Boolean = """ + msg.Name + """.CanPersist;
+  override def FullName: String = """ + msg.Name + """.FullName
+  override def NameSpace: String = """ + msg.Name + """.NameSpace
+  override def Name: String = """ + msg.Name + """.Name
+  override def Version: String = """ + msg.Name + """.Version
+  override def isMessage: Boolean = """ + msg.Name + """.isMessage;
+  override def isContainer: Boolean = """ + msg.Name + """.isContainer();
+  override def PartitionKeyData: Array[String] = getPartitionKey
+  override def PrimaryKeyData: Array[String] = getPrimaryKey
+  def populate(inputdata: InputData) = { throw new Exception("populate method in message is deprecated "); }
+  override def Serialize(dos: DataOutputStream): Unit = { throw new Exception("Serialize method in message is deprecated   "); };
+  override def Deserialize(dis: DataInputStream, mdResolver: MdBaseResolveInfo, loader: java.lang.ClassLoader, savedDataVersion: String): Unit = { throw new Exception("Deserialize method in message is deprecated   "); };
+"""
+  }
 }

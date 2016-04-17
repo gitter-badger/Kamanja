@@ -46,6 +46,8 @@ private class MockInputAdapter extends InputAdapter {
 
   override def getComponentStatusAndMetrics: MonitorComponentInfo = null
 
+  override def getComponentSimpleStats: String = ""
+
   override val nodeContext: NodeContext = null
 }
 

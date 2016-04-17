@@ -47,7 +47,7 @@ trait LogTrait {
   val logger = LogManager.getLogger(loggerName)
 }
 
-class SaveContainerDataCompImpl extends LogTrait with MdBaseResolveInfo {
+class SaveContainerDataCompImpl extends LogTrait with ObjectResolver {
   private var _configFile: String = null
   private var _nodeId: Int = 0
   private var _initialized = false
@@ -152,7 +152,7 @@ class SaveContainerDataCompImpl extends LogTrait with MdBaseResolveInfo {
     }
   }
 
-  override def getMessgeOrContainerInstance(MsgContainerType: String): ContainerInterface = {
+  override def getInstance(MsgContainerType: String): ContainerInterface = {
     try {
       return GetContainerInterface(MsgContainerType)
     } catch {
@@ -161,6 +161,21 @@ class SaveContainerDataCompImpl extends LogTrait with MdBaseResolveInfo {
     }
     return null
   }
+
+  override def getInstance(schemaId: Long): ContainerInterface = {
+    //BUGBUG:: For now we are getting latest class. But we need to get the old one too.
+    if (mdMgr == null)
+      throw new KamanjaException("Metadata Not found", null)
+
+    val contOpt = mdMgr.ContainerForSchemaId(schemaId.toInt)
+
+    if (contOpt == None)
+      throw new KamanjaException("Container Not found for schemaid:" + schemaId, null)
+
+    getInstance(contOpt.get.FullName)
+  }
+
+  override def getMdMgr: MdMgr = mdMgr
 
   @throws(classOf[Exception])
   def Init(cfgfile: String): Unit = {
@@ -297,7 +312,7 @@ class SaveContainerDataCompImpl extends LogTrait with MdBaseResolveInfo {
 
     // If we have cached obj, just create from it
     if (cachedObj != null) {
-      if (cachedObj.getContainerType == ContainerFactoryInterface.ContainerType.MESSAGE)
+      if (cachedObj.getContainerType == ContainerTypes.ContainerType.MESSAGE)
         return cachedObj.createInstance.asInstanceOf[ContainerInterface]
       return cachedObj.createInstance.asInstanceOf[ContainerInterface]
     }

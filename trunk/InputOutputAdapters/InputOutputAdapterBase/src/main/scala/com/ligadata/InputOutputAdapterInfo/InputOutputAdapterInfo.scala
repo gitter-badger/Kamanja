@@ -24,11 +24,12 @@ import com.ligadata.transactions.{NodeLevelTransService, SimpleTransService}
 //import org.json4s._
 //import org.json4s.JsonDSL._
 //import org.json4s.jackson.JsonMethods._
-import org.apache.logging.log4j.{ Logger, LogManager }
+import org.apache.logging.log4j.{Logger, LogManager}
 
 import scala.collection.mutable.ArrayBuffer
 
 object AdapterConfiguration {
+  // Strings to be used for the Metrics descriptions
   val TYPE_INPUT = "Input_Adapter"
   val TYPE_OUTPUT = "Output_Adapter"
 }
@@ -36,14 +37,14 @@ object AdapterConfiguration {
 class AdapterConfiguration {
   // Name of the Adapter, KafkaQueue Name/MQ Name/File Adapter Logical Name/etc
   var Name: String = _
-//  // CSV/JSON/XML for input adapter.
-//  var formatName: String = _
-//  // For output adapter it is just corresponding validate adapter name.
-//  var validateAdapterName: String = _
-//  // For input adapter it is just corresponding failed events adapter name.
-//  var failedEventsAdapterName: String = _
-//  // Queue Associated Message
-//  var associatedMsg: String = _
+  //  // CSV/JSON/XML for input adapter.
+  //  var formatName: String = _
+  //  // For output adapter it is just corresponding validate adapter name.
+  //  var validateAdapterName: String = _
+  //  // For input adapter it is just corresponding failed events adapter name.
+  //  var failedEventsAdapterName: String = _
+  //  // Queue Associated Message
+  //  var associatedMsg: String = _
   // Class where the Adapter can be loaded (Object derived from InputAdapterObj)
   var className: String = _
   // Jar where the className can be found
@@ -53,11 +54,11 @@ class AdapterConfiguration {
   // adapter specific (mostly json) string
   var adapterSpecificCfg: String = _
   var tenantId: String = _
-//  // Delimiter String for keyAndValueDelimiter
-//  var keyAndValueDelimiter: String = _
-//  // Delimiter String for fieldDelimiter
-//  var fieldDelimiter: String = _
-//  var valueDelimiter: String = _ // Delimiter String for valueDelimiter
+  //  // Delimiter String for keyAndValueDelimiter
+  //  var keyAndValueDelimiter: String = _
+  //  // Delimiter String for fieldDelimiter
+  //  var fieldDelimiter: String = _
+  //  var valueDelimiter: String = _ // Delimiter String for valueDelimiter
 }
 
 // Input Adapter Object to create Adapter
@@ -72,7 +73,7 @@ class StartProcPartInfo {
 }
 
 // Input Adapter
-trait InputAdapter extends Monitorable {
+trait InputAdapter extends AdaptersSerializeDeserializers with Monitorable {
   val nodeContext: NodeContext
   // NodeContext
   val inputConfig: AdapterConfiguration // Configuration
@@ -81,6 +82,8 @@ trait InputAdapter extends Monitorable {
     // Making String from key
     return "{\"Name\" : \"%s\"}".format(inputConfig.Name)
   }
+
+  override final def getAdapterName = inputConfig.Name
 
   def Category = "Input"
 
@@ -114,6 +117,8 @@ trait OutputAdapter extends AdaptersSerializeDeserializers with Monitorable {
   // Configuration
   val inputConfig: AdapterConfiguration
 
+  override final def getAdapterName = inputConfig.Name
+
   def send(tnxCtxt: TransactionContext, outputContainers: Array[ContainerInterface]): Unit
 
   def Shutdown: Unit
@@ -121,7 +126,7 @@ trait OutputAdapter extends AdaptersSerializeDeserializers with Monitorable {
   def Category = "Output"
 }
 
-trait ExecContext extends AdaptersSerializeDeserializers {
+trait ExecContext {
   val input: InputAdapter
   val curPartitionKey: PartitionUniqueRecordKey
   val nodeContext: NodeContext
@@ -130,23 +135,35 @@ trait ExecContext extends AdaptersSerializeDeserializers {
   private val failedEventDtFormat = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
 
   if (nodeContext != null && nodeContext.getEnvCtxt() != null) {
-    if (! nodeContext.getEnvCtxt().hasZkConnectionString)
+    if (!nodeContext.getEnvCtxt().hasZkConnectionString)
       throw new KamanjaException("Zookeeper information is not yet set", null)
   } else {
     throw new KamanjaException("Not found NodeContext or EnvContext", null)
   }
 
-  val (zkConnectString, zkNodeBasePath, zkSessionTimeoutMs, zkConnectionTimeoutMs)  = nodeContext.getEnvCtxt().getZookeeperInfo
-  val (txnIdsRangeForPartition, txnIdsRangeForNode)  = nodeContext.getEnvCtxt().getTransactionRanges
+  val (zkConnectString, zkNodeBasePath, zkSessionTimeoutMs, zkConnectionTimeoutMs) = nodeContext.getEnvCtxt().getZookeeperInfo
+  val (txnIdsRangeForPartition, txnIdsRangeForNode) = nodeContext.getEnvCtxt().getTransactionRanges
 
   NodeLevelTransService.init(zkConnectString, zkSessionTimeoutMs, zkConnectionTimeoutMs, zkNodeBasePath, txnIdsRangeForNode,
-    nodeContext.getEnvCtxt().getDefaultDatastoreForTenantId(input.inputConfig.tenantId), nodeContext.getEnvCtxt().getJarPaths())
+    nodeContext.getEnvCtxt().getSystemCatalogDatastore(), nodeContext.getEnvCtxt().getJarPaths())
   private val transService = new SimpleTransService
   transService.init(txnIdsRangeForPartition)
 
-  final def SendFailedEvent(data: Array[Byte], deserializer: String, failedMsg: String, uk: String, uv: String, e: Throwable): Unit = {
+  final def SendFailedEvent(data: Array[Byte], deserializer: String, failedMsg: String, uniqueKey: PartitionUniqueRecordKey, uniqueVal: PartitionUniqueRecordValue, e: Throwable): Unit = {
     val failedTm = failedEventDtFormat.format(new java.util.Date(System.currentTimeMillis))
     val evntData = new String(data)
+
+    var uk = ""
+    var uv = ""
+
+    try {
+      uk = if (uniqueKey != null) uniqueKey.Serialize else ""
+      uv = if (uniqueVal != null) uniqueVal.Serialize else ""
+    } catch {
+      case e: Throwable => {
+        LOG.error("Failed to serialize PartitionUniqueRecordKey and/or PartitionUniqueRecordValue", e)
+      }
+    }
 
     val failMsg = if (e != null) e.getMessage else ""
     val stackTrace = if (e != null) StackTrace.ThrowableTraceString(e) else ""
@@ -192,6 +209,11 @@ trait ExecContext extends AdaptersSerializeDeserializers {
   }
 
   final def execute(msg: ContainerInterface, data: Array[Byte], uniqueKey: PartitionUniqueRecordKey, uniqueVal: PartitionUniqueRecordValue, readTmMilliSecs: Long): Unit = {
+    if (msg == null) {
+      SendFailedEvent(data, "", "", uniqueKey, uniqueVal, null)
+      return
+    }
+
     var uk = ""
     var uv = ""
 
@@ -207,9 +229,12 @@ trait ExecContext extends AdaptersSerializeDeserializers {
     var txnCtxt: TransactionContext = null
     try {
       val transId = transService.getNextTransId
-      val msgEvent = nodeContext.getEnvCtxt().getContainerInstance("System.KamanjaMessageEvent")
+      val msgEvent = nodeContext.getEnvCtxt().getContainerInstance("com.ligadata.KamanjaBase.KamanjaMessageEvent")
+      if (msgEvent == null) {
+        LOG.warn("Not able to get com.ligadata.KamanjaBase.KamanjaMessageEvent")
+      }
       txnCtxt = new TransactionContext(transId, nodeContext, data, EventOriginInfo(uk, uv), readTmMilliSecs, msgEvent)
-      LOG.debug("Processing uniqueKey:%s, uniqueVal:%s, Datasize:%d".format(uk, uv, data.size))
+      LOG.debug("Processing uniqueKey:%s, uniqueVal:%s, Datasize:%d,IsMsgNull:%s,MsgData:%s".format(uk, uv, data.size, if (msg == null) "true" else "false", if (msg == null) "" else msg.get("msg").toString))
       txnCtxt.setInitialMessage("", msg)
       executeMessage(txnCtxt): Unit
     } catch {
@@ -218,46 +243,51 @@ trait ExecContext extends AdaptersSerializeDeserializers {
       }
     } finally {
       // Commit. Writing into OutputAdapters & Storage Adapters
-      nodeContext.getEnvCtxt().commitData(txnCtxt);
+      commitData(txnCtxt);
     }
   }
 
   // Raw data deserialized and send to another send method which takes msg
   final def execute(data: Array[Byte], uniqueKey: PartitionUniqueRecordKey, uniqueVal: PartitionUniqueRecordValue, readTmMilliSecs: Long): Unit = {
-    var msg: ContainerInterface = null
-    var deserializerName: String = ""
-
+    val deserializer = ""
+    val failedMsg = ""
 
     try {
-      val (tMsg, tDeserializerName) = deserialize(data)
-      msg = tMsg
-      deserializerName = tDeserializerName
-      execute(msg, data, uniqueKey, uniqueVal, readTmMilliSecs)
+      val (tMsg, tDeserializerName, msgName) = input.deserialize(data)
+      LOG.debug("Called Deserialize and got msg:" + (if (tMsg == null) "" else tMsg.getFullTypeName))
+      val deserializer = if (tDeserializerName != null) tDeserializerName else ""
+      val failedMsg = if (msgName != null) msgName else ""
+      if (tMsg != null) {
+        execute(tMsg, data, uniqueKey, uniqueVal, readTmMilliSecs)
+      }
+      else {
+        if (LOG.isDebugEnabled) {
+          var uk = ""
+          var uv = ""
+
+          try {
+            uk = if (uniqueKey != null) uniqueKey.Serialize else ""
+            uv = if (uniqueVal != null) uniqueVal.Serialize else ""
+          } catch {
+            case e: Throwable => {
+              LOG.error("Failed to serialize PartitionUniqueRecordKey and/or PartitionUniqueRecordValue", e)
+            }
+          }
+          LOG.debug("Not able to deserialize data:%s at UK:%s, UV:%s".format((if (data != null) new String(data) else ""), uk, uv))
+        }
+        SendFailedEvent(data, tDeserializerName, failedMsg, uniqueKey, uniqueVal, null)
+      }
     } catch {
       case e: Throwable => {
-        //FIXME:- Need to populate deserializer & failedMsg -- Begin
-        val deserializer = ""
-        val failedMsg = ""
-        //FIXME:- Need to populate deserializer & failedMsg -- End
-
-        var uk = ""
-        var uv = ""
-
-        try {
-          uk = if (uniqueKey != null) uniqueKey.Serialize else ""
-          uv = if (uniqueVal != null) uniqueVal.Serialize else ""
-        } catch {
-          case e: Throwable => {
-            LOG.error("Failed to serialize PartitionUniqueRecordKey and/or PartitionUniqueRecordValue", e)
-          }
-        }
-
-        SendFailedEvent(data, deserializer, failedMsg, uk, uv, e)
+        LOG.error("Failed to Deserialize/Execute", e)
+        SendFailedEvent(data, deserializer, failedMsg, uniqueKey, uniqueVal, e)
       }
     }
   }
 
   protected def executeMessage(txnCtxt: TransactionContext): Unit
+
+  protected def commitData(txnCtxt: TransactionContext): Unit
 }
 
 trait ExecContextFactory {

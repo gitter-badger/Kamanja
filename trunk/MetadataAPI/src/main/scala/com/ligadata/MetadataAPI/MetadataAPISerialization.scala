@@ -4,6 +4,7 @@ import java.util.Date
 
 import com.ligadata.Exceptions._
 import com.ligadata.Serialize.TypeDef
+import com.ligadata.Serialize.JsonSerializer._
 import com.ligadata.kamanja.metadata._
 import com.ligadata.kamanja.metadataload.MetadataLoad
 import org.apache.logging.log4j.LogManager
@@ -599,14 +600,26 @@ object MetadataAPISerialization {
 
         }
         case o: TenantInfo => {
-          val primaryDataStore = if (o.primaryDataStore == null) "" else o.primaryDataStore
-          val cacheConfig = if (o.cacheConfig == null) "" else o.cacheConfig
-          val json = "Tenant" ->
-            ("TenantId" -> o.tenantId) ~
-              ("Description" -> getEmptyIfNull(o.description)) ~
-              ("PrimaryDataStore" -> primaryDataStore) ~
-              ("CacheConfig" -> cacheConfig)
-          outputJson = compact(render(json))
+            val primaryDataStore = if (o.primaryDataStore == null) "" else o.primaryDataStore
+            val cacheConfig = if (o.cacheConfig == null) "" else o.cacheConfig
+            val json = "Tenant" ->
+                ("TenantId" -> o.tenantId) ~
+                    ("Description" -> getEmptyIfNull(o.description)) ~
+                    ("PrimaryDataStore" -> primaryDataStore) ~
+                    ("CacheConfig" -> cacheConfig)
+            outputJson = compact(render(json))
+
+        }
+
+        case o: AdapterMessageBinding => {
+            val optionsMapStr : String = SerializeMapToJsonString(o.options) // in com.ligadata.Serialize.JsonSerializer.
+            val json = "AdapterMsgBinding" ->
+                    ("AdapterName" -> o.adapterName) ~
+                    ("MessageName" -> o.messageName) ~
+                    ("Serializer" -> o.serializer) ~
+                    ("Options" -> optionsMapStr)
+
+            outputJson = compact(render(json))
 
         }
         case o: UserPropertiesInfo => {
@@ -665,6 +678,7 @@ object MetadataAPISerialization {
         case "ClusterCfg" => parseClusterCfgInfo(json)
         case "Adapter" => parseAdapterInfo(json)
         case "Tenant" => parseTenantInfo(json)
+        case "AdapterMsgBinding" => parseAdapterMessageBinding(json)
         case "UserProperties" => parseUserPropertiesInfo(json)
         case _ => throw new Exception("deserializeMetadata doesn't support the objects of type objectType of " + key + " yet.")
       }
@@ -1722,30 +1736,61 @@ object MetadataAPISerialization {
     }
   }
 
-  private def parseTenantInfo(tenantInfoJson: JValue): TenantInfo = {
-    try {
-      logger.debug("Parsed the json : " + tenantInfoJson)
+    private def parseTenantInfo(tenantInfoJson: JValue): TenantInfo = {
+        try {
+            logger.debug("Parsed the json : " + tenantInfoJson)
 
-      val tenantInst = tenantInfoJson.extract[Tenant]
+            val tenantInst = tenantInfoJson.extract[Tenant]
 
-      val tenantInfo = MdMgr.GetMdMgr.MakeTenantInfo(
-        tenantInst.Tenant.TenantId,
-        tenantInst.Tenant.Description,
-        tenantInst.Tenant.PrimaryDataStore,
-        tenantInst.Tenant.CacheConfig
-      )
-      tenantInfo
-    } catch {
-      case e: MappingException => {
-        logger.debug("", e)
-        throw Json4sParsingException(e.getMessage(), e)
-      }
-      case e: Exception => {
-        logger.error("Failed to parse JSON" + tenantInfoJson, e)
-        throw e
-      }
+            val tenantInfo = MdMgr.GetMdMgr.MakeTenantInfo(
+                tenantInst.Tenant.TenantId,
+                tenantInst.Tenant.Description,
+                tenantInst.Tenant.PrimaryDataStore,
+                tenantInst.Tenant.CacheConfig
+            )
+            tenantInfo
+        } catch {
+            case e: MappingException => {
+                logger.debug("", e)
+                throw Json4sParsingException(e.getMessage(), e)
+            }
+            case e: Exception => {
+                logger.error("Failed to parse JSON" + tenantInfoJson, e)
+                throw e
+            }
+        }
     }
-  }
+
+    /**
+      * Resurrect the AdapterMessageBinding instance from the supplied JValue.
+      * @param bindingJson the json4s JValue containing the AdapterMessageBinding content
+      * @return an AdapterMessageBinding instance
+      *
+      */
+    private def parseAdapterMessageBinding(bindingJson: JValue): AdapterMessageBinding = {
+        try {
+            logger.debug(s"Parsing this JSON string : \n$bindingJson")
+
+            val rawBinding = bindingJson.extract[AdapterMsgBinding]
+            val optionsStr : String = rawBinding.AdapterMsgBinding.Options
+            val options : Map[String,Any] = jsonStringAsColl(optionsStr).asInstanceOf[Map[String,Any]]
+            val bindingInfo : AdapterMessageBinding =
+                MdMgr.GetMdMgr.MakeAdapterMessageBinding(rawBinding.AdapterMsgBinding.AdapterName
+                                                        ,rawBinding.AdapterMsgBinding.MessageName
+                                                        ,rawBinding.AdapterMsgBinding.Serializer
+                                                        ,options)
+            bindingInfo
+        } catch {
+            case e: MappingException => {
+                logger.debug("", e)
+                throw Json4sParsingException(e.getMessage(), e)
+            }
+            case e: Exception => {
+                logger.error("Failed to parse JSON" + bindingJson, e)
+                throw e
+            }
+        }
+    }
 
   private def parseAdapterInfo(adapterInfoJson: JValue): AdapterInfo = {
     try {
@@ -1844,6 +1889,13 @@ case class Adapter(Adapter: AdapterInformation)
 case class TenantInformation(TenantId: String, Description: String, PrimaryDataStore: String, CacheConfig: String)
 
 case class Tenant(Tenant: TenantInformation)
+
+case class AdapterMsgBindingInfo(AdapterName: String
+                             , MessageName : String
+                             , Serializer: String
+                             , Options : String)
+
+case class AdapterMsgBinding(AdapterMsgBinding: AdapterMsgBindingInfo)
 
 case class KeyVale(Key: String, Value: String)
 

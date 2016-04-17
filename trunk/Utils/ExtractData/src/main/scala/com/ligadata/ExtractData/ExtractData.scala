@@ -16,6 +16,8 @@
 
 package com.ligadata.ExtractData
 
+import com.ligadata.Exceptions.KamanjaException
+
 import scala.reflect.runtime.universe
 import scala.collection.mutable.ArrayBuffer
 import java.util.Properties
@@ -42,7 +44,7 @@ import java.util.Date
 import java.text.SimpleDateFormat
 import com.ligadata.KamanjaVersion.KamanjaVersion
 
-object ExtractData extends MdBaseResolveInfo {
+object ExtractData extends ObjectResolver {
   private val LOG = LogManager.getLogger(getClass);
   private val clsLoaderInfo = new KamanjaLoaderInfo
   private var _currentMessageObj: MessageFactoryInterface = null
@@ -59,7 +61,7 @@ object ExtractData extends MdBaseResolveInfo {
     LOG.warn("    --version")
   }
 
-  override def getMessgeOrContainerInstance(MsgContainerType: String): ContainerInterface = {
+  override def getInstance(MsgContainerType: String): ContainerInterface = {
     if (MsgContainerType.compareToIgnoreCase(_currentTypName) == 0) {
       if (_currentMessageObj != null)
         return _currentMessageObj.createInstance.asInstanceOf[ContainerInterface]
@@ -68,6 +70,21 @@ object ExtractData extends MdBaseResolveInfo {
     }
     return null
   }
+
+  override def getInstance(schemaId: Long): ContainerInterface = {
+    //BUGBUG:: For now we are getting latest class. But we need to get the old one too.
+    if (mdMgr == null)
+      throw new KamanjaException("Metadata Not found", null)
+
+    val contOpt = mdMgr.ContainerForSchemaId(schemaId.toInt)
+
+    if (contOpt == None)
+      throw new KamanjaException("Container Not found for schemaid:" + schemaId, null)
+
+    getInstance(contOpt.get.FullName)
+  }
+
+  override def getMdMgr: MdMgr = mdMgr
 
   private def LoadJars(elem: BaseElem): Boolean = {
     var retVal: Boolean = true

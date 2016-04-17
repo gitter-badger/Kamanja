@@ -17,6 +17,7 @@ import scala.actors.threadpool.{ Executors, ExecutorService }
 import java.io.{InputStream}
 import org.apache.logging.log4j.{ Logger, LogManager }
 import com.ligadata.InputAdapters.{CompressionUtil, SmartFileHandler, SmartFileMonitor}
+import scala.actors.threadpool.{Executors, ExecutorService}
 
 class HdfsFileEntry {
   var name : String = ""
@@ -218,7 +219,7 @@ class HdfsChangesMonitor (adapterName : String, modifiedFileCallback:(SmartFileH
 
   private var connectionConf : FileAdapterConnectionConfig = null
   private var monitoringConf :  FileAdapterMonitoringConfig = null
-
+  private var monitorsExecutorService: ExecutorService = null
   private var hdfsConfig : Configuration = null
 
   def init(adapterSpecificCfgJson: String): Unit ={
@@ -242,8 +243,9 @@ class HdfsChangesMonitor (adapterName : String, modifiedFileCallback:(SmartFileH
   }
 
   def shutdown: Unit ={
-    //TODO : use an executor object to run the monitoring and stop here
+
     isMonitoring = false
+    monitorsExecutorService.shutdown()
   }
 
   def getFolderContents(parentfolder : String, hdFileSystem : FileSystem) : Array[FileStatus] = {
@@ -261,63 +263,71 @@ class HdfsChangesMonitor (adapterName : String, modifiedFileCallback:(SmartFileH
 
   def monitor(){
 
-    monitoringConf.locations.foreach(targetFolder => {
-      // Instantiate HDFS Configuration.
+    isMonitoring = true
+    monitorsExecutorService = Executors.newFixedThreadPool(monitoringConf.locations.length)
 
-      val filesStatusMap = Map[String, HdfsFileEntry]()
-      var firstCheck = true
+    monitoringConf.locations.foreach(folderToWatch => {
+      val dirMonitorthread = new Runnable() {
+        private var targetFolder: String = _
+        def init(dir: String) = targetFolder = dir
 
-      isMonitoring = true
+        override def run() = {
 
-      while(isMonitoring){
+          val filesStatusMap = Map[String, HdfsFileEntry]()
+          var firstCheck = true
 
-        try{
-          logger.info(s"Checking configured HDFS directory (targetFolder)...")
+          while (isMonitoring) {
+
+            try {
+              logger.info(s"Checking configured HDFS directory (targetFolder)...")
 
 
-          val modifiedDirs = new ArrayBuffer[String]()
-          modifiedDirs += targetFolder
-          while(modifiedDirs.nonEmpty ){
-            //each time checking only updated folders: first find direct children of target folder that were modified
-            // then for each folder of these search for modified files and folders, repeat for the modified folders
+              val modifiedDirs = new ArrayBuffer[String]()
+              modifiedDirs += targetFolder
+              while (modifiedDirs.nonEmpty) {
+                //each time checking only updated folders: first find direct children of target folder that were modified
+                // then for each folder of these search for modified files and folders, repeat for the modified folders
 
-            val aFolder = modifiedDirs.head
-            val modifiedFiles = Map[SmartFileHandler, FileChangeType]() // these are the modified files found in folder $aFolder
+                val aFolder = modifiedDirs.head
+                val modifiedFiles = Map[SmartFileHandler, FileChangeType]() // these are the modified files found in folder $aFolder
 
-            modifiedDirs.remove(0)
-            val fs = FileSystem.get(hdfsConfig)
-            findDirModifiedDirectChilds(aFolder , fs , filesStatusMap, modifiedDirs, modifiedFiles, firstCheck)
+                modifiedDirs.remove(0)
+                val fs = FileSystem.get(hdfsConfig)
+                findDirModifiedDirectChilds(aFolder, fs, filesStatusMap, modifiedDirs, modifiedFiles, firstCheck)
 
-            //logger.debug("Closing Hd File System object fs in monitorDirChanges()")
-            //fs.close()
+                //logger.debug("Closing Hd File System object fs in monitorDirChanges()")
+                //fs.close()
 
-            if(modifiedFiles.nonEmpty)
-              modifiedFiles.foreach(tuple =>
-              {
-                val handler = new MofifiedFileCallbackHandler(tuple._1, modifiedFileCallback)
-                // run the callback in a different thread
-                new Thread(handler).start()
-                //globalFileMonitorCallbackService.execute(handler)
-                //modifiedFileCallback(tuple._1,tuple._2)
+                if (modifiedFiles.nonEmpty)
+                  modifiedFiles.foreach(tuple => {
+                    val handler = new MofifiedFileCallbackHandler(tuple._1, modifiedFileCallback)
+                    // run the callback in a different thread
+                    new Thread(handler).start()
+                    //globalFileMonitorCallbackService.execute(handler)
+                    //modifiedFileCallback(tuple._1,tuple._2)
+
+                  }
+                  )
 
               }
-              )
 
+            }
+            catch {
+              case ex: Exception => {
+                logger.error(ex.getMessage)
+                ex.printStackTrace()
+              }
+            }
+
+            firstCheck = false
+
+            logger.info(s"Sleepng for ${monitoringConf.waitingTimeMS} milliseconds...............................")
+            Thread.sleep(monitoringConf.waitingTimeMS)
           }
-
         }
-        catch{
-          case ex: Exception => {
-            logger.error(ex.getMessage)
-            ex.printStackTrace()
-          }
-        }
-
-        firstCheck = false
-
-        logger.info(s"Sleepng for ${monitoringConf.waitingTimeMS} milliseconds...............................")
-        Thread.sleep(monitoringConf.waitingTimeMS)
       }
+      dirMonitorthread.init(folderToWatch)
+      monitorsExecutorService.execute(dirMonitorthread)
     })
 
 

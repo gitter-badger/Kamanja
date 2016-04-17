@@ -13,34 +13,30 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package com.ligadata.jtm.test.filter
+package com.ligadata.jtm.test.filter.V1
 import com.ligadata.KamanjaBase._
 import com.ligadata.KvBase.TimeRange
 import com.ligadata.kamanja.metadata.ModelDef
 import com.ligadata.Utils._
 import com.ligadata.runtime.Conversion
 class ModelFactory(modelDef: ModelDef, nodeContext: NodeContext) extends ModelInstanceFactory(modelDef, nodeContext) {
-  override def isValidMessage(msg: ContainerInterface): Boolean = {
-    msg.isInstanceOf[com.ligadata.kamanja.test.V1000000.arrin1]
-  }
   override def createModelInstance(): ModelInstance = return new Model(this)
-  override def getModelName: String = "com.ligadata.jtm.test.filter"
+  override def getModelName: String = "com.ligadata.jtm.test.filter.Model"
   override def getVersion: String = "0.0.1"
   override def createResultObject(): ModelResultBase = new MappedModelResults()
 }
 class Model(factory: ModelInstanceFactory) extends ModelInstance(factory) {
   val conversion = new com.ligadata.runtime.Conversion
   override def execute(txnCtxt: TransactionContext, execMsgsSet: Array[ContainerOrConcept], triggerdSetIndex: Int, outputDefault: Boolean): Array[ContainerOrConcept] = {
-    val messagefactoryinterface = execMsgsSet(0).asInstanceOf[MessageFactoryInterface]
     //
     //
     def exeGenerated_test1_1(msg1: com.ligadata.kamanja.test.V1000000.arrin1): Array[MessageInterface] = {
       val elements: Array[String] = msg1.mydata
       def process_o1(): Array[MessageInterface] = {
-        if (!(msg1.ext_type_id != "j10")) return Array.empty[MessageInterface]
+        if (!(!(msg1.ext_type_id != "j10"))) return Array.empty[MessageInterface]
         val t1: String = "s:" + elements(1).toString()
         val t2: String = "arryout"
-        val result = new com.ligadata.kamanja.test.V1000000.arrout1(messagefactoryinterface)
+        val result = com.ligadata.kamanja.test.V1000000.arrout1.createInstance
         result.mydata = Array(elements(0) t1, elements(2), elements(3))
         result.out_ext_type_id = t2
         Array(result)
@@ -49,7 +45,7 @@ class Model(factory: ModelInstanceFactory) extends ModelInstance(factory) {
     }
     // Evaluate messages
     val msgs = execMsgsSet.map(m => m.getFullTypeName -> m).toMap
-    val msg1 = msgs.get("com.ligadata.kamanja.test.arrin1").getOrElse(null).asInstanceOf[com.ligadata.kamanja.test.V1000000.arrin1]
+    val msg1 = msgs.getOrElse("com.ligadata.kamanja.test.arrin1", null).asInstanceOf[com.ligadata.kamanja.test.V1000000.arrin1]
     // Main dependency -> execution check
     //
     val results: Array[MessageInterface] =

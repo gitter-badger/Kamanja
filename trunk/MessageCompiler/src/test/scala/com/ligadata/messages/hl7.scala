@@ -1,18 +1,36 @@
-package com.ligadata.messages
 
-import org.json4s.jackson.JsonMethods._
-import org.json4s.DefaultFormats
-import org.json4s.Formats
+package com.ligadata.messages.V1000000;
+
+import org.json4s.jackson.JsonMethods._;
+import org.json4s.DefaultFormats;
+import org.json4s.Formats;
 import com.ligadata.KamanjaBase._;
-import com.ligadata.BaseTypes._
-import java.io.{ DataInputStream, DataOutputStream, ByteArrayOutputStream }
-import com.ligadata.Exceptions.StackTrace
+import com.ligadata.BaseTypes._;
+import com.ligadata.Exceptions.StackTrace;
 import org.apache.logging.log4j.{ Logger, LogManager }
-import scala.collection.mutable.ArrayBuffer;
-import java.util.Date
+import java.util.Date;
+import java.io.{ DataInputStream, DataOutputStream, ByteArrayOutputStream }
 
-object hl7 extends RDDObject[hl7] with ContainerFactoryInterface {
-  type T = hl7;
+object HL7 extends RDDObject[HL7] with MessageFactoryInterface {
+  type T = HL7;
+  override def getFullTypeName: String = "com.ligadata.messages.HL7";
+  override def getTypeNameSpace: String = "com.ligadata.messages";
+  override def getTypeName: String = "HL7";
+  override def getTypeVersion: String = "000000.000001.000000";
+  override def getSchemaId: Int = 0;
+  override def createInstance: HL7 = new HL7(HL7);
+  override def isFixed: Boolean = false;
+  override def getContainerType: ContainerTypes.ContainerType = ContainerTypes.ContainerType.MESSAGE
+  override def getFullName = getFullTypeName;
+  override def toJavaRDDObject: JavaRDDObject[T] = JavaRDDObject.fromRDDObject[T](this);
+
+  def build = new T(this)
+  def build(from: T) = new T(from)
+  override def getPartitionKeyNames: Array[String] = Array("desynpuf_id");
+
+  override def getPrimaryKeyNames: Array[String] = Array("desynpuf_id", "clm_id");
+
+  override def getTimePartitionInfo: TimePartitionInfo = { return null; } // FieldName, Format & Time Partition Types(Daily/Monthly/Yearly)
 
   override def hasPrimaryKey(): Boolean = {
     val pKeys = getPrimaryKeyNames();
@@ -29,119 +47,154 @@ object hl7 extends RDDObject[hl7] with ContainerFactoryInterface {
     return (tmInfo != null && tmInfo.getTimePartitionType != TimePartitionInfo.TimePartitionType.NONE);
   }
 
-  def getTimePartitionInfo: TimePartitionInfo = {
-    var timePartitionInfo: TimePartitionInfo = new TimePartitionInfo();
-    timePartitionInfo.setFieldName("clm_from_dt");
-    timePartitionInfo.setFormat("epochtime");
-    timePartitionInfo.setTimePartitionType(TimePartitionInfo.TimePartitionType.DAILY)
-    return timePartitionInfo
+  override def getAvroSchema: String = """{ "type": "record",  "namespace" : "com.ligadata.messages" , "name" : "hl7" , "fields":[{ "name" : "desynpuf_id" , "type" : "string"},{ "name" : "clm_id" , "type" : "long"},{ "name" : "clm_from_dt" , "type" : "int"},{ "name" : "chestpain" , "type" : "string"},{ "name" : "aatdeficiency" , "type" : "int"},{ "name" : "chroniccough" , "type" : "int"},{ "name" : "chronicsputum" , "type" : "int"}]}""";
+
+  final override def convertFrom(srcObj: Any): T = convertFrom(createInstance(), srcObj);
+
+  override def convertFrom(destObj: Any, srcObj: Any): ContainerInterface = {
+    try {
+      srcObj match {
+
+        case oldVerobj: com.ligadata.messages.V1000000.HL7 => { return convertToNewVer(oldVerobj); }
+        case _ => {
+          throw new Exception("Unhandled Version Found");
+        }
+      }
+    } catch {
+      case e: Exception => {
+        throw e
+      }
+    }
+    return null;
+  }
+  private def convertToNewVer(oldVerobj: com.ligadata.messages.V1000000.HL7): com.ligadata.messages.V1000000.HL7 = {
+    return oldVerobj
   }
 
-  override def getContainerType: ContainerFactoryInterface.ContainerType = ContainerFactoryInterface.ContainerType.MESSAGE
-  override def isFixed: Boolean = false
-  override def getSchema: String = ""
-
-  override def getPrimaryKeyNames: Array[String] = {
-    var primaryKeyNames: Array[String] = Array("desynpuf_id", "clm_id");
-    return primaryKeyNames;
-  }
-
-  override def getPartitionKeyNames: Array[String] = {
-    var partitionKeyNames: Array[String] = Array("desynpuf_id");
-    return partitionKeyNames;
-  }
-
-  override def createInstance: ContainerInterface = null
-  override def getFullTypeName: String = "System.HL7"
-  override def getTypeNameSpace: String = "System"
-  override def getTypeName: String = "HL7"
-  override def getTypeVersion: String = "000000.000001.000000"
-  override def toJavaRDDObject: JavaRDDObject[T] = JavaRDDObject.fromRDDObject[T](this);
-
-  override def getFullName: String = ""
-  override def build: T = null
-  override def build(from: T): T = null
+  override def FullName: String = getFullTypeName
+  override def NameSpace: String = getTypeNameSpace
+  override def Name: String = getTypeName
+  override def Version: String = getTypeVersion
+  override def CreateNewMessage: BaseMsg = createInstance.asInstanceOf[BaseMsg];
+  override def CreateNewContainer: BaseContainer = null;
+  override def IsFixed: Boolean = false
+  override def IsKv: Boolean = true
+  override def CanPersist: Boolean = true
+  override def isMessage: Boolean = true
+  override def isContainer: Boolean = false
+  override def PartitionKeyData(inputdata: InputData): Array[String] = createInstance.getPartitionKey();
+  override def PrimaryKeyData(inputdata: InputData): Array[String] = createInstance.getPrimaryKey();
+  override def TimePartitionData(inputdata: InputData): Long = createInstance.getTimePartitionData;
+  override def NeedToTransformData: Boolean = false
 }
 
-class hl7(factory: ContainerFactoryInterface) extends ContainerInterface(factory) {
-  val logger = this.getClass.getName
-  lazy val log = LogManager.getLogger(logger)
+class HL7(factory: MessageFactoryInterface, other: HL7) extends MessageInterface(factory) {
 
-  private var valuesMap = new java.util.HashMap[String, AttributeValue]()
-  private val keyTypes = Map("desynpuf_id" -> "String", "clm_id" -> "Long", "clm_from_dt" -> "Int")
+  private val log = LogManager.getLogger(getClass)
 
-  override def getPrimaryKey(): Array[String] = {
-    var primaryKeys: scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer[String]();
-    try {
-      primaryKeys += com.ligadata.BaseTypes.StringImpl.toString(get("desynpuf_id").getValue.asInstanceOf[String]);
-      primaryKeys += com.ligadata.BaseTypes.LongImpl.toString(get("clm_id").getValue.asInstanceOf[Long]);
-    } catch {
-      case e: Exception => {
-        log.debug("", e.getStackTrace)
-        throw e
-      }
-    }
-    primaryKeys.toArray;
+  var attributeTypes = generateAttributeTypes;
+
+  private def generateAttributeTypes(): Array[AttributeTypeInfo] = {
+    var attributeTypes = new Array[AttributeTypeInfo](7);
+    attributeTypes(0) = new AttributeTypeInfo("desynpuf_id", 0, AttributeTypeInfo.TypeCategory.STRING, 1, 1, 0)
+    attributeTypes(1) = new AttributeTypeInfo("clm_id", 1, AttributeTypeInfo.TypeCategory.LONG, 4, 4, 0)
+    attributeTypes(2) = new AttributeTypeInfo("clm_from_dt", 2, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+    attributeTypes(3) = new AttributeTypeInfo("chestpain", 3, AttributeTypeInfo.TypeCategory.STRING, 1, 1, 0)
+    attributeTypes(4) = new AttributeTypeInfo("aatdeficiency", 4, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+    attributeTypes(5) = new AttributeTypeInfo("chroniccough", 5, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+    attributeTypes(6) = new AttributeTypeInfo("chronicsputum", 6, AttributeTypeInfo.TypeCategory.INT, 0, 0, 0)
+
+    return attributeTypes
   }
 
-  override def getPartitionKey(): Array[String] = {
+  var keyTypes: Map[String, AttributeTypeInfo] = attributeTypes.map { a => (a.getName, a) }.toMap;
+
+  if (other != null && other != this) {
+    // call copying fields from other to local variables
+    fromFunc(other)
+  }
+
+  override def save: Unit = { /* HL7.saveOne(this) */ }
+
+  def Clone(): ContainerOrConcept = { HL7.build(this) }
+
+  override def getPartitionKey: Array[String] = {
     var partitionKeys: scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer[String]();
     try {
-      partitionKeys += com.ligadata.BaseTypes.StringImpl.toString(get("desynpuf_id").getValue.toString());
+      partitionKeys += com.ligadata.BaseTypes.StringImpl.toString(get("desynpuf_id").asInstanceOf[String]);
+    } catch {
+      case e: Exception => {
+        log.debug("", e)
+        throw e
+      }
+    };
+    partitionKeys.toArray;
+
+  }
+
+  override def getPrimaryKey: Array[String] = {
+    var primaryKeys: scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer[String]();
+    try {
+      primaryKeys += com.ligadata.BaseTypes.StringImpl.toString(get("desynpuf_id").asInstanceOf[String]);
+      primaryKeys += com.ligadata.BaseTypes.LongImpl.toString(get("clm_id").asInstanceOf[Long]);
+    } catch {
+      case e: Exception => {
+        log.debug("", e)
+        throw e
+      }
+    };
+    primaryKeys.toArray;
+
+  }
+
+  override def getAttributeType(name: String): AttributeTypeInfo = {
+    if (name == null || name.trim() == "") return null;
+    attributeTypes.foreach(attributeType => {
+      if (attributeType.getName == name.toLowerCase())
+        return attributeType
+    })
+    return null;
+  }
+
+  var valuesMap = scala.collection.mutable.Map[String, AttributeValue]()
+
+  override def getAttributeTypes(): Array[AttributeTypeInfo] = {
+    val attributeTyps = valuesMap.map(f => f._2.getValueType).toArray;
+    if (attributeTyps == null) return null else return attributeTyps
+  }
+
+  override def get(key: String): AnyRef = { // Return (value, type)
+    try {
+      val value = valuesMap(key).getValue
+      if (value == null) return null; else return value.asInstanceOf[AnyRef];
     } catch {
       case e: Exception => {
         log.debug("", e)
         throw e
       }
     }
-    partitionKeys.toArray;
   }
 
-  override def save() = {}
-  override def Clone(): ContainerOrConcept = { hl7.build(this) }
+  override def getOrElse(key: String, defaultVal: Any): AnyRef = { // Return (value, type)
+    var attributeValue: AttributeValue = new AttributeValue();
+    try {
+      val value = valuesMap(key).getValue
+      if (value == null) return defaultVal.asInstanceOf[AnyRef];
+      return value.asInstanceOf[AnyRef];
+    } catch {
+      case e: Exception => {
+        log.debug("", e)
+        throw e
+      }
+    }
+  }
 
   override def getAttributeNames(): Array[String] = {
-    var attributeNames: scala.collection.mutable.ArrayBuffer[String] = scala.collection.mutable.ArrayBuffer[String]();
     try {
-      val iter = valuesMap.entrySet().iterator();
-      while (iter.hasNext()) {
-        val attributeName = iter.next().getKey;
-        if (attributeName != null && attributeName.trim() != "")
-          attributeNames += attributeName;
-      }
-    } catch {
-      case e: Exception => {
-        log.debug("", e)
-        throw e
-      }
-    }
-    return attributeNames.toArray;
-  }
-
-  override def get(key: String): AttributeValue = { // Return (value, type)
-    try {
-      return valuesMap.get(key.toLowerCase())
-    } catch {
-      case e: Exception => {
-        log.debug("", e)
-        throw e
-      }
-    }
-    return null;
-  }
-
-  override def getOrElse(key: String, defaultVal: Any): AttributeValue = { // Return (value, type)
-    var attributeValue: AttributeValue = new AttributeValue();
-
-    try {
-      val value = valuesMap.get(key.toLowerCase())
-      if (value == null) {
-        attributeValue.setValue(defaultVal);
-        attributeValue.setValueType("Any");
-        return attributeValue;
+      if (valuesMap.isEmpty) {
+        return null;
       } else {
-
-        return value;
+        return valuesMap.keySet.toArray;
       }
     } catch {
       case e: Exception => {
@@ -149,33 +202,33 @@ class hl7(factory: ContainerFactoryInterface) extends ContainerInterface(factory
         throw e
       }
     }
+  }
+
+  override def get(index: Int): AnyRef = { // Return (value, type)
+    throw new Exception("Get By Index is not supported in mapped messages");
+  }
+
+  override def getOrElse(index: Int, defaultVal: Any): AnyRef = { // Return (value,  type)
+    throw new Exception("Get By Index is not supported in mapped messages");
+  }
+
+  override def getAllAttributeValues(): Array[AttributeValue] = { // Has (name, value, type))
+    return valuesMap.map(f => f._2).toArray;
+  }
+
+  override def getAttributeNameAndValueIterator(): java.util.Iterator[AttributeValue] = {
+    //valuesMap.iterator.asInstanceOf[java.util.Iterator[AttributeValue]];
     return null;
-  }
-
-  override def get(index: Int): AttributeValue = { // Return (value, type)
-    throw new Exception("Get By Index is not supported in mapped messages");
-  }
-
-  override def getOrElse(index: Int, defaultVal: Any): AttributeValue = { // Return (value,  type)
-    throw new Exception("Get By Index is not supported in mapped messages");
-  }
-
-  override def getAllAttributeValues(): java.util.HashMap[String, AttributeValue] = { // Has (name, value, type))
-    return valuesMap;
-  }
-
-  override def getAttributeNameAndValueIterator(): java.util.Iterator[java.util.Map.Entry[String, AttributeValue]] = {
-    valuesMap.entrySet().iterator();
   }
 
   override def set(key: String, value: Any) = {
-    var attributeValue: AttributeValue = new AttributeValue();
     try {
       val keyName: String = key.toLowerCase();
-      val valType = keyTypes.getOrElse(keyName, "Any")
-      attributeValue.setValue(value)
-      attributeValue.setValueType(valType)
-      valuesMap.put(keyName, attributeValue)
+      if (keyTypes.contains(key)) {
+        valuesMap(key) = new AttributeValue(value, keyTypes(keyName))
+      } else {
+        valuesMap(key) = new AttributeValue(ValueToString(value), new AttributeTypeInfo(key, -1, AttributeTypeInfo.TypeCategory.STRING, 0, 0, 0))
+      }
     } catch {
       case e: Exception => {
         log.debug("", e)
@@ -185,11 +238,16 @@ class hl7(factory: ContainerFactoryInterface) extends ContainerInterface(factory
   }
 
   override def set(key: String, value: Any, valTyp: String) = {
-    var attributeValue: AttributeValue = new AttributeValue();
     try {
-      attributeValue.setValue(value)
-      attributeValue.setValueType(valTyp)
-      valuesMap.put(key.toLowerCase(), attributeValue)
+      val keyName: String = key.toLowerCase();
+      if (keyTypes.contains(key)) {
+        valuesMap(key) = new AttributeValue(value, keyTypes(keyName))
+      } else {
+        val typeCategory = AttributeTypeInfo.TypeCategory.valueOf(valTyp.toUpperCase())
+        val keytypeId = typeCategory.getValue.toShort
+        val valtypeId = typeCategory.getValue.toShort
+        valuesMap(key) = new AttributeValue(value, new AttributeTypeInfo(key, -1, typeCategory, valtypeId, keytypeId, 0))
+      }
     } catch {
       case e: Exception => {
         log.debug("", e)
@@ -201,5 +259,31 @@ class hl7(factory: ContainerFactoryInterface) extends ContainerInterface(factory
   override def set(index: Int, value: Any) = {
     throw new Exception("Set By Index is not supported in mapped messages");
   }
-}
 
+  private def ValueToString(v: Any): String = {
+    if (v.isInstanceOf[Set[_]]) {
+      return v.asInstanceOf[Set[_]].mkString(",")
+    }
+    if (v.isInstanceOf[List[_]]) {
+      return v.asInstanceOf[List[_]].mkString(",")
+    }
+    if (v.isInstanceOf[Array[_]]) {
+      return v.asInstanceOf[Array[_]].mkString(",")
+    }
+    v.toString
+  }
+
+  private def fromFunc(other: HL7): HL7 = {
+    //this.timePartitionData = com.ligadata.BaseTypes.LongImpl.Clone(other.timePartitionData);
+    return this;
+  }
+
+  def this(factory: MessageFactoryInterface) = {
+    this(factory, null)
+  }
+
+  def this(other: HL7) = {
+    this(other.getFactory.asInstanceOf[MessageFactoryInterface], other)
+  }
+
+}

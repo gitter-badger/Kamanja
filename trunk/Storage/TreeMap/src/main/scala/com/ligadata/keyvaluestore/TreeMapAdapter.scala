@@ -49,14 +49,16 @@ import com.ligadata.Utils.{ KamanjaLoaderInfo }
 
 class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig: String) extends DataStore {
   val adapterConfig = if (datastoreConfig != null) datastoreConfig.trim else ""
-  val loggerName = this.getClass.getName
-  val logger = LogManager.getLogger(loggerName)
+//  val loggerName = this.getClass.getName
+//  val logger = LogManager.getLogger(loggerName)
   private[this] val lock = new Object
   private var containerList: scala.collection.mutable.Set[String] = scala.collection.mutable.Set[String]()
 
   private var dbStoreMap: scala.collection.mutable.Map[String, DB] = new scala.collection.mutable.HashMap()
 
   private var tablesMap: scala.collection.mutable.Map[String, BTreeMap[Array[Byte], Array[Byte]]] = new scala.collection.mutable.HashMap()
+
+//  override def getAdapterName: String = ""
 
   if (adapterConfig.size == 0) {
     throw new Exception("Not found valid TreeMap Configuration.")
@@ -808,9 +810,9 @@ class TreeMapAdapter(val kvManagerLoader: KamanjaLoaderInfo, val datastoreConfig
 
 class TreeMapAdapterTx(val parent: DataStore) extends Transaction {
 
-  val loggerName = this.getClass.getName
-  val logger = LogManager.getLogger(loggerName)
-
+//  val loggerName = this.getClass.getName
+//  val logger = LogManager.getLogger(loggerName)
+//
   override def put(containerName: String, key: Key, value: Value): Unit = {
     parent.put(containerName,  key, value)
   }

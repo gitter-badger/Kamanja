@@ -36,11 +36,9 @@ object KBinaryContainerInterfaceKeys extends Enumeration {
   * Pre-condition: The JSONSerDes must be initialized with the metadata manager, object resolver and class loader
   * before it can be used.
   */
-class KBinarySerDeser() extends SerializeDeserialize with LogTrait {
+class KBinarySerDeser extends SerializeDeserialize with LogTrait {
 
-    var _mgr : MdMgr = null
     var _objResolver : ObjectResolver = null
-    var _classLoader : java.lang.ClassLoader = null
     var _config : Map[String,String] = Map[String,String]()
     var _isReady : Boolean = false
 
@@ -57,7 +55,9 @@ class KBinarySerDeser() extends SerializeDeserialize with LogTrait {
 
         val containerTypeName : String = v.getFullTypeName
         val containerVersion :String = v.getTypeVersion
-        val container : ContainerTypeDef = _mgr.ActiveType(containerTypeName).asInstanceOf[ContainerTypeDef]
+        // BUGBUG::if type is needed we need function to get type information from object resolver
+        //FIXME:- if type is needed we need function to get type information from object resolver
+        val container : ContainerTypeDef = null // _mgr.ActiveType(containerTypeName).asInstanceOf[ContainerTypeDef]
         val className : String = container.PhysicalName
 
         dos.writeUTF(containerTypeName)
@@ -101,7 +101,7 @@ class KBinarySerDeser() extends SerializeDeserialize with LogTrait {
             throw new ObjectNotFoundException(s"The container ${containerTypeName} surprisingly has no fields...serialize fails", null)
         }
 
-        val fields : java.util.HashMap[String,com.ligadata.KamanjaBase.AttributeValue] = v.getAllAttributeValues
+       /* val fields : java.util.HashMap[String,com.ligadata.KamanjaBase.AttributeValue] = v.getAllAttributeValues
         var processCnt : Int = 0
         val fieldCnt : Int = fields.size()
         fieldsToConsider.foreach(fldname => {
@@ -121,13 +121,13 @@ class KBinarySerDeser() extends SerializeDeserialize with LogTrait {
                 }
             } else {
                 if (mappedMsgType == null) {
-                    /** is permissible that a mapped field has no value in the container. */
+                    *//** is permissible that a mapped field has no value in the container. *//*
                 } else {
-                    /** blow it up when fixed msg field is missing */
+                    *//** blow it up when fixed msg field is missing *//*
                     throw new ObjectNotFoundException(s"The fixed container $containerTypeName field $fldname has no value",null)
                 }
             }
-        })
+        })*/
 
         val strRep : String = dos.toString
         logger.debug(s"container $containerTypeName as JSON:\n$strRep")
@@ -344,18 +344,14 @@ class KBinarySerDeser() extends SerializeDeserialize with LogTrait {
     /**
       * Configure the SerializeDeserialize adapter.  This must be done before the adapter implementation can be used.
       *
-      * @param mgr         SerializeDeserialize implementations must be supplied a reference to the cluster MdMgr
       * @param objResolver the ObjectResolver instance that can instantiate ContainerInterface instances
-      * @param classLoader the class loader that has access to the classes needed to build fields.
       * @param config a map of options that might be used to configure the execution of this SerializeDeserialize instance. This may
       *               be null if it is not necessary for the SerializeDeserialize implementation
       */
-    def configure(mgr: MdMgr, objResolver: ObjectResolver, classLoader: ClassLoader, config : java.util.Map[String,String]): Unit = {
-        _mgr  = mgr
+    def configure(objResolver: ObjectResolver, config : java.util.Map[String,String]): Unit = {
         _objResolver = objResolver
-        _classLoader  = classLoader
         _config = if (config != null) config.asScala else Map[String,String]()
-        _isReady = _mgr != null && _objResolver != null && _classLoader != null && _config != null
+        _isReady = _objResolver != null && _config != null
     }
 
     /**
@@ -364,7 +360,7 @@ class KBinarySerDeser() extends SerializeDeserialize with LogTrait {
       * @param b the byte array containing the serialized ContainerInterface instance
       * @return a ContainerInterface
       */
-    def deserialize(b: Array[Byte]) : ContainerInterface = {
+    def deserialize(b: Array[Byte], containerName: String) : ContainerInterface = {
         var dis = new DataInputStream(new ByteArrayInputStream(b));
         val container : ContainerInterface = deserialize(dis)
         container
@@ -380,7 +376,7 @@ class KBinarySerDeser() extends SerializeDeserialize with LogTrait {
     @throws(classOf[com.ligadata.Exceptions.MissingPropertyException])
     @throws(classOf[com.ligadata.Exceptions.UnsupportedObjectException])
     @throws(classOf[IOException])
-    def deserialize(dis : DataInputStream) : ContainerInterface = {
+    private def deserialize(dis : DataInputStream) : ContainerInterface = {
 
         val containerTypeName : String = dis.readUTF
         val containerVersion : String = dis.readUTF
@@ -399,13 +395,15 @@ class KBinarySerDeser() extends SerializeDeserialize with LogTrait {
         /** Fixme: were we to support more than the "current" type, the version key would be used here */
 
         /** get an empty ContainerInterface instance for this type name from the _objResolver */
-        val ci : ContainerInterface = _objResolver.getInstance(_classLoader , containerTypeName)
+        val ci : ContainerInterface = _objResolver.getInstance(containerTypeName)
         if (ci == null) {
             throw new ObjectNotFoundException(s"type name $containerTypeName could not be resolved and built for deserialize",null)
         }
 
         /** get the fields information */
-        val containerBaseType : BaseTypeDef = _mgr.ActiveType(containerTypeName)
+        // BUGBUG::if type is needed we need function to get type information from object resolver
+        //FIXME:- if type is needed we need function to get type information from object resolver
+        val containerBaseType : BaseTypeDef = null // _mgr.ActiveType(containerTypeName)
         val containerType : ContainerTypeDef = if (containerBaseType != null) containerBaseType.asInstanceOf[ContainerTypeDef] else null
         if (containerType == null) {
             throw new ObjectNotFoundException(s"type name $containerTypeName is not a container type... deserialize fails.",null)

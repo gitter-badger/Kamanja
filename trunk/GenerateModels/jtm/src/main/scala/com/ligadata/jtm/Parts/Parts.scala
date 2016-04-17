@@ -44,9 +44,6 @@ object Parts {
 
   val factory =
     """|class {factoryclass.name}(modelDef: ModelDef, nodeContext: NodeContext) extends ModelInstanceFactory(modelDef, nodeContext) {
-       |  override def isValidMessage(msg: ContainerInterface): Boolean = {
-       |    {factory.isvalidmessage}
-       |  }
        |  override def createModelInstance(): ModelInstance = return new {modelclass.name}(this)
        |  override def getModelName: String = "{model.name}"
        |  override def getVersion: String = "{model.version}"
@@ -58,8 +55,6 @@ object Parts {
     """|class {modelclass.name}(factory: ModelInstanceFactory) extends ModelInstance(factory) {
        |  val conversion = new com.ligadata.runtime.Conversion
        |  override def execute(txnCtxt: TransactionContext, execMsgsSet: Array[ContainerOrConcept], triggerdSetIndex: Int, outputDefault: Boolean): Array[ContainerOrConcept] = {
-       |
-       |    val messagefactoryinterface = execMsgsSet(0).asInstanceOf[MessageFactoryInterface]
        |    //
        |    {model.grok}
        |    //

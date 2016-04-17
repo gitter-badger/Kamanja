@@ -1,0 +1,40 @@
+{
+  "header": {
+    "namespace": "com.ligadata.kamanja.samples.models",
+    "name": "HelloWorldIngest",
+    "version": "0.0.1",
+    "language" : "scala",
+    "minVersion" : "2.11",
+    "description": "HelloWorld message transformation"
+  },
+  "imports": {
+    "packages": [ "com.ligadata.runtime.Conversion"]
+  },
+  "aliases": {
+    "messages": {
+      "m1": "com.ligadata.kamanja.samples.messages.inmsg1",
+      "o1": "com.ligadata.kamanja.samples.messages.msg1"
+    }
+  },
+  "transformations": {
+    "helloworldmsgtransform": {
+      "dependsOn": [ ["m1"] ],
+      "computes": {
+        "arrayData":{ "type": "Array[String]", "val": "$msg.split(\",\")", "comment": "Split the incoming data" }
+      },
+      "outputs": {
+        "o1": {
+          "computes": {
+            "typeName": { "type": "String", "val": "arrayData(0)", "comment": "extract the type" }
+          },
+          "where": "\"com.ligadata.kamanja.samples.messages.msg1\" == $typeName",
+          "mapping": {
+            "id": "conversion.ToInteger($arrayData(1))",
+            "name": "$arrayData(2)",
+            "score": "conversion.ToInteger($arrayData(3))"
+          }
+        }
+      }
+    }
+  }
+}

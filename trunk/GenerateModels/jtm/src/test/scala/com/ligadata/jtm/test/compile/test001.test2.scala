@@ -20,9 +20,6 @@ import com.ligadata.kamanja.metadata.ModelDef
 import com.ligadata.Utils._
 import com.ligadata.runtime.Conversion
 class Factory(modelDef: ModelDef, nodeContext: NodeContext) extends ModelInstanceFactory(modelDef, nodeContext) {
-  override def isValidMessage(msg: ContainerInterface): Boolean = {
-    msg.isInstanceOf[com.ligadata.kamanja.test.v1000000.msg1]
-  }
   override def createModelInstance(): ModelInstance = return new Model(this)
   override def getModelName: String = "com.ligadata.jtm.test.filter1"
   override def getVersion: String = "0.0.1"
@@ -31,10 +28,9 @@ class Factory(modelDef: ModelDef, nodeContext: NodeContext) extends ModelInstanc
 class Model(factory: ModelInstanceFactory) extends ModelInstance(factory) {
   val conversion = new com.ligadata.runtime.Conversion
   override def execute(txnCtxt: TransactionContext, execMsgsSet: Array[ContainerOrConcept], triggerdSetIndex: Int, outputDefault: Boolean): Array[ContainerOrConcept] = {
-    val messagefactoryinterface = execMsgsSet(0).asInstanceOf[MessageFactoryInterface]
     //
     //
-    def exeGenerated_test1_1(msg1: com.ligadata.kamanja.test.v1000000.msg1): Array[MessageInterface] = {
+    def exeGenerated_test1_1(msg1: com.ligadata.kamanja.test.V1000000.msg1): Array[MessageInterface] = {
       // conversion to string
       val instr: String = conversion.ToString(msg1.in1)
       // conversion to int
@@ -44,7 +40,7 @@ class Model(factory: ModelInstanceFactory) extends ModelInstance(factory) {
       def process_o1(): Array[MessageInterface] = {
         if (!(msg1.in2 != -1 && msg1.in2 < 100)) return Array.empty[MessageInterface]
         val t1: String = "s:" + msg1.in2.toString()
-        val result = new com.ligadata.kamanja.test.v1000000.msg2(messagefactoryinterface)
+        val result = com.ligadata.kamanja.test.V1000000.msg2.createInstance
         result.out4 = msg1.in3
         result.out3 = msg1.in2
         result.out2 = t1
@@ -55,7 +51,7 @@ class Model(factory: ModelInstanceFactory) extends ModelInstance(factory) {
     }
     // Evaluate messages
     val msgs = execMsgsSet.map(m => m.getFullTypeName -> m).toMap
-    val msg1 = msgs.get("com.ligadata.kamanja.test.msg1").getOrElse(null).asInstanceOf[com.ligadata.kamanja.test.v1000000.msg1]
+    val msg1 = msgs.get("com.ligadata.kamanja.test.msg1").getOrElse(null).asInstanceOf[com.ligadata.kamanja.test.V1000000.msg1]
     // Main dependency -> execution check
     //
     val results: Array[MessageInterface] =

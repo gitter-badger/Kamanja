@@ -1,0 +1,55 @@
+"Adapters": [
+        {
+          "Name": "fc_isight_indicators",
+          "TypeString": "Input",
+          "DataFormat": "JSON",
+          "AssociatedMessage": "System.twittermsg",
+          "ClassName": "com.ligadata.InputAdapters.KafkaSimpleConsumer$",
+          "JarName": "kafkasimpleinputoutputadapters_2.10-1.0.jar",
+          "DependencyJars": [
+            "jopt-simple-3.2.jar",
+            "kafka_2.10-0.8.1.1.jar",
+            "metrics-core-2.2.0.jar",
+            "zkclient-0.3.jar",
+            "kamanjabase_2.10-1.0.jar"
+          ],
+          "AdapterSpecificCfg": {
+            "HostList": "gbrdsr000002255:9092,gbrdsr000002259:9092,gbrdsr000002260:9092",
+            "TopicName": "pronto_input_queue"
+          }
+        },
+        {
+          "Name": "fc_fatafat_output",
+          "TypeString": "Output",
+          "ClassName": "com.ligadata.OutputAdapters.KafkaProducer$",
+          "JarName": "kafkasimpleinputoutputadapters_2.10-1.0.jar",
+          "DependencyJars": [
+            "jopt-simple-3.2.jar",
+            "kafka_2.10-0.8.1.1.jar",
+            "metrics-core-2.2.0.jar",
+            "zkclient-0.3.jar",
+            "kamanjabase_2.10-1.0.jar"
+          ],
+          "AdapterSpecificCfg": {
+            "HostList": "gbrdsr000002255:9092,gbrdsr000002259:9092,gbrdsr000002260:9092",
+            "TopicName": "pronto_output_queue"
+          }
+        },
+        {
+          "Name": "clusterstatus",
+          "TypeString": "Status",
+          "ClassName": "com.ligadata.OutputAdapters.KafkaProducer$",
+          "JarName": "kafkasimpleinputoutputadapters_2.10-1.0.jar",
+          "DependencyJars": [
+            "jopt-simple-3.2.jar",
+            "kafka_2.10-0.8.1.1.jar",
+            "metrics-core-2.2.0.jar",
+            "zkclient-0.3.jar",
+            "kamanjabase_2.10-1.0.jar"
+          ],
+          "AdapterSpecificCfg": {
+            "HostList": "gbrdsr000002255:9092,gbrdsr000002259:9092,gbrdsr000002260:9092",
+            "TopicName": "clusterstatus"
+          }
+        }
+      ]

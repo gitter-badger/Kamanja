@@ -20,14 +20,14 @@
     "transactionmsg": {
       "dependsOn": [ ["m1"] ],
       "computes": {
-        "arrayData":{ "type": "System.ArrayOfString", "val": "$data.split(\",\")", "comment": "Split the incoming data" }
+        "arrayData":{ "type": "Array[String]", "val": "$data.split(\",\")", "comment": "Split the incoming data" }
       },
       "outputs": {
         "o1": {
           "computes": {
-            "type": { "type": "String", "val": "arrayData(0)", "comment": "extract the type" }
+            "typeName": { "type": "String", "val": "arrayData(0)", "comment": "extract the type" }
           },
-          "where": "\"com.ligadata.kamanja.samples.messages.TransactionMsg\" == $type",
+          "where": "\"com.ligadata.kamanja.samples.messages.TransactionMsg\" == $typeName",
           "mapping": {
             "custid": "$arrayData(1)",
             "branchid": "$arrayData(2)",

@@ -63,6 +63,7 @@ class KafkaSimpleConsumer(val inputConfig: AdapterConfiguration, val execCtxtObj
   private val LOG = LogManager.getLogger(getClass)
   private var isQuiesced = false
   private var startTime: Long = 0
+  private var msgCount = 0
   private var isShutdown = false
 
   private var metrics: collection.mutable.Map[String,Any] = collection.mutable.Map[String,Any]()
@@ -161,6 +162,11 @@ class KafkaSimpleConsumer(val inputConfig: AdapterConfiguration, val execCtxtObj
     })
 
     return new MonitorComponentInfo( AdapterConfiguration.TYPE_INPUT, qc.Name, KafkaSimpleConsumer.ADAPTER_DESCRIPTION, startHeartBeat, lastSeen,  Serialization.write(metrics).toString)
+  }
+
+  override def getComponentSimpleStats: String = {
+
+    return qc.topic + "_" + msgCount
   }
 
   /**
@@ -398,6 +404,7 @@ class KafkaSimpleConsumer(val inputConfig: AdapterConfiguration, val execCtxtObj
                 incrementCountForPartition(partitionId)
 
                 uniqueVal.Offset = msgBuffer.offset
+                msgCount += 1
 //                val dontSendOutputToOutputAdap = uniqueVal.Offset <= uniqueRecordValue
                 execThread.execute(message, uniqueKey, uniqueVal, readTmMs)
 

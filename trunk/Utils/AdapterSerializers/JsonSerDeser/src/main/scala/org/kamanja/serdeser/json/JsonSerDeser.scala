@@ -1,37 +1,57 @@
 package org.kamanja.serdeser.json
 
 import org.json4s.jackson.JsonMethods._
-import org.json4s.{MappingException, DefaultFormats, Formats}
-import scala.reflect.runtime.{universe => ru}
+import org.json4s.{DefaultFormats, Formats, MappingException}
 
-import scala.collection.mutable.{ArrayBuffer, Map }
+import scala.collection.mutable.{ArrayBuffer, Map}
 import scala.collection.JavaConverters._
+import java.io.{ByteArrayOutputStream, DataOutputStream}
 
-import java.io.{DataInputStream, ByteArrayInputStream, DataOutputStream, ByteArrayOutputStream}
-
-import org.apache.logging.log4j._
-import com.fasterxml.jackson.databind.ObjectMapper
-
-import com.ligadata.kamanja.metadata.MiningModelType
-import com.ligadata.kamanja.metadata.ModelRepresentation
 import com.ligadata.kamanja.metadata._
-import com.ligadata.kamanja.metadata.ObjType._
-import com.ligadata.kamanja.metadata.MdMgr._
-
 import com.ligadata.Exceptions._
+import com.ligadata.KamanjaBase.AttributeTypeInfo.TypeCategory
+import com.ligadata.KamanjaBase.AttributeTypeInfo.TypeCategory._
 import com.ligadata.KamanjaBase._
-
-import scala.reflect.runtime._
+import org.apache.logging.log4j.LogManager
 
 /**
   * Meta fields found at the beginning of each JSON representation of a ContainerInterface object
   */
-object JsonContainerInterfaceKeys extends Enumeration {
-    type JsonKeys = Value
-    val typename, version, physicalname = Value
+//@@TODO: move this into utils and use for all logging
+object Log {
+    private val log = LogManager.getLogger(getClass)
+
+    def Trace(str: String) = if(log.isTraceEnabled())  log.trace(str)
+    def Warning(str: String) = if(log.isWarnEnabled()) log.warn(str)
+    def Info(str: String) = if(log.isInfoEnabled())    log.info(str)
+    def Error(str: String) = if(log.isErrorEnabled())  log.error(str)
+    def Debug(str: String) = if(log.isDebugEnabled())  log.debug(str)
+
+    def isTraceEnabled = log.isTraceEnabled()
+    def isWarnEnabled = log.isWarnEnabled()
+    def isInfoEnabled = log.isInfoEnabled()
+    def isErrorEnabled = log.isErrorEnabled()
+    def isDebugEnabled = log.isDebugEnabled()
 }
 
+object JSONSerDes {
+    val indents = ComputeIndents
+    val strLF = "\n"
+    val maxIndentLevel = 64
+    def getIndentStr(indentLevel: Int) = if(indentLevel > maxIndentLevel) indents(maxIndentLevel) else if (indentLevel < 0) indents(0) else indents(indentLevel)
 
+    private
+    def ComputeIndents() : Array[String] = {
+        val indentsTemp = ArrayBuffer[String]()
+        indentsTemp.append("")
+        val indent = "  "
+        for (idx <- 1 to maxIndentLevel) indentsTemp.append(indent+indentsTemp(idx-1))
+        indentsTemp.toArray
+    }
+}
+
+import JSONSerDes._
+import Log._
 /**
   * JSONSerDeser instance can serialize a ContainerInterface to a byte array and deserialize a byte array to form
   * an instance of the ContainerInterface encoded in its bytes.
@@ -40,14 +60,14 @@ object JsonContainerInterfaceKeys extends Enumeration {
   * before it can be used.
   */
 
-class JSONSerDes() extends SerializeDeserialize with LogTrait {
-
-    var _mgr : MdMgr = null
+class JSONSerDes extends SerializeDeserialize with LogTrait {
     var _objResolver : ObjectResolver = null
-    var _classLoader : java.lang.ClassLoader = null
-    var _config : Map[String, String] = Map[String,String]()
+    var _config = Map[String,String]()
     var _isReady : Boolean = false
+    var _emitSchemaId = true
+    var _schemaIdKeyPrefix = "@@"
 
+    def SchemaIDKeyName = _schemaIdKeyPrefix + "SchemaId"
     /**
       * Serialize the supplied container to a byte array
       *
@@ -58,180 +78,51 @@ class JSONSerDes() extends SerializeDeserialize with LogTrait {
     def serialize(v : ContainerInterface) : Array[Byte] = {
         val bos: ByteArrayOutputStream = new ByteArrayOutputStream(8 * 1024)
         val dos = new DataOutputStream(bos)
+        containerAsJson(dos, 0, v)
+        val strRep : String = dos.toString
+        // logger.debug(s"container $containerName as JSON:\n$strRep")
+        dos.close()
+        bos.toByteArray
+    }
 
-        val withComma : Boolean = true
-        val withoutComma :Boolean = false
-        val containerName : String = v.getFullTypeName
-        val containerVersion :String = v.getTypeVersion
-        val container : ContainerTypeDef = _mgr.ActiveType(containerName).asInstanceOf[ContainerTypeDef]
-        val className : String = container.PhysicalName
+    /**
+      * Serialize the supplied container to a byte array
+      *
+      * @param v a ContainerInterface (describes a standard kamanja container)
+      */
+    @throws(classOf[com.ligadata.Exceptions.UnsupportedObjectException])
+    def containerAsJson(dos: DataOutputStream, indentLevel: Int, v : ContainerInterface) : Unit = {
+        val fields = v.getAllAttributeValues
+        val fieldCnt : Int = fields.length
 
-        val containerJsonHead : String = "{ "
-        val containerJsonTail : String = " }"
-        val containerNameJson : String = nameValueAsJson(JsonContainerInterfaceKeys.typename.toString, containerName, true, withComma)
-        val containerVersionJson : String = nameValueAsJson(JsonContainerInterfaceKeys.version.toString, containerVersion,  true, withComma)
-        val containerPhyNameJson : String = nameValueAsJson(JsonContainerInterfaceKeys.physicalname.toString, className,  true, withComma)
-
+        val indentStr = getIndentStr(indentLevel)
+        val schemaId = v.getSchemaId
+        val containerJsonHead = indentStr + "{ "
+        val containerJsonTail = indentStr + " }"
         dos.writeUTF(containerJsonHead)
-        dos.writeUTF(containerNameJson)
-        dos.writeUTF(containerVersionJson)
-        dos.writeUTF(containerPhyNameJson)
-
-        val containerType : ContainerTypeDef = if (container != null) container.asInstanceOf[ContainerTypeDef] else null
-        if (containerType == null) {
-            throw new ObjectNotFoundException(s"type name $containerName is not a container type... serialize fails.",null)
+        if(_emitSchemaId) {
+            // dos.writeUTF(strLF)
+            nameValueAsJson(dos, indentLevel+1, SchemaIDKeyName, schemaId.toString, false)
+            if(fieldCnt > 0)
+                dos.writeUTF(", ")
         }
-        val mappedMsgType : MappedMsgTypeDef = if (containerType.isInstanceOf[MappedMsgTypeDef]) containerType.asInstanceOf[MappedMsgTypeDef] else null
-        val fixedMsgType : StructTypeDef = if (containerType.isInstanceOf[StructTypeDef]) containerType.asInstanceOf[StructTypeDef] else null
-        if (mappedMsgType == null && fixedMsgType == null) {
-            throw new UnsupportedObjectException(s"type name $containerNameJson is not a fixed or mapped message container type... serialize fails.",null)
-        }
-
-        /** Fixme: were we to support more than the "current" type, the version key above would be used to discern which type is to be deserialized */
-
-        /**
-          * Note:
-          * The fields from the ContainerInstance are unordered, a java.util.HashMap.  Similarly the fields found in a
-          * a MappedMsg are unordered.
-          *
-          * On the other hand, the fields from a FixedMsg are ordered.
-          *
-          * The fields will be processed in the order of the StructTypeDef's memberDefs array for fixed messages. For
-          * the fixed ones, all of the ContainerInterface's fields will be emitted.
-          *
-          * The fields will be processed in the order of the MappedMsgTypeDef's attrMap map for mapped messages. For
-          * these mapped ones, only the ContainerInterface's fields that have values will be emitted.
-          *
-          */
-        val fieldsToConsider : Array[BaseAttributeDef] = if (mappedMsgType != null) {
-            mappedMsgType.attrMap.values.toArray
-        } else {
-            if (fixedMsgType != null) {
-                fixedMsgType.memberDefs
-            } else {
-                Array[BaseAttributeDef]()
-            }
-        }
-        if (fieldsToConsider.isEmpty) {
-            throw new ObjectNotFoundException(s"The container ${containerName} surprisingly has no fields...serialize fails", null)
-        }
-
-        val fields : java.util.HashMap[String,com.ligadata.KamanjaBase.AttributeValue] = v.getAllAttributeValues
         var processCnt : Int = 0
-        val fieldCnt : Int = fields.size()
-        fieldsToConsider.foreach(fldname => {
+        fields.foreach(fld => {
             processCnt += 1
-            val attr : com.ligadata.KamanjaBase.AttributeValue = fields.get(fldname)
-            if (attr != null) {
-                val valueType: String = attr.getValueType
-                val rawValue: Any = attr.getValue
-                val useComma: Boolean = if (processCnt < fieldCnt) withComma else withoutComma
-
-                val typedef: BaseTypeDef = _mgr.ActiveType(valueType)
-                val typeName: String = typedef.FullName
-                val isContainerType: Boolean = isContainerTypeDef(typedef)
-                val fldRep: String = if (isContainerType) {
-                    processContainerTypeAsJson(typedef.asInstanceOf[ContainerTypeDef]
-                        , rawValue
-                        , useComma)
-                } else {
-                    val quoteValue: Boolean = useQuotesOnValue(typedef)
-                    nameValueAsJson(typeName, rawValue, quoteValue, useComma)
-                }
-                dos.writeBytes(fldRep)
-            } else {
-                if (mappedMsgType == null) {
-                    /** is permissible that a mapped field has no value in the container. */
-                } else {
-                    /** blow it up when fixed msg field is missing */
-                    throw new ObjectNotFoundException(s"The fixed container $containerName field $fldname has no value",null)
-                }
+            val valueType = fld.getValueType
+            val rawValue: Any = fld.getValue
+            val commaSuffix = if (processCnt < fieldCnt) "," else ""
+            val quoteValue: Boolean = useQuotesOnValue(valueType)
+            valueType.getTypeCategory match {
+                case MAP => { keyAsJson(dos, indentLevel+1, valueType.getName); mapAsJson(dos, indentLevel+1, valueType, rawValue.asInstanceOf[Map[Any, Any]]) }
+                case ARRAY => { keyAsJson(dos, indentLevel+1, valueType.getName); arrayAsJson(dos, indentLevel+1, valueType, rawValue.asInstanceOf[Array[Any]]) }
+                case (MESSAGE | CONTAINER) => { keyAsJson(dos, indentLevel+1, valueType.getName); containerAsJson(dos, indentLevel+1, rawValue.asInstanceOf[ContainerInterface]) }
+                case (BOOLEAN | BYTE | LONG | DOUBLE | FLOAT | INT | STRING) => nameValueAsJson(dos, indentLevel+1, valueType.getName, rawValue, quoteValue)
+                case _ => throw new UnsupportedObjectException(s"container type ${valueType.getName} not currently serializable", null)
             }
+            dos.writeUTF(commaSuffix)
         })
         dos.writeUTF(containerJsonTail)
-
-        val strRep : String = dos.toString
-        logger.debug(s"container $containerName as JSON:\n$strRep")
-
-        val byteArray : Array[Byte] = bos.toByteArray
-        dos.close()
-        bos.close()
-        byteArray
-    }
-
-    /**
-      * Process the supplied ContainerTypeDef.  There are essentially two paths through this method.
-      * One path recognizes the container to be MappedMsgTypeDef or StructTypeDef (i.e., instanceOf[ContainerInterface]).
-      * In that event there is recursion back to the serialize(v : ContainerInterface) method.
-      *
-      * The other path pertains to the Array and Map type Containers.  Those with simple scalar types (scalars, String, Boolean)
-      * are handled locally.  Array elements that have ContainerTypeDef elements are iterated and recursion happens
-      * for each element.  For maps, if either the key or value member type is a ContainerTypeDef, each is similarly
-      * managed.
-      *
-      * Fixme: There is no reason that Stacks, Queues and other data types we support cannot be implemented here.  For
-      * now just Array, ArrayBuffer, Map, and ImmutableMap
-      *
-      * @param aContainerType the ContainerTypeDef that describes the supplied instance.
-      * @param rawValue the actual container instance in raw form
-      * @param withComma when true, a ',' is appended to the ContainerTypeDef Json representation
-      * @return a Json String representation for the supplied ContainterTypeDef
-      */
-    private def processContainerTypeAsJson(aContainerType : ContainerTypeDef
-                                         , rawValue : Any
-                                         , withComma : Boolean) : String = {
-        /** ContainerInterface instance? */
-        val isContainerInterface : Boolean = rawValue.isInstanceOf[ContainerInterface]
-        val stringRep : String = if (isContainerInterface) {
-            val containerBytes : Array[Byte] = serialize(rawValue.asInstanceOf[ContainerInterface])
-            val containerStr : String = new String(containerBytes)
-            containerStr
-        } else { /** Check for collection that is currently supported */
-            val strrep : String = aContainerType match {
-                case a : ArrayTypeDef =>  {
-                    val array : Array[Any] = rawValue.asInstanceOf[Array[Any]]
-                    arrayAsJson(aContainerType, array)
-                }
-                case m : MapTypeDef => {
-                    val map : scala.collection.immutable.Map[Any,Any] = rawValue.asInstanceOf[scala.collection.immutable.Map[Any,Any]]
-                    mapAsJson(aContainerType, map)
-                }
-                case _ => throw new UnsupportedObjectException(s"container type ${aContainerType.typeString} not currently serializable",null)
-            }
-
-            strrep
-        }
-        stringRep
-    }
-
-    /**
-      * Answer if the supplied BaseTypeDef is a ContainerTypeDef.
-      *
-      * @param aType a BaseTypeDef
-      * @return true if a ContainerTypeDef
-      */
-    private def isContainerTypeDef(aType : BaseTypeDef) : Boolean = {
-        aType.isInstanceOf[ContainerTypeDef]
-    }
-
-    /**
-      * Answer if the supplied BaseTypeDef is a MappedMsgTypeDef.
-      *
-      * @param aType a BaseTypeDef
-      * @return true if a MappedMsgTypeDef
-      */
-    private def isMappedMsgTypeDef(aType : BaseTypeDef) : Boolean = {
-        aType.isInstanceOf[MappedMsgTypeDef]
-    }
-
-    /**
-      * Answer if the supplied BaseTypeDef is a StructTypeDef (used for fixed messages).
-      *
-      * @param aType a BaseTypeDef
-      * @return true if a StructTypeDef
-      */
-    private def isFixedMsgTypeDef(aType : BaseTypeDef) : Boolean = {
-        aType.isInstanceOf[StructTypeDef]
     }
 
     /**
@@ -241,14 +132,26 @@ class JSONSerDes() extends SerializeDeserialize with LogTrait {
       * @param name json key
       * @param value json value
       * @param quoteValue when true value is quoted
-      * @param withComma when true suffix string with comma
       * @return decorated map element string suitable for including in json map string
       */
-    private def nameValueAsJson(name : String, value : Any, quoteValue : Boolean, withComma : Boolean) : String = {
-        val comma : String = if (withComma) "," else ""
-        val quote : String = if (quoteValue) s"\\${'"'}" else ""
-        s" {'\'}${'"'}$name{'\'}${'"'} : $quote$value$quote$comma"
+    private def nameValueAsJson(dos: DataOutputStream, indentLevel: Int, name : String, value : Any, quoteValue: Boolean) = {
+        keyAsJson(dos, indentLevel, name)
+        valueAsJson(dos, indentLevel, value, quoteValue)
     }
+
+    private def valueAsJson(dos: DataOutputStream, indentLevel: Int, value : Any, quoteValue: Boolean)  = {
+        val quote = if (quoteValue) s"\\${'"'}" else ""
+        // @TODO: need to encode string as proper json string
+        dos.writeUTF(quote+value+quote)
+    }
+
+    /**
+      * Answer a string consisting of "name" : "value" with/without comma suffix.  When quoteValue parameter is false
+      * the value is not quoted (for the scalars and boolean
+      *
+      * @param key json key
+      */
+    private def keyAsJson(dos: DataOutputStream, indentLevel: Int, key : String) = dos.writeUTF(getIndentStr(indentLevel)+"\""+key+"\": ")
 
 
     /**
@@ -257,98 +160,124 @@ class JSONSerDes() extends SerializeDeserialize with LogTrait {
       * @param fieldTypeDef a BaseTypeDef
       * @return true or false if quotes should be used on the json value
       */
-    private def useQuotesOnValue(fieldTypeDef : BaseTypeDef) : Boolean = {
-        val usequotes : Boolean = if (fieldTypeDef == null) {
-            true
-        } else {
-            /** This does not account for user defined versions of the scalars */
-            fieldTypeDef.Name.toLowerCase match {
-                case "int" | "integer" | "short" | "long" | "float" | "double" => false
-                case "boolean" => false
-                case _ => true
-            }
+    private def useQuotesOnValue(fieldTypeDef : AttributeTypeInfo) : Boolean =  if (fieldTypeDef == null) true else useQuotesOnValue(fieldTypeDef.getTypeCategory)
+
+    private def useQuotesOnValue(typeCategory: TypeCategory) : Boolean = {
+        typeCategory match {
+            case (MAP | ARRAY | MESSAGE | CONTAINER | BOOLEAN | BYTE | LONG | DOUBLE | FLOAT | INT ) => false
+            case _ => true
         }
-        usequotes
     }
 
     /**
       * Create a Json string from the supplied immutable map.  Note that either/both map elements can in turn be
       * containers.
       *
-      * @param aContainerType The container type def for the supplied map
+      * @param attribType The container type def for the supplied map
       * @param map the map instance
       * @return a Json string representation
       */
-    private def mapAsJson(aContainerType : ContainerTypeDef, map : scala.collection.immutable.Map[Any,Any]) : String = {
-        val memberTypes : Array[BaseTypeDef] = aContainerType.asInstanceOf[MapTypeDef].ElementTypes
-        val keyType : BaseTypeDef = memberTypes.head
-        val valType : BaseTypeDef = memberTypes.last
-        val itemAtATime : Boolean = (keyType.isInstanceOf[ContainerTypeDef] || valType.isInstanceOf[ContainerTypeDef])
-        val mapAsJsonStr : String = if (itemAtATime) {
-            val buffer : StringBuilder = new StringBuilder
-            val lastVal : Any  = map.values.last
-            val noComma : Boolean = false
-            map.foreach(pair => {
-                val keyRep : String =  if (keyType.isInstanceOf[ContainerTypeDef]) {
-                    processContainerTypeAsJson(keyType.asInstanceOf[ContainerTypeDef], pair._1, noComma)
-                } else {
-                    val quoteValue : Boolean = true
-                    nameValueAsJson(keyType.FullName, pair._1, quoteValue, noComma)
-                }
-                val printComma : Boolean = lastVal != pair._2
-                val valRep : String =  if (valType.isInstanceOf[ContainerTypeDef]) {
-                    processContainerTypeAsJson(valType.asInstanceOf[ContainerTypeDef], pair._2, printComma)
-                } else {
-                    val quoteValue : Boolean = useQuotesOnValue(valType)
-                    nameValueAsJson(valType.FullName, pair._2, quoteValue, printComma)
-                }
-                buffer.append(s"$keyRep : $valRep")
-            })
-            buffer.toString
-        } else {
-            new ObjectMapper().writeValueAsString(map)
+    private def mapAsJson(dos: DataOutputStream, indentLevel: Int, attribType : AttributeTypeInfo, map : scala.collection.mutable.Map[Any,Any]) = {
+        val keyType = attribType.getKeyTypeCategory
+        val valType = attribType.getValTypeCategory
+        val quoteValue = useQuotesOnValue(valType)
+
+        keyType match {
+            case (BOOLEAN | BYTE | LONG | DOUBLE | FLOAT | INT | STRING) => ;
+            case _ => throw new UnsupportedObjectException(s"json serialize doesn't support maps as with complex key types, keyType: ${keyType.name}", null)
         }
-        mapAsJsonStr
+        val indentStr = getIndentStr(indentLevel)
+
+        // @TODO: for now, write entire map as a single line.. later it can be done in multi line using the passed in indentation as basis
+        val mapJsonHead = "{ "
+        val mapJsonTail = " }"
+        dos.writeUTF(mapJsonHead)
+        var idx = 0
+        map.foreach(pair => {
+            val k = pair._1
+            val v = pair._2
+            if(idx > 0) dos.writeUTF(", ")
+            idx += 1
+            dos.writeUTF(mapJsonHead)
+            keyAsJson(dos, 0, k.toString)
+            valType match {
+                case (BOOLEAN | BYTE | LONG | DOUBLE | FLOAT | INT | STRING) => valueAsJson(dos, 0, v, quoteValue);
+                case MAP => mapGenericAsJson(dos, indentLevel, v.asInstanceOf[scala.collection.mutable.Map[Any, Any]])
+                case ARRAY => arrayGenericAsJson(dos, indentLevel, v.asInstanceOf[Array[Any]])
+                case (CONTAINER | MESSAGE) => containerAsJson(dos, 0, v.asInstanceOf[ContainerInterface])
+            }
+            dos.writeUTF(mapJsonTail)
+        })
+        dos.writeUTF(mapJsonTail)
+    }
+
+    private def mapGenericAsJson(dos: DataOutputStream, indentLevel: Int, map : scala.collection.mutable.Map[Any,Any]) = {
+        val indentStr = getIndentStr(indentLevel)
+        // @TODO: for now, write entire map as a single line.. later it can be done in multi line using the passed in indentation as basis
+        val mapJsonHead = "{ "
+        val mapJsonTail = " }"
+        dos.writeUTF(mapJsonHead)
+        var idx = 0
+        map.foreach(pair => {
+            val k = pair._1
+            val v = pair._2
+            if(idx > 0) dos.writeUTF(", ")
+            idx += 1
+            dos.writeUTF(mapJsonHead)
+            keyAsJson(dos, 0, k.toString)
+            valueAsJson(dos, 0, v, isInstanceOf[String])
+            dos.writeUTF(mapJsonTail)
+        })
+        dos.writeUTF(mapJsonTail)
+    }
+
+    private def arrayGenericAsJson(dos: DataOutputStream, indentLevel: Int, array : Array[Any]) = {
+        val indentStr = getIndentStr(indentLevel)
+        // @TODO: for now, write entire map as a single line.. later it can be done in multi line using the passed in indentation as basis
+        val mapJsonHead = "[ "
+        val mapJsonTail = " ]"
+        dos.writeUTF(mapJsonHead)
+        var idx = 0
+        array.foreach(elem => {
+            if(idx > 0) dos.writeUTF(", ")
+            idx += 1
+            valueAsJson(dos, 0, elem, isInstanceOf[String])
+        })
+        dos.writeUTF(mapJsonTail)
     }
 
     /**
       * Create a Json string from the supplied array.  Note that the array elements can themselves
       * be containers.
       *
-      * @param aContainerType The container type def for the supplied array
+      * @param attribType The container type def for the supplied array
       * @param array the array instance
       * @return a Json string representation
       */
-    private def arrayAsJson(aContainerType : ContainerTypeDef, array : Array[Any]) : String = {
-        val memberTypes : Array[BaseTypeDef] = aContainerType.asInstanceOf[ArrayTypeDef].ElementTypes
-        val itmType : BaseTypeDef = memberTypes.last
-        val itemAtATime : Boolean = itmType.isInstanceOf[ContainerTypeDef]
-        val arrAsJsonStr : String = if (itemAtATime) {
-            val buffer : StringBuilder = new StringBuilder
-            val lastItm : Any  = array.last
-            buffer.append("[ ")
-            array.foreach(itm => {
-                val printComma : Boolean = lastItm != itm
-                val itmRep : String =  if (itmType.isInstanceOf[ContainerTypeDef]) {
-                    processContainerTypeAsJson(itmType.asInstanceOf[ContainerTypeDef], itm, printComma)
-                } else {
-                    val quoteValue : Boolean = useQuotesOnValue(itmType)
-                    nameValueAsJson(itmType.FullName, itm, quoteValue, printComma)
-                }
-                buffer.append(s"$itm")
-            })
-            buffer.append(" ]")
-            buffer.toString
-        } else {
-            new ObjectMapper().writeValueAsString(array)
-        }
-        arrAsJsonStr
+    private def arrayAsJson(dos: DataOutputStream, indentLevel: Int, attribType : AttributeTypeInfo, array : Array[Any]) = {
+        val itemType = attribType.getValTypeCategory
+        val quoteValue = useQuotesOnValue(itemType)
+        val mapJsonHead = "[ "
+        val mapJsonTail = " ]"
+        dos.writeUTF(mapJsonHead)
+        var idx = 0
+        array.foreach(itm => {
+            if(idx > 0) dos.writeUTF(", ")
+            idx += 1
+            itemType match {
+                case (BOOLEAN | BYTE | LONG | DOUBLE | FLOAT | INT | STRING) => valueAsJson(dos, 0, itm, quoteValue);
+                case MAP => mapGenericAsJson(dos, indentLevel, itm.asInstanceOf[scala.collection.mutable.Map[Any, Any]])
+                case ARRAY => arrayGenericAsJson(dos, indentLevel, itm.asInstanceOf[Array[Any]])
+                case (CONTAINER | MESSAGE) => containerAsJson(dos, 0, itm.asInstanceOf[ContainerInterface])
+            }
+        })
+        dos.writeUTF(mapJsonTail)
     }
 
 
     /**
       * Set the object resolver to be used for this serializer
- *
+      *
       * @param objRes an ObjectResolver
       */
     def setObjectResolver(objRes : ObjectResolver) : Unit = {
@@ -358,18 +287,14 @@ class JSONSerDes() extends SerializeDeserialize with LogTrait {
     /**
       * Configure the SerializeDeserialize adapter.  This must be done before the adapter implementation can be used.
       *
-      * @param mgr         SerializeDeserialize implementations must be supplied a reference to the cluster MdMgr
       * @param objResolver the ObjectResolver instance that can instantiate ContainerInterface instances
-      * @param classLoader the class loader that has access to the classes needed to build fields.
       * @param config a map of options that might be used to configure the execution of this SerializeDeserialize instance. This may
       *               be null if it is not necessary for the SerializeDeserialize implementation
       */
-    def configure(mgr: MdMgr, objResolver: ObjectResolver, classLoader: ClassLoader, config : java.util.Map[String,String]): Unit = {
-        _mgr  = mgr
+    def configure(objResolver: ObjectResolver, config : java.util.Map[String,String]): Unit = {
         _objResolver = objResolver
-        _classLoader  = classLoader
         _config = if (config != null) config.asScala else Map[String,String]()
-        _isReady = _mgr != null && _objResolver != null && _classLoader != null && _config != null
+        _isReady = _objResolver != null && _config != null
     }
 
     /**
@@ -379,119 +304,47 @@ class JSONSerDes() extends SerializeDeserialize with LogTrait {
       * @return a ContainerInterface
       */
     @throws(classOf[com.ligadata.Exceptions.ObjectNotFoundException])
-    def deserialize(b: Array[Byte]) : ContainerInterface = {
-
-        val rawJsonContainerStr : String = new String(b)
-        val containerInstanceMap : Map[String, Any] = jsonStringAsMap(rawJsonContainerStr)
-
-        /** Decode the map to produce an instance of ContainerInterface */
-
-        /** get the container key information.. the top level object must be a ContainerInterface... if these
-          * are not present, nothing good will come of it */
-        val containerNameJson : String = containerInstanceMap.getOrElse(JsonContainerInterfaceKeys.typename.toString, "").asInstanceOf[String]
-        val containerVersionJson : String = containerInstanceMap.getOrElse(JsonContainerInterfaceKeys.version.toString, "").asInstanceOf[String]
-        val containerPhyNameJson : String = containerInstanceMap.getOrElse(JsonContainerInterfaceKeys.physicalname.toString, "").asInstanceOf[String]
-
-        if (containerNameJson.isEmpty) {
-            throw new MissingPropertyException("the supplied byte array to deserialize does not have a known container name.", null)
-        }
-
-        /** Fixme: were we to support more than the "current" type, the version key above would be used to discern which type is to be deserialized */
-
-        /** get an empty ContainerInterface instance for this type name from the _objResolver */
-        val ci : ContainerInterface = _objResolver.getInstance(_classLoader, containerNameJson)
-        if (ci == null) {
-            throw new ObjectNotFoundException(s"type name $containerNameJson could not be resolved and built for deserialize",null)
-        }
-
-        /** get the fields information */
-        val containerBaseType : BaseTypeDef = _mgr.ActiveType(containerNameJson)
-        val containerType : ContainerTypeDef = if (containerBaseType != null) containerBaseType.asInstanceOf[ContainerTypeDef] else null
-        if (containerType == null) {
-            throw new ObjectNotFoundException(s"type name $containerNameJson is not a container type... deserialize fails.",null)
-        }
-        val mappedMsgType : MappedMsgTypeDef = if (containerType.isInstanceOf[MappedMsgTypeDef]) containerType.asInstanceOf[MappedMsgTypeDef] else null
-        val fixedMsgType : StructTypeDef = if (containerType.isInstanceOf[StructTypeDef]) containerType.asInstanceOf[StructTypeDef] else null
-        if (mappedMsgType == null && fixedMsgType == null) {
-            throw new UnsupportedObjectException(s"type name $containerNameJson is not a fixed or mapped message container type... deserialize fails.",null)
-        }
-
-        val fieldsToConsider : Array[BaseAttributeDef] = if (mappedMsgType != null) {
-            mappedMsgType.attrMap.values.toArray
-        } else {
-            if (fixedMsgType != null) {
-                fixedMsgType.memberDefs
-            } else {
-                Array[BaseAttributeDef]()
-            }
-        }
-        if (fieldsToConsider.isEmpty) {
-            throw new ObjectNotFoundException(s"The container $containerNameJson surprisingly has no fields...deserialize fails", null)
-        }
-
-
-        /** The fields are considered in the order given in their mapped or fixed message type def collection (the values of the map for the
-          * mapped message and the array for the struct def type (fixed))
-          */
-        fieldsToConsider.foreach(attr => {
-
-            val fieldsJson : Any = containerInstanceMap.getOrElse(attr.FullName, null)
-            if (fieldsJson != null) {
-                val isContainerType: Boolean = (attr.typeDef != null && isContainerTypeDef(attr.typeDef))
-                val fld: Any = if (isContainerType) {
-                    val containerTypeInfo: ContainerTypeDef = attr.typeDef.asInstanceOf[ContainerTypeDef]
-                    createContainerType(containerTypeInfo, fieldsJson)
-                } else {
-                    /** currently assumed to be one of the scalars or simple types supported by json/avro */
-                    fieldsJson
-                }
-                ci.set(attr.FullName, fld)
-            } else {
-                if (mappedMsgType == null) {
-                    /** is permissible that a mapped field has no value in the container. */
-                } else {
-                    /** blow it up when fixed msg field is missing */
-                    throw new ObjectNotFoundException(s"The fixed container $containerNameJson field ${attr.typeDef} has no value.. deserialize abandoned",null)
-                }
-            }
-        })
-
-        val container : ContainerInterface = null
-        container
+    def deserialize(b: Array[Byte], containerName: String) : ContainerInterface = {
+        val rawJsonContainerStr: String = new String(b)
+        val containerInstanceMap: Map[String, Any] = jsonStringAsMap(rawJsonContainerStr)
+        deserializeContainerFromJsonMap(containerInstanceMap)
     }
 
-    /**
-      * The current json describes one of the ContainerTypeDefs.  Decode the json building the correct container.
-      *
-      * @param containerTypeInfo a ContainerTypeDef (e.g., a StructTypeDef, MappedMsgTypeDef, ArrayTypeDef, et al)
-      * @param fieldsJson the json container (a map or array) that contains the content
-      * @return
-      */
-    def createContainerType(containerTypeInfo : ContainerTypeDef, fieldsJson : Any) : Any = {
-        /** ContainerInterface instance? */
-        val isContainerInterface : Boolean = containerTypeInfo.isInstanceOf[MappedMsgTypeDef] || containerTypeInfo.isInstanceOf[StructTypeDef]
-        val containerInst : Any = if (isContainerInterface) {
-            /** recurse to obtain the subcontainer */
-            val containerBytes : Array[Byte] = fieldsJson.toString.toCharArray.map(_.toByte)
-            val container : ContainerInterface = deserialize(containerBytes)
-            container
-        } else { /** Check for collection that is currently supported */
+    @throws(classOf[com.ligadata.Exceptions.ObjectNotFoundException])
+    private def deserializeContainerFromJsonMap(containerInstanceMap : Map[String, Any]) : ContainerInterface = {
+        /** Decode the map to produce an instance of ContainerInterface */
 
-            val coll : Any = containerTypeInfo match {
-                case a : ArrayTypeDef =>  {
-                    val collElements : List[Map[String, Any]] = fieldsJson.asInstanceOf[List[Map[String, Any]]]
-                    jsonAsArray(containerTypeInfo, collElements)
-                }
-                case m : MapTypeDef => {
-                    val collElements : Map[String, Any] = fieldsJson.asInstanceOf[Map[String, Any]]
-                    jsonAsMap(containerTypeInfo, collElements)
-                }
-                case _ => throw new UnsupportedObjectException(s"container type ${containerTypeInfo.typeString} not currently serializable",null)
-            }
+        val schemaIdJson = containerInstanceMap.getOrElse(SchemaIDKeyName, "-1").asInstanceOf[Long]
 
-            coll
+        if (schemaIdJson == -1) {
+            throw new MissingPropertyException(s"the supplied map (from json) to deserialize does not have a known schemaid, id: $schemaIdJson", null)
         }
-        containerInst
+        /** get an empty ContainerInterface instance for this type name from the _objResolver */
+        val ci : ContainerInterface = _objResolver.getInstance(schemaIdJson)
+        if (ci == null) {
+            throw new ObjectNotFoundException(s"container interface with schema id: $schemaIdJson could not be resolved and built for deserialize",null)
+        }
+
+        containerInstanceMap.foreach(pair => {
+            val k = pair._1
+            val v = pair._2
+
+            val at = ci.getAttributeType(k)
+            if(at == null)
+                ci.set(k, v)
+            else {
+                // @@TODO: check the type compatibility between "value" field v with the target field
+                val valType = at.getValTypeCategory
+                val fld = valType match {
+                    case (BOOLEAN | BYTE | LONG | DOUBLE | FLOAT | INT | STRING) => v
+                    case MAP => jsonAsMap(at, v.asInstanceOf[Map[String, Any]])
+                    case (CONTAINER | MESSAGE) => deserializeContainerFromJsonMap(v.asInstanceOf[Map[String,Any]])
+                    case ARRAY => jsonAsArray(at, v.asInstanceOf[List[Any]])
+                }
+                ci.set(k, fld)
+            }
+        })
+        ci
     }
 
     /**
@@ -501,24 +354,23 @@ class JSONSerDes() extends SerializeDeserialize with LogTrait {
       * @param collElements the list of json elements for the array buffer
       * @return an array instance
       */
-    def jsonAsArray(arrayTypeInfo : ContainerTypeDef, collElements : List[Map[String,Any]]) : Array[Any] = {
-
+    def jsonAsArray(arrayTypeInfo : AttributeTypeInfo, collElements : List[Any]) : Array[Any] = {
         /**
-         * FIXME: if we intend to support arrays of hetergeneous items (i.e, Array[Any]), this has to change.  At the
-         * moment only arrays of homogeneous types are supported.
-         */
+          * FIXME: if we intend to support arrays of hetergeneous items (i.e, Array[Any]), this has to change.  At the
+          * moment only arrays of homogeneous types are supported.
+          */
 
-        val memberTypes : Array[BaseTypeDef] = arrayTypeInfo.asInstanceOf[MapTypeDef].ElementTypes
-        val itmType : BaseTypeDef = memberTypes.last
-        val arrayMbrTypeIsContainer : Boolean = itmType.isInstanceOf[ContainerTypeDef]
+        val itmType = arrayTypeInfo.getValTypeCategory
         val array : Array[Any] = if (collElements.size > 0) {
             val list : List[Any] = collElements.map(itm => {
-                if (arrayMbrTypeIsContainer) {
-                    val itmType : ContainerTypeDef = itm.asInstanceOf[ContainerTypeDef]
-                    createContainerType(itmType, itm)
-                } else {
-                    itm
+                val fld = itmType match {
+                    case (BOOLEAN | BYTE | LONG | DOUBLE | FLOAT | INT | STRING) => itm
+                    case MAP => itm.asInstanceOf[Map[String, Any]]
+                    case (CONTAINER | MESSAGE) => deserializeContainerFromJsonMap(itm.asInstanceOf[Map[String,Any]])
+                    case ARRAY => itm.asInstanceOf[List[Any]].toArray
+                    case _ => throw new ObjectNotFoundException(s"jsonAsArray: invalid value type: ${itmType.getValue}, fldName: ${itmType.name} could not be resolved",null)
                 }
+                fld
             })
             list.toArray
         } else {
@@ -534,28 +386,22 @@ class JSONSerDes() extends SerializeDeserialize with LogTrait {
       * @param collElements
       * @return
       */
-    def jsonAsMap(mapTypeInfo : ContainerTypeDef, collElements : Map[String,Any]) : scala.collection.immutable.Map[Any,Any] = {
-        val memberTypes : Array[BaseTypeDef] = mapTypeInfo.asInstanceOf[MapTypeDef].ElementTypes
-        val sanityChk : Boolean = memberTypes.length == 2
-        val keyType : BaseTypeDef = memberTypes.head
-        val valType : BaseTypeDef = memberTypes.last
+    def jsonAsMap(mapTypeInfo : AttributeTypeInfo, collElements : Map[String,Any]) : scala.collection.immutable.Map[Any,Any] = {
+        val keyType = mapTypeInfo.getKeyTypeCategory
+        // check if keyType is STRING or other, for now, only STRING is supported
+        val valType = mapTypeInfo.getValTypeCategory
         val map : scala.collection.immutable.Map[Any,Any] = collElements.map(pair => {
             val key : String = pair._1
             val value : Any = pair._2
-            val keyRep : Any =  if (keyType.isInstanceOf[ContainerTypeDef]) {
-                val itmType : ContainerTypeDef = key.asInstanceOf[ContainerTypeDef]
-                createContainerType(itmType, key)
-            } else {
-                key
+            val fld = valType match {
+                case (BOOLEAN | BYTE | LONG | DOUBLE | FLOAT | INT | STRING) => value
+                case MAP => value.asInstanceOf[Map[String, Any]]
+                case (CONTAINER | MESSAGE) => deserializeContainerFromJsonMap(value.asInstanceOf[Map[String,Any]])
+                case ARRAY => value.asInstanceOf[List[Any]].toArray
+                case _ => throw new ObjectNotFoundException(s"jsonAsMap: invalid value type: ${valType.getValue}, fldName: ${valType.name} could not be resolved",null)
             }
-
-            val valRep : Any =  if (valType.isInstanceOf[ContainerTypeDef]) {
-                val itmType : ContainerTypeDef = value.asInstanceOf[ContainerTypeDef]
-                createContainerType(itmType, value)
-            } else {
-                value
-            }
-            (keyRep,valRep)
+            fld
+            (key, fld)
         }).toMap
 
         map
@@ -590,8 +436,4 @@ class JSONSerDes() extends SerializeDeserialize with LogTrait {
             }
         }
     }
-
-
-
 }
-

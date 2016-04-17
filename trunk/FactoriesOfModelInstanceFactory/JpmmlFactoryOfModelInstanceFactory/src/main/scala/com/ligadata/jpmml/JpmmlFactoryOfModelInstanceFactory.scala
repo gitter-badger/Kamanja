@@ -20,8 +20,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.{Map => MutableMap}
 
 import com.ligadata.kamanja.metadata.{MdMgr, ModelDef, BaseElem}
-import com.ligadata.KamanjaBase.{ FactoryOfModelInstanceFactory, ModelInstanceFactory, EnvContext, NodeContext }
-import com.ligadata.KamanjaBase.{ MappedModelResults, ContainerInterface, ModelInstance, ModelResultBase, TransactionContext }
+import com.ligadata.KamanjaBase._
 import com.ligadata.Utils.{ Utils, KamanjaClassLoader, KamanjaLoaderInfo }
 
 import org.apache.logging.log4j.LogManager
@@ -312,7 +311,7 @@ class JpmmlAdapterFactory(modelDef: ModelDef, nodeContext: NodeContext) extends 
       * @param msg  - the message instance that is currently being processed
       * @return true if this model can process the message.
       */
-    override def isValidMessage(msg: ContainerInterface): Boolean = {
+    override def isValidMessage(msg: MessageContainerBase): Boolean = {
         val msgFullName : String = msg.getFullTypeName
         val msgVersionDots : String = msg.getTypeVersion
         val msgVersion : String = msgVersionDots.filter(_ != '.').toString

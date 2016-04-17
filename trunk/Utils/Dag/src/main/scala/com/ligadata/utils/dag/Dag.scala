@@ -126,7 +126,7 @@ object DagRT {
     // if not, make a new node with the given information and put that node in node map
     // and populate input edge map with the input edges from that node.
     def AddNode(nodeId : Long, inputs: Array[Array[EdgeId]], outputs: Array[Long]): Unit = {
-      Info("DagImpl:AddNode ->, numNodes:%d, numEdgeSets: %d, numEdgeTypes: %d, nodeid: %d, inputs: %s, outputs: %s\n".format(numNodes, numEdgeSets, numEdgeTypes, nodeId, inputs.toString(), outputs.toString()))
+      Info("DagImpl:AddNode ->, numNodes:%d, numEdgeSets: %d, numEdgeTypes: %d, nodeid: %d, inputs: %s, outputs: %s\n".format(numNodes, numEdgeSets, numEdgeTypes, nodeId, inputs.map(_.mkString(",")).mkString(":"), outputs.mkString(",")))
       if(nodesMap.contains(nodeId))
         throw AlreadyExistsException("Dag::AddNode, nodeId already exist: %d".format(nodeId), null)
       val node = MakeNode(nodeId, inputs, outputs)
@@ -177,7 +177,7 @@ object DagRT {
       ies.LinkEdges
       iesList.append(ies)
       _numEdgeSets += 1
-      Info("DagImpl:AddInputEdgeSet, added new input edge set; nodeId: %d, idxSetInNode: %d, _numEdgeSets: %d, edgeIdSet: %s\n".format(nodeId, idxSetInNode, _numEdgeSets, edgeIdSet.toString))
+      Info("DagImpl:AddInputEdgeSet, added new input edge set; nodeId: %d, idxSetInNode: %d, _numEdgeSets: %d, edgeIdSet: %s\n".format(nodeId, idxSetInNode, _numEdgeSets, edgeIdSet.mkString(",")))
       ies
     }
   
@@ -194,12 +194,12 @@ object DagRT {
   }
   
   case class IesRTElem(ies: InputEdgeSet) {
-    def Reset() = { curCnt = 0;  for (i <- 0 to iesCnt) flagsFired(i) = false }
+    def Reset() = { curCnt = 0;  for (i <- 0 until iesCnt) flagsFired(i) = false }
     def IsSatisfied = (curCnt == iesCnt) // flagsFired.foldLeft(false){(result, flag) => (result && flag) }
     
     // Return true if all edges are in fired/satisfied state otherwise false
     def SetEdgeAsFired(idx : Int) : Boolean = {
-      if(idx > iesCnt) {
+      if(idx >= iesCnt) {
         // throw exception with appropriate message - must be bug as the idx never exceed iesCnt
       }
       if(flagsFired(idx)) {
@@ -225,7 +225,7 @@ object DagRT {
     def SetDag(dagNew : Dag) = {
       dag = dagNew.dagImpl
       iesRT = new Array[IesRTElem](dag.numEdgeSets)
-      for(idx <- 0 to dag.numEdgeSets) {
+      for(idx <- 0 until dag.numEdgeSets) {
         iesRT(idx) = IesRTElem(dag.getInputEdgeSet(idx))
         iesRT(idx).Reset
       }

@@ -13,15 +13,12 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package com.ligadata.models.samples.finance
+package com.ligadata.models.samples.finance.V1
 import com.ligadata.KamanjaBase._
 import com.ligadata.KvBase.TimeRange
 import com.ligadata.kamanja.metadata.ModelDef
 import com.ligadata.runtime.Conversion
 class TransactionIngestFactory(modelDef: ModelDef, nodeContext: NodeContext) extends ModelInstanceFactory(modelDef, nodeContext) {
-  override def isValidMessage(msg: ContainerInterface): Boolean = {
-    msg.isInstanceOf[com.ligadata.kamanja.samples.messages.V1000000.TransactionMsgIn]
-  }
   override def createModelInstance(): ModelInstance = return new TransactionIngest(this)
   override def getModelName: String = "com.ligadata.models.samples.finance"
   override def getVersion: String = "0.0.1"
@@ -30,7 +27,6 @@ class TransactionIngestFactory(modelDef: ModelDef, nodeContext: NodeContext) ext
 class TransactionIngest(factory: ModelInstanceFactory) extends ModelInstance(factory) {
   val conversion = new com.ligadata.runtime.Conversion
   override def execute(txnCtxt: TransactionContext, execMsgsSet: Array[ContainerOrConcept], triggerdSetIndex: Int, outputDefault: Boolean): Array[ContainerOrConcept] = {
-    val messagefactoryinterface = execMsgsSet(0).asInstanceOf[MessageFactoryInterface]
     //
     //
     def exeGenerated_transactionmsg_1(msg1: com.ligadata.kamanja.samples.messages.V1000000.TransactionMsgIn): Array[MessageInterface] = {
@@ -39,8 +35,8 @@ class TransactionIngest(factory: ModelInstanceFactory) extends ModelInstance(fac
       def process_o1(): Array[MessageInterface] = {
         // extract the type
         val typeName: String = arrayData(0)
-        if ("com.ligadata.kamanja.samples.messages.TransactionMsg" == typeName) return Array.empty[MessageInterface]
-        val result = new com.ligadata.kamanja.samples.messages.V1000000.TransactionMsg(messagefactoryinterface)
+        if (!("com.ligadata.kamanja.samples.messages.TransactionMsg" == typeName)) return Array.empty[MessageInterface]
+        val result = com.ligadata.kamanja.samples.messages.V1000000.TransactionMsg.createInstance
         result.branchid = conversion.ToInteger(arrayData(2))
         result.custid = conversion.ToLong(arrayData(1))
         result.locationid = conversion.ToInteger(arrayData(8))
@@ -56,7 +52,7 @@ class TransactionIngest(factory: ModelInstanceFactory) extends ModelInstance(fac
     }
     // Evaluate messages
     val msgs = execMsgsSet.map(m => m.getFullTypeName -> m).toMap
-    val msg1 = msgs.get("com.ligadata.kamanja.samples.messages.TransactionMsgIn").getOrElse(null).asInstanceOf[com.ligadata.kamanja.samples.messages.V1000000.TransactionMsgIn]
+    val msg1 = msgs.getOrElse("com.ligadata.kamanja.samples.messages.TransactionMsgIn", null).asInstanceOf[com.ligadata.kamanja.samples.messages.V1000000.TransactionMsgIn]
     // Main dependency -> execution check
     //
     val results: Array[MessageInterface] =

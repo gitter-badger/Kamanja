@@ -46,14 +46,19 @@ private class MockOutputAdapter extends OutputAdapter {
 
   override def getComponentStatusAndMetrics: MonitorComponentInfo = null
 
+  override def getComponentSimpleStats: String = ""
+
   override val nodeContext: NodeContext = null
 
   // This is protected override method. After applying serialization, pass original messages, Serialized data & Serializer names
-  override def send(tnxCtxt: TransactionContext, outputContainers: Array[ContainerInterface], serializedContainerData: Array[Array[Byte]], serializerNames: Array[String]): Unit = {
+  def send(tnxCtxt: TransactionContext, outputContainers: Array[ContainerInterface], serializedContainerData: Array[Array[Byte]], serializerNames: Array[String]): Unit = {
     this.send(serializedContainerData)
   }
 
-  override def send(tnxCtxt: TransactionContext, outputContainers: Array[ContainerInterface]): Unit = super.send(tnxCtxt, outputContainers)
+  override def send(tnxCtxt: TransactionContext, outputContainers: Array[ContainerInterface]): Unit = {
+    val (containers, serBuf, serializers) = serialize(tnxCtxt, outputContainers)
+    send(serBuf)
+  }
 }
 
 class OutputAdapterTests extends FlatSpec with BeforeAndAfter with Matchers with MockFactory {
