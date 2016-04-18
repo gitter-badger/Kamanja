@@ -801,17 +801,33 @@ object JsonSerializer {
           pretty(render(json))
         }
         case o: ClusterConfigDef => {
-          val json = (("ObjectType" ->  o.elementType) ~
-            ("Operation" -> operation) ~
-            ("NameSpace" -> o.NameSpace) ~
-            ("Name" -> o.name) ~
-            ("Version" -> "0") ~
-            ("PhysicalName" -> "") ~
-            ("JarName" -> "") ~
-            ("DependantJars" -> List[String]()) ~
-            ("ElementType" -> o.elementType) ~
-            ("ClusterId" -> o.clusterId))
-          pretty(render(json))
+            val json = (("ObjectType" ->  o.elementType) ~
+                ("Operation" -> operation) ~
+                ("NameSpace" -> o.NameSpace) ~
+                ("Name" -> o.name) ~
+                ("Version" -> "0") ~
+                ("PhysicalName" -> "") ~
+                ("JarName" -> "") ~
+                ("DependantJars" -> List[String]()) ~
+                ("ElementType" -> o.elementType) ~
+                ("ClusterId" -> o.clusterId))
+            pretty(render(json))
+        }
+        case o: AdapterMessageBinding => {
+            /** FIXME: Hack Alert:
+              * FIXME: For these we jam the FullBindingName in the name field and then restate the key in the
+              * FIXME: MetadataAPIImpl.updateThisKey(zkMessage: ZooKeeperNotification, tranId: Long) method to
+              * FIXME: val bindingKey : String = s"${zkMessage.ObjectType}.${zkMessage.Name}"...
+              * FIXME: Except for the object type and operation, the other fields are there just to satisfy the
+              * FIXME: the usage pattern in MetadataAPIImpl.updateThisKey method.
+              * FIXME: This mechanism should be reconsidered.
+              */
+            val json = (("ObjectType" ->  "AdapterMsgBinding") ~
+                ("Operation" -> operation) ~
+                ("NameSpace" -> o.NameSpace) ~
+                ("Name" -> o.FullBindingName) ~
+                ("Version" -> "0"))
+            pretty(render(json))
         }
         case _ => {
           throw UnsupportedObjectException("zkSerializeObjectToJson doesn't support the  objects of type objectType of " + mdObj.getClass().getName() + " yet.", null)

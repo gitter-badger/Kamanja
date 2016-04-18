@@ -1,9 +1,9 @@
-package org.kamanja.serdeser.csv
+package com.ligadata.kamanja.serializer
 
 import scala.collection.mutable.Map
 import scala.collection.JavaConverters._
 import java.io.{DataOutputStream, ByteArrayOutputStream}
-import org.apache.logging.log4j.{LogManager }
+import org.apache.logging.log4j.LogManager
 // import org.apache.commons.lang.StringEscapeUtils
 
 import com.ligadata.Exceptions._
@@ -20,7 +20,7 @@ object CsvContainerInterfaceKeys extends Enumeration {
 
 //@@TODO: move this into utils and use for all logging
 object Log {
-    private val log = LogManager.getLogger(getClass);
+    private val log = LogManager.getLogger(getClass)
 
     def Trace(str: String) = if(log.isTraceEnabled())  log.trace(str)
     def Warning(str: String) = if(log.isWarnEnabled()) log.warn(str)
@@ -71,7 +71,9 @@ class CsvSerDeser extends SerializeDeserialize {
     var _emitHeaderFirst : Boolean = false
     var _fieldDelimiter  = ","
     var _lineDelimiter = "\n"
+    var _nullValue = ""
     var _alwaysQuoteField = false
+    var _escapeChar = "\\"
 
     /**
       * Serialize the supplied container to a byte array using these CSV rules:
@@ -80,11 +82,8 @@ class CsvSerDeser extends SerializeDeserialize {
       */
     @throws(classOf[com.ligadata.Exceptions.ObjectNotFoundException])
     override def serialize(v : ContainerInterface) : Array[Byte] = {
-        val bos: ByteArrayOutputStream = new ByteArrayOutputStream(8 * 1024)
-        val dos = new DataOutputStream(bos)
+        val sb = new StringBuilder(8 * 1024)
 
-        val withComma : Boolean = true
-        val withoutComma :Boolean = false
         val containerName : String = v.getFullTypeName
         val containerType = v.getContainerType
 
@@ -101,7 +100,7 @@ class CsvSerDeser extends SerializeDeserialize {
          */
         val fields = v.getAllAttributeValues
         if (fields.isEmpty) {
-            throw new ObjectNotFoundException(s"The container ${containerName} surprisingly has no fields...serialize fails", null)
+            throw new ObjectNotFoundException(s"The container $containerName surprisingly has no fields...serialize fails", null)
         }
 
         var processCnt : Int = 0
@@ -111,30 +110,27 @@ class CsvSerDeser extends SerializeDeserialize {
             val fld = attr.getValue
             if (fld != null) {
                 val doTrailingComma : Boolean = processCnt < fieldCnt
-                emitField(dos, attr, doTrailingComma)
+                emitField(sb, attr, doTrailingComma)
             } else {
               // right thing to do is to emit NULL as special value - either as empty in output or some special indication such as -
                 throw new ObjectNotFoundException(s"during serialize()...attribute ${attr.getValueType.getName} could not be found in the container... mismatch", null)
             }
         })
-
-        val strRep : String = dos.toString
-        Debug(s"attribute as JSON:\n$strRep")
-
-        val byteArray : Array[Byte] = bos.toByteArray
-        dos.close()
-        bos.close()
-        byteArray
+        val strRep = sb.toString()
+        if (isDebugEnabled) {
+            Debug(s"Serialized as CSV, #flds: $fieldCnt, data: $strRep")
+        }
+        strRep.getBytes
     }
 
     /**
       * Write the field data type names to the supplied stream.  This is called whenever the _emitHeaderFirst instance
       * variable is true... usually just once in a given stream creation.
       *
-      * @param dos
-      * @param containerFieldsInOrder
+      * @param sb string builder to emit header
+      * @param containerFieldsInOrder array of field definitions
       */
-    private def emitHeaderRecord(dos : DataOutputStream, containerFieldsInOrder : Array[AttributeValue]) = {
+    private def emitHeaderRecord(sb : StringBuilder, containerFieldsInOrder : Array[AttributeValue]): Unit = {
         val quote : String = s"${'"'}"
         val fieldCnt : Int = containerFieldsInOrder.length
         var cnt : Int = 0
@@ -143,7 +139,7 @@ class CsvSerDeser extends SerializeDeserialize {
             cnt += 1
             val delim : String = if (cnt < fieldCnt) _fieldDelimiter else ""
             val value : String = s"$quote${av.getValueType.getName}$quote"
-            dos.writeUTF(s"$value$delim")
+            sb.append(s"$value$delim")
         })
     }
 
@@ -172,11 +168,11 @@ class CsvSerDeser extends SerializeDeserialize {
       * 11) Record (line) delimiters can be configured.  By default, the delimiter is the MS-DOS delimiter (\r\n).  The typical *nix line
       * (\n) is also supported.
       *
-      * @param dos the data output stream to receive the emissions of the decorated value
+      * @param sb the data output stream to receive the emissions of the decorated value
       * @param attr the attribute value that contains the data value
       * @param doTrailingComma when true follow data emission with comma; when false, emit the line delimiter configured
       */
-    private def emitField( dos : DataOutputStream
+    private def emitField( sb: StringBuilder
                           ,attr : com.ligadata.KamanjaBase.AttributeValue
                           ,doTrailingComma : Boolean) = {
         val valueType  = attr.getValueType
@@ -184,17 +180,19 @@ class CsvSerDeser extends SerializeDeserialize {
         val typeName : String = valueType.getName
         Debug(s"emit field $typeName with original value = ${rawValue.toString}")
 
-        val valueStr : String = attr.getValue.toString
-
-        val fld = valueType.getKeyTypeCategory match {
-            case (BOOLEAN | BYTE | LONG | DOUBLE | FLOAT | INT) => rawValue.toString
-            case STRING => escapeQuotes(rawValue.asInstanceOf[String])
-            case (MAP | CONTAINER | MESSAGE | ARRAY) => throw new NotImplementedFunctionException(s"emitField: complex type: ${valueType.getKeyTypeCategory.getValue}, fldName: ${valueType.getName}, not supported in standard csv format",null);
-            case _ => throw new ObjectNotFoundException(s"emitField: invalid value type: ${valueType.getKeyTypeCategory.getValue}, fldName: ${valueType.getName} could not be resolved",null)
+        var fld = _nullValue
+        if(rawValue != null) {
+            fld = valueType.getKeyTypeCategory match {
+                case (BOOLEAN | BYTE | LONG | DOUBLE | FLOAT | INT) => rawValue.toString
+                case STRING => escapeQuotes(rawValue.asInstanceOf[String])
+                case (MAP | CONTAINER | MESSAGE | ARRAY) => throw new NotImplementedFunctionException(s"emitField: complex type: ${valueType.getKeyTypeCategory.getValue}, fldName: ${valueType.getName}, not supported in standard csv format", null);
+                case _ => throw new ObjectNotFoundException(s"emitField: invalid value type: ${valueType.getKeyTypeCategory.getValue}, fldName: ${valueType.getName} could not be resolved", null)
+            }
+            Debug(s"emit field $typeName with value possibly quoted and escaped = $fld")
         }
-        Debug(s"emit field $typeName with value possibly quoted and escaped = $fld")
-        dos.writeUTF(fld)
-        dos.writeUTF(_lineDelimiter)
+        sb.append(fld)
+        if(doTrailingComma)
+            sb.append(_fieldDelimiter)
     }
 
     /**
@@ -208,11 +206,14 @@ class CsvSerDeser extends SerializeDeserialize {
         val len : Int = if (valueStr != null) valueStr.length else 0
         if(len == 0) return ""
         val buffer : StringBuilder = new StringBuilder
-        val fieldDelimiter = _fieldDelimiter
+        val fieldDelimiter = _fieldDelimiter(0)
+        val escapeChar = _escapeChar(0)
         valueStr.foreach(ch => {
             val esc = ch match {
-                case fieldDelimiter => "\\"
-                case '"' => "\\"
+                case `escapeChar` => _escapeChar
+                case `fieldDelimiter` => _escapeChar
+                case '"' => _escapeChar
+                case '\\' => _escapeChar
                 case _ => ""
             }
             buffer.append(esc)
@@ -241,56 +242,48 @@ class CsvSerDeser extends SerializeDeserialize {
         _objResolver = objResolver
         _config = configProperties.asScala
         _fieldDelimiter = _config.getOrElse("fieldDelimiter", ",")
-        _lineDelimiter =  _config.getOrElse("fieldDelimiter", "\n")
+        _lineDelimiter =  _config.getOrElse("lineDelimiter", "\n")
+        _nullValue =  _config.getOrElse("nullValue", "")
+        _escapeChar = _config.getOrElse("escChar", "\\")
         val alwaysQuoteFieldStr = _config.getOrElse("alwaysQuoteField", "F")
         _alwaysQuoteField = alwaysQuoteFieldStr.toLowerCase.startsWith("t")
 
         _isReady = (_objResolver != null && _config != null)
     }
 
-    private def emptyByteVal: Byte = 0
-    private def emptyIntVal: Int = 0
-    private def emptyLongVal: Long = 0
-    private def emptyFloatVal: Float = 0
-    private def emptyDoubleVal: Double = 0
-    private def emptyBooleanVal: Boolean = false
-    private def emptyCharVal: Char = ' '
-
-    private def resolveValue(fld: String, attr: AttributeTypeInfo): Any = {
-        if(fld == null) {
-            try {
-                Error("Input data is null for attribute(Name:%s, Index:%d, getTypeCategory:%s)".format(attr.getName(), attr.getIndex(), attr.getTypeCategory.toString))
-            } catch {
-                case e: Throwable => { Error(e)}
-            }
-            return null
-        }
-
+    private def resolveValue(fldStr: String, attr: AttributeTypeInfo): Any = {
+        val fld = if(fldStr == null) "" else fldStr
         var returnVal: Any = null
-        attr.getTypeCategory match {
-            case INT =>    { val f1 = fld.trim; returnVal = if(f1.length > 0) f1.toInt else emptyIntVal }
-            case FLOAT =>  { val f1 = fld.trim; returnVal = if(f1.length > 0) f1.toFloat else emptyFloatVal }
-            case DOUBLE => { val f1 = fld.trim; returnVal = if(f1.length > 0) f1.toDouble else emptyDoubleVal }
-            case LONG =>   { val f1 = fld.trim; returnVal = if(f1.length > 0) f1.toLong else emptyLongVal }
-            case BYTE =>   { val f1 = fld.trim; returnVal = if(f1.length > 0) f1.toByte else emptyByteVal }
-            case BOOLEAN =>{ val f1 = fld.trim; returnVal = if(f1.length > 0) f1.toBoolean else emptyBooleanVal }
-            case CHAR =>   returnVal = fld(0)
+        val tc = attr.getTypeCategory
+
+        tc match {
+            case CHAR =>   returnVal = if( fld.length > 0) fld(0) else null
             case STRING => returnVal = fld
             case _ => {
-                // Unhandled type
-                try {
-                    Error("For FieldData:%s we did not find valid Category Type in attribute info(Name:%s, Index:%d, getTypeCategory:%s)".format(fld, attr.getName(), attr.getIndex(), attr.getTypeCategory.toString))
-                } catch {
-                    case e: Throwable => { Error(e) }
+                val f1 = fld.trim
+                tc match {
+                    case INT =>     returnVal = if (f1.length > 0) f1.toInt else null
+                    case FLOAT =>   returnVal = if (f1.length > 0) f1.toFloat else null
+                    case DOUBLE =>  returnVal = if (f1.length > 0) f1.toDouble else null
+                    case LONG =>    returnVal = if (f1.length > 0) f1.toLong else null
+                    case BYTE =>    returnVal = if (f1.length > 0) f1.toByte else null
+                    case BOOLEAN => returnVal = if (f1.length > 0) f1.toBoolean else null
+                    case _ => {
+                        // Unhandled type
+                        try
+                            Error("For FieldData:%s we did not find valid Category Type in attribute info(Name:%s, Index:%d, getTypeCategory:%s)".format(fld, attr.getName, attr.getIndex, attr.getTypeCategory.toString))
+                        catch {
+                            case e: Throwable => {
+                                Error(e)
+                            }
+                        }
+                    }
                 }
             }
         }
-        if (returnVal == null) {
-            try {
-                Error("For FieldData:%s, returning NULL value in attribute info(Name:%s, Index:%d, getTypeCategory:%s)".format(fld, attr.getName(), attr.getIndex(), attr.getTypeCategory.toString))
-            } catch {
-                case e: Throwable => { Error(e) }
-            }
+        if(isDebugEnabled) {
+            val dumpStr = if(returnVal != null) returnVal.toString else "null"
+            Debug(s"Resolve value, name: ${attr.getName} value: $dumpStr\n")
         }
         returnVal
     }
@@ -329,7 +322,7 @@ class CsvSerDeser extends SerializeDeserialize {
         if (containerType == null) {
             throw new ObjectNotFoundException(s"type name $containerName is not a container type... deserialize fails.",null)
         }
-        if (ci.isFixed == false) {
+        if (! ci.isFixed) {
             throw new UnsupportedObjectException(s"type name $containerName has a mapped message container type...these are not supported in CSV... use either JSON or VCSV (when available) instead... deserialize fails.",null)
         }
 
@@ -341,7 +334,7 @@ class CsvSerDeser extends SerializeDeserialize {
         val numFields = rawCsvFields.length
 
         if (isDebugEnabled) {
-            Debug("InputData in fields:" + rawCsvFields.map(fld => (if (fld == null) "<null>" else fld)).mkString(","))
+            Debug("InputData in fields:" + rawCsvFields.map(fld => if (fld == null) "<null>" else fld).mkString(","))
         }
 
         fieldsToConsider.foreach(attr => {
@@ -351,7 +344,7 @@ class CsvSerDeser extends SerializeDeserialize {
             }
             /** currently assumed to be one of the scalars or simple types supported by json/avro **/
             if(fldIdx >= numFields) {
-                Error(s"input contains less number of fields than expected in container - attribute name: ${attr.getName}, fieldIndex: ${fldIdx}, numFields: ${numFields}")
+                Error(s"input contains less number of fields than expected in container - attribute name: ${attr.getName}, fieldIndex: $fldIdx, numFields: $numFields")
                 throw new UnsupportedObjectException(s"field type name ${attr.getName} is a container type... containers are not supported by the CSV deserializer at this time... deserialization fails.",null)
             }
             val fld = rawCsvFields(fldIdx)

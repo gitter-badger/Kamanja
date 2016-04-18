@@ -44,6 +44,7 @@ import Dag._
 //
 
 case class EdgeId(nodeId: Long, edgeTypeId: Long) {
+  override def toString = "(N:%d, ET:%d)".format(nodeId, edgeTypeId)
   def IsMatch(eid: EdgeId) : Boolean = {
     return (eid.edgeTypeId == edgeTypeId) && ((eid.nodeId == nodeId) || (nodeId == 0))
   }
@@ -98,12 +99,14 @@ object DagRT {
   
   // maintain all edge sets where a given edge type is member of
   case class EdgeType(edgeTypeId: Long, idxET: Int) {
+    override def toString = "(%d, %d)".format(edgeTypeId, idxET)
     def AddInputEdge(ie: InputEdge) = inputEdges.append(ie)
     val inputEdges = ArrayBuffer[InputEdge]()
   }
   
   // definition of input edge which is denoted by origination node id and msg type
   case class InputEdge(eid: EdgeId, et: EdgeType, idxInSet: Int) {
+    override def toString = "(eid:%s, et:%s, idxInSet:%d)".format(eid.toString, et.toString, idxInSet)
     var iesOwner : InputEdgeSet = null
     def IsMatch(eidFrom: EdgeId) = eid.IsMatch(eidFrom)
   }
@@ -243,17 +246,21 @@ object DagRT {
     //  return the ready node list
     def FireEdges(eids: Array[EdgeId]) : Array[ReadyNode] = {
       val result = new ArrayBuffer[ReadyNode]()
+      Info("DagRTImpl:FireEdges -> edges - %s\n".format(eids.map(_.toString).mkString(":")))
 
       def ProcessEid(eid: EdgeId) = {
         val eti = eid.edgeTypeId
         val etOpt = dag.getEdgeType(eti)
         if(etOpt.isEmpty)
-          throw InvalidArgumentException("DagRuntime::FireEdge - eid.edgeTypeId does not exist in Dag, eid.NodeId: %d, eid.edgeTypeId: %d".format(eid.nodeId, eid.edgeTypeId), null)
-        val et = etOpt.get
-        et.inputEdges.foreach(ie => if(ie.IsMatch(eid)) ProcessMatch(ie))
+          Info("DagRuntime::FireEdge - eid.edgeTypeId does not exist in Dag, eid.NodeId: %d, eid.edgeTypeId: %d".format(eid.nodeId, eid.edgeTypeId))
+        else {
+          val et = etOpt.get
+          et.inputEdges.foreach(ie => if (ie.IsMatch(eid)) ProcessMatch(ie))
+        }
       }
       
       def ProcessMatch(ie : InputEdge) = {
+        Info("DagRTImpl:ProcessMatch -> ie - %s\n".format(ie.toString))
         val ies = ie.iesOwner
         val idxIES = ies.idxIES
         val idxInSet = ie.idxInSet

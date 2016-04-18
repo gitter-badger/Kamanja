@@ -270,7 +270,7 @@ object AdapterMessageBindingUtils {
             val slzer : SerializeDeserializeConfig = mdMgr.GetSerializer(serializerName)
             val serializerPresent: Boolean = slzer != null
             if (! serializerPresent) {
-                buffer.append(s"The message $messageName cannot be found in the metadata...; ")
+                buffer.append(s"The serializer $serializerName cannot be found in the metadata...; ")
             }
             slzer
         } else {
@@ -281,9 +281,9 @@ object AdapterMessageBindingUtils {
          *
          * FIXME: if the namespace of the standard csv serializer changes, the constant below MUST change with it.
          */
-        val csvNamespace : String = "org.kamanja.serdeser.csv"
-        val serializerNamespace : String = if (serializer != null) serializer.NameSpace.toLowerCase else "_no_name_"
-        val isCsvSerializer : Boolean = (serializerNamespace == csvNamespace)
+        val csvNamespaceName : String = "com.ligadata.kamanja.serializer.delimitedserdeser"
+        val serializerNamespaceName : String = if (serializer != null) s"${serializer.FullName.toLowerCase}" else "_no_name_"
+        val isCsvSerializer : Boolean = (serializerNamespaceName == csvNamespaceName)
         val msgFields : Array[BaseAttributeDef] = if (msgDef != null && isCsvSerializer) {
             if (msgDef.containerType.isInstanceOf[MappedMsgTypeDef]) {
                 val mappedMsg : MappedMsgTypeDef = msgDef.containerType.asInstanceOf[MappedMsgTypeDef]
@@ -301,7 +301,7 @@ object AdapterMessageBindingUtils {
 
         val msgHasContainerFields : Boolean = (msgFields != null && msgFields.filter(fld => fld.typeDef.isInstanceOf[ContainerTypeDef]).length > 0)
         if (msgHasContainerFields) {
-            buffer.append(s"The message $messageName has container type fields.  These are not handled by the $csvNamespace.* serializers...; ")
+            buffer.append(s"The message $messageName has container type fields.  These are not handled by the $csvNamespaceName serializer...; ")
         }
 
         val ok : Boolean = buffer.isEmpty
@@ -387,7 +387,7 @@ object AdapterMessageBindingUtils {
                 val detailedString : String = processingResults.map( pair => {
                     val (msg, elem) : (String, BaseElemDef) = pair
                     val binding : AdapterMessageBinding = elem.asInstanceOf[AdapterMessageBinding]
-                    val cmdMsg : String = "binding could not be cached...not added"
+                    val cmdMsg : String = s"binding could not be cached...not added ...$msg"
                     new ApiResult(-1, "AddAdapterMessageBinding", s"${binding.FullBindingName} ", cmdMsg).toString
                 }).mkString(s",\n")
 
@@ -401,7 +401,7 @@ object AdapterMessageBindingUtils {
             val detailedString : String = processingResults.map( pair => {
                 val (msg, elem) : (String, BaseElemDef) = pair
                 val bindingName : String = if (elem != null) elem.asInstanceOf[AdapterMessageBinding].FullBindingName else "Binding could not be created"
-                val cmdMsg : String = if (elem != null) "not added" else "and not added"
+                val cmdMsg : String = if (elem != null) s"not added ...$msg" else s"and not added...$msg"
                 new ApiResult(-1, "AddAdapterMessageBinding", s"$bindingName", cmdMsg).toString
             }).mkString(s",\n")
             val resultStr : String = s"$overallMsg,\n$detailedString"

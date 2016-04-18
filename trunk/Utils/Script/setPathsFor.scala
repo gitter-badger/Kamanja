@@ -62,7 +62,21 @@ Substitute the supplied Kamanja template file that contains the standard config 
 keys ({InstallDirectory}, {ScalaInstallDirectory}, {JavaInstallDirectory}) with the supplied 
 associated values.
 
-Usage: setPathsFor --installDir <kamanja install dir> --templateFile <templateFile path> --scalaHome <Scala Home> --javaHome <Java Home> 
+Usage: setPathsFor --installDir <kamanja install dir> --templateFile <templateFile path> --scalaHome <Scala Home> --javaHome <Java Home> --storeType <cassandra, hbase, hashmap, etc.> [--schemaName <name e.g., testdata>] [--schemaLocation <a path for hashdb or ip addr for others>]
+
+Note: The schemaName parameter is required for 'cassandra' and 'hbase' storeTypes.  If the 'schemaLocation' is not present, it is assumed that the standard install directory substitution used for hashmap or treemap.
+
+Note: The keys that are sought in the templates are these (should you decide to build your own template file):
+
+	    {ScalaInstallDirectory}
+	    {JavaInstallDirectory}
+	    {InstallDirectory}
+	    {StoreType}
+	    {SchemaName}
+	    {SchemaLocation}
+
+Note: An enhancement would be to pass in your keys that you wish to substitute.
+
     """
 	}
 
@@ -86,6 +100,12 @@ Usage: setPathsFor --installDir <kamanja install dir> --templateFile <templateFi
 	          nextOption(map ++ Map('javaHome -> value), tail)
 	        case "--installDir" :: value :: tail =>
 	          nextOption(map ++ Map('installDir -> value), tail)
+	        case "--storeType" :: value :: tail =>
+	          nextOption(map ++ Map('storeType -> value), tail)
+	        case "--schemaName" :: value :: tail =>
+	          nextOption(map ++ Map('schemaName -> value), tail)
+	        case "--schemaLocation" :: value :: tail =>
+	          nextOption(map ++ Map('schemaLocation -> value), tail)
 	        case option :: tail => println("Unknown option " + option)
 	          sys.exit(1)
 	      }
@@ -97,8 +117,11 @@ Usage: setPathsFor --installDir <kamanja install dir> --templateFile <templateFi
 	    val scalaHome : String = if (options.contains('scalaHome)) options.apply('scalaHome) else null
         val javaHome : String = if (options.contains('javaHome)) options.apply('javaHome) else null
         val installDir : String = if (options.contains('installDir)) options.apply('installDir) else null
+        val storeType : String = if (options.contains('storeType)) options.apply('storeType) else null
+        val schemaName : String = if (options.contains('schemaName)) options.apply('schemaName) else "[no substitution supplied]"
+        val schemaLocation : String = if (options.contains('schemaLocation)) options.apply('schemaLocation) else null
 
-	    val ok : Boolean = templateFile != null && scalaHome != null && javaHome != null && installDir != null
+	    val ok : Boolean = templateFile != null && scalaHome != null && javaHome != null && installDir != null && storeType != null
 	    if (! ok) {
 	    	println("\ninvalid arguments\n")
 	    	println(usage)
@@ -106,7 +129,7 @@ Usage: setPathsFor --installDir <kamanja install dir> --templateFile <templateFi
 	    }
 
 	    val template : String = Source.fromFile(templateFile, "ASCII").mkString
-	    val subMap : Map[String,String] = Map[String,String]("{ScalaInstallDirectory}" -> scalaHome.trim, "{JavaInstallDirectory}" -> javaHome.trim, "{InstallDirectory}" -> installDir.trim)
+	    val subMap : Map[String,String] = Map[String,String]("{ScalaInstallDirectory}" -> scalaHome.trim, "{JavaInstallDirectory}" -> javaHome.trim, "{InstallDirectory}" -> installDir.trim, "{StoreType}" -> storeType.trim, "{SchemaName}" -> schemaName.trim, "{SchemaLocation}" -> schemaLocation.trim)
 
 
 	    /** do the substitutions */

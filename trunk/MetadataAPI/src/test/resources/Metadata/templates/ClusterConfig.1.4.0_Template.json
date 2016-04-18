@@ -3,18 +3,18 @@
     {
       "ClusterId": "ligadata1",
       "SystemCatalog": {
-        "StoreType": "hashmap",
-        "SchemaName": "testdata",
-        "Location": "{InstallDirectory}/storage/syscatelog"
+        "StoreType": "{StoreType}",
+        "SchemaName": "{SchemaName}",
+        "Location": "{SchemaLocation}"
       },
       "Tenants": [
         {
           "TenantId": "tenant1",
           "Description": "tenant1",
           "PrimaryDataStore": {
-            "StoreType": "hashmap",
-            "SchemaName": "testdata",
-            "Location": "{InstallDirectory}/storage/tenant1_default"
+            "StoreType": "{StoreType}",
+            "SchemaName": "{SchemaName}",
+            "Location": "{SchemaLocation}"
           },
           "CacheConfig": {
             "MaxSize": "1GB"
@@ -58,9 +58,9 @@
           "Name": "hBaseStore1",
           "TypeString": "Storage",
           "TenantId": "tenant1",
-          "StoreType": "hashmap",
-          "SchemaName": "testdata",
-          "Location": "{InstallDirectory}/storage/tenant1_storage_1"
+          "StoreType": "{StoreType}",
+          "SchemaName": "{SchemaName}",
+          "Location": "{SchemaLocation}"
         },
         {
           "Name": "kafkaAdapterInput1",

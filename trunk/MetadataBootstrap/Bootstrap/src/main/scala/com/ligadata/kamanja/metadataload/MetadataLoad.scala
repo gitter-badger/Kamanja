@@ -142,10 +142,10 @@ class MetadataLoad(val mgr: MdMgr, val typesPath: String, val fcnPath: String, v
     */
   private def initSerializeDeserializeConfigs: Unit = {
     mgr.AddSerializer("com.ligadata.kamanja.serializer" // namespace
-      , "delimitedserdeser" //name: String
+      , "csvserdeser" //name: String
       , 1 //version: Long = 1
       , SerializeDeserializeType.CSV //serializerType: SerializeDeserializeType.SerDeserType
-      , "org.kamanja.serdeser.csv.CsvSerDeser" //physicalName: String
+      , "com.ligadata.kamanja.serializer.CsvSerDeser" //physicalName: String
       , MetadataLoad.baseTypesOwnerId //ownerId: String
       , MetadataLoad.baseTypesTenantId //tenantId: String
       , 1 //uniqueId: Long
@@ -157,7 +157,7 @@ class MetadataLoad(val mgr: MdMgr, val typesPath: String, val fcnPath: String, v
       , "jsonserdeser" //name: String
       , 1 //version: Long = 1
       , SerializeDeserializeType.JSON //serializerType: SerializeDeserializeType.SerDeserType
-      , "org.kamanja.serdeser.json.JsonSerDeser" //physicalName: String
+      , "com.ligadata.kamanja.serializer.JsonSerDeser" //physicalName: String
       , MetadataLoad.baseTypesOwnerId //ownerId: String
       , MetadataLoad.baseTypesTenantId //tenantId: String
       , 2 //uniqueId: Long
@@ -169,7 +169,7 @@ class MetadataLoad(val mgr: MdMgr, val typesPath: String, val fcnPath: String, v
       , "kbinaryserdeser" //name: String
       , 1 //version: Long = 1
       , SerializeDeserializeType.KBinary //serializerType: SerializeDeserializeType.SerDeserType
-      , "org.kamanja.serdeser.kbinary.KBinarySerDeser" //physicalName: String
+      , "com.ligadata.kamanja.serializer.KBinarySerDeser" //physicalName: String
       , MetadataLoad.baseTypesOwnerId //ownerId: String
       , MetadataLoad.baseTypesTenantId //tenantId: String
       , 3 //uniqueId: Long

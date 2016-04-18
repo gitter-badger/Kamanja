@@ -234,7 +234,6 @@ trait ExecContext {
         LOG.warn("Not able to get com.ligadata.KamanjaBase.KamanjaMessageEvent")
       }
       txnCtxt = new TransactionContext(transId, nodeContext, data, EventOriginInfo(uk, uv), readTmMilliSecs, msgEvent)
-      LOG.debug("Processing uniqueKey:%s, uniqueVal:%s, Datasize:%d,IsMsgNull:%s,MsgData:%s".format(uk, uv, data.size, if (msg == null) "true" else "false", if (msg == null) "" else msg.get("msg").toString))
       txnCtxt.setInitialMessage("", msg)
       executeMessage(txnCtxt): Unit
     } catch {

@@ -2,26 +2,22 @@
   {
     "AdapterName": "testin_1",
     "MessageName": "com.ligadata.kamanja.samples.messages.inmsg1",
-    "Serializer": "com.ligadata.kamanja.serializer.delimitedserdeser",
+    "Serializer": "com.ligadata.kamanja.serializer.csvserdeser",
     "Options": {
       "alwaysQuoteFields": false,
-      "fieldDelimiter": "\\x01",
-      "lineDelimiter": "\r\n"
+      "fieldDelimiter": "\\x01"
     }
   },
   {
     "AdapterName": "testout_1",
     "MessageNames": [
-      "com.ligadata.kamanja.samples.messages.inmsg1",
       "com.ligadata.kamanja.samples.messages.msg1",
       "com.ligadata.kamanja.samples.messages.outmsg1"
     ],
-    "Serializer": "com.ligadata.kamanja.serializer.delimitedserdeser",
+    "Serializer": "com.ligadata.kamanja.serializer.csvserdeser",
     "Options": {
       "alwaysQuoteFields": false,
-      "fieldDelimiter": ",",
-      "lineDelimiter": "\r\n",
-      "produceHeader": true
+      "fieldDelimiter": ","
     }
   }
 ]

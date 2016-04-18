@@ -1736,4 +1736,32 @@ object ConfigUtils {
     MdMgr.GetMdMgr.DumpModelConfigs
   }
 
+    /**
+      * LoadAdapterMessageBindingIntoCache
+      *
+      * @param key string of the form "s"${zkMessage.ObjectType}.${zkMessage.Name}" where the object type is the
+      *            "AdapterMsgBinding" and the Name is the FullBindingName of the object to fetch
+      */
+    def LoadAdapterMessageBindingIntoCache(key: String) {
+        try {
+            logger.debug("Fetch the AdapterMessageBinding with key: " + key + " from persistent store ")
+            val (objtype, jsonBytes) : (String, Any) = PersistenceUtils.GetObject(key.toLowerCase, "adapter_message_bindings")
+            logger.debug("Deserialize the binding " + key)
+            val binding : AdapterMessageBinding =
+                    MetadataAPISerialization.deserializeMetadata(new String(jsonBytes.asInstanceOf[Array[Byte]])).asInstanceOf[AdapterMessageBinding]
+            if (binding != null) {
+                if (! binding.IsDeleted) {
+                    logger.debug("Add the binding " + key + " to the metadata cache ")
+                    MdMgr.GetMdMgr.AddAdapterMessageBinding(binding)
+                }
+            }
+        } catch {
+            case e: Exception => {
+                logger.warn("Unable to load the object " + key + " into cache ", e)
+            }
+        }
+    }
+
+
+
 }

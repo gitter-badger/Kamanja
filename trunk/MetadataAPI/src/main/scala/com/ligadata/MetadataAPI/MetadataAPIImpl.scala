@@ -3023,12 +3023,25 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
         }
       }
       case "adapterDef" | "nodeDef" | "clusterInfoDef" | "clusterDef" | "upDef"=> {
-        zkMessage.Operation match {
-          case "Add" | "Update" => {
-            updateClusterConfigForKey(zkMessage.ObjectType, zkMessage.Name, zkMessage.NameSpace, zkMessage.Operation)
+          zkMessage.Operation match {
+              case "Add" | "Update" => {
+                updateClusterConfigForKey(zkMessage.ObjectType, zkMessage.Name, zkMessage.NameSpace, zkMessage.Operation)
+              }
+              case _ => { logger.error("Unknown Operation " + zkMessage.Operation + " in zookeeper notification, notification is not processed ..") }
           }
-          case _ => { logger.error("Unknown Operation " + zkMessage.Operation + " in zookeeper notification, notification is not processed ..") }
-        }
+      }
+      case "AdapterMsgBinding"=> {
+          /** Restate the key to use the binding key (see AdapterMessageBinding class decl in Metadata project) for form. */
+          val bindingKey : String = s"${zkMessage.ObjectType}.${zkMessage.Name}"
+          zkMessage.Operation match {
+              case "Add" => {
+                  ConfigUtils.LoadAdapterMessageBindingIntoCache(bindingKey)
+              }
+              case "Remove" => {
+                  //ConfigUtils.RemoveAdapterMessageBindingFromCache(bindingKey)
+              }
+              case _ => { logger.error("Unknown Operation " + zkMessage.Operation + " in zookeeper notification, notification is not processed ..") }
+          }
       }
       case "ModelDef" => {
         zkMessage.Operation match {
