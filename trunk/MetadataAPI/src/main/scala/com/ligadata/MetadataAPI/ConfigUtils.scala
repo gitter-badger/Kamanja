@@ -1154,7 +1154,7 @@ object ConfigUtils {
     /**
      * Dump the configuration file to the log
      */
-  def dumpMetadataAPIConfig {
+  def  dumpMetadataAPIConfig {
     val e = MetadataAPIImpl.GetMetadataAPIConfig.propertyNames()
     while (e.hasMoreElements()) {
       val key = e.nextElement().asInstanceOf[String]

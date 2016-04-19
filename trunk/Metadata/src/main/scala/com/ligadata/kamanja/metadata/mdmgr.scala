@@ -1914,20 +1914,20 @@ class MdMgr {
   @throws(classOf[NoSuchElementException])
   def MakeFixedMsg(nameSpace: String, name: String, physicalName: String, args: List[(String, String, String, String, Boolean, String)], ownerId: String, tenantId: String, uniqueId: Long, mdElementId: Long, schemaId: Int, avroSchema:String, ver: Long = 1, jarNm: String = null, depJars: Array[String] = null, primaryKeys: List[(String, List[String])] = null, foreignKeys: List[(String, List[String], String, List[String])] = null, partitionKey: Array[String] = null, recompile: Boolean = false, persist: Boolean /* = false */): MessageDef = {
 
-    val latestActiveMessage = Message(nameSpace, name, -1, false)
-    if (latestActiveMessage != None) {
-      if (recompile) {
-        //Only make a message if the version is greater then the last known version already in the system.
-        if (latestActiveMessage.get.Version > ver) {
-          throw AlreadyExistsException(s"Higher active version of Message $nameSpace.$name already exists in the system", null)
-        }
-      } else {
-        //Only make a message if the version is greater or equal then the last known version already in the system.
-        if (latestActiveMessage.get.Version >= ver) {
-          throw AlreadyExistsException(s"Higher active version of Message $nameSpace.$name already exists in the system", null)
-        }
-      }
-    }
+  //  val latestActiveMessage = Message(nameSpace, name, -1, false)
+  //  if (latestActiveMessage != None) {
+  //    if (recompile) {
+  //      //Only make a message if the version is greater then the last known version already in the system.
+  //      if (latestActiveMessage.get.Version > ver) {
+  //        throw AlreadyExistsException(s"Higher active version of Message $nameSpace.$name already exists in the system", null)
+   //     }
+   //   } else {
+   //     //Only make a message if the version is greater or equal then the last known version already in the system.
+   //     if (latestActiveMessage.get.Version >= ver) {
+   //       throw AlreadyExistsException(s"Higher active version of Message $nameSpace.$name already exists in the system", null)
+   //     }
+    //  }
+   // }
 
     var msg: MessageDef = new MessageDef
     msg.containerType = MakeStructDef(nameSpace, name, physicalName, args, ver, jarNm, depJars, primaryKeys, foreignKeys, partitionKey, ownerId, tenantId, uniqueId, mdElementId, schemaId, avroSchema, persist)
@@ -2275,13 +2275,14 @@ class MdMgr {
 
   @throws(classOf[AlreadyExistsException])
   def AddScalar(nameSpace: String, name: String, tp: Type, physicalName: String, ownerId: String, tenantId: String, uniqueId: Long, mdElementId: Long, ver: Long = 1, jarNm: String = null, depJars: Array[String] = null, implementationName: String = null): Unit = {
-    AddScalar(MakeScalar(nameSpace, name, tp, physicalName, ownerId, tenantId, uniqueId, mdElementId, ver, jarNm, depJars, implementationName))
+    AddScalar(MakeScalar(nameSpace, name, tp, physicalName, ownerId, tenantId, uniqueId, mdElementId, ver, jarNm, depJars, implementationName), false)
   }
 
   @throws(classOf[AlreadyExistsException])
-  def AddScalar(st: ScalarTypeDef): Unit = {
+  def AddScalar(st: ScalarTypeDef, ignoreExistingObjectsOnStartup: Boolean ): Unit = {
     if (Type(st.FullName, -1, false) != None) {
-      throw AlreadyExistsException(s"Scalar ${st.FullName} already exists.", null)
+     // if (!ignoreExistingObjectsOnStartup)
+     //   throw AlreadyExistsException(s"Scalar ${st.FullName} already exists.", null)
     }
     typeDefs.addBinding(st.FullName, st)
   }
@@ -2305,10 +2306,11 @@ class MdMgr {
   }
 
   @throws(classOf[AlreadyExistsException])
-  def AddArray(at: ArrayTypeDef): Unit = {
-    if (Type(at.FullName, -1, false) != None) {
-      throw AlreadyExistsException(s"Array ${at.FullName} already exists.", null)
-    }
+  def AddArray(at: ArrayTypeDef, ignoreExistingObjectsOnStartup: Boolean = false): Unit = {
+    //if (Type(at.FullName, -1, false) != None) {
+   //   if (!ignoreExistingObjectsOnStartup)
+    //    throw AlreadyExistsException(s"Array ${at.FullName} already exists.", null)
+   // }
     typeDefs.addBinding(at.FullName, at)
   }
 
@@ -2504,9 +2506,10 @@ class MdMgr {
   }
 
   @throws(classOf[AlreadyExistsException])
-  def AddMap(map: MapTypeDef): Unit = {
+  def AddMap(map: MapTypeDef, ignoreExistingObjectsOnStartup: Boolean = false): Unit = {
     if (Type(map.FullName, -1, false) != None) {
-      throw AlreadyExistsException(s"Map ${map.FullName} already exists.", null)
+      //if (!ignoreExistingObjectsOnStartup)
+    //    throw AlreadyExistsException(s"Map ${map.FullName} already exists.", null)
     }
     typeDefs.addBinding(map.FullName, map)
   }
@@ -2605,7 +2608,7 @@ class MdMgr {
   @throws(classOf[AlreadyExistsException])
   @throws(classOf[NoSuchElementException])
   def AddFunc(nameSpace: String, name: String, physicalName: String, retTypeNsName: (String, String), args: List[(String, String, String)], fmfeatures: Set[FcnMacroAttr.Feature], ownerId: String, tenantId: String, uniqueId: Long, mdElementId: Long, ver: Long = 1, jarNm: String = null, depJars: Array[String] = Array[String]()): Unit = {
-    AddFunc(MakeFunc(nameSpace, name, physicalName, retTypeNsName, args, fmfeatures, ownerId, tenantId, uniqueId, mdElementId, ver, jarNm, depJars))
+    AddFunc(MakeFunc(nameSpace, name, physicalName, retTypeNsName, args, fmfeatures, ownerId, tenantId, uniqueId, mdElementId, ver, jarNm, depJars), false)
   }
 
   /**
@@ -2617,18 +2620,20 @@ class MdMgr {
     */
 
   @throws(classOf[AlreadyExistsException])
-  def AddFunc(fn: FunctionDef): Unit = {
+  def AddFunc(fn: FunctionDef, ignoreExistingObjectsOnStartup: Boolean ): Unit = {
     val args = fn.args.map(a => a.aType.FullName).toList
     if (Function(fn.FullName, args, -1, false) != None) {
-      val argsStr = args.mkString(",")
-      throw AlreadyExistsException(s"Function ${fn.FullName} with arguments \'${argsStr}\' already exists.", null)
+      if (ignoreExistingObjectsOnStartup) {
+        val argsStr = args.mkString(",")
+      //  throw AlreadyExistsException(s"Function ${fn.FullName} with arguments \'${argsStr}\' already exists.", null)
+      }
     }
     val fcnSig: String = fn.typeString
     if (FunctionByTypeSig(fcnSig) != null) {
-      throw AlreadyExistsException(s"Function ${fn.FullName} with signature \'${fcnSig}\' already exists.", null)
+     // throw AlreadyExistsException(s"Function ${fn.FullName} with signature \'${fcnSig}\' already exists.", null)
     }
     if (MacroByTypeSig(fcnSig) != null) {
-      throw AlreadyExistsException(s"Macro ${fn.FullName} with signature \'${fcnSig}\' will be hidden should this function be cataloged.", null)
+     // throw AlreadyExistsException(s"Macro ${fn.FullName} with signature \'${fcnSig}\' will be hidden should this function be cataloged.", null)
     }
 
     funcDefs.addBinding(fn.FullName, fn)
@@ -2647,7 +2652,7 @@ class MdMgr {
     */
 
   @throws(classOf[AlreadyExistsException])
-  def AddAttribute(attr: BaseAttributeDef): Unit = {
+  def AddAttribute(attr: BaseAttributeDef, ignoreExistingObjectsOnStartup: Boolean = false): Unit = {
     attrbDefs.addBinding(attr.FullName, attr)
   }
 
@@ -2830,13 +2835,12 @@ class MdMgr {
 
   @throws(classOf[AlreadyExistsException])
   @throws(classOf[NoSuchElementException])
-  def AddMsg(msg: MessageDef): Unit = {
-    if (Type(msg.FullName, -1, false) != None) {
-      throw AlreadyExistsException(s"Message type ${msg.FullName} already exists.", null)
-    }
-    if (Message(msg.FullName, -1, false) != None) {
-      throw AlreadyExistsException(s"Message ${msg.FullName} already exists.", null)
-    }
+  def AddMsg(msg: MessageDef, ignoreExistingObjectsOnStartup: Boolean = false): Unit = {
+
+   // if (Message(msg.FullName, -1, false) != None) {
+   //   if (!ignoreExistingObjectsOnStartup)
+   //     throw AlreadyExistsException(s"Message ${msg.FullName} already exists.", null)
+   // }
     if (msg.containerType == null) {
       throw new NoSuchElementException(s"The containerType of the Message ${msg.FullName} can not be null.")
     }
@@ -2898,12 +2902,11 @@ class MdMgr {
 
   @throws(classOf[AlreadyExistsException])
   @throws(classOf[NoSuchElementException])
-  def AddContainer(container: ContainerDef): Unit = {
-    if (Type(container.FullName, -1, false) != None) {
-      throw AlreadyExistsException(s"Container type ${container.FullName} already exists.", null)
-    }
+  def AddContainer(container: ContainerDef, ignoreExistingObjectsOnStartup: Boolean = false): Unit = {
+
     if (Container(container.FullName, -1, false) != None) {
-      throw AlreadyExistsException(s"Container ${container.FullName} already exists.", null)
+     // if (!ignoreExistingObjectsOnStartup)
+     //   throw AlreadyExistsException(s"Container ${container.FullName} already exists.", null)
     }
     if (container.containerType == null) {
       throw new NoSuchElementException(s"The containerType of container ${container.FullName} can not be null.")
@@ -2922,9 +2925,10 @@ class MdMgr {
 
   @throws(classOf[AlreadyExistsException])
   @throws(classOf[NoSuchElementException])
-  def AddContainerType(containerType: ContainerTypeDef): Unit = {
+  def AddContainerType(containerType: ContainerTypeDef, ignoreExistingObjectsOnStartup: Boolean = false): Unit = {
     if (Type(containerType.FullName, -1, false) != None) {
-      throw AlreadyExistsException(s"Container type ${containerType.FullName} already exists.", null)
+     // if (ignoreExistingObjectsOnStartup)
+     //   throw AlreadyExistsException(s"Container type ${containerType.FullName} already exists.", null)
     }
     typeDefs.addBinding(containerType.FullName, containerType)
   }

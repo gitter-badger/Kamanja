@@ -50,7 +50,7 @@ public class Migrate {
         String versionInstallPath = null;
         String implemtedClass = null;
         List<String> jars = null;
-
+	String tenantId = null;
         VersionConfig() {
         }
     }
@@ -352,7 +352,6 @@ public class Migrate {
         URLClassLoader dstKamanjaLoader = null;
         int retCode = 1;
         boolean foundError = false;
-        String tenantId = ""; // FIXME:- RAMANA YOU NEED TO EXPECT tenantId from Input (must) and pass it to Migrater
 
         try {
             if (configuration == null) {
@@ -367,6 +366,7 @@ public class Migrate {
             String dstVer = configuration.migratingTo.version.trim();
             String scalaFrom = configuration.migratingFrom.scalaVersion.trim();
             String scalaTo = configuration.migratingTo.scalaVersion.trim();
+            String tenantId = configuration.migratingTo.tenantId.trim();
 
             if (srcVer.equalsIgnoreCase("1.1") == false
                     && srcVer.equalsIgnoreCase("1.2") == false 
@@ -723,6 +723,12 @@ public class Migrate {
                 migrateTo.dropAllTables(metadataDelTbls.toArray(new TableName[metadataDelTbls.size()]), dataDelTbls.toArray(new TableName[dataDelTbls.size()]), statusDelTbls.toArray(new TableName[statusDelTbls.size()]));
                 sendStatus("Completed dropping tables", "INFO");
                 logger.info("Completed dropping tables");
+
+		// 1.4.0 change. Because of the way we save keys in metadata tables
+		// is different from non-metadata tables, we need to create tabels
+		// ahead.
+                logger.info("Create metadata tables again");
+		migrateTo.createMetadataTables();
 
                 String[] excludeMetadata = new String[0];
                 if (configuration.excludeMetadata != null

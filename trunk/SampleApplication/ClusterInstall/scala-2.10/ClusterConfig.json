@@ -76,8 +76,8 @@
           "TypeString": "Storage",
           "TenantId": "tenant1",
           "StoreType": "hbase",
-          "SchemaName": "kamanja",
-          "Location": "{InstallDirectory}/storage/tenant1_storage_1"
+          "SchemaName": "tenant1_storage_1",
+          "Location": "localhost"
         },
         {
           "Name": "TestIn_1",

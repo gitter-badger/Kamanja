@@ -142,7 +142,7 @@ class SmartFileConsumer(val inputConfig: AdapterConfiguration, val execCtxtObj: 
 
   private var _ignoreFirstMsg : Boolean = _
 
-  val statusUpdateInterval = 1000 //ms
+  val statusUpdateInterval = 60000 //ms
 
   private val allNodesStartInfo = scala.collection.mutable.Map[String, List[(Int, String, Int, Boolean)]]()
 

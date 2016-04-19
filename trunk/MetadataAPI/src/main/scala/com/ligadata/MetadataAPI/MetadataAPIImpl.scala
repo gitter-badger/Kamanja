@@ -979,7 +979,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
           val funcKey = (obj.getClass().getName().split("\\.").last + "." + o.typeString).toLowerCase
           logger.debug("Adding the function to the cache: name of the object =>  " + funcKey)
           saveObjFn()
-          mdMgr.AddFunc(o)
+          mdMgr.AddFunc(o, false)
         }
         case o: AttributeDef => {
           logger.debug("Adding the attribute to the cache: name of the object =>  " + dispkey)
@@ -989,7 +989,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
         case o: ScalarTypeDef => {
           logger.debug("Adding the Type to the cache: name of the object =>  " + dispkey)
           saveObjFn()
-          mdMgr.AddScalar(o)
+          mdMgr.AddScalar(o, false)
         }
         case o: ArrayTypeDef => {
           logger.debug("Adding the Type to the cache: name of the object =>  " + dispkey)
@@ -1409,7 +1409,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
       * @param o <description please>
      *  @param mdMgr the metadata manager receiver
      */
-  def AddObjectToCache(o: Object, mdMgr: MdMgr) {
+  def AddObjectToCache(o: Object, mdMgr: MdMgr, ignoreExistingObjectsOnStartup: Boolean = false) {
     // If the object's Delete flag is set, this is a noop.
     val obj = o.asInstanceOf[BaseElemDef]
 
@@ -1428,36 +1428,36 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
         }
         case o: MessageDef => {
           logger.debug("Adding the message to the cache: name of the object =>  " + dispkey)
-          mdMgr.AddMsg(o)
+          mdMgr.AddMsg(o, ignoreExistingObjectsOnStartup)
         }
         case o: ContainerDef => {
           logger.debug("Adding the container to the cache: name of the object =>  " + dispkey)
-          mdMgr.AddContainer(o)
+          mdMgr.AddContainer(o, ignoreExistingObjectsOnStartup)
         }
         case o: FunctionDef => {
           val funcKey = o.typeString.toLowerCase
           logger.debug("Adding the function to the cache: name of the object =>  " + funcKey)
-          mdMgr.AddFunc(o)
+          mdMgr.AddFunc(o, ignoreExistingObjectsOnStartup)
         }
         case o: AttributeDef => {
           logger.debug("Adding the attribute to the cache: name of the object =>  " + dispkey)
-          mdMgr.AddAttribute(o)
+          mdMgr.AddAttribute(o, ignoreExistingObjectsOnStartup)
         }
         case o: ScalarTypeDef => {
           logger.debug("Adding the Type to the cache: name of the object =>  " + dispkey)
-          mdMgr.AddScalar(o)
+          mdMgr.AddScalar(o, ignoreExistingObjectsOnStartup)
         }
         case o: ArrayTypeDef => {
           logger.debug("Adding the Type to the cache: name of the object =>  " + dispkey)
-          mdMgr.AddArray(o)
+          mdMgr.AddArray(o, ignoreExistingObjectsOnStartup)
         }
         case o: MapTypeDef => {
           logger.debug("Adding the Type to the cache: name of the object =>  " + dispkey)
-          mdMgr.AddMap(o)
+          mdMgr.AddMap(o, ignoreExistingObjectsOnStartup)
         }
         case o: ContainerTypeDef => {
           logger.debug("Adding the Type to the cache: name of the object =>  " + dispkey)
-          mdMgr.AddContainerType(o)
+          mdMgr.AddContainerType(o, ignoreExistingObjectsOnStartup)
         }
         case _ => {
           logger.error("SaveObject is not implemented for objects of type " + obj.getClass.getName)
@@ -1465,10 +1465,12 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
       }
     } catch {
       case e: AlreadyExistsException => {
-        logger.error("Already Exists! Failed to Cache the object(" + obj.FullName + "." + MdMgr.Pad0s2Version(obj.Version) + ")", e)
+        logger.error("Already Exists! Failed to Cache the object(" + obj.FullName + "." + MdMgr.Pad0s2Version(obj.Version) + ")")
+        throw e
       }
       case e: Exception => {
-        logger.error("Exception! Failed to Cache the object(" + obj.FullName + "." + MdMgr.Pad0s2Version(obj.Version) + ")", e)
+        logger.error("Exception! Failed to Cache the object(" + obj.FullName + "." + MdMgr.Pad0s2Version(obj.Version) + ")")
+        throw e
       }
     }
   }
@@ -1476,7 +1478,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     /**
      * ModifyObject
       *
-      * @param obj
+      * @param objDeleteObject
      * @param operation
      */
   def ModifyObject(obj: BaseElemDef, operation: String) {
@@ -2092,7 +2094,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
      * @param zkNotify
      * @return
      */
-  def RemoveMessage(nameSpace: String, name: String, version: Long, userid: Option[String], zkNotify: Boolean = true): String = {
+  def  RemoveMessage(nameSpace: String, name: String, version: Long, userid: Option[String], zkNotify: Boolean = true): String = {
     MessageAndContainerUtils.RemoveMessage(nameSpace,name,version,userid,zkNotify)
   }
 
@@ -2805,11 +2807,11 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     }
   }
 
-  private def DeserializeAndAddObject(k: Key, data: Array[Byte], objectsChanged: ArrayBuffer[BaseElemDef], operations: ArrayBuffer[String], maxTranId: Long): Unit = {
+  private def DeserializeAndAddObject(k: Key, data: Array[Byte], objectsChanged: ArrayBuffer[BaseElemDef], operations: ArrayBuffer[String], maxTranId: Long, ignoreExistingObjectsOnStartup: Boolean = false): Unit = {
     val mObj= MetadataAPISerialization.deserializeMetadata(new String(data)).asInstanceOf[BaseElemDef] // serializer.DeserializeObjectFromByteArray(v.asInstanceOf[Array[Byte]]).asInstanceOf[BaseElemDef]
     if (mObj != null) {
       if (mObj.tranId <= maxTranId) {
-        AddObjectToCache(mObj, MdMgr.GetMdMgr)
+        AddObjectToCache(mObj, MdMgr.GetMdMgr, ignoreExistingObjectsOnStartup)
         DownloadJarFromDB(mObj)
       } else {
         if (mObj.isInstanceOf[FunctionDef]) {
@@ -2835,7 +2837,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     /**
      * LoadAllObjectsIntoCache
      */
-  def LoadAllObjectsIntoCache {
+  def LoadAllObjectsIntoCache(ignoreExistingObjectsOnStartup: Boolean = false) {
     try {
       val configAvailable = ConfigUtils.LoadAllConfigObjectsIntoCache
       if (configAvailable) {
@@ -2864,7 +2866,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
           val unHandledTypes = ArrayBuffer[(Key, Array[Byte])]()
           typesYetToProcess.foreach(typ1 => {
             try {
-              DeserializeAndAddObject(typ1._1, typ1._2, objectsChanged, operations, maxTranId)
+              DeserializeAndAddObject(typ1._1, typ1._2, objectsChanged, operations, maxTranId, ignoreExistingObjectsOnStartup)
             } catch {
               case e: Throwable => {
                 unHandledTypes += typ1
@@ -2895,7 +2897,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
             {
               val data = v.asInstanceOf[Array[Byte]]
               try {
-                DeserializeAndAddObject(k, data, objectsChanged, operations, maxTranId)
+                DeserializeAndAddObject(k, data, objectsChanged, operations, maxTranId, ignoreExistingObjectsOnStartup)
               } catch {
                 case e: Throwable => {
                   if (typ.equalsIgnoreCase("types")) {
@@ -3067,7 +3069,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
           }
           case "Remove" => {
             try {
-              RemoveMessage(zkMessage.NameSpace, zkMessage.Name, zkMessage.Version.toLong, None, false)
+              MdMgr.GetMdMgr.ModifyMessage(zkMessage.NameSpace, zkMessage.Name, zkMessage.Version.toLong, zkMessage.Operation)
             } catch {
               case e: ObjectNolongerExistsException => {
                 logger.error("The object " + dispkey + " nolonger exists in metadata : It may have been removed already", e)
@@ -3093,7 +3095,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
           }
           case "Remove" => {
             try {
-              RemoveContainer(zkMessage.NameSpace, zkMessage.Name, zkMessage.Version.toLong, None, false)
+              MdMgr.GetMdMgr.ModifyContainer(zkMessage.NameSpace, zkMessage.Name, zkMessage.Version.toLong, zkMessage.Operation)
             } catch {
               case e: ObjectNolongerExistsException => {
                 logger.error("The object " + dispkey + " nolonger exists in metadata : It may have been removed already", e)
@@ -4166,7 +4168,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     val jarPaths = if (tmpJarPaths != null) tmpJarPaths.split(",").toSet else scala.collection.immutable.Set[String]()
     MetadataAPIImpl.OpenDbStore(jarPaths, GetMetadataAPIConfig.getProperty("METADATA_DATASTORE"))
     MetadataAPIImpl.CreateMetadataTables
-    MetadataAPIImpl.LoadAllObjectsIntoCache
+    MetadataAPIImpl.LoadAllObjectsIntoCache()
     MetadataAPIImpl.CloseDbStore
     MetadataAPIImpl.InitSecImpl
     if (startHB) InitHearbeat
@@ -4198,7 +4200,7 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     val jarPaths = if (tmpJarPaths != null) tmpJarPaths.split(",").toSet else scala.collection.immutable.Set[String]()
     MetadataAPIImpl.OpenDbStore(jarPaths, GetMetadataAPIConfig.getProperty("METADATA_DATASTORE"))
     MetadataAPIImpl.CreateMetadataTables
-    MetadataAPIImpl.LoadAllObjectsIntoCache
+    MetadataAPIImpl.LoadAllObjectsIntoCache(true)
     MetadataAPIImpl.InitSecImpl
     if (startHB) InitHearbeat
     isInitilized = true
@@ -4332,6 +4334,6 @@ object MetadataAPIImpl extends MetadataAPI with LogTrait {
     val jarPaths = if (tmpJarPaths != null) tmpJarPaths.split(",").toSet else scala.collection.immutable.Set[String]()
     MetadataAPIImpl.OpenDbStore(jarPaths, GetMetadataAPIConfig.getProperty("METADATA_DATASTORE"))
     MetadataAPIImpl.CreateMetadataTables
-    MetadataAPIImpl.LoadAllObjectsIntoCache
+    MetadataAPIImpl.LoadAllObjectsIntoCache()
   }
 }

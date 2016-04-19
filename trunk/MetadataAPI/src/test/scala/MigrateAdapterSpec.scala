@@ -43,7 +43,7 @@ import org.json4s.native.Serialization.{ read, write, writePretty }
 
 import com.ligadata.kamanja.metadataload.MetadataLoad
 
-case class adapterMessageBinding(var AdapterName: String,var MessageNames: List[String], var Options: List[(String,String)], var Serializer: String)
+case class adapterMessageBinding(var AdapterName: String,var MessageNames: List[String], var Options: Map[String,String], var Serializer: String)
 
 
 class MigrateAdapterSpec extends FunSpec with LocalTestFixtures with BeforeAndAfter with BeforeAndAfterAll with GivenWhenThen {
@@ -59,6 +59,7 @@ class MigrateAdapterSpec extends FunSpec with LocalTestFixtures with BeforeAndAf
   var fileList: List[String] = null
   var newVersion: String = null
   val userid: Option[String] = Some("test")
+  val tenantId: Option[String] = Some("botanical")
 
   val ambs: List[adapterMessageBinding] = null
 
@@ -144,7 +145,7 @@ class MigrateAdapterSpec extends FunSpec with LocalTestFixtures with BeforeAndAf
       }
 
       logger.info("Load All objects into cache")
-      MetadataAPIImpl.LoadAllObjectsIntoCache
+      MetadataAPIImpl.LoadAllObjectsIntoCache(false)
 
       // The above call is resetting JAR_PATHS based on nodeId( node-specific configuration)
       // This is causing unit-tests to fail
@@ -175,7 +176,7 @@ class MigrateAdapterSpec extends FunSpec with LocalTestFixtures with BeforeAndAf
       adapters.foreach( a => {
 	logger.info("a => " + a)
 	val adapter = a.asInstanceOf[Map[String,Any]]
-	var am = new adapterMessageBinding(new String(),Array[String]().toList,Array[(String,String)]().toList,new String())
+	var am = new adapterMessageBinding(new String(),Array[String]().toList,Map[String,String](),new String())
 	adapter.keys.foreach( k => {
 	  logger.info(k + " => " + adapter(k))
 	  k.toUpperCase match {
@@ -183,15 +184,21 @@ class MigrateAdapterSpec extends FunSpec with LocalTestFixtures with BeforeAndAf
 	    case "ASSOCIATEDMESSAGE" => am.MessageNames = Array(adapter(k).asInstanceOf[String]).toList
 	    case "DATAFORMAT" => {
 	      adapter(k).asInstanceOf[String].toUpperCase match {
-		case "CSV" => am.Serializer = "org.kamanja.serdeser.csv.CsvSerDeser"
-		case "JSON" => am.Serializer = "org.kamanja.serdeser.JSON"
+		case "CSV" => am.Serializer = "com.ligadata.kamanja.serializer.CsvSerDeser"
+		case "JSON" => am.Serializer = "com.ligadata.kamanja.serializer.JsonSerDeser"
+		case _ => am.Serializer = "com.ligadata.kamanja.serializer.KBinarySerDeser"
 	      }
 	    }
-	    case "FIELDDELIMITER" => am.Options = am.Options :+ ("fieldDelimiter",adapter(k).asInstanceOf[String])
-	    case "LINEDELIMITER" => am.Options = am.Options :+ ("lineDelimiter",adapter(k).asInstanceOf[String])
+	    case "FIELDDELIMITER" => am.Options = am.Options + ("fieldDelimiter" -> adapter(k).asInstanceOf[String])
+	    case "LINEDELIMITER" => am.Options = am.Options + ("lineDelimiter" -> adapter(k).asInstanceOf[String])
 	    case _ => logger.info("Ignore the key " + k)
 	  }
 	})
+	// add default options if none exist
+	if( am.Options.size == 0 ){
+	  am.Options = am.Options + ("produceHeader" -> "true")
+	  am.Options = am.Options + ("alwaysQuotedFields" -> "false")
+	}
 	ambs = ambs :+ am
       })
       ambs
@@ -221,7 +228,8 @@ class MigrateAdapterSpec extends FunSpec with LocalTestFixtures with BeforeAndAf
     var ambs = parseClusterConfig(cfgStr)
     ambs
   }
-  
+
+
   describe("Unit Tests for Migration of Adapter objects to 1.4") {
     // validate property setup
     it("Validate properties for MetadataAPI") {
@@ -321,8 +329,7 @@ class MigrateAdapterSpec extends FunSpec with LocalTestFixtures with BeforeAndAf
       scala.collection.mutable.Map(m.toSeq: _*) 
     }
 
-    it("Cluster Config Tests") {
-
+    it("Add Cluster Config") {
       And("Check whether CONFIG_FILES_DIR defined as property")
       dirName = MetadataAPIImpl.GetMetadataAPIConfig.getProperty("CONFIG_FILES_DIR")
       assert(null != dirName)
@@ -338,7 +345,7 @@ class MigrateAdapterSpec extends FunSpec with LocalTestFixtures with BeforeAndAf
       val cfgFiles = new java.io.File(dirName).listFiles.filter(_.getName.endsWith(".json"))
       assert(0 != cfgFiles.length)
 
-      fileList = List("ClusterConfig.json")
+      fileList = List("sample_adapters.json")
       fileList.foreach(f1 => {
 	And("Add the Config From " + f1)
 	And("Make Sure " + f1 + " exist")
@@ -383,27 +390,69 @@ class MigrateAdapterSpec extends FunSpec with LocalTestFixtures with BeforeAndAf
 
 	And("Check number of the adapters")
 	var adapters = MdMgr.GetMdMgr.Adapters
-	assert(adapters.size == 4)
+	assert(adapters.size == 2)
 
-	And("RemoveConfig API for the config that was just added")
-	res = MetadataAPIImpl.RemoveConfig(cfgStr, None, "testConfig")
-	res should include regex ("\"Status Code\" : 0")
-
-	And("Check number of the nodes after removing config")
-	nodes = MdMgr.GetMdMgr.Nodes
-	assert(nodes.size == 0)
-
-	And("Check number of the adapters after removing config")
-	adapters = MdMgr.GetMdMgr.Adapters
-	assert(adapters.size == 0)
-
-	And("AddConfig second time from " + file.getPath)
-	cfgStr = Source.fromFile(file).mkString
-	res = MetadataAPIImpl.UploadConfig(cfgStr, None, "testConfig")
-	res should include regex ("\"Status Code\" : 0")
       })
     }
 
+    // Add few message objects
+    it("Add Few Sample Messages") {
+      And("Check whether MESSAGE_FILES_DIR defined as property")
+      dirName = MetadataAPIImpl.GetMetadataAPIConfig.getProperty("MESSAGE_FILES_DIR")
+      assert(null != dirName)
+
+      And("Check Directory Path")
+      iFile = new File(dirName)
+      assert(true == iFile.exists)
+
+      And("Check whether " + dirName + " is a directory ")
+      assert(true == iFile.isDirectory)
+
+      And("Make sure there are few JSON message files in " + dirName);
+      val msgFiles = new java.io.File(dirName).listFiles.filter(_.getName.endsWith(".json"))
+      assert(0 != msgFiles.length)
+
+      fileList = List("com.botanical.csv.emailmsg.json",
+		      "com.botanical.json.audit.ordermsg.json",
+		      "com.botanical.json.audit.shippingmsg.json",
+		      "com.botanical.json.ordermsg.json",
+		      "com.botanical.json.shippingmsg.json")
+      fileList.foreach(f1 => {
+	And("Add the Message From " + f1)
+	And("Make Sure " + f1 + " exist")
+	var exists = false
+	var file: java.io.File = null
+	breakable {
+	  msgFiles.foreach(f2 => {
+	    if (f2.getName() == f1) {
+	      exists = true
+	      file = f2
+	      break
+	    }
+	  })
+	}
+	assert(true == exists)
+
+	And("AddMessage first time from " + file.getPath)
+	var msgStr = Source.fromFile(file).mkString
+	res = MetadataAPIImpl.AddMessage(msgStr, "JSON", None,tenantId)
+	res should include regex ("\"Status Code\" : 0")
+
+	And("GetMessageDef API to fetch the message that was just added")
+
+	var objectName = f1.stripSuffix(".json").toLowerCase
+	logger.info("objectName => " + objectName)
+
+	val nameNodes: Array[String] = if (objectName != null && objectName.contains('.')) objectName.split('.') else Array(MdMgr.sysNS, objectName)
+	val nmspcNodes: Array[String] = nameNodes.splitAt(nameNodes.size - 1)._1
+	val buffer: StringBuilder = new StringBuilder
+	val nameSpace: String = nmspcNodes.addString(buffer, ".").toString
+	val objName: String = nameNodes(nameNodes.size - 1)
+	//var version = "000001000000000000"
+	res = MetadataAPIImpl.GetMessageDef(nameSpace,objName,"JSON","-1",None)
+	res should include regex ("\"Status Code\" : 0")
+      })
+    }
 
     it("Load Adapter Message Bindings") {
 
@@ -422,8 +471,8 @@ class MigrateAdapterSpec extends FunSpec with LocalTestFixtures with BeforeAndAf
       val cfgFiles = new java.io.File(dirName).listFiles.filter(_.getName.endsWith(".json"))
       assert(0 != cfgFiles.length)
 
-      //fileList = List("sample_adapters1.json","sample_adapters2.json")
-      fileList = List("ClusterConfig.json")
+      fileList = List("sample_adapters.json")
+
       fileList.foreach(f1 => {
 	And("Add the Config From " + f1)
 	And("Make Sure " + f1 + " exist")
@@ -464,6 +513,7 @@ class MigrateAdapterSpec extends FunSpec with LocalTestFixtures with BeforeAndAf
 
 	val bindings =  AdapterMessageBindingUtils.ListAllAdapterMessageBindings
 	assert(bindings.size == cnt)
+
       })
     }
   }

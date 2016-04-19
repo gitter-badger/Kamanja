@@ -16,6 +16,7 @@
 
 package com.ligadata.MetadataAPI
 
+import com.ligadata.Exceptions.KamanjaException
 import org.apache.logging.log4j.{ Logger, LogManager }
 
 import com.ligadata.MetadataAPI.MetadataAPI.ModelType
@@ -240,9 +241,11 @@ object StartMetadataAPI {
           usage
         }
       }
+      case fio: java.io.FileNotFoundException => {
+        logger.error("Unable to read a file, the file either does not exist or is inaccessible ", fio)
+      }
       case e: Throwable => {
-        logger.error("", e)
-        e.getStackTrace.toString
+        logger.error("Error, due to an unknown exception", e)
       }
     } finally {
       MetadataAPIImpl.shutdown
@@ -255,6 +258,7 @@ object StartMetadataAPI {
 
   def route(action: Action.Value, input: String, param: String = "", tenantid: String, originalArgs: Array[String], userId: Option[String] ,extraCmdArgs:immutable.Map[String, String]): String = {
     var response = ""
+    var fileinquesiton = input
     var optMsgProduced:Option[String] = None
     var tid = if (tenantid.size > 0) Some(tenantid) else None
 
@@ -441,6 +445,7 @@ object StartMetadataAPI {
         case Action.ADDADAPTERMESSAGEBINDING => {
             val bindingString: String = extraCmdArgs.getOrElse(FROMSTRING, "")
             val bindingFilePath: String = extraCmdArgs.getOrElse(FROMFILE, "")
+            fileinquesiton = bindingFilePath
             if (bindingString.nonEmpty && bindingFilePath.nonEmpty) {
                 println("Currently only a file specification OR a string specification for the bindings are permitted, not both.")
                 throw new RuntimeException(s"Currently only a file specification or a string specification for the bindings are permitted, not both.")
@@ -512,7 +517,10 @@ object StartMetadataAPI {
       }
     }
     catch {
-
+      case fio: java.io.FileNotFoundException => {
+        logger.error("Unable to access file: "+ fileinquesiton)
+        return s"Unable to execute command for action = $action"
+      }
       case e: Exception => {
         logger.warn("", e)
         /** tentative answer of unidentified command type failure. */

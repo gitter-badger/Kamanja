@@ -490,7 +490,7 @@ Try again.
     }
 
     if (!isFileExists(componentVersionJarAbsolutePath, true)) {
-      printAndLogError("GetComponent-1.4.0 script is not installed in path " + clusterInstallerDriversLocation, log)
+      printAndLogError("GetComponent_2.11-1.4.0.jar is not installed in path " + clusterInstallerDriversLocation, log)
       cnt += 1
     }
 
@@ -531,14 +531,14 @@ Try again.
         givenTemplate = true
         migrateTemplate_opt.trim
       } else {
-        s"$clusterInstallerDriversLocation/../config/MigrateConfig_template.json"
+        s"$clusterInstallerDriversLocation/MigrateConfig_template.json"
       }
 
       if (!isFileExists(migrateTemplate, true)) {
         if (givenTemplate)
           printAndLogError(s"Given migrateTemplate $migrateTemplate is not valid file", log)
         else
-          printAndLogError(s"MigrateConfig_template.json is not installed in path ${clusterInstallerDriversLocation}/../config", log)
+          printAndLogError(s"MigrateConfig_template.json is not installed in path ${clusterInstallerDriversLocation}", log)
         cnt += 1
       }
 
@@ -720,6 +720,7 @@ Try again.
           }
 
         val tenantId = if (tenantId_opt == null) {""} else{ tenantId_opt }
+	logger.info("tenantId => " + tenantId)
 	
 
         /** Install the new installation */
@@ -758,7 +759,8 @@ Try again.
               , priorInstallDirName
               , newInstallDirName
               , physicalRootDir
-              , rootDirPath)
+              , rootDirPath
+              , tenantId)
             printAndLogDebug("Migration preparation " + (if (migratePreparationOk) "Succeeded" else "Failed"), log)
             if (!migratePreparationOk) {
               printAndLogError(s"Some thing failed to prepare migration configuration. The parameters for the migration may be incorrect... aborting installation", log)
@@ -1531,7 +1533,8 @@ Try again.
                           , priorInstallDirName: String
                           , newInstallDirName: String
                           , physicalRootDir: String
-                          , rootDirPath: String): Boolean = {
+                          , rootDirPath: String
+			  , tenantId: String): Boolean = {
 
     val migrationToBeDone: String = if (fromKamanja == "1.1") "1.1=>1.4" else if (fromKamanja == "1.2") "1.2=>1.4" else if (fromKamanja == "1.3") "1.3=>1.4" else "hmmm"
 
@@ -1557,6 +1560,7 @@ Try again.
           , parentPath
           , physicalRootDir
           , rootDirPath
+          , tenantId
         )
         migratePending = true
         migrateConfig = migrateConfigJSON
@@ -1588,6 +1592,7 @@ Try again.
           , parentPath
           , physicalRootDir
           , rootDirPath
+          , tenantId
         )
         migratePending = true
         migrateConfig = migrateConfigJSON
@@ -1611,6 +1616,7 @@ Try again.
           , parentPath
           , physicalRootDir
           , rootDirPath
+          , tenantId
         )
         migratePending = true
         migrateConfig = migrateConfigJSON
@@ -1677,6 +1683,7 @@ Try again.
                             , parentPath: String
                             , physicalRootDir: String
                             , rootDirPath: String
+			    , tenantId: String
                            ): String = {
 
     val template: String = Source.fromFile(migrateConfigFilePath).mkString
@@ -1716,7 +1723,8 @@ Try again.
       , "{OldPackageInstallPath}" -> oldPackageInstallPath
       , "{ScalaFromVersion}" -> scalaFromVersion
       , "{ScalaToVersion}" -> scalaToVersion
-      , "{UnhandledMetadataDumpDir}" -> unhandledMetadataDumpDir)
+      , "{UnhandledMetadataDumpDir}" -> unhandledMetadataDumpDir
+      , "{TenantId}" -> tenantId)
 
     val substitutionMap: Map[String, String] = subPairs.toMap
     val varSub = new MapSubstitution(template, substitutionMap, logger, log)

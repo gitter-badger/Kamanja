@@ -128,7 +128,7 @@ class ContainerAPISpec extends FunSpec with LocalTestFixtures with BeforeAndAfte
 			}
 
 			logger.info("Load All objects into cache")
-			MetadataAPIImpl.LoadAllObjectsIntoCache
+			MetadataAPIImpl.LoadAllObjectsIntoCache(false)
 
 			// The above call is resetting JAR_PATHS based on nodeId( node-specific configuration)
 			// This is causing unit-tests to fail
@@ -304,6 +304,9 @@ class ContainerAPISpec extends FunSpec with LocalTestFixtures with BeforeAndAfte
 
 				And("AddContainer first time from " + file.getPath)
 				contStr = Source.fromFile(file).mkString
+				println("HERE IS MY METADATA CONFIGURATION!!!!!!!!!!!")
+				MetadataAPIImpl.dumpMetadataAPIConfig
+
 				res = MetadataAPIImpl.AddContainer(contStr, "JSON", None)
 				res should include regex ("\"Status Code\" : 0")
 

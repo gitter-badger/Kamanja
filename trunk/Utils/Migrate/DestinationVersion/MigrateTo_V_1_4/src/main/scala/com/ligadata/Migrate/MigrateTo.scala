@@ -242,9 +242,12 @@ class MigrateTo_V_1_4 extends MigratableTo {
     _parallelDegree = if (parallelDegree <= 1) 1 else parallelDegree
     _mergeContainerAndMessages = mergeContainerAndMessages
 
-    if (tenantId != null && tenantId.size > 0)
+    if (tenantId != null && tenantId.size > 0){
       _tenantId = Some(tenantId)
-
+    }
+    else{
+      throw new Exception("tenantId can't be null")
+    }
     _bInit = true
   }
 
@@ -287,6 +290,15 @@ class MigrateTo_V_1_4 extends MigratableTo {
       return _statusStoreDb.isTableExists(tblInfo.namespace, tblInfo.name)
     false
   }
+
+  override def createMetadataTables(): Unit = {
+    if (_bInit == false)
+      throw new Exception("Not yet Initialized")
+    // Create metadataTables
+    val metadataTables = Array("metadata_objects","jar_store","config_objects","model_config_objects","transaction_id","metadatacounters","avroschemainfo")
+    _metaDataStoreDb.CreateMetadataContainer(metadataTables)
+  }
+
 
   private def addBackupTablesToExecutor(executor: ExecutorService, storeDb: DataStore, tblsToBackedUp: Array[BackupTableInfo], errMsgTemplate: String, force: Boolean): Unit = {
     tblsToBackedUp.foreach(backupTblInfo => {
@@ -637,6 +649,7 @@ class MigrateTo_V_1_4 extends MigratableTo {
 
                   try {
                     val retRes = MetadataAPIImpl.AddModel(MetadataAPI.ModelType.fromString("kpmml"), mdlDefStr, defaultUserId, _tenantId, Some(dispkey), Some(ver))
+		    logger.info("AddModel: Response => " + retRes)
                     failed = isFailedStatus(retRes)
                   } catch {
                     case e: Exception => {
@@ -666,6 +679,7 @@ class MigrateTo_V_1_4 extends MigratableTo {
 
                 try {
                   val retRes = MetadataAPIImpl.AddMessage(msgDefStr, "JSON", defaultUserId, _tenantId)
+		  logger.info("AddMessage: Response => " + retRes)
                   failed = isFailedStatus(retRes)
                 } catch {
                   case e: Exception => {
@@ -696,6 +710,8 @@ class MigrateTo_V_1_4 extends MigratableTo {
 
                 try {
                   val retRes = MetadataAPIImpl.AddContainer(contDefStr, "JSON", defaultUserId, _tenantId)
+		  logger.info("AddContainer: Response => " + retRes)
+
                   failed = isFailedStatus(retRes)
                 } catch {
                   case e: Exception => {
@@ -742,6 +758,7 @@ class MigrateTo_V_1_4 extends MigratableTo {
                   implicit val jsonFormats: Formats = DefaultFormats
                   val newMdlCfgStr = Serialization.write(changedCfg)
                   val retRes = MetadataAPIImpl.UploadModelsConfig(newMdlCfgStr, Some[String](namespace), null) // Considering namespace as userid
+		  logger.info("AddConfig: Response => " + retRes)
                   failed = isFailedStatus(retRes)
                 } catch {
                   case e: Exception => {
@@ -768,6 +785,7 @@ class MigrateTo_V_1_4 extends MigratableTo {
 
                 try {
                   val retRes = MetadataAPIImpl.AddFunctions(fnCfg, "JSON", defaultUserId)
+		  logger.info("AddFunction: Response => " + retRes)
                   failed = isFailedStatus(retRes)
                 } catch {
                   case e: Exception => {

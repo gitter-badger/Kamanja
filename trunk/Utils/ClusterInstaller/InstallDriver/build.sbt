@@ -46,6 +46,7 @@ assemblyMergeStrategy in assembly := {
   case x if x contains "com/fasterxml/jackson/core" => MergeStrategy.first
   case x if x contains "com\\fasterxml\\jackson\\core" => MergeStrategy.first
   case x if x contains "commons-logging" => MergeStrategy.first
+  case x if x contains "log4j2.xml" => MergeStrategy.first
   case "log4j.properties" => MergeStrategy.first
   case "unwanted.txt" => MergeStrategy.discard
   case x =>

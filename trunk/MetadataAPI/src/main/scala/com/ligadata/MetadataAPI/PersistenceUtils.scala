@@ -817,7 +817,7 @@ object PersistenceUtils {
     try {
       logger.debug("Creating MetadataTables")
       if (mainDS != null) {
-	val metadataTables = Array("metadata_objects","jar_store","config_objects","model_config_objects","transaction_id","metadata_counters")
+	val metadataTables = Array("metadata_objects","jar_store","config_objects","model_config_objects","transaction_id","metadatacounters","avroschemainfo")
         mainDS.CreateMetadataContainer(metadataTables)
         logger.debug("Created Metadata Tables")
       }

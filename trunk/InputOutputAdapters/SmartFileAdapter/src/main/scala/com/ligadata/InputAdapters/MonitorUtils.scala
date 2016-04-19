@@ -64,8 +64,8 @@ object SmartFileHandlerFactory{
     val handler : SmartFileHandler =
       adapterConfig._type.toLowerCase() match {
         case "das/nas" => new PosixFileHandler(fileFullPath)
-        case "sftp" => new HdfsFileHandler(fileFullPath, connectionConf)
-        case "hdfs" => new SftpFileHandler(fileFullPath, connectionConf)
+        case "sftp" => new SftpFileHandler(fileFullPath, connectionConf)
+        case "hdfs" => new HdfsFileHandler(fileFullPath, connectionConf)
         case _ => throw new KamanjaException("Unsupported Smart file adapter type", null)
       }
 

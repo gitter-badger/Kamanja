@@ -255,7 +255,7 @@ object MessageAndContainerUtils {
     try {
       var compProxy = new CompilerProxy
       //compProxy.setLoggerLevel(Level.TRACE)
-      val (classStrVer, cntOrMsgDef, classStrNoVer) = compProxy.compileMessageDef(contOrMsgText, recompile)
+      val (classStrVer, cntOrMsgDef, classStrNoVer) = compProxy.compileMessageDef(false, contOrMsgText, recompile)
       if (cntOrMsgDef != null) {
         cntOrMsgDef.ownerId = if (userid == None) "kamanja" else userid.get
         cntOrMsgDef.tenantId = tenantId.get
@@ -429,7 +429,7 @@ object MessageAndContainerUtils {
 
       var compProxy = new CompilerProxy
       //compProxy.setLoggerLevel(Level.TRACE)
-      val (classStrVer, msgDef, classStrNoVer) = compProxy.compileMessageDef(messageText)
+      val (classStrVer, msgDef, classStrNoVer) = compProxy.compileMessageDef(true, messageText)
       if (msgDef != null) {
         msgDef.ownerId = if (userid == None) "kamanja" else userid.get
         msgDef.tenantId = tenantId.get

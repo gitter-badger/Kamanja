@@ -118,7 +118,7 @@ while read LINE; do
              if [ ! -d "$installDir/run" ]; then
                 mkdir "$installDir/run"
              fi
-             ps u -p $pidvals | grep "KamanjaManager-1.0" | grep -v "grep" | wc -l > "$installDir/run/$statusfile"
+             ps u -p $pidvals | grep "kamanjamanager_2.11-1.4.0.jar" | grep -v "grep" | wc -l > "$installDir/run/$statusfile"
              ps u -p $pidvals | grep "MetadataAPIService-1.0" | grep -v "grep" | wc -l >> "$installDir/run/$statusfile"
 
 EOF

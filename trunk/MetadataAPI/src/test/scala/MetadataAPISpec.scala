@@ -130,7 +130,7 @@ class MetadataAPISpec extends FunSpec with LocalTestFixtures with BeforeAndAfter
 			}
 
 			logger.info("Load All objects into cache")
-			MetadataAPIImpl.LoadAllObjectsIntoCache
+			MetadataAPIImpl.LoadAllObjectsIntoCache(false)
 
 			// The above call is resetting JAR_PATHS based on nodeId( node-specific configuration)
 			// This is causing unit-tests to fail

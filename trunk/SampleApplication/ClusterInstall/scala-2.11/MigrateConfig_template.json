@@ -8,8 +8,8 @@
     "versionInstallPath": "{OldPackageInstallPath}",
     "implemtedClass": "com.ligadata.Migrate.MigrateFrom_V_{KamanjaFromVersionWithUnderscore}",
     "jars": [
-      "{NewPackageInstallPath}/lib/system/migratebase-1.0.jar",
-      "{NewPackageInstallPath}/lib/system/migratefrom_v_{KamanjaFromVersionWithUnderscore}_{ScalaFromVersion}-1.0.jar",
+      "{NewPackageInstallPath}/lib/system/migratebase-1.4.0.jar",
+      "{NewPackageInstallPath}/lib/system/migratefrom_v_{KamanjaFromVersionWithUnderscore}_{ScalaFromVersion}-1.4.0.jar",
       "{OldPackageInstallPath}/bin/KamanjaManager-1.0"
     ]
   },
@@ -19,9 +19,11 @@
     "versionInstallPath": "{NewPackageInstallPath}",
     "implemtedClass": "com.ligadata.Migrate.MigrateTo_V_1_4",
     "jars": [
-      "{NewPackageInstallPath}/lib/system/migratebase-1.0.jar",
-      "{NewPackageInstallPath}/lib/system/migrateto_v_1_4_{ScalaToVersion}-1.0.jar",
-      "{NewPackageInstallPath}/bin/KamanjaManager-1.0"
+      "{NewPackageInstallPath}/lib/system/migratebase-1.4.0.jar",
+      "{NewPackageInstallPath}/lib/system/migrateto_v_1_4_{ScalaToVersion}-1.4.0.jar",
+      "{NewPackageInstallPath}/lib/system/KamanjaInternalDeps_{ScalaToVersion}-1.4.0.jar",
+      "{NewPackageInstallPath}/lib/system/ExtDependencyLibs_{ScalaToVersion}-1.4.0.jar",
+      "{NewPackageInstallPath}/lib/system/ExtDependencyLibs2_{ScalaToVersion}-1.4.0.jar"
     ]
   },
   "dataSaveThreshold": 2048,

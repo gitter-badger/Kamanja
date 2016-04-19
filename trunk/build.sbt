@@ -30,6 +30,16 @@ coverageEnabled in ThisBuild := true
 
 val Organization = "com.ligadata"
 
+// This is a task that is defined to assemble the 3 fat jars all at once
+// This may be used as part of a build/install script to reduce commands
+// or to include as a dependency for another task such as what is done in the MetadataAPI project
+val assembleDependencies = TaskKey[Unit]("assembleDependencies")
+
+assembleDependencies in Global := {
+  (assembly in ExtDependencyLibs).value
+  (assembly in ExtDependencyLibs2).value
+  (assembly in KamanjaInternalDeps).value
+}
 
 //newly added
 lazy val ExtDependencyLibs = project.in(file("ExtDependencyLibs")).configs(TestConfigs.all: _*).settings(TestSettings.settings: _*)
@@ -100,6 +110,13 @@ lazy val MethodExtractor = project.in(file("Pmml/MethodExtractor")).configs(Test
 // no external dependencies
 
 lazy val MetadataAPI = project.in(file("MetadataAPI")).configs(TestConfigs.all: _*).settings(TestSettings.settings: _*).dependsOn(ExtDependencyLibs % "provided", ExtDependencyLibs2 % "provided", StorageManager, Metadata, PmmlCompiler, Serialize, ZooKeeperClient, ZooKeeperListener, OutputMsgDef, Exceptions, SecurityAdapterBase, KamanjaUtils, HeartBeat, KamanjaBase, JpmmlFactoryOfModelInstanceFactory, jtm, SimpleApacheShiroAdapter % "test")
+    .settings(
+      parallelExecution in Test := false,
+      test <<= (test in Test).dependsOn(assembleDependencies)
+    )
+
+//test in MetadataAPI <<= (test in MetadataAPI) dependsOn ((assembly in KamanjaInternalDeps), (assembly in ExtDependencyLibs), (assembly in ExtDependencyLibs2))
+//parallelExecution in Test in MetadataAPI := false
 
 lazy val MetadataBootstrap = project.in(file("MetadataBootstrap/Bootstrap")).configs(TestConfigs.all: _*).settings(TestSettings.settings: _*).dependsOn(ExtDependencyLibs % "provided", ExtDependencyLibs2 % "provided", Metadata, KamanjaBase, BaseTypes, Exceptions)
 

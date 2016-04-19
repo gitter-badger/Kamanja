@@ -109,7 +109,7 @@ class CompilerProxy {
     */
   def recompileModelFromSource(sourceCode: String, pName: String, deps: List[String], typeDeps: List[String], inMsgSets: List[List[String]], outputMsgs: List[String], sourceLang: String, userid: Option[String], tenantId: String): ModelDef = {
     try {
-      val (classPath, elements, totalDeps, nonTypeDeps) = buildClassPath(deps, typeDeps)
+      val (classPath, elements, totalDeps, nonTypeDeps) = buildClassPath(deps, typeDeps, null, inMsgSets, outputMsgs)
       val msgDefClassFilePath = compiler_work_dir + "/tempCode." + sourceLang
       val ((modelNamespace, modelName, modelVersion, pname, mdlFactory, loaderInfo, modConfigName), repackagedCode, tempPackage) = parseSourceForMetadata(sourceCode, "tempCode", sourceLang, msgDefClassFilePath, classPath, elements, userid)
       var inputMsgSets =
@@ -360,7 +360,7 @@ class CompilerProxy {
     * compileMessageDef - Compile Messages/Containers here
     */
   @throws(classOf[MsgCompilationFailedException])
-  def compileMessageDef(msgDefStr: String, recompile: Boolean = false): (String, ContainerDef, String) = {
+  def compileMessageDef(isUpdate: Boolean, msgDefStr: String, recompile: Boolean = false): (String, ContainerDef, String) = {
     try {
       val mgr = MdMgr.GetMdMgr
       //val msg = new MessageDefImpl()
@@ -1066,19 +1066,38 @@ class CompilerProxy {
     var curClass: Class[_] = null
     try {
       // Convert class name into a class
-      var curClz = Class.forName(clsName, true, loaderInfo.loader)
+      curClass = Class.forName(clsName, true, loaderInfo.loader)
       isMsg = false
 
-      while (curClz != null && isMsg == false) {
-        logger.debug("getMessageInst: class name => " + curClz.getName())
-        isMsg = Utils.isDerivedFrom(curClz, "com.ligadata.KamanjaBase.MessageFactoryInterface")
+      val allSuperClassesInterfaces = ArrayBuffer[Class[_]]()
+
+      if (curClass != null)
+        allSuperClassesInterfaces += curClass
+
+      var curProcessingItem = 0
+
+      while (isMsg == false && curProcessingItem < allSuperClassesInterfaces.size) {
+        val clz = allSuperClassesInterfaces(curProcessingItem)
+        curProcessingItem += 1
+        logger.debug("getMessageInst: class name => " + clz.getName())
+        isMsg = Utils.isDerivedFrom(clz, "com.ligadata.KamanjaBase.MessageFactoryInterface")
         if (isMsg == false) {
-          curClz = curClz.getSuperclass()
+          val tmpSupClz = clz.getSuperclass()
+          if (tmpSupClz != null)
+            allSuperClassesInterfaces += tmpSupClz
+          val interfecs = clz.getInterfaces()
+          if (interfecs != null) {
+            for (intf <- interfecs) {
+              allSuperClassesInterfaces += intf
+            }
+          }
+        } else {
+          logger.debug("found getMessageInst: class name => " + curClass.getName())
         }
       }
     } catch {
       case e: Exception => {
-        logger.debug("Failed to get message classname :" + clsName, e)
+        logger.error("Failed to get message classname :" + clsName, e)
       }
     }
 
@@ -1110,6 +1129,8 @@ class CompilerProxy {
         if (curClass != null) {
           isMsg = true
           clsName = tmpClsName + "$"
+        } else {
+          logger.warn(tmpClsName + " or " + tmpClsName + "$ is not found as message")
         }
       } else {
         isMsg = true
@@ -1172,12 +1193,48 @@ class CompilerProxy {
             val inst = getMessageInst(t, loaderInfo)
             if (inst != null) {
               logger.debug("getDefaultInputMsgSets: call mdlFactory.isValidMessage ")
-              if (mdlFactory.isValidMessage(inst)) {
-                logger.debug("getDefaultInputMsgSets: mdlFactory.isValidMessage returned true")
-                defaultInputMsgSets = List(t) :: defaultInputMsgSets
-              }
-              else {
-                logger.debug("getDefaultInputMsgSets: mdlFactory.isValidMessage returned false")
+              try {
+                if (mdlFactory.isValidMessage(inst)) {
+                  logger.debug("getDefaultInputMsgSets: mdlFactory.isValidMessage returned true")
+                  defaultInputMsgSets = List(t) :: defaultInputMsgSets
+                }
+                else {
+                  logger.debug("getDefaultInputMsgSets: mdlFactory.isValidMessage returned false")
+                }
+              } catch {
+                case e: DeprecatedException => {
+                  try {
+                    if (mdlFactory.isValidMessage(inst.asInstanceOf[MessageContainerBase])) {
+                      logger.debug("getDefaultInputMsgSets: mdlFactory.isValidMessage returned true")
+                      defaultInputMsgSets = List(t) :: defaultInputMsgSets
+                    }
+                    else {
+                      logger.debug("getDefaultInputMsgSets: mdlFactory.isValidMessage returned false for message " + t)
+                    }
+                  } catch {
+                    case e: DeprecatedException => {
+                      try {
+                        if (mdlFactory.isValidMessage(inst.asInstanceOf[MessageInterface])) {
+                          logger.debug("getDefaultInputMsgSets: mdlFactory.isValidMessage returned true")
+                          defaultInputMsgSets = List(t) :: defaultInputMsgSets
+                        }
+                        else {
+                          logger.debug("getDefaultInputMsgSets: mdlFactory.isValidMessage returned false for message " + t)
+                        }
+                      } catch {
+                        case e: Throwable => {
+                          logger.debug("getDefaultInputMsgSets: mdlFactory.isValidMessage returned failure for message " + t, e)
+                        }
+                      }
+                    }
+                    case e: Throwable => {
+                      logger.debug("getDefaultInputMsgSets: mdlFactory.isValidMessage returned failure for message " + t, e)
+                    }
+                  }
+                }
+                case e: Throwable => {
+                  logger.debug("getDefaultInputMsgSets: mdlFactory.isValidMessage returned failure for message " + t, e)
+                }
               }
             }
             else {
@@ -1415,7 +1472,7 @@ class CompilerProxy {
   /**
     * buildClassPath
     */
-  private def buildClassPath(inDeps: List[String], inMC: List[String], cpDeps: List[String] = null): (String, Set[BaseElemDef], scala.collection.immutable.Set[String], scala.collection.immutable.Set[String]) = {
+  private def buildClassPath(inDeps: List[String], inMC: List[String], cpDeps: List[String], inMsgSets: List[List[String]], outMsgs: List[String]): (String, Set[BaseElemDef], scala.collection.immutable.Set[String], scala.collection.immutable.Set[String]) = {
     var depElems: Set[BaseElemDef] = Set[BaseElemDef]()
     var totalDeps: Set[String] = Set[String]()
     var classPathDeps: Set[String] = Set[String]()
@@ -1434,10 +1491,22 @@ class CompilerProxy {
 
     var msgContDepSet: Set[String] = Set[String]()
     var msgJars: String = ""
-    if (inMC == null)
+    if (inMC == null && inMsgSets == null && outMsgs == null)
       logger.warn("Dependant message/containers were not provided into Model Compiler")
     else {
-      inMC.foreach(dep => {
+      val allTypes = scala.collection.mutable.Set[String]()
+      if (inMC != null && inMC.size > 0)
+        allTypes ++= inMC
+      if (outMsgs != null && outMsgs.size > 0)
+        allTypes ++= outMsgs
+      if (inMsgSets != null && inMsgSets.size > 0) {
+        inMsgSets.foreach(set => {
+          if (set != null && set.size > 0)
+            allTypes ++= set
+        })
+      }
+
+      allTypes.foreach(dep => {
         val elem: BaseElemDef = getDependencyElement(dep).getOrElse(null)
         if (elem == null)
           logger.warn("Unknown dependency " + dep)
@@ -1517,7 +1586,7 @@ class CompilerProxy {
     val inMC = MetadataAPIImpl.getModelMessagesContainers(modelName, userId)
     val retVals = buildClassPath(MetadataAPIImpl.getModelDependencies(modelName, userId),
       inMC,
-      cpDeps)
+      cpDeps, inMsgSets, outMsgs)
     (retVals._1, retVals._2, retVals._3, retVals._4, inMsgSets, outMsgs)
   }
 
