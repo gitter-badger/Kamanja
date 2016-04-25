@@ -23,6 +23,8 @@ trait LogTrait {
   val logger = LogManager.getLogger(loggerName)
 }
 
+case class container(begintime: String, endtime: String, keys: Array[Array[String]])
+
 object ContainersUtility extends App with LogTrait {
 case class data(key: String, value: String)
   def usage: String = {
@@ -61,7 +63,7 @@ Sample uses:
   override def main(args: Array[String]) {
 
     logger.debug("ContainersUtility.main begins")
-
+    implicit val formats = DefaultFormats
     if (args.length == 0) logger.error(usage)
     val arglist = args.toList
     type OptionMap = Map[Symbol, String]
@@ -97,34 +99,12 @@ Sample uses:
     val filter = if(options.contains('filter)) options.apply('filter) else null // include keyid and timeranges
     val filterFile = scala.io.Source.fromFile(filter).mkString // read filter file config (JSON file)
     val parsedKey = parse(filterFile)
-    var timeRangeList = scala.collection.immutable.List.empty[TimeRange] //create an arrayBuffer to append data into it
-    var insideKeyList = scala.collection.immutable.List.empty[Array[String]] // create an ArrayBuffer to append data into it
+    var containerObj:List[container]= null
     if (parsedKey != null) {
-      val values = parsedKey.values.asInstanceOf[Map[String, Any]]
-      values.foreach(kv => {
-        if (kv._1.compareToIgnoreCase("keyid") == 0) {
-          val keyList = kv._2.asInstanceOf[List[List[Any]]]
-          keyList.foreach(listitem => {
-            if (listitem != null) {
-              insideKeyList =  insideKeyList :+ listitem.map(item => item.toString).toArray
-            }
-          })
-        } else if (kv._1.compareToIgnoreCase("timerange") == 0) {
-          val list = kv._2.asInstanceOf[List[Map[String, String]]]
-          list.foreach(listItem => {
-            if (!listItem("begintime").equalsIgnoreCase(null) && !listItem("endtime").equalsIgnoreCase(null)) {
-              var timeRangeObj = new TimeRange(listItem("begintime").toLong, listItem("endtime").toLong)
-              timeRangeList= timeRangeList :+ timeRangeObj
-            }
-          })
-        }
-      })
+      containerObj = parsedKey.extract[List[container]]
     } else if(!operation.equalsIgnoreCase("truncate")){
       logger.error("you should pass a filter file for select and delete operation")
     }
-
-    val timeRangeArray: Array[TimeRange] = timeRangeList.toArray // include a list list of TimeRange objects
-    val keysArray: Array[Array[String]] = insideKeyList.toArray // include a list of bucketKey
 
     var valid: Boolean = (cfgfile != null && containerName != null)
 
@@ -153,19 +133,21 @@ if (utilmaker.isOk) {
         val dstore = utilmaker.GetDataStoreHandle(containersUtilityConfiguration.jarPaths, utilmaker.dataDataStoreInfo)
         if (dstore != null) {
           try {
+            dstore.setObjectResolver(utilmaker)
+            dstore.DefaultSerializerDeserializer("com.ligadata.kamanja.serializer.jsonserdeser", scala.collection.immutable.Map[String, Any]())
             if (operation != null) {
               if (operation.equalsIgnoreCase("truncate")) {
                 utilmaker.TruncateContainer(containerName, dstore)
               } else if (operation.equalsIgnoreCase("delete")) {
-                if(keysArray.length == 0 && timeRangeArray.length == 0)
+                if(containerObj.size == 0)
                   logger.error("Failed to delete data from %s container, at least one item (keyid, timerange) should not be null for delete operation".format(containerName))
                 else
-                  utilmaker.DeleteFromContainer(containerName,keysArray, timeRangeArray, dstore)
+                  utilmaker.DeleteFromContainer(containerName,containerObj, dstore)
               } else if (operation.equalsIgnoreCase("select")) {
-                if(keysArray.length == 0 && timeRangeArray.length == 0)
+                if(containerObj.size == 0)
                   logger.error("Failed to select data from %s container,at least one item (keyid, timerange) should not be null for select operation".format(containerName))
                 else
-                  writeToFile(utilmaker.GetFromContainer(containerName, keysArray, timeRangeArray, dstore),output, containerName)
+                  writeToFile(utilmaker.GetFromContainer(containerName, containerObj, dstore),output, containerName)
               }
             } else {
               logger.error("Unknown operation you should use one of these options: select, delete, truncate")

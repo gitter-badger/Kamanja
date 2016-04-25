@@ -11,7 +11,7 @@ import com.ligadata.Serialize.JZKInfo
 import com.ligadata.StorageBase.DataStore
 import com.ligadata.Utils.{KamanjaClassLoader, Utils, KamanjaLoaderInfo}
 import com.ligadata.kamanja.metadata.MdMgr._
-import com.ligadata.kamanja.metadata.{BaseElem, BaseTypeDef, NodeInfo}
+import com.ligadata.kamanja.metadata.{MdMgr, BaseElem, BaseTypeDef, NodeInfo}
 import com.ligadata.keyvaluestore.KeyValueManager
 import org.apache.curator.framework.CuratorFramework
 import org.json4s.jackson.JsonMethods._
@@ -24,7 +24,7 @@ import scala.collection.immutable.Map
 /**
   * Created by Yousef on 3/9/2016.
   */
-class UtilityForContainers(val loadConfigs: Properties, val typename: String) extends LogTrait with MdBaseResolveInfo {
+class UtilityForContainers(val loadConfigs: Properties, val typename: String) extends LogTrait with ObjectResolver {
 
   var isOk: Boolean = true
   var zkcForSetData: CuratorFramework = null
@@ -64,14 +64,14 @@ class UtilityForContainers(val loadConfigs: Properties, val typename: String) ex
     isOk = false
   }
 
-  val dataStore = if (isOk) cluster.cfgMap.getOrElse("SystemCatalog", null) else null
-  if (isOk && dataStore == null) {
-    logger.error("DataStore not found for Node %d  & ClusterId : %s".format(containersUtilityConfiguration.nodeId, nodeInfo.ClusterId))
-    isOk = false
-  }
+//  val dataStore = if (isOk) cluster.cfgMap.getOrElse("SystemCatalog", null) else null
+//  if (isOk && dataStore == null) {
+//    logger.error("DataStore not found for Node %d  & ClusterId : %s".format(containersUtilityConfiguration.nodeId, nodeInfo.ClusterId))
+//    isOk = false
+//  }
 
   val zooKeeperInfo = if (isOk) cluster.cfgMap.getOrElse("ZooKeeperInfo", null) else null
-  if (isOk && dataStore == null) {
+  if (isOk && zooKeeperInfo  == null) {
     logger.error("ZooKeeperInfo not found for Node %d  & ClusterId : %s".format(containersUtilityConfiguration.nodeId, nodeInfo.ClusterId))
     isOk = false
   }
@@ -86,7 +86,7 @@ class UtilityForContainers(val loadConfigs: Properties, val typename: String) ex
     implicit val jsonFormats: Formats = DefaultFormats
     val zKInfo = parse(zooKeeperInfo).extract[JZKInfo]
 
-    dataDataStoreInfo = dataStore
+    //dataDataStoreInfo = dataStore
 
     if (isOk) {
       zkConnectString = zKInfo.ZooKeeperConnectString.replace("\"", "").trim
@@ -115,6 +115,7 @@ class UtilityForContainers(val loadConfigs: Properties, val typename: String) ex
   var messageObj: MessageFactoryInterface = _
   var containerObj: ContainerFactoryInterface = _
   var objFullName: String = _
+  var tenantId: String = ""
 
   if (isOk) {
     typeNameCorrType = mdMgr.ActiveType(typename.toLowerCase)
@@ -124,6 +125,27 @@ class UtilityForContainers(val loadConfigs: Properties, val typename: String) ex
     } else {
       objFullName = typeNameCorrType.FullName.toLowerCase
       kvTableName = objFullName.replace('.', '_')
+      val msg = mdMgr.Message(typename.toLowerCase, -1, false)
+      val cnt = mdMgr.Container(typename.toLowerCase, -1, false)
+      tenantId = if (msg != None) msg.get.TenantId else if (cnt != None) cnt.get.TenantId else ""
+    }
+  }
+
+  if (isOk && tenantId.trim.size == 0) {
+    logger.error("Not found valid tenantId for " + typename)
+    isOk = false
+  } else {
+    val tenatInfo = mdMgr.GetTenantInfo(tenantId.toLowerCase)
+    if (tenatInfo == null) {
+      logger.error("Not found tenantInfo for tenantId " + tenantId)
+      isOk = false
+    } else {
+      if (tenatInfo.primaryDataStore == null || tenatInfo.primaryDataStore.trim.size == 0) {
+        logger.error("Not found valid Primary Datastore for tenantId " + tenantId)
+        isOk = false
+      } else {
+        dataDataStoreInfo = tenatInfo.primaryDataStore
+      }
     }
   }
 
@@ -251,7 +273,7 @@ class UtilityForContainers(val loadConfigs: Properties, val typename: String) ex
     true
   }
 
-  override def getMessgeOrContainerInstance(MsgContainerType: String): ContainerInterface = {
+  override def getInstance(MsgContainerType: String): ContainerInterface = {
     if (MsgContainerType.compareToIgnoreCase(objFullName) != 0)
       return null
     // Simply creating new object and returning. Not checking for MsgContainerType. This is issue if the child level messages ask for the type
@@ -262,7 +284,23 @@ class UtilityForContainers(val loadConfigs: Properties, val typename: String) ex
     return null
   }
 
-   def GetDataStoreHandle(jarPaths: collection.immutable.Set[String], dataStoreInfo: String): DataStore = {
+  override def getInstance(schemaId: Long): ContainerInterface = {
+    //BUGBUG:: For now we are getting latest class. But we need to get the old one too.
+    if (mdMgr == null)
+      throw new KamanjaException("Metadata Not found", null)
+
+    val contOpt = mdMgr.ContainerForSchemaId(schemaId.toInt)
+
+    if (contOpt == None)
+      throw new KamanjaException("Container Not found for schemaid:" + schemaId, null)
+
+    getInstance(contOpt.get.FullName)
+  }
+
+  override def getMdMgr: MdMgr = mdMgr
+
+
+  def GetDataStoreHandle(jarPaths: collection.immutable.Set[String], dataStoreInfo: String): DataStore = {
     try {
       logger.debug("Getting DB Connection for dataStoreInfo:%s".format(dataStoreInfo))
       return KeyValueManager.Get(jarPaths, dataStoreInfo)
@@ -287,34 +325,30 @@ class UtilityForContainers(val loadConfigs: Properties, val typename: String) ex
     kvstore.TruncateContainer(Array(typename))
   }
   // this method used to dalete data from container for a specific keys in a specific time ranges
-   def DeleteFromContainer(typename: String, keyids: Array[Array[String]], timeranges: Array[TimeRange], kvstore: DataStore): Unit ={
+   def DeleteFromContainer(typename: String, containerObj: List[container], kvstore: DataStore): Unit ={
 //    logger.info("delete data from %s container for %s keys and timerange: %d-%d".format(typename,keyids,timeranges.beginTime,timeranges.endTime))
-    if(keyids.length == 0)
-      timeranges.foreach(timerange => {
-        logger.info("delete from %s container for timerange: %d-%d".format(typename, timerange.beginTime,timerange.endTime))
-      kvstore.del(typename, timerange)
-      })
-    else  if (timeranges.length == 0) {
-      var keyList = scala.collection.immutable.List.empty[Key]
-      val keyArraybuf = scala.collection.mutable.ArrayBuffer.empty[Key]
-      val deleteKey = (k: Key) => {
-        keyList = keyList :+ k
-        //keyArraybuf.append(k)
+    containerObj.foreach(item => {
+      if (item.keys.size == 0) {
+        var timerange = new TimeRange(item.begintime.toLong, item.endtime.toLong)
+        logger.info("delete from %s container for timerange: %d-%d".format(typename, timerange.beginTime, timerange.endTime))
+        kvstore.del(typename, timerange)
+      } else if (item.begintime.equals(null) || item.endtime.equals(null)) {
+        var keyList = scala.collection.immutable.List.empty[Key]
+        val deleteKey = (k: Key) => {
+          keyList = keyList :+ k
+        }
+        kvstore.getKeys(typename, item.keys, deleteKey)
+        val keyArrays: Array[Key] = keyList.toArray
+        kvstore.del(typename, keyArrays)
+      } else {
+        var timerange = new TimeRange(item.begintime.toLong, item.endtime.toLong)
+        kvstore.del(typename, timerange, item.keys)
       }
-
-      kvstore.getKeys(typename, keyids, deleteKey)
-     // val keyArrays: Array[Key] = keyArraybuf.toArray
-      val keyArrays: Array[Key] = keyList.toArray
-      kvstore.del(typename, keyArrays)
-    } else
-      timeranges.foreach(timerange => {
-        logger.info("delete from %s container for keyid: %s and timerange: %d-%d".format(typename, keyids, timerange.beginTime, timerange.endTime))
-        kvstore.del(typename, timerange, keyids)
-      })
+    })
   }
 
   //this method used to get data from container for a specific key in a specific time ranges
-   def GetFromContainer(typename: String, keyArray: Array[Array[String]], timeranges: Array[TimeRange], kvstore: DataStore): Map[String,String] ={
+   def GetFromContainer(typename: String, containerObj: List[container], kvstore: DataStore): Map[String,String] ={
 
     var data : Map[String,String] = null
     val retriveData = (k: Key, v: Any, serializerTyp: String, typeName: String, ver: Int)=>{
@@ -326,12 +360,17 @@ class UtilityForContainers(val loadConfigs: Properties, val typename: String) ex
       data = data + (bucketId.toString -> value.toString) // this includes key and value
     }
       //logger.info("select data from %s container for %s key and timerange: %d-%d".format(typename,timerange.beginTime,timerange.endTime))
-    if(keyArray.length == 0)
-      kvstore.get(typename, timeranges, retriveData)
-    else if (timeranges.length == 0)
-      kvstore.get(typename, keyArray, retriveData)
-    else
-      kvstore.get(typename,timeranges,keyArray,retriveData)
+    containerObj.foreach(item => {
+      if (item.keys.size == 0) {
+        var timerange = new TimeRange(item.begintime.toLong, item.endtime.toLong)
+        kvstore.get(typename, Array(timerange), retriveData)
+      } else if (item.begintime.equals(null) || item.endtime.equals(null)){
+        kvstore.get(typename, item.keys, retriveData)
+      } else {
+        var timerange = new TimeRange(item.begintime.toLong, item.endtime.toLong)
+        kvstore.get(typename, Array(timerange), item.keys, retriveData)
+      }
+    })
     return data
   }
 }
